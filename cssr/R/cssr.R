@@ -1,3 +1,5 @@
+# TODO @gfaletto: implement protolasso and clusterRepLasso (located in 
+# toy_ex_slide_funcs.R, in /Users/gregfaletto/Google Drive/Data Science/LaTeX/Generalized Stability Selection Presentation)
 
 #' Cluster Stability Selection
 #'
@@ -1132,7 +1134,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     res_list <- parallel::mclapply(X=subsamps_object, FUN=cssLoop, x=x, y=y,
         lambda=lambda, fitfun=fitfun, mc.cores=num_cores)
 
-    # Store selected sets in B x p (or 2*B x p for "SS") binary matrix
+    # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
     if(sampling_type=="SS"){
         res <- matrix(0L, 2*B, p)
     } else if(sampling_type=="MB"){
@@ -1315,65 +1317,44 @@ cssLasso <- function(X, y, lambda){
     return(selected)
 }
 
-formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
-    get_prototypes=FALSE, x=NA, y=NA){
-    # Takes in clusters or matrix R and outputs list of feature clusters.
-    # Optionally, can use_R
-    # identify prototypes from each cluster (the feature within each cluster
-    # most correlated with the response) if X and y are provided.
-
-    # Identify clustered features: row i in R contains all the features
-    # that are in a cluster with feature i, so come up with a list containing
-    # all the clusters and then remove the repeats
-
-    # Inputs:
-
-    # clusters
-    # Either an integer vector of a list of integer vectors; each vector should
-    # contain the indices of a
-    # cluster of features. (If there is only one cluster, clusters can either
-    # be a list of length 1 or simply an integer vector.) If clusters is
-    # specified then R is ignored.
-
-    # clust_names
-    # A character vector of the names of the clusters in clusters.
-
-    # R
-    # Numeric p x p matrix; entry ij contains the "substitutive value" of
-    # feature i for feature j (diagonal must consist of ones, all entries must be between 0 and 1, and matrix must
-    # be symmetric)
-
-    # get_prototypes
-    # Logical: if TRUE, will identify prototype from each cluster (the feature
-    # from each cluster that is most correlated with the response) for the
-    # protolasso. In this case, x and y must be provided.
-
-    # x
-    # Design matrix of numerics; only needs to be provided if get_prototypes is
-    # TRUE.
-
-    # y
-    # Numeric response vector; only needs to be provided if get_prototypes is
-    # TRUE.
-
-    # Output
-
-    # A list with the following elements:
-
-    # clusters: A list where each entry is an integer vector of indices of features that
-    # are in a common cluster. (The length of list clusters is equal to the
-    # number of clusters.) All identified clusters are non-overlapping. Any
-    # clusters of size 1 are removed from the input, and only clusters of size
-    # 2 or larger are returned.
-
-    # multiple: logical; TRUE if there is more than one cluster of size greater
-    # than 1, FALSE otherwise.
-
-    # prototypes: only returned if get_prototypes=TRUE. An integer vector whose
-    # length is equal to the number of clusters. Entry i is the index of the
-    # feature belonging to cluster i that is most highly correlated with y
-    # (that is, the prototype for the cluster; see function protolasso for
-    # details).
+#' Formats clusters in standardized way, optionally estimating cluster
+#' prototypes
+#'
+#' @param clusters Either an integer vector of a list of integer vectors; each
+#' vector should contain the indices of a cluster of features. (If there is only
+#' one cluster, clusters can either be a list of length 1 or simply an integer
+#' vector.) If clusters is specified then R is ignored.
+#' @param p integer or numeric; the numbe of features in x (should match 
+#' ncol(x), if x is provided)
+#' @param clust_names A character vector of the names of the clusters in clusters.
+#' @param get_prototypes Logical: if TRUE, will identify prototype from each
+#' cluster (the feature from each cluster that is most correlated with the
+#' response) for the protolasso. In this case, x and y must be provided.
+#' @param x n x p numeric matrix; design matrix. Only needs to be provided if
+#' get_prototypes is TRUE.
+#' @param y Numeric response vector; only needs to be provided if get_prototypes
+#' is TRUE. Note: in general, the css function does not require y to be a
+#' numeric vector, because the provided fitfun could use a different form of y
+#' (for example, a categorical response variable). However, y must be numeric in
+#' order to provide prototypes because the prototypes are determined using the
+#' correlation between cluster members (columns of x) and y.
+#' @param R Numeric p x p matrix; not currently used. Entry ij contains the 
+#' "substitutive value" of feature i for feature j (diagonal must consist of
+#' ones, all entries must be between 0 and 1, and matrix must be symmetric)
+#' @return A named list with the following elements: \item{clusters}{A list
+#' where each entry is an integer vector of indices of features that are in a
+#' common cluster. (The length of list clusters is equal to the number of
+#' clusters.) All identified clusters are non-overlapping. Any clusters of size
+#' 1 are removed from the input, and only clusters of size 2 or larger are
+#' returned.} \item{multiple}{Logical; TRUE if there is more than one cluster of
+#' size greater than 1, FALSE otherwise.} \item{prototypes}{only returned if
+#' get_prototypes=TRUE. An integer vector whose length is equal to the number of
+#' clusters. Entry i is the index of the feature belonging to cluster i that is
+#' most highly correlated with y (that is, the prototype for the cluster; see
+#' function protolasso for details).}
+#' @author Gregory Faletto, Jacob Bien
+formatClusters <- function(clusters=NA, p=-1, clust_names=NA, 
+    get_prototypes=FALSE, x=NA, y=NA, R=NA){
 
     # Check inputs
 
@@ -1384,6 +1365,7 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
     stopifnot(is.integer(p) | is.numeric(p))
     stopifnot(length(p) == 1)
     stopifnot(p == round(p))
+    stopifnot(!is.na(p))
     if(p > 0){
         stopifnot(p >= 2)
     }
@@ -1449,7 +1431,6 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
         stopifnot(is.matrix(x))
 
         n <- nrow(x)
-        p <- ncol(x)
 
         checkY(y, n)
     }
@@ -1486,8 +1467,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
 
     if(any(lengths(clusters) > 1)){ # & length(clusters) > 1
 
-        # Only care about clusters with more than one element (only ones that need
-        # to be treated differently)
+        # Only care about clusters with more than one element (only ones that
+        # need to be treated differently)
         # keep track of whether there's more than one cluster or not
         multiple <- sum(lengths(clusters) > 1) > 1
     }
@@ -1495,6 +1476,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
     # For any features not already in a cluster, add a cluster containing only
     # that feature
     orig_length_clusters <- length(clusters)
+
+    stopifnot(p >= 1)
     for(i in 1:p){
         feat_i_found <- FALSE
         if(orig_length_clusters > 0){
@@ -1527,7 +1510,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
         # Replace any proposed cluster names that are already in use
         if(any(proposed_clust_names %in% names(clusters))){
             proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste("c",
-                unnamed_clusts[proposed_clust_names %in% names(clusters)] + p, sep="")
+                unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
+                sep="")
         }
         while_counter <- 0
         while(any(proposed_clust_names %in% names(clusters))){
@@ -1561,12 +1545,27 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA, R=NA,
     }
 }
 
+#' Estimate prototypes from a list of clusters
+#'
+#' Takes in list of clusters, x, and y and returns an integer vector (of length
+#' equal to the number of clusters) of the indices of the feature prototypes
+#' (the features from each cluster most correlated with the response).
+#'
+#' @param clusters A list where each entry is an integer vector of indices of
+#' features that are in a common cluster. (The length of list clusters must be
+#' equal to the number of clusters.) All identified clusters must be
+#' non-overlapping. Must only include clusters of size 2 or larger.
+#' @param x n x p numeric matrix; design matrix.
+#' @param y Numeric response vector. Note: in general, the css function does not
+#' require y to be a numeric vector, because the provided fitfun could use a
+#' different form of y (for example, a categorical response variable). However,
+#' y must be numeric in order to provide prototypes because the prototypes are
+#' determined using the correlation between cluster members (columns of x) and
+#' y.
+#' @return An integer vector of the same length as clusters. Entry j is the
+#' index of the feature identified as the prototype for cluster j.
+#' @author Gregory Faletto, Jacob Bien
 getPrototypes <- function(clusters, x, y){
-    # Takes in list of clusters, x, and y and returns an integer vector (of
-    # length equal to the number of clusters) of the indices of the feature
-    # prototypes (the features from each cluster most correlated with the
-    # response).
-
     # Check inputs
 
     stopifnot(!is.list(clusters) | all(lengths(clusters) >= 1))
@@ -1602,9 +1601,25 @@ getPrototypes <- function(clusters, x, y){
     return(prototypes)
 }
 
+#' Estimate prototypes from a single cluster
+#'
+#' Takes in a single cluster, x, and y and returns an integer of the index of
+#' the feature prototype (the feature from the cluster most correlated with the
+#' response).
+#'
+#' @param cluster_members_i An integer vector of indices of features that are in
+#' a common cluster. Must have length at least 2.
+#' @param x n x p numeric matrix; design matrix.
+#' @param y Numeric response vector. Note: in general, the css function does not
+#' require y to be a numeric vector, because the provided fitfun could use a
+#' different form of y (for example, a categorical response variable). However,
+#' y must be numeric in order to provide prototypes because the prototypes are
+#' determined using the correlation between cluster members (columns of x) and
+#' y.
+#' @return integer; the index of the feature identified as the prototype for
+#' the cluster.
+#' @author Gregory Faletto, Jacob Bien
 identifyPrototype <- function(cluster_members_i, x, y){
-    # Given a cluster of features, x, and y, identifies the prototype.
-
     # Check input
     stopifnot(is.integer(cluster_members_i))
     # If cluster only has one member, that member is the prototype
@@ -1612,7 +1627,6 @@ identifyPrototype <- function(cluster_members_i, x, y){
         return(cluster_members_i)
     }
     stopifnot(length(cluster_members_i) > 1)
-
 
     # Choose which cluster member to represent cluster for stability
     # metric purposes by choosing the one most highly correlated
@@ -1637,10 +1651,19 @@ identifyPrototype <- function(cluster_members_i, x, y){
     return(ret)
 }
 
+#' Find cluster proportions
+#'
+#' Given a matrix of feature selection indicator variables and a list of
+#' clusters of features, returns a matrix of cluster indicator variables, as
+#' well as the selection proportions for both features and clusters.
+#'
+#' @param clusters
+#' @param res A `B` x p (or `2*B` x p for sampling_type = "SS") integer matrix.
+#' Each row of res should be a selected set (res_ij is 1 if feature j was
+#' selected on resample i and 0 if not).
+#' @param sampling_type
 getClusterProps <- function(clusters, res, sampling_type){
-    # res is a B x p (or 2*B x p for "SS") integer matrix. Each row of res
-    # is a selected set (res_ij is 1 if feature j was selected on resample i and
-    # 0 if not).
+    # res is 
 
     # Check input
 
