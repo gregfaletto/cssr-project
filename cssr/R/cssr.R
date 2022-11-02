@@ -98,7 +98,10 @@
 #' \cr Beinrucker, A., Dogan, Ü., &
 #' Blanchard, G. (2016). Extensions of stability selection using subsamples of
 #' observations and covariates. \emph{Statistics and Computing}, 26(5), 1059-
-#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}.
+#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}. \cr Jerome Friedman,
+#' Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized
+#' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},
+#' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @export
 css <- function(X, y, lambda
     , clusters = list()
@@ -176,8 +179,6 @@ css <- function(X, y, lambda
     return(ret)
 }
 
-
-
 #' Generate randomly sampled data including noisy observations of latent
 #' variables
 #'
@@ -221,22 +222,24 @@ css <- function(X, y, lambda
 #' latent variables. The coefficients of the features will be
 #' beta_unclustered/sqrt(1:k_unclustered). Can't equal 0. Default is 1.
 #' @param snr Integer or numeric; the signal-to-noise ratio of the response
-#' y. If snr is specified, the variance of the noise in y will be calculated
-#' using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of snr and
-#' sigma_eps_sq must be specified. Default is NA.
+#' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
+#' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
+#' snr and sigma_eps_sq must be specified. Default is NA.
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
 #' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
-#' @return A list of the following elements. \item{X}{An n x p matrix of
+#' @return A list of the following elements. \item{X}{An n x p numeric matrix of
 #' n observations from a p-dimensional multivariate normal distribution
-#' generated using the specified parameters. The first n_clusters times cluster_size
-#' features will be the clusters of features correlated with the n_clusters
-#' latent variables. The next k_unclustered features will be the "weak signal"
-#' features, and the remaining p - n_clusters*cluster_size - k_unclustered
-#' features will be the unclustered noise features.} \item{y}{The response
-#' generated from X, the latent features from Z, and the coefficient vector.}
-#' \item{Z}{The latent features; either a numeric vector (if n_clusters > 1) or
-#' a numeric matrix (if n_clusters > 1).} \item{mu}{The expected response given
-#' X, Z, and the true coefficient vector (equal to y minus the added noise).}
+#' generated using the specified parameters. The first n_clusters times
+#' cluster_size features will be the clusters of features correlated with the
+#' n_clusters latent variables. The next k_unclustered features will be the
+#' "weak signal" features, and the remaining p - n_clusters*cluster_size -
+#' k_unclustered features will be the unclustered noise features.} \item{y}{A
+#' length n numeric vector; the response generated from X, the latent features
+#' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
+#' latent features; either a numeric vector (if n_clusters > 1) or a numeric
+#' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
+#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 #' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
@@ -288,25 +291,27 @@ genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 
     # Generate coefficients
     # Note that beta has length p + sig_clusters
-    coefs <- makeCoefficients(p + sig_clusters, k_unclustered,
-        beta_unclustered, beta_latent, n_clusters, sig_clusters,
-        cluster_size + 1)
+    coefs <- makeCoefficients(p + n_clusters, k_unclustered, beta_unclustered,
+        beta_latent, n_clusters, sig_clusters, cluster_size + 1)
 
     # Generate mu, X, z, sd, y
-    gen_mu_x_y_sd_res <- gen_mu_x_y_sd(n, p, coefs$beta, Sigma, sig_clusters,
+    gen_mu_x_z_sd_res <- genMuXZSd(n, p, coefs$beta, Sigma,
+        coefs$blocked_dgp_vars, coefs$latent_vars, n_clusters,
         cluster_size, snr, sigma_eps_sq)
 
     # Note that X is n x p
-    X <- gen_mu_x_y_sd_res$X
+    X <- gen_mu_x_z_sd_res$X
+
     stopifnot(nrow(X) == n)
     stopifnot(ncol(X) == p)
+
     # Z is a vector if n_clusters = 1; if n_clusters > 1, Z is a n x n_clusters
     # matrix
-    Z <- gen_mu_x_y_sd_res$z
+    Z <- gen_mu_x_z_sd_res$z
 
     # Note that mu has length n
-    mu <- gen_mu_x_y_sd_res$mu
-    sd <- gen_mu_x_y_sd_res$sd
+    mu <- gen_mu_x_z_sd_res$mu
+    sd <- gen_mu_x_z_sd_res$sd
 
     y <- mu + sd * stats::rnorm(n)
 
@@ -337,7 +342,10 @@ genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 #' 34(3), 1436–1462. \url{https://doi.org/10.1214/009053606000000281}.
 #' \cr Peter Bühlmann and Sara van de Geer. Statistics for High-Dimensional
 #' Data. \emph{Springer Series in Statistics}. Springer, Heidelberg, 2011. ISBN
-#' 978-3-642-20191-2. \url{http://dx.doi.org/10.1007/978-3-642-20192-9}.
+#' 978-3-642-20191-2. \url{http://dx.doi.org/10.1007/978-3-642-20192-9}. \cr
+#' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization
+#' Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of
+#' Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @export
 getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
     stopifnot(is.character(lambda_choice))
@@ -1042,6 +1050,8 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     stop("createSubsamples failed to return anything")
 }
 
+#' Generate list of subsamples
+#'
 #` Generate list of `B` (or `2*B` for sampling_type="SS") subsamples of size
 #` `n/2`
 #' @param n Integer or numeric; sample size of the data set.
@@ -1064,7 +1074,6 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 #' Statistical Methodology}, 75(1), 55–80.
 #' \url{https://doi.org/10.1109/RITA.2014.2302071}.
 getSubsamps <- function(n, B, sampling_type){
-    
     subsamples <- list()
     for(i in 1:B){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
@@ -1214,7 +1223,6 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 #' 
 #' Runs provided feature selection method fitfun on each subsample for cluster
 #' stability selection (this function is called within mclapply).
-#'
 #' @param input Could be one of two things: \item{subsample}An integer vector of
 #' size `n/2` containing the indices of the observations in the subsample.}
 #' \item{drop_var_input}{A named list containing two elements: one named
@@ -1292,7 +1300,10 @@ cssLoop <- function(input, x, y, lambda, fitfun){
 #' @author Gregory Faletto, Jacob Bien
 #' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}. \cr Jerome Friedman, Trevor Hastie,
+#' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models
+#' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.
+#' URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @export
 cssLasso <- function(X, y, lambda){
     # Check inputs
@@ -1867,7 +1878,10 @@ makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
     return(Sigma)
 }
 
-#' @param p
+#' Generated coefficients for y in latent variable model
+#'
+#' @param p Integer or numeric; the number of features that will be observed in
+#' x plus the number of latent variables (each corresponding to a cluster).
 #' @param k_unblocked Integer or numeric; the number of features in X that
 #' will have nonzero coefficients in the true model for y among those features 
 #' not generated from the n_clusters latent variables (called "weak signal" 
@@ -1906,6 +1920,9 @@ makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
 #' \item{insig_blocked_vars}{An integer vector containing the indices of the
 #' features corresponding to the latent features that will have coefficient 0 in
 #' the true model for y. If nblocks=0, this will just be NA.}
+#' \item{latent_vars}{An integer vector of length nblocks containing the indices
+#' of all of the latent features.}
+#' @author Gregory Faletto, Jacob Bien
 #' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
@@ -1923,15 +1940,17 @@ makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
 
     # identify indices of first coefficient in each significant block (these
     # features will have coefficient beta_high)
-    blocked_dgp_vars <- NA
-    if(sig_blocks >= 1){
-        blocked_dgp_vars <- as.integer(((0:(sig_blocks - 1))*block_size + 1))
-        stopifnot(all(blocked_dgp_vars) %in% 1:p)
-        stopifnot(all(blocked_dgp_vars) %in% 1:(block_size*nblocks))
-        stopifnot(length(unique(blocked_dgp_vars)) == sig_blocks)
+    latent_vars <- NA
+    if(nblocks >= 1){
+        latent_vars <- as.integer(((0:(nblocks - 1))*block_size + 1))
+
+        stopifnot(all(latent_vars) %in% 1:p)
+        stopifnot(all(latent_vars) %in% 1:(block_size*nblocks))
+        stopifnot(length(unique(latent_vars)) == nblocks)
+        stopifnot(length(latent_vars) == nblocks)
     }
-    
-    stopifnot(length(blocked_dgp_vars) == sig_blocks)
+
+    blocked_dgp_vars <- latent_vars[1:sig_blocks]
     
     beta[blocked_dgp_vars] <- beta_high
 
@@ -1970,37 +1989,91 @@ makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
     stopifnot(nblocks*block_size + length(insig_blocked_vars) <= p)
 
     stopifnot(sum(beta != 0) == sig_blocks + k_unblocked)
+    stopifnot(is.numeric(beta) | is.integer(beta))
 
     return(list(beta=beta, blocked_dgp_vars=blocked_dgp_vars,
         sig_unblocked_vars=sig_unblocked_vars,
-        insig_blocked_vars=insig_blocked_vars))
+        insig_blocked_vars=insig_blocked_vars, latent_vars=latent_vars))
 }
 
-gen_mu_x_y_sd <- function(n, p, beta, Sigma, sig_blocks=1, block_size, snr=NA,
-    sigma_eps_sq=NA){
-    # print(Sigma)
+#' Generate observed and latent variables along with conditional mean
+#'
+#' @param n Integer or numeric; the number of observations to generate. (The
+#' generated X and Z will have n rows, and the generated y and mu will have
+#' length n.)
+#' @param p Integer or numeric; the number of observed features (the generated X
+#' will have p columns).
+#' @param beta A numeric or integer vector of length `p` + sig_blocks containing
+#' the coefficients for the true model for y.
+#' @param Sigma A (`p` + n_blocks) x (`p` + n_blocks) numeric matrix
+#' representing the covariance matrix for the latent features, the associated
+#' proxies, and the remaining features.
+#' @param blocked_dgp_vars An integer vector of length sig_blocks containing the
+#' indices of the features corresponding to the latent features that have
+#' nonzero coefficient beta_high in the true model for y.
+#' @param latent_vars An integer vector of length n_blocks containing the
+#' indices of all of the latent features.
+#' @param n_blocks Integer or numeric; the number of latent variables to
+#' generate, each of which will be associated with an observed cluster in X.
+#' Must be at least 1. Default is 1.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, X will contain block_size noisy proxies that are correlated with
+#' the latent variable.
+#' @param snr Integer or numeric; the signal-to-noise ratio of the response
+#' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
+#' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
+#' snr and sigma_eps_sq must be specified. Default is NA.
+#' @param sigma_eps_sq Integer or numeric; the variance on the noise added
+#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' @return A named list with the following elements: \item{X}{An `n` x `p`
+#' numeric matrix containing the observed proxies for the latent variables as
+#' well as the observed unblocked (iid) variables.} \item{mu}{A length `n`
+#' numeric vector; the expected response given X, Z, and the true
+#' coefficient vector (equal to y minus the added noise).} \item{z}{An `n` x
+#' n_blocks numeric matrix containing the n_blocks latent variables. Note that
+#' (X, z) is multivariate Gaussian.} \item{sd}{Numeric; the standard deviation
+#' of the noise added to mu to get y (calculated either from snr or
+#' sigma_eps_sq).}
+#' @author Gregory Faletto, Jacob Bien
+genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
+    latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA){
+    # Check inputs
 
-    stopifnot(nrow(Sigma) == p + sig_blocks & ncol(Sigma) == p + sig_blocks)
+    stopifnot(nrow(Sigma) == p + n_blocks)
+    stopifnot(ncol(Sigma) == p + n_blocks)
+    stopifnot(length(blocked_dgp_vars) <= n_blocks)
+    if(any(!is.na(sigma_eps_sq))){
+        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
+        stopifnot(length(sigma_eps_sq) == 1)
+        stopifnot(sigma_eps_sq >= 0)
+    } else{
+        if(any(is.na(snr))){
+            stop("Must provide one of snr or sigma_eps_sq")
+        }
+        stopifnot(is.numeric(snr) | is.integer(snr))
+        stopifnot(length(snr) == 1)
+        stopifnot(snr > 0)
+    }
 
-    x <- MASS::mvrnorm(n=n, mu=rep(0, p + sig_blocks), Sigma=Sigma)
+    stopifnot(length(beta) == p + n_blocks)
+    stopifnot(all(beta[blocked_dgp_vars] != 0))
+
+    stopifnot(length(latent_vars) == n_blocks)
+
+    x <- MASS::mvrnorm(n=n, mu=rep(0, p + n_blocks), Sigma=Sigma)
 
     stopifnot(length(beta) == ncol(x))
 
-    # blocked_dgp_vars <- coefs[2]
-    # sig_unblocked_vars <- coefs[3]
     mu <- as.numeric(x %*% beta)
-    stopifnot(length(mu) == n)
+
     # Remove true blocked signal feature from each block from x now that I've
     # generated mu
-
-    # identify indices of first coefficient in each significant block, which
-    # correspond to the latent features (these betas will be nonzero)
-    blocked_dgp_vars <- ((0:(sig_blocks-1))*block_size+1)
-
-    stopifnot(length(blocked_dgp_vars) == sig_blocks)
-
-    z <- x[, blocked_dgp_vars]
-    x <- x[, setdiff(1:ncol(x), blocked_dgp_vars)]
+    z <- NA
+    if(length(latent_vars) > 0){
+        z <- x[, latent_vars]
+    }
+    
+    x <- x[, setdiff(1:(p + n_blocks), latent_vars)]
 
     # If SNR is null, use sigma_eps_sq
     if(!is.na(sigma_eps_sq)){
@@ -2009,49 +2082,28 @@ gen_mu_x_y_sd <- function(n, p, beta, Sigma, sig_blocks=1, block_size, snr=NA,
         sd <- sqrt(sum(mu^2) / (n * snr)) # taking snr = ||mu||^2 /(n * sigma^2)
     }
 
+    # Check output
+
+    stopifnot(length(mu) == n)
+
     stopifnot(nrow(x) == n)
     stopifnot(ncol(x) == p)
 
-    return(list(X=x, mu=mu, blocked_dgp_vars=blocked_dgp_vars, z=z, sd=sd))
-}
-
-checkXInputResults <- function(newx, css_X){
-
-    feat_names <- as.character(NA)
-    if(!is.null(colnames(newx))){
-        feat_names <- colnames(newx)
-    }
-
-    # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(newx)){
-        newx <- stats::model.matrix(~ ., newx)
-    }
-
-    stopifnot(is.matrix(newx))
-    stopifnot(all(!is.na(newx)))
-
-    n <- nrow(newx)
-    p <- ncol(newx)
-    stopifnot(p >= 2)
-    if(length(feat_names) > 1){
-        stopifnot(length(feat_names) == p)
-    } else{
-        stopifnot(is.na(feat_names))
-    }
-
-    colnames(newx) <- character()
-
-    # Confirm that newx matches css_results$X
-    if(p != ncol(css_X)){
-        stop("Number of columns in newx must match number of columns from matrix provided to css")
-    }
-    if(length(feat_names) != 1){
-        if(!identical(feat_names, colnames(css_X))){
-            stop("Provided feature names for newx do not match feature names provided to css")
+    if(any(!is.na(z))){
+        if(n_blocks > 1){
+            stopifnot(nrow(z) == n)
+            stopifnot(ncol(z) == n_blocks)
+        } else{
+            stopifnot(length(z) == n)
         }
     }
 
-    return(list(feat_names=feat_names, newx=newx))
+    stopifnot(is.numeric(sd) | is.integer(sd))
+    stopifnot(length(sd) == 1)
+    stopifnot(!is.na(sd))
+    stopifnot(sd >= 0)
+
+    return(list(X=x, mu=mu, z=z, sd=sd))
 }
 
 #' Create design matrix of cluster representatives from matrix of raw features
@@ -2195,6 +2247,7 @@ getSelectedClusters <- function(css_results, weighting="sparse", cutoff=0,
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
 
     selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+    
     # Check that selected_clusts has length at least min_num_clusts
     min_num_clusts <- max(min_num_clusts, 0)
     B <- nrow(css_results$feat_sel_mat)
@@ -2247,7 +2300,6 @@ getSelectedClusters <- function(css_results, weighting="sparse", cutoff=0,
         }
     }
     
-
     # Get selected features from selected clusters
     clusters <- css_results$clusters
     stopifnot(all(clust_names %in% names(clusters)))
@@ -2460,6 +2512,45 @@ cor_function <- function(t, y){
         return(0)
     }
     return(abs(stats::cor(t, y)))
+}
+
+checkXInputResults <- function(newx, css_X){
+
+    feat_names <- as.character(NA)
+    if(!is.null(colnames(newx))){
+        feat_names <- colnames(newx)
+    }
+
+    # Check if x is a matrix; if it's a data.frame, convert to matrix.
+    if(is.data.frame(newx)){
+        newx <- stats::model.matrix(~ ., newx)
+    }
+
+    stopifnot(is.matrix(newx))
+    stopifnot(all(!is.na(newx)))
+
+    n <- nrow(newx)
+    p <- ncol(newx)
+    stopifnot(p >= 2)
+    if(length(feat_names) > 1){
+        stopifnot(length(feat_names) == p)
+    } else{
+        stopifnot(is.na(feat_names))
+    }
+
+    colnames(newx) <- character()
+
+    # Confirm that newx matches css_results$X
+    if(p != ncol(css_X)){
+        stop("Number of columns in newx must match number of columns from matrix provided to css")
+    }
+    if(length(feat_names) != 1){
+        if(!identical(feat_names, colnames(css_X))){
+            stop("Provided feature names for newx do not match feature names provided to css")
+        }
+    }
+
+    return(list(feat_names=feat_names, newx=newx))
 }
 
 checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
