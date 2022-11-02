@@ -151,7 +151,6 @@ css <- function(X, y, lambda
     clus_prop_results <- getClusterProps(clusters, res, sampling_type)
 
     clus_sel_props_p <- clus_prop_results$clus_sel_props_p
-    res_clus_p <- clus_prop_results$res_clus_p
     res_n_clusters <- clus_prop_results$res_n_clusters
 
     rm(clus_prop_results)
@@ -210,17 +209,17 @@ css <- function(X, y, lambda
 #' n_clusters. Default is 1.
 #' @param rho Integer or numeric; the covariance of the proxies in each cluster
 #' with the latent variable (and each other). Note that the correlation between
-#' the features in the cluster will be rho/var. Default is 0.9.
+#' the features in the cluster will be rho/var. Can't equal 0. Default is 0.9.
 #' @param var Integer or numeric; the variance of all of the observed features
 #' in X (both the proxies for the latent variables and the k_unclustered other
-#' features). Default is 1.
+#' features). Can't equal 0. Default is 1.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
-#' model for y. Default is 1.5.
+#' model for y. Can't equal 0. Default is 1.5.
 #' @param beta_unclustered Integer or numeric; the maximum coefficient in the
 #' model for y among the k_unclustered features in X not generated from the
 #' latent variables. The coefficients of the features will be
-#' beta_unclustered/sqrt(1:k_unclustered). Default is 1.
+#' beta_unclustered/sqrt(1:k_unclustered). Can't equal 0. Default is 1.
 #' @param snr Integer or numeric; the signal-to-noise ratio of the response
 #' y. If snr is specified, the variance of the noise in y will be calculated
 #' using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of snr and
@@ -249,9 +248,30 @@ genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 
     # Check inputs
     stopifnot(sig_clusters <= n_clusters)
+    stopifnot(sig_clusters >= 0)
+    stopifnot(sig_clusters == round(sig_clusters))
+    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
+
+    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
+    stopifnot(n_clusters == round(n_clusters))
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
     stopifnot(abs(rho) <= abs(var))
+    # TODO(gfaletto): is it easy to remove the requirement that n_clusters is
+    # at least 1 (so that it's possible to generate data with no latent 
+    # features)? If so, should only check that cluster_size >= 1 if n_clusters
+    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
+    # rather than 2.
     stopifnot(n_clusters >= 1)
+    stopifnot(cluster_size >= 1)
+    stopifnot(rho != 0)
+    stopifnot(var != 0)
+
+    stopifnot(beta_latent != 0)
+    stopifnot(beta_unclustered != 0)
+
+    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
+    stopifnot(k_unclustered >= 0)
+    stopifnot(k_unclustered == round(k_unclustered))
 
     # Same as make_sparse_blocked_linear_model_random, but ith coefficient
     # of weak signal features is beta_unclustered/sqrt(i) in order to have
@@ -262,12 +282,13 @@ genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 
     # Generate covariance matrix (latent features are mixed in matrix, so each
     # cluster will be of size cluster_size + 1)
-    Sigma <- make_covariance_matrix(p + sig_clusters, n_clusters, cluster_size +
+
+    Sigma <- makeCovarianceMatrix(p + n_clusters, n_clusters, cluster_size +
         1, rho, var)
 
     # Generate coefficients
     # Note that beta has length p + sig_clusters
-    coefs <- make_coefficients4_ranking2(p + sig_clusters, k_unclustered,
+    coefs <- makeCoefficients(p + sig_clusters, k_unclustered,
         beta_unclustered, beta_latent, n_clusters, sig_clusters,
         cluster_size + 1)
 
@@ -277,6 +298,8 @@ genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 
     # Note that X is n x p
     X <- gen_mu_x_y_sd_res$X
+    stopifnot(nrow(X) == n)
+    stopifnot(ncol(X) == p)
     # Z is a vector if n_clusters = 1; if n_clusters > 1, Z is a n x n_clusters
     # matrix
     Z <- gen_mu_x_y_sd_res$z
@@ -1684,6 +1707,12 @@ identifyPrototype <- function(cluster_members_i, x, y){
 #' @author Gregory Faletto, Jacob Bien
 getClusterProps <- function(clusters, res, sampling_type){
 
+    # TODO(gfaletto): consider deprecating feat_sel_props and res_clus_p
+    # outputs, which don't seem to be used anywhere? (res_clus_p still needs
+    # to be calculated since it is used to calculate clus_sel_props_p, but it
+    # doesn't necessarily need to be returned. feat_sel_props doesn't seem to
+    # be needed to be calculated or returned here at all.)
+
     # Check input
 
     stopifnot(is.matrix(res))
@@ -1778,15 +1807,47 @@ getClusterProps <- function(clusters, res, sampling_type){
         res_n_clusters=res_n_clusters))
 }
 
-make_covariance_matrix <- function(p, nblocks, block_size, rho, var) {
-     # start with p x p identity matrix
-    Sigma <- var*diag(p)
+#' Generate covariance matrix for simulated clustered data
+#'
+#' @param p Integer or numeric; the total number of features in the covariance
+#' matrix to be created, including latent features, the associated noisy proxies
+#' with each latent feature, and other (weak signal and noise) features.
+#' @param n_blocks Integer or numeric; the number of latent variables in the
+#' data, each of which is associated with an observed cluster in X. Must be at
+#' least 1.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, the covariance matrix will include the original latent feature
+#' plus block_size - 1 noisy proxies that are correlated with the latent
+#' variable.
+#' @param rho Integer or numeric; the covariance of the proxies in each cluster
+#' with the latent variable (and each other). Note that the correlation between
+#' the features in the cluster will be rho/var. rho cannot equal 0.
+#' @param var Integer or numeric; the variance of all of the observed features
+#' in X (both the proxies for the latent variables and the k_unclustered other
+#' features). var cannot equal 0.
+#' @return A `p` x `p` numeric matrix representing the covariance matrix for
+#' the latent features, the associated proxies, and the remaining features. All
+#' features not in a block will be independent from each other and the blocks
+#' and have variance var.
+#' @author Gregory Faletto, Jacob Bien
+makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
+    # Check inputs
 
-    ### select n.blocks blocks of features to be highly correlated
+    stopifnot(p >= nblocks*block_size)
+    stopifnot(abs(rho) <= abs(var))
+    stopifnot(nblocks >= 1)
+    stopifnot(rho != 0)
+    stopifnot(var != 0)
+    stopifnot(block_size >= 2)
+
+    # start with p x p identity matrix
+    Sigma <- var*diag(p)
 
     # create matrix with nblocks rows, each containing a vector of
     # indices of highly correlated features
     block_feats <- matrix(seq(nblocks*block_size), nrow=nblocks, byrow=TRUE)
+
+    stopifnot(length(unique(block_feats)) == length(block_feats))
 
     # add covariances of highly correlated features to sigma
     for(i in 1:nblocks){
@@ -1799,38 +1860,117 @@ make_covariance_matrix <- function(p, nblocks, block_size, rho, var) {
             }
         }
     }
+    stopifnot(is.numeric(Sigma))
     stopifnot(nrow(Sigma) == p & ncol(Sigma) == p)
     stopifnot(all(Sigma == t(Sigma)))
 
     return(Sigma)
 }
 
-make_coefficients4_ranking2 <- function(p, k_unblocked=0, beta_low,
-    beta_high, nblocks, sig_blocks, block_size){
-    # Make sure p is large enough
+#' @param p
+#' @param k_unblocked Integer or numeric; the number of features in X that
+#' will have nonzero coefficients in the true model for y among those features 
+#' not generated from the n_clusters latent variables (called "weak signal" 
+#' features in the simulations from Faletto and Bien 2022). The coefficients on
+#' these features will be determined by beta_low.
+#' @param beta_low Integer or numeric; the maximum coefficient in the
+#' model for y among the k_unblocked features in X not generated from the
+#' latent variables. The coefficients of the features will be
+#' beta_low/sqrt(1:k_unblocked).
+#' @param beta_high Integer or numeric; the coefficient used for all
+#' sig_blocks latent variables that have nonzero coefficients in the true
+#' model for y.
+#' @param nblocks Integer or numeric; the number of latent variables that were
+#' generated, each of which will be associated with an observed cluster in X.
+#' @param sig_blocks Integer or numeric; the number of generated latent
+#' features that will have nonzero coefficients in the true model for y (all of
+#' them will have coefficient beta_latent). In particular, the first sig_blocks
+#' latent variables will have coefficient beta_latent, and the remaining nblocks
+#' - sig_blocks features will have coefficient 0. Must be less than or equal to
+#' n_clusters.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, the covariance matrix will include the original latent feature
+#' plus block_size - 1 noisy proxies that are correlated with the latent
+#' variable.
+#' @return A named list with the following elements: \item{beta}{A vector of
+#' length `p` containing the coefficients for the true model for y. All entries
+#' will equal 0 except for the sig_blocks latent variables that will have
+#' coefficient beta_high and the k_unblocked independent features with
+#' coefficient determined by beta_low.} \item{blocked_dgp_vars}{An integer
+#' vector of length sig_blocks containing the indices of the features
+#' corresponding to the latent features that will have nonzero coefficient
+#' beta_high in the true model for y.} \item{sig_unblocked_vars}{An integer
+#' vector of length k_unblocked containing the indices of the observed features
+#' that are independent of the blocked features and have coefficient beta_low in
+#' the true model for y. If k_unblocked = 0, this will just be NA.}
+#' \item{insig_blocked_vars}{An integer vector containing the indices of the
+#' features corresponding to the latent features that will have coefficient 0 in
+#' the true model for y. If nblocks=0, this will just be NA.}
+#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
+    sig_blocks, block_size){
+
+    # Check inputs
+    stopifnot(k_unblocked >= 0)
     stopifnot(p >= nblocks*block_size + k_unblocked)
-    # sets blocked coefficients to beta_high and
-    # unblocked coefficients to range from beta_low down by a power law
+    stopifnot(sig_blocks <= nblocks)
+    stopifnot(sig_blocks >= 0)
+
+    # Initialize beta
     beta <- numeric(p)
+
     # identify indices of first coefficient in each significant block (these
-    # betas will be nonzero)
-    blocked_dgp_vars <- ((0:(sig_blocks-1))*block_size+1)
-    # make these coefficients in each block nonzero
+    # features will have coefficient beta_high)
+    blocked_dgp_vars <- NA
+    if(sig_blocks >= 1){
+        blocked_dgp_vars <- as.integer(((0:(sig_blocks - 1))*block_size + 1))
+        stopifnot(all(blocked_dgp_vars) %in% 1:p)
+        stopifnot(all(blocked_dgp_vars) %in% 1:(block_size*nblocks))
+        stopifnot(length(unique(blocked_dgp_vars)) == sig_blocks)
+    }
+    
+    stopifnot(length(blocked_dgp_vars) == sig_blocks)
+    
     beta[blocked_dgp_vars] <- beta_high
+
     # identify remaining coefficients in blocks (which ought to be set to 0)
-    insig_blocked_vars <- setdiff(1:(block_size*nblocks-1), blocked_dgp_vars)
-    stopifnot(all(beta[insig_blocked_vars] == 0))
+    insig_blocked_vars <- NA
+
+    if(nblocks >= 1){
+        insig_blocked_vars <- setdiff(1:(block_size*nblocks), blocked_dgp_vars)
+        stopifnot(all(beta[insig_blocked_vars] == 0))
+    }
     # find significant unblocked variables (if applicable) and fill in
     # coefficients
+    sig_unblocked_vars <- NA
+
     if(k_unblocked > 0){
         # Range of weak signal coefficients
         beta_lows <- beta_low/sqrt(1:k_unblocked)
         sig_unblocked_vars <- (nblocks*block_size + 1):
-        (nblocks*block_size + k_unblocked)
+            (nblocks*block_size + k_unblocked)
+        sig_unblocked_vars <- as.integer(sig_unblocked_vars)
+
+        stopifnot(length(sig_unblocked_vars) == k_unblocked)
+        stopifnot(length(unique(sig_unblocked_vars)) == k_unblocked)
+        stopifnot(all(sig_unblocked_vars) %in% 1:p)
+
         beta[sig_unblocked_vars] <- beta_lows
-    } else {
-        sig_unblocked_vars <- NA
     }
+
+    stopifnot(length(intersect(blocked_dgp_vars, sig_unblocked_vars)) == 0)
+    stopifnot(length(intersect(sig_unblocked_vars, insig_blocked_vars)) == 0)
+    stopifnot(length(intersect(blocked_dgp_vars, insig_blocked_vars)) == 0)
+
+    stopifnot(length(insig_blocked_vars) + length(blocked_dgp_vars) ==
+        nblocks*block_size)
+
+    stopifnot(nblocks*block_size + length(insig_blocked_vars) <= p)
+
+    stopifnot(sum(beta != 0) == sig_blocks + k_unblocked)
+
     return(list(beta=beta, blocked_dgp_vars=blocked_dgp_vars,
         sig_unblocked_vars=sig_unblocked_vars,
         insig_blocked_vars=insig_blocked_vars))
@@ -1868,6 +2008,10 @@ gen_mu_x_y_sd <- function(n, p, beta, Sigma, sig_blocks=1, block_size, snr=NA,
     }else{
         sd <- sqrt(sum(mu^2) / (n * snr)) # taking snr = ||mu||^2 /(n * sigma^2)
     }
+
+    stopifnot(nrow(x) == n)
+    stopifnot(ncol(x) == p)
+
     return(list(X=x, mu=mu, blocked_dgp_vars=blocked_dgp_vars, z=z, sd=sd))
 }
 
