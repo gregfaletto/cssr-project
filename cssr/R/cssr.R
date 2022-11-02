@@ -1109,7 +1109,8 @@ getSubsamps <- function(n, B, sampling_type){
 #' cssLasso, an implementation of the lasso using glmnet.
 #' @return A binary integer matrix of dimension `B` x `p` (if sampling_type ==
 #' "MB") or `2*B` x `p` (if sampling_type == "SS"). res[i, j] = 1 if feature j
-#' was selected on subsample i and equals 0 otherwise.
+#' was selected on subsample i and equals 0 otherwise. (That is, each row is a
+#' selected set.)
 #' @author Gregory Faletto, Jacob Bien
 getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     num_cores, fitfun=cssLasso){
@@ -1657,13 +1658,31 @@ identifyPrototype <- function(cluster_members_i, x, y){
 #' clusters of features, returns a matrix of cluster indicator variables, as
 #' well as the selection proportions for both features and clusters.
 #'
-#' @param clusters
-#' @param res A `B` x p (or `2*B` x p for sampling_type = "SS") integer matrix.
-#' Each row of res should be a selected set (res_ij is 1 if feature j was
-#' selected on resample i and 0 if not).
-#' @param sampling_type
+#' @param clusters A list where each entry is an integer vector of indices of
+#' features that are in a common cluster, as in the output of formatClusters.
+#' (The length of list clusters is equal to the number of clusters.) All
+#' identified clusters must be non-overlapping, and all clusters must be of
+#' size at least 2.
+#' @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
+#' == "MB" was provided to ) or `2*B` x `p` (if sampling_type == "SS").
+#' res[i, j] = 1 if feature j was selected on subsample i and equals 0
+#' otherwise, as in the output of getSelMatrix. (That is, each row is a selected
+#' set.)
+#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
+#' type used for stability selection.
+#' @return A named list with four elements. \item{feat_sel_props}{A numeric
+#' vector of length p. The jth entry is the proportion of subsamples in which
+#' feature j was selected by fitfun.} \item{clus_sel_props_p}{A numeric vector
+#' of length p. The jth entry is the proportion of subsamples in which at least
+#' one member of the cluster containing feature j was selected.}
+#' \item{res_clus_p}{An integer matrix of the same dimensions as res.
+#' res_clus_p[i, j] = 1 if at least one member of the cluster containing feature
+#' j was selected by fitfun on subsample i, and 0 otherwise.}
+#' \item{res_n_clusters}{A binary integer matrix with the same number of rows
+#' as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
+#' one member of cluster j was selected on subsample i, and 0 otherwise.}
+#' @author Gregory Faletto, Jacob Bien
 getClusterProps <- function(clusters, res, sampling_type){
-    # res is 
 
     # Check input
 
