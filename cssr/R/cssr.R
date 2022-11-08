@@ -554,9 +554,10 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @return A named list with two items. \item{selected_clusts}{A list of
-#' integer vectors; each vector contains the indices of one of the selected
-#' clusters.} \item{selected_feats}{An integer vector; the indices of the
-#' features with nonzero weights from all of the selected clusters.}
+#' integer vectors; each vector contains the indices of the features in one of
+#' the selected clusters.} \item{selected_feats}{A named integer vector; the
+#' indices of the features with nonzero weights from all of the selected
+#' clusters.}
 #' @author Gregory Faletto, Jacob Bien
 #' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
@@ -2288,18 +2289,27 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be decreased until at most
 #' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
-#' @return \item{weights}{A named list of the same length as the number of selected clusters. Each list element weights[[j]] is a numeric vector
-#' of the weights to use for the jth selected cluster, and it has the same name as the 
-#' cluster it corresponds to.}
+#' @return A named list with the following elements: \item{selected_clusts}{A
+#' named numeric vector containing the selection proportions for the selected
+#' clusters. The name of each entry is the name of the corresponding cluster.}
+#' \item{selected_feats}{A named integer vector; the indices of the features
+#' with nonzero weights from all of the selected clusters.} \item{weights}{A
+#' named list of the same length as the number of selected clusters. Each list
+#' element weights[[j]] is a numeric  vector of the weights to use for the jth
+#' selected cluster, and it has the same name as the  cluster it corresponds
+#' to.}
 #' @author Gregory Faletto, Jacob Bien
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
-    # Eliminate clusters with selection proportions below cutoff
+    # Check input
+
     stopifnot("clus_sel_mat" %in% names(css_results))
+    stopifnot("feat_sel_mat" %in% names(css_results))
     stopifnot("clusters" %in% names(css_results))
     stopifnot(all(colnames(css_results$clus_sel_mat) ==
         names(css_results$clusters)))
 
+    # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
 
     # Check that selected_clusts has length at least min_num_clusts
@@ -2360,18 +2370,43 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     names(selected_feats) <- feat_names[selected_feats]
 
+    # Check output
+
+    stopifnot(is.numeric(selected_clusts))
+    stopifnot(all(selected_clusts >= 0))
+    stopifnot(all(selected_clusts <= 1))
+    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) <= length(css_results$clusters))
+    stopifnot(length(names(selected_clusts)) ==
+        length(unique(names(selected_clusts))))
+
+    stopifnot(is.integer(selected_feats))
+    stopifnot(length(selected_feats) == length(unique(selected_feats)))
+    p <- ncol(css_results$feat_sel_mat)
+    stopifnot(all(selected_feats %in% 1:p))
+
+    # Already checked weights in getAllClustWeights
+
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
 }
 
+#' Identify prototypes from selected clusters
+#'
+#' Takes in list of selected clusters and returns an integer vector (of
+#' length equal to the number of clusters) of the indices of the feature
+#' prototypes (the features from each cluster that were selected the most
+#' often individual by the base method in cluster stability selection).
+#' In the case of a tie, the tie is broken by choosing the feature most
+#' correlated with the response in the full data set provided to css.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param selected_clusts A list of integer vectors; each vector must contain
+#' the indices of features in a cluster.
+#' @return 
+#' @author Gregory Faletto, Jacob Bien
 getSelectionPrototypes <- function(css_results, selected_clusts){
-    # Takes in list of selected clusters and returns an integer vector (of
-    # length equal to the number of clusters) of the indices of the feature
-    # prototypes (the features from each cluster that were selected the most
-    # often individual by the base method in cluster stability selection).
-    # In the case of a tie, the tie is broken by choosing the feature most
-    # correlated with the response in the full data set provided to css.
-
+    
     # Check inputs
     stopifnot(class(css_results) == "cssr")
 
@@ -2433,7 +2468,8 @@ getModelSize <- function(X, y, clusters){
 #' @param css_results An object of class "cssr" (the output of the function
 #' css).
 #' @param sel_clusters A named numeric vector containing the selection
-#' proportions for the selected clusters.
+#' proportions for the selected clusters. The name of each entry is the name
+#' of the corresponding cluster.
 #' @param weighting Character; determines how to calculate the weights for
 #' individual features within the selected clusters. Only those features with
 #' nonzero weight within the selected clusters will be returned. Must be one of
@@ -2496,7 +2532,6 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
         stopifnot(all(weights[[i]] <= 1))
         stopifnot(abs(sum(weights[[i]]) - 1) < 10^(-6))
     }
-
     return(weights)
 }
 
