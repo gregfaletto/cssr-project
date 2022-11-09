@@ -1344,7 +1344,7 @@ cssLoop <- function(input, x, y, lambda, fitfun){
         y=y[subsample], lambda=lambda))
 
     # Check output
-    checkCssLoopOutput(selected, p)
+    checkCssLoopOutput(selected, p, as.integer(which(feats_to_keep)))
 
     return(as.integer(selected))
 }
@@ -1440,18 +1440,21 @@ cssLasso <- function(X, y, lambda){
 #' @param R Numeric p x p matrix; not currently used. Entry ij contains the 
 #' "substitutive value" of feature i for feature j (diagonal must consist of
 #' ones, all entries must be between 0 and 1, and matrix must be symmetric)
-#' @return A named list with the following elements: \item{clusters}{A list
-#' where each entry is an integer vector of indices of features that are in a
-#' common cluster. (The length of list clusters is equal to the number of
-#' clusters.) All identified clusters are non-overlapping. Any clusters of size
-#' 1 are removed from the input, and only clusters of size 2 or larger are
-#' returned.} \item{multiple}{Logical; TRUE if there is more than one cluster of
-#' size greater than 1, FALSE otherwise.} \item{prototypes}{only returned if
-#' get_prototypes=TRUE. An integer vector whose length is equal to the number of
-#' clusters. Entry i is the index of the feature belonging to cluster i that is
-#' most highly correlated with y (that is, the prototype for the cluster; see
-#' function protolasso for details).}
+#' @return A named list with the following elements: \item{clusters}{A named
+#' list where each entry is an integer vector of indices of features that are in
+#' a common cluster. (The length of list clusters is equal to the number of
+#' clusters.) All identified clusters are non-overlapping. All features appear
+#' in exactly one cluster (any unclustered features will be put in their own
+#' "cluster" of size 1).} \item{multiple}{Logical; TRUE if there is more than
+#' one cluster of size greater than 1, FALSE otherwise.} \item{prototypes}{only
+#' returned if get_prototypes=TRUE. An integer vector whose length is equal to
+#' the number of clusters. Entry i is the index of the feature belonging to
+#' cluster i that is most highly correlated with y (that is, the prototype for
+#' the cluster, as in the protolasso; see Reid and Tibshirani 2016).}
 #' @author Gregory Faletto, Jacob Bien
+#' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
+#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#' \url{https://doi.org/10.1093/biostatistics/kxv049}.
 formatClusters <- function(clusters=NA, p=-1, clust_names=NA, 
     get_prototypes=FALSE, x=NA, y=NA, R=NA){
 
@@ -1525,15 +1528,13 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
 
     # Check output
 
-    checkClusters(clusters)
+    checkClusters(clusters, p)
     stopifnot(is.logical(multiple))
     stopifnot(length(multiple) == 1)
     stopifnot(!is.na(multiple))
 
     if(get_prototypes){
         prototypes <- getPrototypes(clusters, x, y)
-
-        checkPrototypes(prototypes, clusters)
 
         return(list(clusters=clusters, multiple=multiple,
             prototypes=prototypes))
@@ -1593,7 +1594,19 @@ getPrototypes <- function(clusters, x, y){
 
     # Check output
 
-    checkPrototypes(prototypes, clusters)
+    stopifnot(is.integer(prototypes))
+    if(length(clusters) > 0){
+        if(is.list(clusters)){
+            stopifnot(length(prototypes) == length(clusters))
+        } else {
+            stopifnot(length(prototypes) == 1)
+        }
+    } else{
+        stopifnot(length(prototypes) == 0)
+    }
+
+    stopifnot(all(!is.na(prototypes)))
+    stopifnot(length(prototypes) == length(unique(prototypes)))
 
     return(prototypes)
 }
@@ -1654,11 +1667,12 @@ identifyPrototype <- function(cluster_members_i, x, y){
 #' clusters of features, returns a matrix of cluster indicator variables, as
 #' well as the selection proportions for both features and clusters.
 #'
-#' @param clusters A list where each entry is an integer vector of indices of
-#' features that are in a common cluster, as in the output of formatClusters.
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of formatClusters.
 #' (The length of list clusters is equal to the number of clusters.) All
-#' identified clusters must be non-overlapping, and all clusters must be of
-#' size at least 2.
+#' identified clusters must be non-overlapping, and all features must appear in
+#' exactly one cluster (any unclustered features should be in their own
+#' "cluster" of size 1).
 #' @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
 #' == "MB" was provided to ) or `2*B` x `p` (if sampling_type == "SS").
 #' res[i, j] = 1 if feature j was selected on subsample i and equals 0
@@ -1688,20 +1702,11 @@ getClusterProps <- function(clusters, res, sampling_type){
 
     # Check input
 
-    stopifnot(is.matrix(res))
-    stopifnot(all(res %in% c(0, 1)))
+    B <- checkGetClusterPropsInput(clusters, res, sampling_type)
+
     p <- ncol(res)
-    if(sampling_type=="SS"){
-        B <- nrow(res)/2
-        stopifnot(B == round(B))
-    } else{
-        B <- nrow(res)
-    }
-    stopifnot(B > 0)
 
     n_clusters <- length(clusters)
-
-    checkClusters(clusters)
 
     # Calculate feat_sel_props
     feat_sel_props <- colMeans(res)
@@ -1735,7 +1740,7 @@ getClusterProps <- function(clusters, res, sampling_type){
             function(x){length(unique(x)) == 1})))
     }
 
-    # Check output
+    # Check res_clus_p
     stopifnot(is.matrix(res_clus_p))
     stopifnot(all.equal(dim(res), dim(res_clus_p)))
     stopifnot(all(res_clus_p %in% c(0, 1)))
@@ -1754,26 +1759,8 @@ getClusterProps <- function(clusters, res, sampling_type){
     clus_sel_props_p <- colMeans(res_clus_p)
 
     # Check output
-
-    stopifnot(is.numeric(feat_sel_props))
-    stopifnot(length(feat_sel_props) == p)
-    stopifnot(all(feat_sel_props >= 0))
-    stopifnot(all(feat_sel_props <= 1))
-
-    stopifnot(is.numeric(clus_sel_props_p))
-    stopifnot(length(clus_sel_props_p) == p)
-    stopifnot(all(clus_sel_props_p >= 0))
-    stopifnot(all(clus_sel_props_p <= 1))
-
-    stopifnot(is.matrix(res_n_clusters))
-    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
-    stopifnot(all(res_n_clusters %in% c(0, 1)))
-    stopifnot(ncol(res_n_clusters) == n_clusters)
-    if(sampling_type=="SS"){
-        stopifnot(B == nrow(res_n_clusters)/2)
-    } else{
-        stopifnot(B == nrow(res_n_clusters))
-    }
+    checkGetClusterPropsOutput(feat_sel_props, p, clus_sel_props_p,
+        res_n_clusters, clusters, sampling_type)
 
     return(list(feat_sel_props=feat_sel_props,
         clus_sel_props_p=clus_sel_props_p, res_clus_p=res_clus_p,
@@ -2069,6 +2056,7 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
 }
 
 #' Create design matrix of cluster representatives from matrix of raw features
+#' using results of css function
 #'
 #' @param css_results An object of class "cssr" (the output of the function
 #' css).
@@ -2118,45 +2106,20 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
 #' \url{https://arxiv.org/abs/2201.00494}.
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, newx=NA){
-    # Takes in results from css function and outputs a design matrix
 
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    ret <- checkFormCssDesignInputs(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts, newx)
 
-    if(length(newx) == 1){
-        if(is.na(newx)){
-            if(length(css_results$train_inds) == 0){
-                stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
-            }
-            newx <- css_results$X[css_results$train_inds, ]
-            feat_names <- colnames(newx)
-        } else{
-            results <- checkXInputResults(newx, css_results$X)
+    newx <- ret$newx
+    max_num_clusts <- ret$max_num_clusts
 
-            newx <- results$newx
-            feat_names <- results$feat_names
-
-            rm(results)
-        }
-    } else{
-        results <- checkXInputResults(newx, css_results$X)
-
-        newx <- results$newx
-        feat_names <- results$feat_names
-
-        rm(results)
-    }
+    rm(ret)
 
     n <- nrow(newx)
     p <- ncol(newx)
 
-    checkCutoff(cutoff)
-    checkWeighting(weighting)
-    checkMinNumClusts(min_num_clusts, p)
-    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
-        css_results$clusters)
-
-    # Get the names of the selected clustesr and the weights for the features
+    # Get the names of the selected clusters and the weights for the features
     # within each cluster, according to the provided weighting rule
     clust_sel_results <- getSelectedClusters(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)
@@ -2270,11 +2233,11 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
 
-    # Check that selected_clusts has length at least min_num_clusts
+    # Get selected clusters
     selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
-    min_num_clusts <- max(min_num_clusts, 1)
     B <- nrow(css_results$feat_sel_mat)
 
+    # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
         cutoff <- cutoff - 1/B
         selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
@@ -2283,8 +2246,6 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     # Check that selected_clusts has length at most max_num_clusts
     if(!is.na(max_num_clusts)){
         n_clusters <- ncol(css_results$clus_sel_mat)
-        max_num_clusts <- min(max_num_clusts, n_clusters)
-        max_num_clusts <- max(max_num_clusts, min_num_clusts)
         while(length(selected_clusts) > max_num_clusts){
             cutoff <- cutoff + 1/B
             if(cutoff > 1){
@@ -2328,22 +2289,10 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     names(selected_feats) <- feat_names[selected_feats]
 
-    # Check output
+    # Check output (already checked weights wihin getAllClustWeights)
 
-    stopifnot(is.numeric(selected_clusts))
-    stopifnot(all(selected_clusts >= 0))
-    stopifnot(all(selected_clusts <= 1))
-    stopifnot(length(selected_clusts) >= 1)
-    stopifnot(length(selected_clusts) <= length(css_results$clusters))
-    stopifnot(length(names(selected_clusts)) ==
-        length(unique(names(selected_clusts))))
-
-    stopifnot(is.integer(selected_feats))
-    stopifnot(length(selected_feats) == length(unique(selected_feats)))
-    p <- ncol(css_results$feat_sel_mat)
-    stopifnot(all(selected_feats %in% 1:p))
-
-    # Already checked weights in getAllClustWeights
+    checkGetSelectedClustersOutput(selected_clusts, css_results,
+        selected_feats)
 
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
@@ -2419,10 +2368,12 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 #' function, y does not have to be a numeric response, but for this function,
 #' the underlying selection procedure is the lasso, so y must be a real-valued
 #' response.)
-#' @param clusters A named list of integer vectors; each vector is the indices
-#' of features in a cluster (as in the clusters object in the output of css;
-#' see function checkClusters to see what properties are guaranteed for this
-#' object).
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of css.
+#' (The length of list clusters is equal to the number of clusters.) All
+#' identified clusters must be non-overlapping, and all features must appear in
+#' exactly one cluster (any unclustered features should be in their own
+#' "cluster" of size 1).
 #' @return An integer; the estimated size of the model. The minimum returned
 #' value is 1, even if the lasso with cross-validation chose no features.
 #' @author Gregory Faletto, Jacob Bien
@@ -3046,31 +2997,65 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
 }
 
+#' Helper function to confirm that the argument cutoff to several functions is
+#' as expected
+#'
+#' @param cutoff Numeric; only those clusters with selection proportions equal
+#' to at least cutoff will be selected by cluster stability selection. Must be
+#' between 0 and 1.
+#' @author Gregory Faletto, Jacob Bien
 checkCutoff <- function(cutoff){
     stopifnot(is.numeric(cutoff) | is.integer(cutoff))
     stopifnot(length(cutoff) == 1)
+    stopifnot(!is.na(cutoff))
     stopifnot(cutoff >= 0)
     stopifnot(cutoff <= 1)
 }
 
+#' Helper function to confirm that the argument min_num_clusts to several 
+#' functions is as expected
+#'
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param p The number of features; since this is an upper bound on the number
+#' of clusters of features, it is also an upper bound on min_num_clusts.
+#' @author Gregory Faletto, Jacob Bien
 checkMinNumClusts <- function(min_num_clusts, p){
     stopifnot(length(min_num_clusts) == 1)
     stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
+    stopifnot(!is.na(min_num_clusts))
     stopifnot(min_num_clusts == round(min_num_clusts))
     stopifnot(min_num_clusts >= 1)
     stopifnot(min_num_clusts <= p)
 }
 
+#' Helper function to confirm that the argument max_num_clusts to several 
+#' functions is as expected
+#'
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Can be NA, in which case
+#' max_num_clusts will be ignored.
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) max_num_clusts must be at least as
+#' large as min_num_clusts.
+#' @param p The number of features; since this is an upper bound on the number
+#' of clusters of features, it is also an upper bound on max_num_clusts.
 #' @return The provided max_num_clusts, coerced to an integer if needed, and
 #' coerced to be less than or equal to the total number of clusters.
-#' @author
+#' @author Gregory Faletto, Jacob Bien
 checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, clusters){
     stopifnot(length(max_num_clusts) == 1)
     if(!is.na(max_num_clusts)){
         stopifnot(is.numeric(max_num_clusts) | is.integer(max_num_clusts))
         stopifnot(max_num_clusts == round(max_num_clusts))
         stopifnot(max_num_clusts >= 0)
-        max_num_clusts <- as.integer(min(p, max_num_clusts))
+        stopifnot(max_num_clusts <= p)
         max_num_clusts <- as.integer(min(length(clusters),
             max_num_clusts))
         stopifnot(max_num_clusts >= min_num_clusts)
@@ -3078,8 +3063,17 @@ checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, clusters){
     return(max_num_clusts)
 }
 
+#' Helper function to confirm that the argument weighting to several 
+#' functions is as expected
+#'
+#' @param weighting Character; determines how to calculate the weights to
+#' combine features from the selected clusters into weighted averages, called
+#' cluster representatives. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg'.
+#' @author Gregory Faletto, Jacob Bien
 checkWeighting <- function(weighting){
     stopifnot(length(weighting)==1)
+    stopifnot(!is.na(weighting))
     if(!is.character(weighting)){
         stop("Weighting must be a character")
     }
@@ -3088,18 +3082,34 @@ checkWeighting <- function(weighting){
     }
 }
 
+#' Helper function to confirm that the argument sampling_type to several 
+#' functions is as expected
+#'
+#' @param sampling_type A character vector; either "SS" or "MB". "MB" is not
+#' supported yet.
+#' @author Gregory Faletto, Jacob Bien
 checkSamplingType <- function(sampling_type){
     stopifnot(is.character(sampling_type))
     stopifnot(length(sampling_type) == 1)
+    stopifnot(!is.na(sampling_type))
     stopifnot(sampling_type %in% c("SS", "MB"))
     if(sampling_type == "MB"){
         stop("sampling_type MB is not yet supported (and isn't recommended anyway)")
     }
 }
 
+#' Helper function to confirm that the argument prop_feats_remove to several 
+#' functions is as expected
+#'
+#' @param prop_feats_remove Numeric; proportion of features that are dropped on
+#' each subsample. Must be between 0 and 1.
+#' @param p The number of features; must be greater than 2 if prop_feats_remove
+#' is greater than 0.
+#' @author Gregory Faletto, Jacob Bien
 checkPropFeatsRemove <- function(prop_feats_remove, p){
     stopifnot(length(prop_feats_remove) == 1)
     stopifnot(is.numeric(prop_feats_remove) | is.integer(prop_feats_remove))
+    stopifnot(!is.na(prop_feats_remove))
     stopifnot(prop_feats_remove >= 0 & prop_feats_remove < 1)
     if(prop_feats_remove > 0){
         # Make sure p is at least 2 or else this doesn't make sense
@@ -3107,9 +3117,17 @@ checkPropFeatsRemove <- function(prop_feats_remove, p){
     }
 }
 
+#' Helper function to confirm that the argument B to several functions is as
+#' expected
+#'
+#' @param B Integer or numeric; the number of subsamples. Note: For
+#' sampling.type=="MB" the total number of subsamples will be `B`; for
+#' sampling_type="SS" the number of subsamples will be `2*B`.
+#' @author Gregory Faletto, Jacob Bien
 checkB <- function(B){
     stopifnot(length(B) == 1)
     stopifnot(is.numeric(B) | is.integer(B))
+    stopifnot(!is.na(B))
     stopifnot(B == round(B))
     stopifnot(B > 0)
     if(B < 10){
@@ -3119,37 +3137,50 @@ checkB <- function(B){
     }
 }
 
-checkClusters <- function(clusters){
-    stopifnot(all(lengths(clusters) >= 1))
+#' Helper function to confirm that the argument clusters to several functions is
+#' as expected
+#'
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of css or
+#' formatClusters. (The length of list clusters is equal to the number of
+#' clusters.) All identified clusters must be non-overlapping, and all features
+#' must appear in exactly one cluster (any unclustered features should be in
+#' their own "cluster" of size 1).
+#' @param p The number of features; must be at least as large as the number of
+#' clusters.
+#' @author Gregory Faletto, Jacob Bien
+checkClusters <- function(clusters, p){
     stopifnot(is.list(clusters))
+    stopifnot(all(lengths(clusters) >= 1))
     stopifnot(all(!is.na(clusters)))
 
     n_clusters <- length(clusters)
 
     stopifnot(n_clusters == length(unique(clusters)))
+    stopifnot(n_clusters <= p)
     stopifnot(!is.null(names(clusters)))
     stopifnot(is.character(names(clusters)))
     stopifnot(all(!is.na(names(clusters)) & names(clusters) != ""))
     stopifnot(length(unique(names(clusters))) == n_clusters)
 
-}
-
-checkPrototypes <- function(prototypes, clusters){
-    stopifnot(is.integer(prototypes))
-    if(length(clusters) > 0){
-        if(is.list(clusters)){
-            stopifnot(length(prototypes) == length(clusters))
-        } else {
-            stopifnot(length(prototypes) == 1)
-        }
-    } else{
-        stopifnot(length(prototypes) == 0)
+    all_clustered_feats <- integer()
+    for(i in 1:n_clusters){
+        stopifnot(is.integer(clusters[[i]]))
+        all_clustered_feats <- c(all_clustered_feats, clusters[[i]])
     }
 
-    stopifnot(all(!is.na(prototypes)))
-    stopifnot(length(prototypes) == length(unique(prototypes)))
+    stopifnot(length(all_clustered_feats) == p)
+    stopifnot(length(unique(all_clustered_feats)) == p)
+    stopifnot(all(all_clustered_feats <= p))
+    stopifnot(all(all_clustered_feats >= 1))
 }
 
+#' Helper function to confirm that the argument y to several functions is
+#' as expected
+#'
+#' @param y Numeric response vector.
+#' @param n Number of observations of covariates; should match length of y.
+#' @author Gregory Faletto, Jacob Bien
 checkY <- function(y, n){
     stopifnot(all(!is.na(y)))
     stopifnot(is.numeric(y) | is.integer(y))
@@ -3157,6 +3188,17 @@ checkY <- function(y, n){
     stopifnot(n == length(y))
 }
 
+#' Helper function to confirm that the inputs to cssLasso are as expected. 
+#'
+#' @param X A design matrix containing the predictors. (Note that we don't need
+#' to check X very much, because X will have already been checked by the
+#' function checkCssInputs when it was provided to css.)
+#' @param y A numeric vector containing the response.
+#' @param lambda Numeric; a nonnegative number for the lasso penalty to use
+#' on each subsample. (For now, only one lambda value can be provided to
+#' cssLasso; in the future, we plan to allow for multiple lambda values to be
+#' provided to cssLasso, as described in Faletto and Bien 2022.)
+#' @author Gregory Faletto, Jacob Bien
 checkCssLassoInputs <- function(X, y, lambda){
 
     n <- nrow(X)
@@ -3171,7 +3213,6 @@ checkCssLassoInputs <- function(X, y, lambda){
     if(length(unique(y)) <= 1){
         stop("Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.")
     }
-
     if(length(lambda) != 1){
         stop("For method cssLasso, lambda must be a numeric of length 1.")
     }
@@ -3183,7 +3224,18 @@ checkCssLassoInputs <- function(X, y, lambda){
     }
 }
 
-checkCssLoopOutput <- function(selected, p){
+#' Helper function to confirm that the outputs of the provided feature selection
+#' method are as required. 
+#'
+#' @param selected An integer vector; the indices of the features selected by
+#' the lasso.
+#' @param p The total number of observed features; all selected features must be
+#' in 1:p.
+#' @param feats_on_subsamp Integer; the indices of the features considered by
+#' the feature selection method. All selected features must be among these
+#' features.
+#' @author Gregory Faletto, Jacob Bien
+checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
     if(!exists("selected")){
         stop("The provided feature selection method fitfun failed to return anything on (at least) one subsample")
     }
@@ -3213,12 +3265,27 @@ checkCssLoopOutput <- function(selected, p){
         "condition" %in% class(selected)){
         stop("The provided feature selection method fitfun returned an error on (at least) one subsample")
     }
+    if(!all(selected %in% feats_on_subsamp)){
+        stop("The provided feature selection method somehow selected features that were not provided for it to consider.")
+    }
 }
 
+#' Helper function to confirm that the new X matrix provided to getCssDesign or
+#' getCssPreds matches the characteristics of the X that was provided to css.
+#'
+#' @param trainX A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix). Must contain
+#' the same features (in the same number of columns) as the X matrix provided to
+#' css, and if the columns of trainX are labeled, the names must match the
+#' variable names provided to css. trainX may be omitted if train_inds were
+#' provided to css to set aside observations.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
 #' @return A named list with the following elements: \item{newX}{The provided
 #' trainX matrix, coerced from a data.frame to a matrix if the provided trainX
 #' was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
 #' trainX input was provided.}
+#' @author Gregory Faletto, Jacob Bien
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
@@ -3235,7 +3302,23 @@ checkNewXProvided <- function(trainX, css_results){
     return(list(newX=trainX, newXProvided=newXProvided))
 }
 
-#'' Check that output is as expected, and throw warnings or an error if not
+#' Helper function to check operations within getSelectedClusters function
+#'
+#' @param n_sel_clusts The number of selected clusters; should be constrained
+#' by min_num_clusts and max_num_clusts (though it may not be possible to
+#' satisfy both constraints simulteneously, in which case a warning will be
+#' thrown).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
+#' @param clus_sel_props Numeric; a vector of length equal to the number of
+#' clusters, containing the selection proportions of each cluster.
+#' @author Gregory Faletto, Jacob Bien
 checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     clus_sel_props){
     if(n_sel_clusts == 0){
@@ -3261,6 +3344,33 @@ checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     }
 }
 
+#' Helper function to ensure that the inputs to formatClusters are as expected
+#'
+#' @param clusters Either an integer vector of a list of integer vectors; each
+#' vector should contain the indices of a cluster of features. (If there is only
+#' one cluster, clusters can either be a list of length 1 or simply an integer
+#' vector.) If clusters is specified then R is ignored.
+#' @param p integer or numeric; the numbe of features in x (should match 
+#' ncol(x), if x is provided)
+#' @param clust_names A character vector of the names of the clusters in clusters.
+#' @param get_prototypes Logical: if TRUE, will identify prototype from each
+#' cluster (the feature from each cluster that is most correlated with the
+#' response) for the protolasso. In this case, x and y must be provided.
+#' @param x n x p numeric matrix; design matrix. Only needs to be provided if
+#' get_prototypes is TRUE.
+#' @param y Numeric response vector; only needs to be provided if get_prototypes
+#' is TRUE. Note: in general, the css function does not require y to be a
+#' numeric vector, because the provided fitfun could use a different form of y
+#' (for example, a categorical response variable). However, y must be numeric in
+#' order to provide prototypes because the prototypes are determined using the
+#' correlation between cluster members (columns of x) and y.
+#' @param R Numeric p x p matrix; not currently used. Entry ij contains the 
+#' "substitutive value" of feature i for feature j (diagonal must consist of
+#' ones, all entries must be between 0 and 1, and matrix must be symmetric)
+#' @return A list of integer vectors; each vector will contain the indices of a
+#' cluster of features. Any duplicated clusters provided in the input will be
+#' removed.
+#' @author Gregory Faletto, Jacob Bien
 checkFormatClustersInput <- function(clusters, p, clust_names, 
     get_prototypes, x, y, R)
 
@@ -3371,4 +3481,182 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
     return(clusters)
 }
 
+#' Helper function to check inputs to getClusterProps function
+#'
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of formatClusters.
+#' (The length of list clusters is equal to the number of clusters.) All
+#' identified clusters must be non-overlapping, and all features must appear in
+#' exactly one cluster (any unclustered features should be in their own
+#' "cluster" of size 1).
+#' @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
+#' == "MB" was provided to ) or `2*B` x `p` (if sampling_type == "SS").
+#' res[i, j] = 1 if feature j was selected on subsample i and equals 0
+#' otherwise, as in the output of getSelMatrix. (That is, each row is a selected
+#' set.)
+#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
+#' type used for stability selection.
+#' @return The parameter B, corresponding to half of the subsamples for 
+#' sampling_type "SS".
+#' @author Gregory Faletto, Jacob Bien
+checkGetClusterPropsInput <- function(clusters, res, sampling_type)
+    stopifnot(is.matrix(res))
+    stopifnot(all(res %in% c(0, 1)))
+    p <- ncol(res)
+    if(sampling_type=="SS"){
+        B <- nrow(res)/2
+        stopifnot(B == round(B))
+    } else{
+        B <- nrow(res)
+    }
+    stopifnot(B > 0)
 
+    checkClusters(clusters, p)
+
+    return(B)
+}
+
+#' Helper function to check the output of getClusterProps
+#'
+#' @param feat_sel_props A numeric
+#' vector of length p. The jth entry is the proportion of subsamples in which
+#' feature j was selected by fitfun.
+#' @param p Integer; the number of features in the X matrix provided to css.
+#' @param clus_sel_props_p A numeric vector
+#' of length p. The jth entry is the proportion of subsamples in which at least
+#' one member of the cluster containing feature j was selected.
+#' @param res_n_clusters A binary integer matrix with the same number of rows
+#' as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
+#' one member of cluster j was selected on subsample i, and 0 otherwise.
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of formatClusters.
+#' (The length of list clusters is equal to the number of clusters.) All
+#' identified clusters must be non-overlapping, and all features must appear in
+#' exactly one cluster (any unclustered features should be in their own
+#' "cluster" of size 1).
+#' @param sampling_type
+#' @author Gregory Faletto, Jacob Bien
+checkGetClusterPropsOutput <- function(feat_sel_props, p, clus_sel_props_p,
+    res_n_clusters, clusters, sampling_type){
+    stopifnot(is.numeric(feat_sel_props))
+    stopifnot(length(feat_sel_props) == p)
+    stopifnot(all(feat_sel_props >= 0))
+    stopifnot(all(feat_sel_props <= 1))
+
+    stopifnot(is.numeric(clus_sel_props_p))
+    stopifnot(length(clus_sel_props_p) == p)
+    stopifnot(all(clus_sel_props_p >= 0))
+    stopifnot(all(clus_sel_props_p <= 1))
+
+    stopifnot(is.matrix(res_n_clusters))
+    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
+    stopifnot(all(res_n_clusters %in% c(0, 1)))
+    stopifnot(ncol(res_n_clusters) == n_clusters)
+    if(sampling_type=="SS"){
+        stopifnot(B == nrow(res_n_clusters)/2)
+    } else{
+        stopifnot(B == nrow(res_n_clusters))
+    }
+}
+
+#' Helper function to check that the inputs to formCssDesign are as expected
+#'
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param weighting Character; determines how to calculate the weights to
+#' combine features from the selected clusters into weighted averages, called
+#' cluster representatives. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg'.
+#' @param cutoff Numeric; css will return only those clusters with selection
+#' proportions equal to at least cutoff. Must be between 0 and 1.
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.)
+#' @param newx A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to generate the design matrix of cluster
+#' representatives. Must contain the same features (in the same
+#' number of columns) as the X matrix provided to css, and if the columns of
+#' newx are labeled, the names must match the variable names provided to css.
+#' newx may be omitted if train_inds were provided to css to set aside
+#' observations for model estimation. If this is the case, then when newx is
+#' omitted formCssDesign will return a design matrix of cluster representatives
+#' formed from the train_inds observations from the matrix X provided to css.
+#' (If no train_inds were provided to css, newX must be provided to
+#' formCssDesign.)
+#' @return A named list with the following elements: \item{newx}{If newx was
+#' provided, the provided newx matrix, coerced from a data.frame to a matrix if
+#' needed. If newx was not provided, a matrix formed by the train_inds set
+#' aside in the original function call to css.} \item{max_num_clusts}{The
+#' provided max_num_clusts, coerced to an integer if needed, and coerced to be
+#' less than or equal to the total number of clusters.}
+#' @author Gregory Faletto, Jacob Bien
+checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
+    min_num_clusts, max_num_clusts, newx){    
+    stopifnot(class(css_results) == "cssr")
+
+    if(length(newx) == 1){
+        if(is.na(newx)){
+            if(length(css_results$train_inds) == 0){
+                stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
+            }
+            newx <- css_results$X[css_results$train_inds, ]
+            # feat_names <- colnames(newx)
+        } else{
+            results <- checkXInputResults(newx, css_results$X)
+
+            newx <- results$newx
+            # feat_names <- results$feat_names
+
+            rm(results)
+        }
+    } else{
+        results <- checkXInputResults(newx, css_results$X)
+
+        newx <- results$newx
+        # feat_names <- results$feat_names
+
+        rm(results)
+    }
+
+    p <- ncol(newx)
+
+    checkCutoff(cutoff)
+    checkWeighting(weighting)
+    checkMinNumClusts(min_num_clusts, p)
+    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        css_results$clusters)
+
+    return(list(newx=newx, max_num_clusts=max_num_clusts))
+}
+
+#' Helper function to check that output of getSelectedClusters is as expected
+#'
+#' @param selected_clusts A named numeric vector containing the selection
+#' proportions for the selected clusters. The name of each entry is the name of
+#' the corresponding cluster.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param selected_feats A named integer vector; the indices of the features
+#' with nonzero weights from all of the selected clusters.
+#' @author Gregory Faletto, Jacob Bien
+checkGetSelectedClustersOutput <- function(selected_clusts, css_results,
+    selected_feats){
+    stopifnot(is.numeric(selected_clusts))
+    stopifnot(all(selected_clusts >= 0))
+    stopifnot(all(selected_clusts <= 1))
+    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) <= length(css_results$clusters))
+    stopifnot(length(names(selected_clusts)) ==
+        length(unique(names(selected_clusts))))
+
+    stopifnot(is.integer(selected_feats))
+    stopifnot(length(selected_feats) == length(unique(selected_feats)))
+    p <- ncol(css_results$feat_sel_mat)
+    stopifnot(all(selected_feats %in% 1:p))
+}
