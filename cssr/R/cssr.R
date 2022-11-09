@@ -3,7 +3,10 @@
 
 #' Cluster Stability Selection
 #'
-#' Executes cluster stability selection algorithm.
+#' Executes cluster stability selection algorithm. Takes subsamples of data,
+#' executes feature selection algorithm on each subsample, and returns matrices
+#' of feature selection indicators as well as cluster selection indicators.
+#'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
 #' p >= 2 features/predictors.
@@ -78,13 +81,14 @@
 #' (or 2*B for SS sampling) x length(clusters) numeric (binary) matrix.
 #' `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected
 #' by the base feature selection method on subsample i, and 0 otherwise.}
-#' \item{X}{The X matrix provided to css.} \item{y}{The y vector provided to
-#' css.} \item{clusters}{A named list of integer vectors containing all of the
-#' clusters provided to css, as well as size 1 clusters of any features not
-#' listed in any of the clusters provided to css. All clusters will have names;
-#' any clusters not provided with a name in the input to css will be given names
-#' automatically by css (of the form c1, etc.).} \item{train_inds}{Identical
-#' to the train_inds provided to css.}
+#' \item{X}{The X matrix provided to css, coerced from a data.frame to a matrix
+#' if needed.} \item{y}{The y vector provided to css.} \item{clusters}{A named
+#' list of integer vectors containing all of the clusters provided to css, as
+#' well as size 1 clusters of any features not listed in any of the clusters
+#' provided to css. All clusters will have names; any clusters not provided with
+#' a name in the input to css will be given names automatically by css (of the
+#' form c1, etc.).} \item{train_inds}{Identical to the train_inds provided to
+#' css.}
 #' @author Gregory Faletto, Jacob Bien
 #' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
@@ -469,7 +473,6 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
         min_num_clusts, max_num_clusts, trainX, trainY)
 
     trainXProvided <- check_list$trainXProvided
-    n_train <- check_list$n_train
     trainX <- check_list$trainX
     testX <- check_list$testX
     feat_names <- check_list$feat_names
@@ -477,6 +480,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 
     rm(check_list)
 
+    n_train <- nrow(trainX)
     n <- nrow(testX)
     p <- ncol(testX)
 
@@ -688,8 +692,6 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
             ClustSize=lengths(sel_clusts))
     }
 
-
-
     print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
 
     rownames(print_df) <- NULL
@@ -752,7 +754,7 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     # Check inputs
     stopifnot(class(css_results) == "cssr")
 
-    check_results <- checkNewXProvided(newX, newX, css_results)
+    check_results <- checkNewXProvided(newX, css_results)
 
     newX <- check_results$newX
     newXProvided <- check_results$newXProvided
@@ -2645,7 +2647,7 @@ getClustWeights <- function(cluster_i, weighting, feat_sel_props){
 #' will all be nonnegative and sum to 1.
 #' @author Gregory Faletto, Jacob Bien
 cor_function <- function(t, y){
-    # 
+    # Check inputs
     stopifnot(is.numeric(t) | is.integer(t))
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(length(t) == length(y))
@@ -2659,6 +2661,30 @@ cor_function <- function(t, y){
     return(abs(stats::cor(t, y)))
 }
 
+#' Helper function to confirm that inputs to several functions are as expected,
+#' and modify inputs if needed
+#'
+#' @param newx A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to generate the design matrix of cluster
+#' representatives. Must contain the same features (in the same
+#' number of columns) as the X matrix provided to css, and if the columns of
+#' newX are labeled, the names must match the variable names provided to css.
+#' newX may be omitted if train_inds were provided to css to set aside
+#' observations for model estimation. If this is the case, then when newX is
+#' omitted getCssDesign will return a design matrix of cluster representatives
+#' formed from the train_inds observations from the matrix X provided to css.
+#' (If no train_inds were provided to css, newX must be provided to
+#' getCssDesign.) Default is NA.
+#' @param css_X The X matrix provided to css, as in the output of the css
+#' function (after having been coerced from a data.frame to a matrix by css if
+#' needed.
+#' @return A named list with the following elements. \item{feat_names}{A 
+#' character vector containing the column names of newx (if the provided newx
+#' had column names). If the provided newx did not have column names, feat_names
+#' will be NA.} \item{newx}{The provided newx matrix, coerced from a data.frame
+#' to a matrix if the provided newx was a data.frame.}
+#' @author Gregory Faletto, Jacob Bien
 checkXInputResults <- function(newx, css_X){
 
     feat_names <- as.character(NA)
@@ -2698,6 +2724,86 @@ checkXInputResults <- function(newx, css_X){
     return(list(feat_names=feat_names, newx=newx))
 }
 
+#' Helper function to confirm that inputs to the function css are as expected,
+#' and modify inputs if needed
+#'
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' p >= 2 features/predictors.
+#' @param y The response; can be anything that takes the form of an
+#' n-dimensional vector, with the ith entry corresponding to the ith row of X.
+#' Typically (and for default fitfun = cssLasso), y should be an n-dimensional
+#' numeric vector.
+#' @param lambda A tuning parameter or set of tuning parameters that may be used
+#' by the feature selection method fitfun. In the default case when
+#' fitfun = cssLasso, lambda should be a numeric: the penalty to use for each
+#' lasso fit. (css does not require lambda to be any particular object because
+#' for a user-specified feature selection method fitfun, lambda can be an
+#' arbitrary object. See the description of fitfun below.)
+#' @param clusters A list of integer vectors; each vector should contain the 
+#' indices of a cluster of features (a subset of 1:p). (If there is only one
+#' cluster, clusters can either be a list of length 1 or an integer vector.)
+#' All of the provided clusters must be non-overlapping. Every feature not
+#' appearing in any cluster will be assumed to be unclustered (that is, they
+#' will be treated as if they are in a "cluster" containing only themselves). If
+#' clusters is a list of length 0 (or a list only containing clusters of length
+#' 1), then css() returns the same results as stability selection (so the
+#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
+#' clusters will be needed later; any clusters that are not given names in the
+#' provided list will be given names automatically by css. Default is list() (so
+#' no clusters are specified).
+#' @param fitfun A function; the feature selection function used on each
+#' subsample by cluster stability selection. This can be any feature selection
+#' method; the only requirement is that it accepts the arguments (and only the
+#' arguments) X, y, and lambda and returns an integer vector that is a subset of
+#' 1:p. For example, fitfun could be best subset selection or forward stepwise
+#' selection or LARS and lambda could be the desired model size; or fitfun could be the
+#' elastic net and lambda could be a length-two vector specifying lambda and
+#' alpha. Default is cssLasso, an implementation of lasso (relying on the R
+#' package glmnet), where lambda must be a positive numeric specifying the L1
+#' penalty for the lasso.
+#' @param sampling_type A character vector; either "SS" or "MB". For "MB",
+#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
+#' 2010). For "SS", in addition to these B subsamples, the B complementary pair
+#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
+#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
+#' @param B Integer or numeric; the number of subsamples. Note: For
+#' sampling.type=="MB" the total number of subsamples will be `B`; for
+#' sampling_type="SS" the number of subsamples will be `2*B`. Default is 100
+#' for sampling_type="MB" and 50 for sampling_type="SS".
+#' @param prop_feats_remove Numeric; if prop_feats_remove is greater than 0,
+#' then on each subsample, each feature is randomly dropped from the design
+#' matrix that is provided to fitfun with probability prop_feats_remove
+#' (independently across features). That is, in a typical subsample,
+#' prop_feats_remove*p features will be dropped (though this number will vary).
+#' This is similar in spirit (but distinct from) extended stability selection
+#' (Beinrucker et. al. 2016); see their paper for some of the benefits of
+#' dropping features (besides increasing computational speed and decreasing
+#' memory requirements). For sampling_type="SS", the features dropped in
+#' each complementary pair of subsamples are identical in order to ensure that
+#' the theoretical guarantees of Faletto and Bien (2022) are retained within
+#' each individual pair of subsamples. (Note that this feature is not
+#' investigated either theoretically or in simulations by Faletto and Bien
+#' 2022). Must be between 0 and 1. Default is 0.
+#' @param train_inds Optional; an integer or numeric vector containing the
+#' indices of observations in X and y to set aside for model training by the
+#' function getCssPreds after feature selection. (This will only work if y is
+#' real-valued, because getCssPreds using ordinary least squares regression to
+#' generate predictions.) If train_inds is not provided, all of the observations
+#' in the provided data set will be used for feature selection.
+#' @param num_cores Optional; an integer. If using parallel processing, the
+#' number of cores to use for parallel processing (num_cores will be supplied
+#' internally as the mc.cores argument of parallel::mclapply).
+#' @return A named list with the following elements: \item{feat_names}{A 
+#' character vector containing the column names of X (if the provided X
+#' had column names). If the provided X did not have column names, feat_names
+#' will be NA.}\item{clust_names}{A  character vector containing the names of
+#' the provided clusters (if the provided clusters were named). If the provided
+#' clusters were not named, clust_names will be NA.} \item{X}{The provided X
+#' matrix, coerced from a data.frame to a matrix if the provided X was a
+#' data.frame.} \item{clusters}{Either an integer vector of a list of integer
+#' vectors; each vector will contain the indices of a cluster of features.}
+#' @author Gregory Faletto, Jacob Bien
 checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     prop_feats_remove, train_inds, num_cores){
 
@@ -2807,12 +2913,78 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
         clusters=clusters))
 }
 
+#' Helper function to confirm that inputs to the function getCssPreds are as
+#' expected, and modify inputs if needed.
+#'
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param testX A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to generate predictions. Must contain the same
+#' features (in the same number of columns) as the matrix provided to css.
+#' @param weighting Character; determines how to calculate the weights to
+#' combine features from the selected clusters into weighted averages, called
+#' cluster representatives. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg'. For "sparse", all the weight is put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", the weight used for each cluster member is calculated in
+#' proportion to the individual selection proportions of each feature. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, the cluster representative
+#' is just a simple average of all the cluster members). See Faletto and Bien
+#' (2022) for details. Default is "weighted_avg".
+#' @param cutoff Numeric; getCssPreds will make use only of those clusters with
+#' selection proportions equal to at least cutoff. Must be between 0 and 1.
+#' Default is 0 (in which case either all clusters are used, or max_num_clusts
+#' are used, if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) Default is 1.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param trainX A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to estimate the linear model from the selected
+#' clusters. trainX is only necessary to provide if no train_inds were
+#' designated in the css function call to set aside observations for model
+#' estimation (though even if train_inds was provided, trainX and trianY will be
+#' used for model estimation if they are both provided to getCssPreds). Must 
+#' contain the same features (in the same number of columns) as the matrix 
+#' provided to css, and if the columns of trainX are labeled, the names must
+#' match the variable names provided to css. Default is NA (in which case
+#' getCssPreds uses the observations from the train_inds that were provided to
+#' css to estimate a linear model).
+#' @param trainY The response corresponding to trainX. Must be a real-valued
+#' response (unlike in the general css setup) because predictions will be
+#' generated by an ordinary least squares model. Must have the same length as
+#' the number of rows of trainX. Like trainX, only needs to be provided if no
+#' observations were set aside for model estimation by the parameter train_inds
+#' in the css function call. Default is NA (in which case getCssPreds uses the
+#' observations from the train_inds that were provided to css).
+#' @return A named list with the following elements: \item{trainXProvided}{
+#' Logical; indicates whether a valid trainX input was provided.} \item{trainX}{
+#' The provided trainX matrix, coerced from a data.frame to a matrix if the
+#' provided trainX was a data.frame. (If a valid trainX was not provided, this
+#' output simply passes whatever was provided as trainX.)} \item{testX}{The
+#' provided testX matrix, coerced from a data.frame to a matrix if the provided
+#' testX was a data.frame.} \item{feat_names}{A character vector containing the
+#' column names of testX (if the provided testX had column names). If the
+#' provided testX did not have column names, feat_names will be NA.}
+#' \item{max_num_clusts}{The provided max_num_clusts, coerced to an integer if
+#' needed, and coerced to be less than or equal to the total number of clusters
+#' from the output of css_results.}
+#' @author Gregory Faletto, Jacob Bien
 checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     min_num_clusts, max_num_clusts, trainX, trainY){
-
+    # Check inputs
     stopifnot(class(css_results) == "cssr")
 
-    check_results <- checkNewXProvided(trainX, testX, css_results)
+    check_results <- checkNewXProvided(trainX, css_results)
 
     trainX <- check_results$newX
     trainXProvided <- check_results$newXProvided
@@ -2821,30 +2993,23 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     n_train <- nrow(trainX)
 
-    trainXProvided <- FALSE
-
-    if(all(!is.na(trainX))){
-        if(length(trainX) == 1 & length(trainY) != 1){
-            warning("trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
-        }
-    } else if(length(trainY) != 1){
-        warning("trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
-    }
-
     if(trainXProvided){
-        if(all(!is.na(trainY))){
+        if(all(!is.na(trainY)) & length(trainY) > 1){
             stopifnot(is.numeric(trainY))
             stopifnot(n_train == length(trainY))
         } else{
             if(length(css_results$train_inds) == 0){
                 stop("css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions")
             }
-
             trainXProvided <- FALSE
-
-            if(length(trainX) != 1){
-                warning("trainX provided but no trainY provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
-            }
+            warning("trainX provided but no trainY provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
+        }
+    } else{
+        if(length(css_results$train_inds) == 0){
+            stop("css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions")
+        }
+        if(all(!is.na(trainY)) & length(trainY) > 1){
+            warning("trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
         }
     }
 
@@ -2858,14 +3023,26 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     n <- nrow(testX)
     p <- ncol(testX)
 
+    stopifnot(n >= 1)
+    stopifnot(p == ncol(trainX))
+    if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
+        warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
+    }
+    if(is.null(colnames(trainX)) & !is.null(colnames(testX))){
+        warning("Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)")
+    }
+    if(!is.null(colnames(trainX)) & !is.null(colnames(testX))){
+        stopifnot(all(colnames(trainX) == colnames(testX)))
+    }
+
     checkCutoff(cutoff)
     checkWeighting(weighting)
     checkMinNumClusts(min_num_clusts, p)
     max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
         css_results$clusters)
 
-    return(list(trainXProvided=trainXProvided, n_train=n_train, trainX=trainX,
-        testX=testX, feat_names=feat_names, max_num_clusts=max_num_clusts))
+    return(list(trainXProvided=trainXProvided, trainX=trainX, testX=testX,
+        feat_names=feat_names, max_num_clusts=max_num_clusts))
 
 }
 
@@ -2884,6 +3061,9 @@ checkMinNumClusts <- function(min_num_clusts, p){
     stopifnot(min_num_clusts <= p)
 }
 
+#' @return The provided max_num_clusts, coerced to an integer if needed, and
+#' coerced to be less than or equal to the total number of clusters.
+#' @author
 checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, clusters){
     stopifnot(length(max_num_clusts) == 1)
     if(!is.na(max_num_clusts)){
@@ -3035,35 +3215,23 @@ checkCssLoopOutput <- function(selected, p){
     }
 }
 
-checkNewXProvided <- function(trainX, testX, css_results){
+#' @return A named list with the following elements: \item{newX}{The provided
+#' trainX matrix, coerced from a data.frame to a matrix if the provided trainX
+#' was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
+#' trainX input was provided.}
+checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
-    if(all(!is.na(trainX))){
-        if(length(trainX) > 1){
-            newXProvided <- TRUE
-            n_train <- nrow(trainX)
-            stopifnot(n_train > 1)
 
-            trainX <- checkXInputResults(trainX, css_results$X)$newx
-        } else{
-            stopifnot(all(is.na(testX)))
-            stopifnot(length(testX) == 1)
-
-            if(length(css_results$train_inds) == 0){
-                stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
-            }
-        }
+    if(all(!is.na(trainX)) & length(trainX) > 1){
+        newXProvided <- TRUE
+        trainX <- checkXInputResults(trainX, css_results$X)$newx
+        n_train <- nrow(trainX)
+        stopifnot(n_train > 1)
     } else{
-        stopifnot(all(is.na(trainX)))
-        stopifnot(length(trainX) == 1)
-
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
         }
-
-        # if(length(css_results$train_inds) == 0){
-        #     stop("css must be provided with indices to set aside for model training (train_inds) in order to generate predictions")
-        # }
-    }
+    } 
     return(list(newX=trainX, newXProvided=newXProvided))
 }
 
