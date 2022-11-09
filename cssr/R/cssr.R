@@ -1760,7 +1760,7 @@ getClusterProps <- function(clusters, res, sampling_type){
 
     # Check output
     checkGetClusterPropsOutput(feat_sel_props, p, clus_sel_props_p,
-        res_n_clusters, clusters, sampling_type)
+        res_n_clusters, clusters, sampling_type, B)
 
     return(list(feat_sel_props=feat_sel_props,
         clus_sel_props_p=clus_sel_props_p, res_clus_p=res_clus_p,
@@ -2264,7 +2264,8 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     n_sel_clusts <- length(selected_clusts)
 
-    # Check that output is as expected, and throw warnings or an error if not
+    # Check that n_sel_clusts is as expected, and throw warnings or an error if
+    # not
     checkSelectedClusters(n_sel_clusts, min_num_clusts, max_num_clusts,
         clus_sel_props)
     
@@ -2411,10 +2412,16 @@ getModelSize <- function(X, y, clusters){
         feats_to_drop <- integer()
         for(i in 1:length(clusters)){
             cluster_i <- clusters[[i]]
-            feat_to_keep <- identifyPrototype(cluster_i, X, y)
-            feats_to_drop <- c(feats_to_drop, setdiff(cluster_i, feat_to_keep))
+            if(length(cluster_i) > 1){
+                feat_to_keep <- identifyPrototype(cluster_i, X, y)
+                feats_to_drop <- c(feats_to_drop, setdiff(cluster_i,
+                    feat_to_keep))
+            }
         }
-        X_size <- X_size[, -1*feats_to_drop]
+        if(length(feats_to_drop) > 0){
+            X_size <- X_size[, -1*feats_to_drop]
+        }
+        
     }
 
     size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian")
@@ -2793,42 +2800,8 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     # Intentionally don't check y or lambda further to allow for flexbility--these
     # inputs should be checked within fitfun.
 
-    stopifnot(!is.na(clusters))
-    if(is.list(clusters)){
-        stopifnot(all(!is.na(clusters)))
-        stopifnot(length(clusters) == length(unique(clusters)))
-
-        if(is.list(clusters) & length(clusters) > 0){
-            for(i in 1:length(clusters)){
-                stopifnot(length(clusters[[i]]) == length(unique(clusters[[i]])))
-                stopifnot(all(!is.na(clusters[[i]])))
-                stopifnot(is.integer(clusters[[i]]) | is.numeric(clusters[[i]]))
-                stopifnot(all(clusters[[i]] == round(clusters[[i]])))
-                clusters[[i]] <- as.integer(clusters[[i]])
-            }
-
-            if(length(clusters) >= 2){
-                # Check that clusters are non-overlapping
-                for(i in 1:(length(clusters) - 1)){
-                    for(j in (i+1):length(clusters)){
-                        if(length(intersect(clusters[[i]], clusters[[j]])) != 0){
-                            error_mes <- paste("Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: ",
-                                i, ", ", j, ".", sep="")
-                            stop(error_mes)
-                        }
-                    }
-                }
-            }
-        }
-    } else{
-        stopifnot(is.numeric(clusters) | is.integer(clusters))
-        stopifnot(length(clusters) == length(unique(clusters)))
-        stopifnot(all(!is.na(clusters)))
-        stopifnot(is.integer(clusters) | is.numeric(clusters))
-        stopifnot(all(clusters == round(clusters)))
-        clusters <- as.integer(clusters)
-
-    }
+    # Check clusters argument
+    clusters <- checkCssClustersInput(clusters)
 
     stopifnot(class(fitfun) == "function")
     stopifnot(length(fitfun) == 1)
@@ -3372,7 +3345,7 @@ checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
 #' removed.
 #' @author Gregory Faletto, Jacob Bien
 checkFormatClustersInput <- function(clusters, p, clust_names, 
-    get_prototypes, x, y, R)
+    get_prototypes, x, y, R){
 
     if(any(is.na(clusters)) & any(is.na(R))){
         stop("Must specify one of clusters or R.")
@@ -3499,7 +3472,7 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
 #' @return The parameter B, corresponding to half of the subsamples for 
 #' sampling_type "SS".
 #' @author Gregory Faletto, Jacob Bien
-checkGetClusterPropsInput <- function(clusters, res, sampling_type)
+checkGetClusterPropsInput <- function(clusters, res, sampling_type){
     stopifnot(is.matrix(res))
     stopifnot(all(res %in% c(0, 1)))
     p <- ncol(res)
@@ -3513,7 +3486,7 @@ checkGetClusterPropsInput <- function(clusters, res, sampling_type)
 
     checkClusters(clusters, p)
 
-    return(B)
+    return(as.integer(B))
 }
 
 #' Helper function to check the output of getClusterProps
@@ -3535,9 +3508,10 @@ checkGetClusterPropsInput <- function(clusters, res, sampling_type)
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
 #' @param sampling_type
+#' @param B Integer; half of the subsamples for sampling_type "SS".
 #' @author Gregory Faletto, Jacob Bien
 checkGetClusterPropsOutput <- function(feat_sel_props, p, clus_sel_props_p,
-    res_n_clusters, clusters, sampling_type){
+    res_n_clusters, clusters, sampling_type, B){
     stopifnot(is.numeric(feat_sel_props))
     stopifnot(length(feat_sel_props) == p)
     stopifnot(all(feat_sel_props >= 0))
@@ -3551,7 +3525,7 @@ checkGetClusterPropsOutput <- function(feat_sel_props, p, clus_sel_props_p,
     stopifnot(is.matrix(res_n_clusters))
     stopifnot(identical(colnames(res_n_clusters), names(clusters)))
     stopifnot(all(res_n_clusters %in% c(0, 1)))
-    stopifnot(ncol(res_n_clusters) == n_clusters)
+    stopifnot(ncol(res_n_clusters) == length(clusters))
     if(sampling_type=="SS"){
         stopifnot(B == nrow(res_n_clusters)/2)
     } else{
@@ -3659,4 +3633,62 @@ checkGetSelectedClustersOutput <- function(selected_clusts, css_results,
     stopifnot(length(selected_feats) == length(unique(selected_feats)))
     p <- ncol(css_results$feat_sel_mat)
     stopifnot(all(selected_feats %in% 1:p))
+}
+
+#' Helper function to confirm that clusters input to css is as expected
+#'
+#' @param clusters A list of integer vectors; each vector should contain the 
+#' indices of a cluster of features (a subset of 1:p). (If there is only one
+#' cluster, clusters can either be a list of length 1 or an integer vector.)
+#' All of the provided clusters must be non-overlapping. Every feature not
+#' appearing in any cluster will be assumed to be unclustered (that is, they
+#' will be treated as if they are in a "cluster" containing only themselves). If
+#' clusters is a list of length 0 (or a list only containing clusters of length
+#' 1), then css() returns the same results as stability selection (so the
+#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
+#' clusters will be needed later; any clusters that are not given names in the
+#' provided list will be given names automatically by css. Default is list() (so
+#' no clusters are specified).
+#' @return Same as the input, but all of the clusters will be coerced to
+#' integers.
+#' @author Gregory Faletto, Jacob Bien
+checkCssClustersInput <- function(clusters){
+    stopifnot(!is.na(clusters))
+    if(is.list(clusters)){
+        stopifnot(all(!is.na(clusters)))
+        stopifnot(length(clusters) == length(unique(clusters)))
+
+        if(length(clusters) > 0){
+            for(i in 1:length(clusters)){
+                stopifnot(length(clusters[[i]]) == length(unique(clusters[[i]])))
+                stopifnot(all(!is.na(clusters[[i]])))
+                stopifnot(is.integer(clusters[[i]]) | is.numeric(clusters[[i]]))
+                stopifnot(all(clusters[[i]] == round(clusters[[i]])))
+                clusters[[i]] <- as.integer(clusters[[i]])
+            }
+
+            if(length(clusters) >= 2){
+                # Check that clusters are non-overlapping
+                for(i in 1:(length(clusters) - 1)){
+                    for(j in (i+1):length(clusters)){
+                        if(length(intersect(clusters[[i]], clusters[[j]])) != 0){
+                            error_mes <- paste("Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: ",
+                                i, ", ", j, ".", sep="")
+                            stop(error_mes)
+                        }
+                    }
+                }
+            }
+        }
+    } else{
+        # If clusters is not a list, it should be a vector of indices of
+        # features that are in the (one) cluster
+        stopifnot(is.numeric(clusters) | is.integer(clusters))
+        stopifnot(length(clusters) == length(unique(clusters)))
+        stopifnot(all(!is.na(clusters)))
+        stopifnot(is.integer(clusters) | is.numeric(clusters))
+        stopifnot(all(clusters == round(clusters)))
+        clusters <- as.integer(clusters)
+    }
+    return(clusters)
 }
