@@ -61,7 +61,7 @@ testthat::test_that("identifyPrototype works", {
 
 testthat::test_that("corFunction works", {
   testthat::expect_identical(corFunction(rep(1, 10), 1:10), 0)
-  testthat::expect_identical(corFunction(1:5, rep(1.2, 5)), 0)
+  testthat::expect_identical(corFunction(rep(1.2, 5), 1:5), 0)
   x <- stats::rnorm(8)
   y <- stats::rnorm(8)
   testthat::expect_identical(corFunction(x, y), abs(stats::cor(x, y)))
@@ -151,15 +151,15 @@ testthat::test_that("createSubsamples works", {
   
   # Try odd n
   
-  res_odd <- createSubsamples(n=19L, p=23L, B=8L, sampling_type="SS",
+  res_odd <- createSubsamples(n=19L, p=23L, B=13L, sampling_type="SS",
                               prop_feats_remove=0)
   testthat::expect_true(is.list(res_odd))
-  testthat::expect_equal(length(res_odd), 2*8)
+  testthat::expect_equal(length(res_odd), 2*13)
   testthat::expect_true(all(lengths(res_odd) == floor(19/2)))
   testthat::expect_equal(length(unique(res_odd[[3]])), floor(19/2))
 
   set_odd <- res_odd[[2]]
-  comp_set_odd <- res_odd[[2 + 8]]
+  comp_set_odd <- res_odd[[2 + 13]]
 
   testthat::expect_equal(length(intersect(set_odd, comp_set_odd)), 0)
   testthat::expect_equal(length(union(set_odd, comp_set_odd)),
