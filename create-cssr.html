@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-11-10" />
+<meta name="date" content="2022-11-11" />
 
 <title>Creating the cssr R package</title>
 
@@ -359,7 +359,7 @@ pre code {
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">November 10, 2022</h4>
+<h4 class="date">November 11, 2022</h4>
 
 </div>
 
@@ -416,12 +416,12 @@ individual features. This is implemented in the function
 getSelMatrix.</li>
 <li>So far this is the same as the original stability selection
 procedure. Now we take into account the clusters. The function
-getClusterProps takes in the formatted clusters as well as feat_sel_mat
-and generates the binary matrix clus_sel_mat, which contains selection
-indicators for each cluster. clus_sel_mat has the same number of rows as
-feat_sel_mat and one column for each cluster rather than one for each
-feature. This is used to calculate the cluster selection
-proportions.</li>
+getClusterSelMatrix takes in the formatted clusters as well as
+feat_sel_mat and generates the binary matrix clus_sel_mat, which
+contains selection indicators for each cluster. clus_sel_mat has the
+same number of rows as feat_sel_mat and one column for each cluster
+rather than one for each feature. This is used to calculate the cluster
+selection proportions.</li>
 </ul>
 <p>The function css is specified below. (There are some extra details
 that I omitted in the above description for brevity; you can read the
@@ -577,12 +577,10 @@ full details below.)</p>
 
     ### Get selection proportions for clusters corresponding to each feature
 
-    clus_sel_mat &lt;- <a href='create-cssr.html#getClusterProps'>getClusterProps</a>(clusters, feat_sel_mat,
-        sampling_type)$res_n_clusters
+    clus_sel_mat &lt;- <a href='create-cssr.html#getClusterSelMatrix'>getClusterSelMatrix</a>(clusters, feat_sel_mat)
 
     # Check outputs
     stopifnot(!is.null(colnames(clus_sel_mat)))
-
     stopifnot(all(colnames(clus_sel_mat) == names(clusters)))
 
     ret &lt;- list(feat_sel_mat = feat_sel_mat,
@@ -950,13 +948,12 @@ requirements on lambda and y to allow the end user flexibility for any
 specified fitfun. checkCssLassoInputs ensures that y is a real-valued
 response, lambda is a nonnegative real number, etc.) checkCssLassoInputs
 is specified in the helper functions section later.</p>
-<p>Finally, getClusterProps is the last significant function called
+<p>Finally, getClusterSelMatrix is the last significant function called
 within css.</p>
-<pre class="r"><code>#&#39; Find cluster proportions
+<pre class="r"><code>#&#39; Get cluster selection matrix
 #&#39;
 #&#39; Given a matrix of feature selection indicator variables and a list of
-#&#39; clusters of features, returns a matrix of cluster indicator variables, as
-#&#39; well as the selection proportions for both features and clusters.
+#&#39; clusters of features, returns a matrix of cluster indicator variables.
 #&#39;
 #&#39; @param clusters A named list where each entry is an integer vector of indices
 #&#39; of features that are in a common cluster, as in the output of formatClusters.
@@ -964,46 +961,21 @@ within css.</p>
 #&#39; identified clusters must be non-overlapping, and all features must appear in
 #&#39; exactly one cluster (any unclustered features should be in their own
 #&#39; &quot;cluster&quot; of size 1).
-#&#39; @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
-#&#39; == &quot;MB&quot; was provided to ) or `2*B` x `p` (if sampling_type == &quot;SS&quot;).
-#&#39; res[i, j] = 1 if feature j was selected on subsample i and equals 0
-#&#39; otherwise, as in the output of getSelMatrix. (That is, each row is a selected
-#&#39; set.)
-#&#39; @param sampling_type A character vector (either &quot;SS&quot; or &quot;MB&quot;); the sampling
-#&#39; type used for stability selection.
-#&#39; @return A named list with four elements. \item{feat_sel_props}{A numeric
-#&#39; vector of length p. The jth entry is the proportion of subsamples in which
-#&#39; feature j was selected by fitfun.} \item{clus_sel_props_p}{A numeric vector
-#&#39; of length p. The jth entry is the proportion of subsamples in which at least
-#&#39; one member of the cluster containing feature j was selected.}
-#&#39; \item{res_clus_p}{An integer matrix of the same dimensions as res.
-#&#39; res_clus_p[i, j] = 1 if at least one member of the cluster containing feature
-#&#39; j was selected by fitfun on subsample i, and 0 otherwise.}
-#&#39; \item{res_n_clusters}{A binary integer matrix with the same number of rows
-#&#39; as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
-#&#39; one member of cluster j was selected on subsample i, and 0 otherwise.}
+#&#39; @param res A binary integer matrix. es[i, j] = 1 if feature j was selected
+#&#39; on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+#&#39; (That is, each row is a selected set.)
+#&#39; @return A binary integer matrix with the same number of rows
+#&#39; as res and length(clusters) columns. Entry i, j is 1 if at least
+#&#39; one member of cluster j was selected on subsample i, and 0 otherwise.
 #&#39; @author Gregory Faletto, Jacob Bien
-<span id='getClusterProps'>getClusterProps</span> &lt;- function(clusters, res, sampling_type){
-
-    # TODO(gfaletto): consider deprecating feat_sel_props and res_clus_p
-    # outputs, which don&#39;t seem to be used anywhere? (res_clus_p still needs
-    # to be calculated since it is used to calculate clus_sel_props_p, but it
-    # doesn&#39;t necessarily need to be returned. feat_sel_props doesn&#39;t seem to
-    # be needed to be calculated or returned here at all.)
+<span id='getClusterSelMatrix'>getClusterSelMatrix</span> &lt;- function(clusters, res){
 
     # Check input
-
-    B &lt;- <a href='create-cssr.html#checkGetClusterPropsInput'>checkGetClusterPropsInput</a>(clusters, res, sampling_type)
+    <a href='create-cssr.html#checkGetClusterSelMatrixInput'>checkGetClusterSelMatrixInput</a>(clusters, res)
 
     p &lt;- ncol(res)
 
     n_clusters &lt;- length(clusters)
-
-    # Calculate feat_sel_props
-    feat_sel_props &lt;- colMeans(res)
-
-    # Matrix of cluster selection proportions (with p columns)
-    res_clus_p &lt;- res
 
     # Matrix of cluster selection proportions (with n_clusters columns)
     res_n_clusters &lt;- matrix(rep(0L, nrow(res)*n_clusters), nrow=nrow(res),
@@ -1021,44 +993,18 @@ within css.</p>
         if(length(clusters[[j]]) &lt;= 1){
             next
         }
-
-        # Set all cluster members in these rows equal to 1 in res_clus_p
-        res_clus_p[rows_j_sel, clusters[[j]]] &lt;- 1
-
-        # Confirm that all columns in res_clus_p corresponding to
-        # clusters[[j]] have the same values
-        stopifnot(all(apply(res_clus_p[, clusters[[j]]], 1,
-            function(x){length(unique(x)) == 1})))
     }
-
-    # Check res_clus_p
-    stopifnot(is.matrix(res_clus_p))
-    stopifnot(all.equal(dim(res), dim(res_clus_p)))
-    stopifnot(all(res_clus_p %in% c(0, 1)))
-
-    # For every cluster, confirm that all columns in res_clus_p corresponding
-    # to that cluster are identical (that is, every row in the submatrix
-    # res_clus_p[, clusters[[j]]] has only one unique value)
-    for(j in 1:n_clusters){
-        if(length(clusters[[j]]) &gt; 1){
-            stopifnot(all(apply(res_clus_p[, clusters[[j]]], 1,
-                function(x){length(unique(x)) == 1})))
-        }
-    }
-
-    # Calculate clus_sel_props_p
-    clus_sel_props_p &lt;- colMeans(res_clus_p)
 
     # Check output
-    <a href='create-cssr.html#checkGetClusterPropsOutput'>checkGetClusterPropsOutput</a>(feat_sel_props, p, clus_sel_props_p,
-        res_n_clusters, clusters, sampling_type, B)
+    stopifnot(is.matrix(res_n_clusters))
+    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
+    stopifnot(all(res_n_clusters %in% c(0, 1)))
+    stopifnot(ncol(res_n_clusters) == length(clusters))
 
-    return(list(feat_sel_props=feat_sel_props,
-        clus_sel_props_p=clus_sel_props_p, res_clus_p=res_clus_p,
-        res_n_clusters=res_n_clusters))
+    return(res_n_clusters)
 }</code></pre>
-<p>The helper function checkGetClusterPropsInput verifies the inputs to
-getClusterProps, and checkGetClusterPropsOutput confirms the output.</p>
+<p>The helper function checkGetClusterSelMatrixInput verifies the inputs
+to getClusterSelMatrix.</p>
 <p>With the above and the helper functions below, the css function is
 complete!</p>
 </div>
@@ -1122,10 +1068,8 @@ the feature selection method is valid.</li>
 </ul></li>
 <li>checkCssLassoInputs checks that the inputs to the provided fitfun,
 cssLasso, are as needed.</li>
-<li>checkGetClusterPropsInput verifies that the input to getClusterProps
-is as expected.</li>
-<li>checkGetClusterPropsOutput confirms the output of
-getClusterProps.</li>
+<li>checkGetClusterSelMatrixInput verifies that the input to
+getClusterSelMatrix is as expected.</li>
 </ul>
 <p>checkCssInputs:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that inputs to the function css are as expected,
@@ -1644,7 +1588,7 @@ getClusterProps.</li>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1714,7 +1658,7 @@ getClusterProps.</li>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -1846,7 +1790,7 @@ getClusterProps.</li>
   #                        &quot;incorrect number of dimensions&quot;,
   #                        fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>corFunction:</p>
 <pre class="r"><code>#&#39; Absolute value of sample correlation between two vectors
 #&#39;
@@ -1969,7 +1913,7 @@ getClusterProps.</li>
                            &quot;Large values of B may require long computation times.&quot;,
                            fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkPropFeatsRemove</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument prop_feats_remove to several 
 #&#39; functions is as expected
@@ -2009,7 +1953,7 @@ getClusterProps.</li>
                          &quot;p &gt;= 2 is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>cssLoop:</p>
 <pre class="r"><code>#&#39; Helper function run on each subsample
 #&#39; 
@@ -2158,8 +2102,8 @@ getClusterProps.</li>
         stop(&quot;For method cssLasso, lambda must be nonnegative.&quot;)
     }
 }</code></pre>
-<p>checkGetClusterPropsInput:</p>
-<pre class="r"><code>#&#39; Helper function to check inputs to getClusterProps function
+<p>checkGetClusterSelMatrixInput:</p>
+<pre class="r"><code>#&#39; Helper function to check inputs to getClusterSelMatrix function
 #&#39;
 #&#39; @param clusters A named list where each entry is an integer vector of indices
 #&#39; of features that are in a common cluster, as in the output of formatClusters.
@@ -2167,76 +2111,240 @@ getClusterProps.</li>
 #&#39; identified clusters must be non-overlapping, and all features must appear in
 #&#39; exactly one cluster (any unclustered features should be in their own
 #&#39; &quot;cluster&quot; of size 1).
-#&#39; @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
-#&#39; == &quot;MB&quot; was provided to ) or `2*B` x `p` (if sampling_type == &quot;SS&quot;).
-#&#39; res[i, j] = 1 if feature j was selected on subsample i and equals 0
-#&#39; otherwise, as in the output of getSelMatrix. (That is, each row is a selected
-#&#39; set.)
-#&#39; @param sampling_type A character vector (either &quot;SS&quot; or &quot;MB&quot;); the sampling
-#&#39; type used for stability selection.
+#&#39; @param res A binary integer matrix. res[i, j] = 1 if feature j was selected
+#&#39; on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+#&#39; (That is, each row is a selected set.)
 #&#39; @return The parameter B, corresponding to half of the subsamples for 
 #&#39; sampling_type &quot;SS&quot;.
 #&#39; @author Gregory Faletto, Jacob Bien
-<span id='checkGetClusterPropsInput'>checkGetClusterPropsInput</span> &lt;- function(clusters, res, sampling_type){
+<span id='checkGetClusterSelMatrixInput'>checkGetClusterSelMatrixInput</span> &lt;- function(clusters, res){
     stopifnot(is.matrix(res))
     stopifnot(all(res %in% c(0, 1)))
     p &lt;- ncol(res)
-    if(sampling_type==&quot;SS&quot;){
-        B &lt;- nrow(res)/2
-        stopifnot(B == round(B))
-    } else{
-        B &lt;- nrow(res)
-    }
-    stopifnot(B &gt; 0)
-
+    stopifnot(nrow(res) &gt; 0)
     <a href='create-cssr.html#checkClusters'>checkClusters</a>(clusters, p)
-
-    return(as.integer(B))
 }</code></pre>
-<p>checkGetClusterPropsOutput:</p>
-<pre class="r"><code>#&#39; Helper function to check the output of getClusterProps
-#&#39;
-#&#39; @param feat_sel_props A numeric
-#&#39; vector of length p. The jth entry is the proportion of subsamples in which
-#&#39; feature j was selected by fitfun.
-#&#39; @param p Integer; the number of features in the X matrix provided to css.
-#&#39; @param clus_sel_props_p A numeric vector
-#&#39; of length p. The jth entry is the proportion of subsamples in which at least
-#&#39; one member of the cluster containing feature j was selected.
-#&#39; @param res_n_clusters A binary integer matrix with the same number of rows
-#&#39; as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
-#&#39; one member of cluster j was selected on subsample i, and 0 otherwise.
-#&#39; @param clusters A named list where each entry is an integer vector of indices
-#&#39; of features that are in a common cluster, as in the output of formatClusters.
-#&#39; (The length of list clusters is equal to the number of clusters.) All
-#&#39; identified clusters must be non-overlapping, and all features must appear in
-#&#39; exactly one cluster (any unclustered features should be in their own
-#&#39; &quot;cluster&quot; of size 1).
-#&#39; @param sampling_type
-#&#39; @param B Integer; half of the subsamples for sampling_type &quot;SS&quot;.
-#&#39; @author Gregory Faletto, Jacob Bien
-<span id='checkGetClusterPropsOutput'>checkGetClusterPropsOutput</span> &lt;- function(feat_sel_props, p, clus_sel_props_p,
-    res_n_clusters, clusters, sampling_type, B){
-    stopifnot(is.numeric(feat_sel_props))
-    stopifnot(length(feat_sel_props) == p)
-    stopifnot(all(feat_sel_props &gt;= 0))
-    stopifnot(all(feat_sel_props &lt;= 1))
+</div>
+<div id="tests-for-main-functions-in-css-now-that-helper-functions-have-been-defined" class="section level1">
+<h1>Tests for main functions in css (now that helper functions have been
+defined)</h1>
+<p>Tests for createSubsamples:</p>
+<pre class="r"><code>testthat::test_that(&quot;createSubsamples works&quot;, {
+  res &lt;- <a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=20L, p=5L, B=11L, sampling_type=&quot;SS&quot;,
+                          prop_feats_remove=0)
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2*11)
+  testthat::expect_true(all(lengths(res) == 20/2))
+  testthat::expect_equal(length(unique(res[[13]])), 20/2)
 
-    stopifnot(is.numeric(clus_sel_props_p))
-    stopifnot(length(clus_sel_props_p) == p)
-    stopifnot(all(clus_sel_props_p &gt;= 0))
-    stopifnot(all(clus_sel_props_p &lt;= 1))
+  set &lt;- res[[4]]
+  comp_set &lt;- res[[4 + 11]]
 
-    stopifnot(is.matrix(res_n_clusters))
-    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
-    stopifnot(all(res_n_clusters %in% c(0, 1)))
-    stopifnot(ncol(res_n_clusters) == length(clusters))
-    if(sampling_type==&quot;SS&quot;){
-        stopifnot(B == nrow(res_n_clusters)/2)
-    } else{
-        stopifnot(B == nrow(res_n_clusters))
-    }
-}</code></pre>
+  testthat::expect_equal(length(intersect(set, comp_set)), 0)
+  testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
+  testthat::expect_equal(20, length(c(set, comp_set)))
+  
+  # Try odd n
+  
+  res_odd &lt;- <a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=19L, p=23L, B=8L, sampling_type=&quot;SS&quot;,
+                              prop_feats_remove=0)
+  testthat::expect_true(is.list(res_odd))
+  testthat::expect_equal(length(res_odd), 2*8)
+  testthat::expect_true(all(lengths(res_odd) == floor(19/2)))
+  testthat::expect_equal(length(unique(res_odd[[3]])), floor(19/2))
+
+  set_odd &lt;- res_odd[[2]]
+  comp_set_odd &lt;- res_odd[[2 + 8]]
+
+  testthat::expect_equal(length(intersect(set_odd, comp_set_odd)), 0)
+  testthat::expect_equal(length(union(set_odd, comp_set_odd)),
+                         length(c(set_odd, comp_set_odd)))
+  testthat::expect_equal(19 - 1, length(c(set_odd, comp_set_odd)))
+  
+  
+  
+  testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=20L, p=5L, B=11L, sampling_type=&quot;MB&quot;,
+                          prop_feats_remove=0),
+                         &quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;,
+                         fixed=TRUE)
+  # misspecified sampling_type (not specifying error because contains quotation
+  # marks)
+  testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=20L, p=5L, B=11L, sampling_type=&quot;S&quot;,
+                          prop_feats_remove=0))
+  testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=11.1, p=5L, B=11L, sampling_type=&quot;SS&quot;,
+                          prop_feats_remove=0),
+                         &quot;n == round(n) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=-20L, p=5L, B=11L, sampling_type=&quot;SS&quot;,
+                          prop_feats_remove=0),
+                         &quot;n &gt; 0 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=20L, p=5L, B=25.6, sampling_type=&quot;SS&quot;,
+                          prop_feats_remove=0),
+                         &quot;B == round(B) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  # testthat::expect_null(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>()
+  # testthat::expect_error(<a href='create-cssr.html#createSubsamples'>createSubsamples</a>(), &quot;&quot;,
+  #                        fixed=TRUE)
+})</code></pre>
+<pre><code>## ── Warning (&#39;&lt;text&gt;:18&#39;): createSubsamples works ───────────────────────────────
+## Small values of B may lead to poor results.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#createSubsamples'>createSubsamples</a>(...)
+##  2. litr (local) <a href='create-cssr.html#checkB'>checkB</a>(B)</code></pre>
+<p>Tests for getSubsamps</p>
+<pre class="r"><code>testthat::test_that(&quot;getSubsamps works&quot;, {
+  res &lt;- <a href='create-cssr.html#getSubsamps'>getSubsamps</a>(n=18L, B=21L, sampling_type=&quot;SS&quot;)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2*21)
+  testthat::expect_true(all(lengths(res) == 18/2))
+  testthat::expect_equal(length(unique(res[[7]])), 18/2)
+
+  set &lt;- res[[3]]
+  comp_set &lt;- res[[3 + 21]]
+
+  testthat::expect_equal(length(intersect(set, comp_set)), 0)
+  testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
+  testthat::expect_equal(18, length(c(set, comp_set)))
+})</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
+<p>Tests for getSelMatrix</p>
+<pre class="r"><code>testthat::test_that(&quot;getSelMatrix works&quot;, {
+  x &lt;- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
+  y &lt;- stats::rnorm(25)
+  subsamps_object &lt;- <a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=25, p=6, B=12, sampling_type=&quot;SS&quot;,
+                                      prop_feats_remove=0)
+  res &lt;- <a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x, y=y, lambda=0.01, B=12, sampling_type=&quot;SS&quot;,
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso)
+
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_equal(nrow(res), 2*12)
+  testthat::expect_equal(ncol(res), 6)
+  testthat::expect_true(all(res %in% c(0, 1)))
+  testthat::expect_true(all(is.integer(res)))
+
+  # Try a different fitfun
+
+  <span id='testFitfun'>testFitfun</span> &lt;- function(X, y, lambda){
+    p &lt;- ncol(X)
+    stopifnot(p &gt;= 2)
+    # Choose p/2 features randomly
+    selected &lt;- sample.int(p, size=floor(p/2))
+    return(selected)
+  }
+  
+  # Note that value of lambda doesn&#39;t matter
+  res2 &lt;- <a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x, y=y, lambda=&quot;foo&quot;, B=12, sampling_type=&quot;SS&quot;,
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=testFitfun)
+
+  testthat::expect_true(is.matrix(res2))
+  testthat::expect_equal(nrow(res2), 2*12)
+  testthat::expect_equal(ncol(res2), 6)
+  testthat::expect_true(all(res2 %in% c(0, 1)))
+  testthat::expect_true(all(is.integer(res2)))
+  
+  testthat::expect_error(<a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x, y=y, lambda=&quot;0.02&quot;, B=12, sampling_type=&quot;SS&quot;,
+                      subsamps_object=&quot;subsamps_object&quot;, num_cores=1,
+                      fitfun=testFitfun),
+                      &quot;is.integer(subsample) is not TRUE&quot;,
+                      fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x[1:8, ], y=y, lambda=&quot;foo&quot;, B=12, sampling_type=&quot;SS&quot;,
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=testFitfun),
+                      &quot;length(y) == n is not TRUE&quot;,
+                      fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x, y=y, lambda=-0.02, B=12, sampling_type=&quot;SS&quot;,
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso),
+                      &quot;For method cssLasso, lambda must be nonnegative.&quot;,
+                      fixed=TRUE)
+  # Wrong B
+  testthat::expect_error(<a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(x=x, y=y, lambda=0.02, B=37, sampling_type=&quot;SS&quot;,
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso),
+                      &quot;length(res_list) == nrow(res) is not TRUE&quot;,
+                      fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
+<p>Tests for cssLasso</p>
+<pre class="r"><code>testthat::test_that(&quot;cssLasso works&quot;, {
+  x &lt;- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
+  y &lt;- stats::rnorm(15)
+  
+  res &lt;- <a href='create-cssr.html#cssLasso'>cssLasso</a>(X=x, y=y, lambda=0.01)
+  
+  testthat::expect_true(is.integer(res))
+  testthat::expect_true(length(res) &lt;= 4)
+  testthat::expect_true(length(res) &gt;= 0)
+  testthat::expect_true(length(res) == length(unique(res)))
+  testthat::expect_true(all(res &lt;= 4))
+  testthat::expect_true(all(res &gt;= 1))
+  
+  testthat::expect_error(<a href='create-cssr.html#cssLasso'>cssLasso</a>(X=x[1:13, ], y=y, lambda=0.01),
+                         &quot;For method cssLasso, y must be a vector of length equal to nrow(X).&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#cssLasso'>cssLasso</a>(X=x, y=y, lambda=-0.01),
+                         &quot;For method cssLasso, lambda must be nonnegative.&quot;,
+                         fixed=TRUE)
+
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
+<p>Tests for getClusterSelMatrix:</p>
+<pre class="r"><code>testthat::test_that(&quot;getClusterSelMatrix works&quot;, {
+  good_clusters &lt;- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:8), blue_clust=9L)
+  
+  B &lt;- 14
+  p &lt;- 9
+  
+  res_entries &lt;- as.integer(sample(c(0, 1), size=2*B*p, replace=TRUE))
+  
+  good_res &lt;- matrix(res_entries, nrow=2*B, ncol=p)
+  
+  res &lt;- <a href='create-cssr.html#getClusterSelMatrix'>getClusterSelMatrix</a>(good_clusters, good_res)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_equal(nrow(res), 2*B)
+  # 3 clusters
+  testthat::expect_equal(ncol(res), 3)
+  testthat::expect_identical(colnames(res), c(&quot;red_cluster&quot;, &quot;green_cluster&quot;,
+                                              &quot;blue_clust&quot;))
+  testthat::expect_true(all(is.integer(res)))
+  testthat::expect_true(all(res %in% c(0, 1)))
+
+  clust_2 &lt;- good_clusters[[2]]
+  
+  any_one &lt;- rowSums(good_res[, clust_2]) &gt; 0
+  if(any(any_one)){
+    testthat::expect_true(all(res[any_one, 2] == 1))
+  }
+
+  all_zeros &lt;- rowSums(good_res[, clust_2]) == 0
+  if(any(all_zeros)){
+    testthat::expect_true(all(res[all_zeros, 2] == 0))
+  }
+
+  # Not all features in a cluster
+  bad_clusters &lt;- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:7), blue_clust=9L)
+
+  testthat::expect_error(<a href='create-cssr.html#getClusterSelMatrix'>getClusterSelMatrix</a>(bad_clusters, good_res),
+                         &quot;length(all_clustered_feats) == p is not TRUE&quot;,
+                         fixed=TRUE)
+
+  bad_res_entries &lt;- as.integer(sample(c(0, 1, 2), size=2*B*p, replace=TRUE))
+
+  bad_res &lt;- matrix(bad_res_entries, nrow=2*B, ncol=p)
+
+  testthat::expect_error(<a href='create-cssr.html#getClusterSelMatrix'>getClusterSelMatrix</a>(good_clusters, bad_res),
+                         &quot;all(res %in% c(0, 1)) is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <div id="documenting-the-package-and-building" class="section level2">
 <h2>Documenting the package and building</h2>
 <p>We finish by running commands that will document, build, and install
@@ -2249,9 +2357,6 @@ litr::document() # &lt;-- use instead of devtools::document()
 # devtools::check(document = FALSE)</code></pre>
 <pre><code>## ℹ Updating cssr documentation
 ## ℹ Loading cssr</code></pre>
-<pre><code>## Warning: []8;line = 21:col = 1;file:///Users/gregfaletto/Documents/GitHub/cssr-
-## project/cssr/R/checkGetClusterPropsOutput.RcheckGetClusterPropsOutput.R:21]8;;]
-## @param requires name and description</code></pre>
 <pre><code>## Warning: []8;line = 7:col = 1;file:///Users/gregfaletto/Documents/GitHub/cssr-
 ## project/cssr/R/cssLoop.RcssLoop.R:7]8;;] @param has mismatched braces or quotes</code></pre>
 <pre><code>## Writing &#39;]8;;file:///Users/gregfaletto/Documents/GitHub/cssr-project/cssr/NAMESPACENAMESPACE]8;;&#39;
@@ -2262,8 +2367,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLassoInputs&#39;)checkCssLassoInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLoopOutput&#39;)checkCssLoopOutput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormatClustersInput&#39;)checkFormatClustersInput.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterPropsInput&#39;)checkGetClusterPropsInput.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterPropsOutput&#39;)checkGetClusterPropsOutput.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterSelMatrixInput&#39;)checkGetClusterSelMatrixInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkPropFeatsRemove&#39;)checkPropFeatsRemove.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSamplingType&#39;)checkSamplingType.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkY&#39;)checkY.Rd]8;;&#39;
@@ -2273,7 +2377,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLasso&#39;)cssLasso.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLoop&#39;)cssLoop.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formatClusters&#39;)formatClusters.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterProps&#39;)getClusterProps.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelMatrix&#39;)getClusterSelMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getPrototypes&#39;)getPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelMatrix&#39;)getSelMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSubsamps&#39;)getSubsamps.Rd]8;;&#39;

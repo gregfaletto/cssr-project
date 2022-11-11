@@ -151,12 +151,10 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 
     ### Get selection proportions for clusters corresponding to each feature
 
-    clus_sel_mat <- getClusterProps(clusters, feat_sel_mat,
-        sampling_type)$res_n_clusters
+    clus_sel_mat <- getClusterSelMatrix(clusters, feat_sel_mat)
 
     # Check outputs
     stopifnot(!is.null(colnames(clus_sel_mat)))
-
     stopifnot(all(colnames(clus_sel_mat) == names(clusters)))
 
     ret <- list(feat_sel_mat = feat_sel_mat,

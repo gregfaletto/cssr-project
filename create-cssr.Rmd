@@ -47,7 +47,7 @@ Cluster stability selection is a feature selection method designed to allow stab
 
 * First, css creates random subsamples of the data. This is implemented in the function createSubsamples.
 * Next, css executes the specified feature selection method on each subsample. This generates a binary matrix, feat_sel_mat, with one row for each subsample and one column for each feature in X. In each row, the entry corresponding to each feature equals 1 if the feature was selected on that subsample and 0 otherwise. feat_sel_mat is one of the outputs of css; it is used to calculate the selection proportions for individual features. This is implemented in the function getSelMatrix.
-* So far this is the same as the original stability selection procedure. Now we take into account the clusters. The function getClusterProps takes in the formatted clusters as well as feat_sel_mat and generates the binary matrix clus_sel_mat, which contains selection indicators for each cluster. clus_sel_mat has the same number of rows as feat_sel_mat and one column for each cluster rather than one for each feature. This is used to calculate the cluster selection proportions.
+* So far this is the same as the original stability selection procedure. Now we take into account the clusters. The function getClusterSelMatrix takes in the formatted clusters as well as feat_sel_mat and generates the binary matrix clus_sel_mat, which contains selection indicators for each cluster. clus_sel_mat has the same number of rows as feat_sel_mat and one column for each cluster rather than one for each feature. This is used to calculate the cluster selection proportions.
 
 The function css is specified below. (There are some extra details that I omitted in the above description for brevity; you can read the full details below.)
 
@@ -204,12 +204,10 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 
     ### Get selection proportions for clusters corresponding to each feature
 
-    clus_sel_mat <- getClusterProps(clusters, feat_sel_mat,
-        sampling_type)$res_n_clusters
+    clus_sel_mat <- getClusterSelMatrix(clusters, feat_sel_mat)
 
     # Check outputs
     stopifnot(!is.null(colnames(clus_sel_mat)))
-
     stopifnot(all(colnames(clus_sel_mat) == names(clusters)))
 
     ret <- list(feat_sel_mat = feat_sel_mat,
@@ -574,14 +572,13 @@ cssLasso <- function(X, y, lambda){
 
 Notice that cssLasso depends on the package glmnet, and calls the function checkCssLassoInputs, which verifies that the inputs to cssLasso are as needed. (In particular, the function css imposes very few requirements on lambda and y to allow the end user flexibility for any specified fitfun. checkCssLassoInputs ensures that y is a real-valued response, lambda is a nonnegative real number, etc.) checkCssLassoInputs is specified in the helper functions section later.
 
-Finally, getClusterProps is the last significant function called within css.
+Finally, getClusterSelMatrix is the last significant function called within css.
 
 ```{r}
-#' Find cluster proportions
+#' Get cluster selection matrix
 #'
 #' Given a matrix of feature selection indicator variables and a list of
-#' clusters of features, returns a matrix of cluster indicator variables, as
-#' well as the selection proportions for both features and clusters.
+#' clusters of features, returns a matrix of cluster indicator variables.
 #'
 #' @param clusters A named list where each entry is an integer vector of indices
 #' of features that are in a common cluster, as in the output of formatClusters.
@@ -589,46 +586,21 @@ Finally, getClusterProps is the last significant function called within css.
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
-#' @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
-#' == "MB" was provided to ) or `2*B` x `p` (if sampling_type == "SS").
-#' res[i, j] = 1 if feature j was selected on subsample i and equals 0
-#' otherwise, as in the output of getSelMatrix. (That is, each row is a selected
-#' set.)
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
-#' @return A named list with four elements. \item{feat_sel_props}{A numeric
-#' vector of length p. The jth entry is the proportion of subsamples in which
-#' feature j was selected by fitfun.} \item{clus_sel_props_p}{A numeric vector
-#' of length p. The jth entry is the proportion of subsamples in which at least
-#' one member of the cluster containing feature j was selected.}
-#' \item{res_clus_p}{An integer matrix of the same dimensions as res.
-#' res_clus_p[i, j] = 1 if at least one member of the cluster containing feature
-#' j was selected by fitfun on subsample i, and 0 otherwise.}
-#' \item{res_n_clusters}{A binary integer matrix with the same number of rows
-#' as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
-#' one member of cluster j was selected on subsample i, and 0 otherwise.}
+#' @param res A binary integer matrix. es[i, j] = 1 if feature j was selected
+#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+#' (That is, each row is a selected set.)
+#' @return A binary integer matrix with the same number of rows
+#' as res and length(clusters) columns. Entry i, j is 1 if at least
+#' one member of cluster j was selected on subsample i, and 0 otherwise.
 #' @author Gregory Faletto, Jacob Bien
-getClusterProps <- function(clusters, res, sampling_type){
-
-    # TODO(gfaletto): consider deprecating feat_sel_props and res_clus_p
-    # outputs, which don't seem to be used anywhere? (res_clus_p still needs
-    # to be calculated since it is used to calculate clus_sel_props_p, but it
-    # doesn't necessarily need to be returned. feat_sel_props doesn't seem to
-    # be needed to be calculated or returned here at all.)
+getClusterSelMatrix <- function(clusters, res){
 
     # Check input
-
-    B <- checkGetClusterPropsInput(clusters, res, sampling_type)
+    checkGetClusterSelMatrixInput(clusters, res)
 
     p <- ncol(res)
 
     n_clusters <- length(clusters)
-
-    # Calculate feat_sel_props
-    feat_sel_props <- colMeans(res)
-
-    # Matrix of cluster selection proportions (with p columns)
-    res_clus_p <- res
 
     # Matrix of cluster selection proportions (with n_clusters columns)
     res_n_clusters <- matrix(rep(0L, nrow(res)*n_clusters), nrow=nrow(res),
@@ -646,45 +618,19 @@ getClusterProps <- function(clusters, res, sampling_type){
         if(length(clusters[[j]]) <= 1){
             next
         }
-
-        # Set all cluster members in these rows equal to 1 in res_clus_p
-        res_clus_p[rows_j_sel, clusters[[j]]] <- 1
-
-        # Confirm that all columns in res_clus_p corresponding to
-        # clusters[[j]] have the same values
-        stopifnot(all(apply(res_clus_p[, clusters[[j]]], 1,
-            function(x){length(unique(x)) == 1})))
     }
-
-    # Check res_clus_p
-    stopifnot(is.matrix(res_clus_p))
-    stopifnot(all.equal(dim(res), dim(res_clus_p)))
-    stopifnot(all(res_clus_p %in% c(0, 1)))
-
-    # For every cluster, confirm that all columns in res_clus_p corresponding
-    # to that cluster are identical (that is, every row in the submatrix
-    # res_clus_p[, clusters[[j]]] has only one unique value)
-    for(j in 1:n_clusters){
-        if(length(clusters[[j]]) > 1){
-            stopifnot(all(apply(res_clus_p[, clusters[[j]]], 1,
-                function(x){length(unique(x)) == 1})))
-        }
-    }
-
-    # Calculate clus_sel_props_p
-    clus_sel_props_p <- colMeans(res_clus_p)
 
     # Check output
-    checkGetClusterPropsOutput(feat_sel_props, p, clus_sel_props_p,
-        res_n_clusters, clusters, sampling_type, B)
+    stopifnot(is.matrix(res_n_clusters))
+    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
+    stopifnot(all(res_n_clusters %in% c(0, 1)))
+    stopifnot(ncol(res_n_clusters) == length(clusters))
 
-    return(list(feat_sel_props=feat_sel_props,
-        clus_sel_props_p=clus_sel_props_p, res_clus_p=res_clus_p,
-        res_n_clusters=res_n_clusters))
+    return(res_n_clusters)
 }
 ```
 
-The helper function checkGetClusterPropsInput verifies the inputs to getClusterProps, and checkGetClusterPropsOutput confirms the output.
+The helper function checkGetClusterSelMatrixInput verifies the inputs to getClusterSelMatrix.
 
 With the above and the helper functions below, the css function is complete!
 
@@ -707,8 +653,7 @@ Below, we specify some of the helper functions for css, which are less important
 * The function cssLoop is called within css. In particular, it is a helper function needed in order to allow for parallel processing of the feature selection method on each of the subsamples.
   - checkCssLoopOutput verifies that the output of cssLoop as expected. This is particularly important because the user can specify their own feature selection method; checkCssLoopOutput verifies that the output of the feature selection method is valid.
 * checkCssLassoInputs checks that the inputs to the provided fitfun, cssLasso, are as needed.
-* checkGetClusterPropsInput verifies that the input to getClusterProps is as expected.
-* checkGetClusterPropsOutput confirms the output of getClusterProps.
+* checkGetClusterSelMatrixInput verifies that the input to getClusterSelMatrix is as expected.
 
       
 checkCssInputs:
@@ -1831,10 +1776,10 @@ checkCssLassoInputs <- function(X, y, lambda){
 }
 ```
 
-checkGetClusterPropsInput:
+checkGetClusterSelMatrixInput:
 
 ```{r}
-#' Helper function to check inputs to getClusterProps function
+#' Helper function to check inputs to getClusterSelMatrix function
 #'
 #' @param clusters A named list where each entry is an integer vector of indices
 #' of features that are in a common cluster, as in the output of formatClusters.
@@ -1842,80 +1787,250 @@ checkGetClusterPropsInput:
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
-#' @param res A binary integer matrix of dimension `B` x `p` (if sampling_type
-#' == "MB" was provided to ) or `2*B` x `p` (if sampling_type == "SS").
-#' res[i, j] = 1 if feature j was selected on subsample i and equals 0
-#' otherwise, as in the output of getSelMatrix. (That is, each row is a selected
-#' set.)
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
+#' @param res A binary integer matrix. res[i, j] = 1 if feature j was selected
+#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+#' (That is, each row is a selected set.)
 #' @return The parameter B, corresponding to half of the subsamples for 
 #' sampling_type "SS".
 #' @author Gregory Faletto, Jacob Bien
-checkGetClusterPropsInput <- function(clusters, res, sampling_type){
+checkGetClusterSelMatrixInput <- function(clusters, res){
     stopifnot(is.matrix(res))
     stopifnot(all(res %in% c(0, 1)))
     p <- ncol(res)
-    if(sampling_type=="SS"){
-        B <- nrow(res)/2
-        stopifnot(B == round(B))
-    } else{
-        B <- nrow(res)
-    }
-    stopifnot(B > 0)
-
+    stopifnot(nrow(res) > 0)
     checkClusters(clusters, p)
-
-    return(as.integer(B))
 }
 ```
 
-checkGetClusterPropsOutput:
+
+# Tests for main functions in css (now that helper functions have been defined)
+
+Tests for createSubsamples:
 
 ```{r}
-#' Helper function to check the output of getClusterProps
-#'
-#' @param feat_sel_props A numeric
-#' vector of length p. The jth entry is the proportion of subsamples in which
-#' feature j was selected by fitfun.
-#' @param p Integer; the number of features in the X matrix provided to css.
-#' @param clus_sel_props_p A numeric vector
-#' of length p. The jth entry is the proportion of subsamples in which at least
-#' one member of the cluster containing feature j was selected.
-#' @param res_n_clusters A binary integer matrix with the same number of rows
-#' as res and length(clusters) columns. res_n_clusters[i, j] = 1 if at least
-#' one member of cluster j was selected on subsample i, and 0 otherwise.
-#' @param clusters A named list where each entry is an integer vector of indices
-#' of features that are in a common cluster, as in the output of formatClusters.
-#' (The length of list clusters is equal to the number of clusters.) All
-#' identified clusters must be non-overlapping, and all features must appear in
-#' exactly one cluster (any unclustered features should be in their own
-#' "cluster" of size 1).
-#' @param sampling_type
-#' @param B Integer; half of the subsamples for sampling_type "SS".
-#' @author Gregory Faletto, Jacob Bien
-checkGetClusterPropsOutput <- function(feat_sel_props, p, clus_sel_props_p,
-    res_n_clusters, clusters, sampling_type, B){
-    stopifnot(is.numeric(feat_sel_props))
-    stopifnot(length(feat_sel_props) == p)
-    stopifnot(all(feat_sel_props >= 0))
-    stopifnot(all(feat_sel_props <= 1))
+testthat::test_that("createSubsamples works", {
+  res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
+                          prop_feats_remove=0)
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2*11)
+  testthat::expect_true(all(lengths(res) == 20/2))
+  testthat::expect_equal(length(unique(res[[13]])), 20/2)
 
-    stopifnot(is.numeric(clus_sel_props_p))
-    stopifnot(length(clus_sel_props_p) == p)
-    stopifnot(all(clus_sel_props_p >= 0))
-    stopifnot(all(clus_sel_props_p <= 1))
+  set <- res[[4]]
+  comp_set <- res[[4 + 11]]
 
-    stopifnot(is.matrix(res_n_clusters))
-    stopifnot(identical(colnames(res_n_clusters), names(clusters)))
-    stopifnot(all(res_n_clusters %in% c(0, 1)))
-    stopifnot(ncol(res_n_clusters) == length(clusters))
-    if(sampling_type=="SS"){
-        stopifnot(B == nrow(res_n_clusters)/2)
-    } else{
-        stopifnot(B == nrow(res_n_clusters))
-    }
-}
+  testthat::expect_equal(length(intersect(set, comp_set)), 0)
+  testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
+  testthat::expect_equal(20, length(c(set, comp_set)))
+  
+  # Try odd n
+  
+  res_odd <- createSubsamples(n=19L, p=23L, B=8L, sampling_type="SS",
+                              prop_feats_remove=0)
+  testthat::expect_true(is.list(res_odd))
+  testthat::expect_equal(length(res_odd), 2*8)
+  testthat::expect_true(all(lengths(res_odd) == floor(19/2)))
+  testthat::expect_equal(length(unique(res_odd[[3]])), floor(19/2))
+
+  set_odd <- res_odd[[2]]
+  comp_set_odd <- res_odd[[2 + 8]]
+
+  testthat::expect_equal(length(intersect(set_odd, comp_set_odd)), 0)
+  testthat::expect_equal(length(union(set_odd, comp_set_odd)),
+                         length(c(set_odd, comp_set_odd)))
+  testthat::expect_equal(19 - 1, length(c(set_odd, comp_set_odd)))
+  
+  
+  
+  testthat::expect_error(createSubsamples(n=20L, p=5L, B=11L, sampling_type="MB",
+                          prop_feats_remove=0),
+                         "sampling_type MB is not yet supported (and isn't recommended anyway)",
+                         fixed=TRUE)
+  # misspecified sampling_type (not specifying error because contains quotation
+  # marks)
+  testthat::expect_error(createSubsamples(n=20L, p=5L, B=11L, sampling_type="S",
+                          prop_feats_remove=0))
+  testthat::expect_error(createSubsamples(n=11.1, p=5L, B=11L, sampling_type="SS",
+                          prop_feats_remove=0),
+                         "n == round(n) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(createSubsamples(n=-20L, p=5L, B=11L, sampling_type="SS",
+                          prop_feats_remove=0),
+                         "n > 0 is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(createSubsamples(n=20L, p=5L, B=25.6, sampling_type="SS",
+                          prop_feats_remove=0),
+                         "B == round(B) is not TRUE",
+                         fixed=TRUE)
+  
+  # testthat::expect_null(createSubsamples()
+  # testthat::expect_error(createSubsamples(), "",
+  #                        fixed=TRUE)
+})
+```
+
+Tests for getSubsamps
+
+```{r}
+testthat::test_that("getSubsamps works", {
+  res <- getSubsamps(n=18L, B=21L, sampling_type="SS")
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2*21)
+  testthat::expect_true(all(lengths(res) == 18/2))
+  testthat::expect_equal(length(unique(res[[7]])), 18/2)
+
+  set <- res[[3]]
+  comp_set <- res[[3 + 21]]
+
+  testthat::expect_equal(length(intersect(set, comp_set)), 0)
+  testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
+  testthat::expect_equal(18, length(c(set, comp_set)))
+})
+```
+
+Tests for getSelMatrix
+
+```{r}
+testthat::test_that("getSelMatrix works", {
+  x <- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
+  y <- stats::rnorm(25)
+  subsamps_object <- createSubsamples(n=25, p=6, B=12, sampling_type="SS",
+                                      prop_feats_remove=0)
+  res <- getSelMatrix(x=x, y=y, lambda=0.01, B=12, sampling_type="SS",
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso)
+
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_equal(nrow(res), 2*12)
+  testthat::expect_equal(ncol(res), 6)
+  testthat::expect_true(all(res %in% c(0, 1)))
+  testthat::expect_true(all(is.integer(res)))
+
+  # Try a different fitfun
+
+  testFitfun <- function(X, y, lambda){
+    p <- ncol(X)
+    stopifnot(p >= 2)
+    # Choose p/2 features randomly
+    selected <- sample.int(p, size=floor(p/2))
+    return(selected)
+  }
+  
+  # Note that value of lambda doesn't matter
+  res2 <- getSelMatrix(x=x, y=y, lambda="foo", B=12, sampling_type="SS",
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=testFitfun)
+
+  testthat::expect_true(is.matrix(res2))
+  testthat::expect_equal(nrow(res2), 2*12)
+  testthat::expect_equal(ncol(res2), 6)
+  testthat::expect_true(all(res2 %in% c(0, 1)))
+  testthat::expect_true(all(is.integer(res2)))
+  
+  testthat::expect_error(getSelMatrix(x=x, y=y, lambda="0.02", B=12, sampling_type="SS",
+                      subsamps_object="subsamps_object", num_cores=1,
+                      fitfun=testFitfun),
+                      "is.integer(subsample) is not TRUE",
+                      fixed=TRUE)
+  testthat::expect_error(getSelMatrix(x=x[1:8, ], y=y, lambda="foo", B=12, sampling_type="SS",
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=testFitfun),
+                      "length(y) == n is not TRUE",
+                      fixed=TRUE)
+  testthat::expect_error(getSelMatrix(x=x, y=y, lambda=-0.02, B=12, sampling_type="SS",
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso),
+                      "For method cssLasso, lambda must be nonnegative.",
+                      fixed=TRUE)
+  # Wrong B
+  testthat::expect_error(getSelMatrix(x=x, y=y, lambda=0.02, B=37, sampling_type="SS",
+                      subsamps_object=subsamps_object, num_cores=1,
+                      fitfun=cssLasso),
+                      "length(res_list) == nrow(res) is not TRUE",
+                      fixed=TRUE)
+})
+```
+
+Tests for cssLasso
+
+```{r}
+testthat::test_that("cssLasso works", {
+  x <- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
+  y <- stats::rnorm(15)
+  
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+  
+  testthat::expect_true(is.integer(res))
+  testthat::expect_true(length(res) <= 4)
+  testthat::expect_true(length(res) >= 0)
+  testthat::expect_true(length(res) == length(unique(res)))
+  testthat::expect_true(all(res <= 4))
+  testthat::expect_true(all(res >= 1))
+  
+  testthat::expect_error(cssLasso(X=x[1:13, ], y=y, lambda=0.01),
+                         "For method cssLasso, y must be a vector of length equal to nrow(X).",
+                         fixed=TRUE)
+  testthat::expect_error(cssLasso(X=x, y=y, lambda=-0.01),
+                         "For method cssLasso, lambda must be nonnegative.",
+                         fixed=TRUE)
+
+})
+```
+
+Tests for getClusterSelMatrix:
+
+```{r}
+testthat::test_that("getClusterSelMatrix works", {
+  good_clusters <- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:8), blue_clust=9L)
+  
+  B <- 14
+  p <- 9
+  
+  res_entries <- as.integer(sample(c(0, 1), size=2*B*p, replace=TRUE))
+  
+  good_res <- matrix(res_entries, nrow=2*B, ncol=p)
+  
+  res <- getClusterSelMatrix(good_clusters, good_res)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_equal(nrow(res), 2*B)
+  # 3 clusters
+  testthat::expect_equal(ncol(res), 3)
+  testthat::expect_identical(colnames(res), c("red_cluster", "green_cluster",
+                                              "blue_clust"))
+  testthat::expect_true(all(is.integer(res)))
+  testthat::expect_true(all(res %in% c(0, 1)))
+
+  clust_2 <- good_clusters[[2]]
+  
+  any_one <- rowSums(good_res[, clust_2]) > 0
+  if(any(any_one)){
+    testthat::expect_true(all(res[any_one, 2] == 1))
+  }
+
+  all_zeros <- rowSums(good_res[, clust_2]) == 0
+  if(any(all_zeros)){
+    testthat::expect_true(all(res[all_zeros, 2] == 0))
+  }
+
+  # Not all features in a cluster
+  bad_clusters <- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:7), blue_clust=9L)
+
+  testthat::expect_error(getClusterSelMatrix(bad_clusters, good_res),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+
+  bad_res_entries <- as.integer(sample(c(0, 1, 2), size=2*B*p, replace=TRUE))
+
+  bad_res <- matrix(bad_res_entries, nrow=2*B, ncol=p)
+
+  testthat::expect_error(getClusterSelMatrix(good_clusters, bad_res),
+                         "all(res %in% c(0, 1)) is not TRUE",
+                         fixed=TRUE)
+})
 ```
 
 
