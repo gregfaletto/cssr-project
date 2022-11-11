@@ -25,13 +25,12 @@ identifyPrototype <- function(cluster_members_i, x, y){
     if(length(cluster_members_i) == 1){
         return(cluster_members_i)
     }
-    stopifnot(length(cluster_members_i) > 1)
 
     # Choose which cluster member to represent cluster for stability
     # metric purposes by choosing the one most highly correlated
     # with y
 
-    cors_i <- apply(x[, cluster_members_i], 2, cor_function, y=y)
+    cors_i <- apply(x[, cluster_members_i], 2, corFunction, y=y)
     max_index_i <- which.max(cors_i)[1]
 
     stopifnot(length(max_index_i) == 1)

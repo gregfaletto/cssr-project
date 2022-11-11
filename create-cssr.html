@@ -417,10 +417,10 @@ getSelMatrix.</li>
 <li>So far this is the same as the original stability selection
 procedure. Now we take into account the clusters. The function
 getClusterProps takes in the formatted clusters as well as feat_sel_mat
-and generates the binary matrix clus_sel_mat, a binary matrix with
-selection indicators for each cluster. clus_sel_mat has the same number
-of rows as feat_sel_mat and one column for each cluster rather than for
-each feature. This is used to calculate the cluster selection
+and generates the binary matrix clus_sel_mat, which contains selection
+indicators for each cluster. clus_sel_mat has the same number of rows as
+feat_sel_mat and one column for each cluster rather than one for each
+feature. This is used to calculate the cluster selection
 proportions.</li>
 </ul>
 <p>The function css is specified below. (There are some extra details
@@ -1061,21 +1061,6 @@ within css.</p>
 getClusterProps, and checkGetClusterPropsOutput confirms the output.</p>
 <p>With the above and the helper functions below, the css function is
 complete!</p>
-<p>Code chunks whose first line starts with <code>#&#39;</code> are added to
-the package.</p>
-<p>We can try running it.</p>
-<pre class="r"><code># say_hello(&quot;Jacob&quot;)</code></pre>
-<p>That code chunk does not start with <code>#&#39;</code>, so it is not
-added to the package.</p>
-<p>Let’s write some tests to make sure the function behaves as
-desired:</p>
-<pre class="r"><code># testthat::test_that(&quot;say_hello works&quot;, {
-#   testthat::expect_equal(say_hello(&quot;Jacob&quot;), &quot;Hello Jacob!&quot;)
-#   testthat::expect_equal(say_hello(&quot;Jacob&quot;, exclamation = FALSE), &quot;Hello Jacob.&quot;)
-# })</code></pre>
-<p>Code chunks that have one or more lines starting with
-<code>test_that(</code> (or <code>testthat::test_that(</code>) are added
-to the package as tests.</p>
 </div>
 </div>
 <div id="helper-functions" class="section level1">
@@ -1112,7 +1097,12 @@ within each cluster that has the largest marginal sample correlation
 with y.
 <ul>
 <li>identifyPrototype is the workhorse of getPrototypes, identifyng the
-prototype given a single cluster.</li>
+prototype given a single cluster.
+<ul>
+<li>corFunction is a helper function called within identifyPrototype to
+calculate the aboslute value of the correlation between two
+vectors.</li>
+</ul></li>
 </ul></li>
 </ul></li>
 <li>checkSamplingType ensures that the input sampling_type is as
@@ -1615,6 +1605,12 @@ getClusterProps.</li>
 
     return(clusters)
 }</code></pre>
+<p>Tests for checkFormatClustersInput:</p>
+<pre class="r"><code># testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
+#   testthat::expect_null(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>()
+#   testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(), &quot;&quot;,
+#                          fixed=TRUE)
+# })</code></pre>
 <p>checkY:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument y to several functions is
 #&#39; as expected
@@ -1626,8 +1622,29 @@ getClusterProps.</li>
     stopifnot(all(!is.na(y)))
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(length(unique(y)) &gt; 1)
+    stopifnot(length(n) == 1)
+    stopifnot(!is.na(n))
+    stopifnot(is.numeric(n) | is.integer(n))
+    stopifnot(n == round(n))
+    stopifnot(n &gt; 0)
     stopifnot(n == length(y))
 }</code></pre>
+<p>Tests for checkY:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkY works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkY'>checkY</a>(as.numeric(1:20)*.1, 20))
+  testthat::expect_null(<a href='create-cssr.html#checkY'>checkY</a>(as.integer(1:15), 15))
+  testthat::expect_error(<a href='create-cssr.html#checkY'>checkY</a>(1:7, 8), &quot;n == length(y) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkY'>checkY</a>(1:7, -7), &quot;n &gt; 0 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkY'>checkY</a>(rep(as.numeric(NA), 13), 13),
+                         &quot;all(!is.na(y)) is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkY'>checkY</a>(rep(5.2, 9), 9),
+                         &quot;length(unique(y)) &gt; 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkY'>checkY</a>(c(TRUE, FALSE, TRUE), 3),
+                         &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1666,6 +1683,38 @@ getClusterProps.</li>
     stopifnot(all(all_clustered_feats &lt;= p))
     stopifnot(all(all_clustered_feats &gt;= 1))
 }</code></pre>
+<p>Tests for checkClusters</p>
+<pre class="r"><code>testthat::test_that(&quot;checkClusters works&quot;, {
+  good_clusters &lt;- list(c1=as.integer(1:5), c2=as.integer(6:8), c3=9L)
+  
+  testthat::expect_null(<a href='create-cssr.html#checkClusters'>checkClusters</a>(good_clusters, 9))
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(good_clusters, 10),
+                         &quot;length(all_clustered_feats) == p is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(as.integer(1:10), 10),
+                         &quot;is.list(clusters) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=9L,
+                                            c4=integer()), 9),
+                         &quot;all(lengths(clusters) &gt;= 1) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=9L,
+                                            c4=as.integer(NA)), 9),
+                         &quot;all(!is.na(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=9L,
+                                            c2=as.integer(6:8)), 9),
+                         &quot;n_clusters == length(unique(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkClusters'>checkClusters</a>(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=10L), 9),
+                         &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -1760,13 +1809,12 @@ getClusterProps.</li>
     if(length(cluster_members_i) == 1){
         return(cluster_members_i)
     }
-    stopifnot(length(cluster_members_i) &gt; 1)
 
     # Choose which cluster member to represent cluster for stability
     # metric purposes by choosing the one most highly correlated
     # with y
 
-    cors_i &lt;- apply(x[, cluster_members_i], 2, cor_function, y=y)
+    cors_i &lt;- apply(x[, cluster_members_i], 2, corFunction, y=y)
     max_index_i &lt;- which.max(cors_i)[1]
 
     stopifnot(length(max_index_i) == 1)
@@ -1784,6 +1832,71 @@ getClusterProps.</li>
 
     return(ret)
 }</code></pre>
+<p>Tests for identifyPrototype</p>
+<pre class="r"><code>testthat::test_that(&quot;identifyPrototype works&quot;, {
+  testthat::expect_identical(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(10L, &quot;a&quot;, 5), 10L)
+  n &lt;- 10
+  p &lt;- 5
+  X &lt;- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y &lt;- X[, p]
+  testthat::expect_equal(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(as.integer(p), X, y), p)
+  testthat::expect_equal(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(2L, X, y), 2)
+  # testthat::expect_equal(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(as.integer(2:p), X, y), p)
+  # testthat::expect_error(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(as.integer(2:p), y, X),
+  #                        &quot;incorrect number of dimensions&quot;,
+  #                        fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
+<p>corFunction:</p>
+<pre class="r"><code>#&#39; Absolute value of sample correlation between two vectors
+#&#39;
+#&#39; Calculates the absolute value of correlation of t and y. If either input has
+#&#39; only one unique value, returns 0 by definition.
+#&#39; @param t A numeric or integer vector.
+#&#39; @param y A numeric or integer vector; must have the same length as t.
+#&#39; @return A numeric vector of the same length as cluster_i containing the
+#&#39; weights corresponding to each of the features in cluster_i. The weights
+#&#39; will all be nonnegative and sum to 1.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='corFunction'>corFunction</span> &lt;- function(t, y){
+    # Check inputs
+    stopifnot(is.numeric(t) | is.integer(t))
+    stopifnot(is.numeric(y) | is.integer(y))
+    stopifnot(length(t) == length(y))
+    if(length(unique(t)) == 1){
+        return(0)
+    }
+    if(length(unique(y)) == 1){
+        warning(&quot;The second argument to corFunction only had one unique entry&quot;)
+        return(0)
+    }
+    return(abs(stats::cor(t, y)))
+}</code></pre>
+<p>Tests for corFunction</p>
+<pre class="r"><code>testthat::test_that(&quot;corFunction works&quot;, {
+  testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(rep(1, 10), 1:10), 0)
+  testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(1:5, rep(1.2, 5)), 0)
+  x &lt;- stats::rnorm(8)
+  y &lt;- stats::rnorm(8)
+  testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(x, y), abs(stats::cor(x, y)))
+  testthat::expect_warning(<a href='create-cssr.html#corFunction'>corFunction</a>(1:5, rep(1.2, 5)),
+                           &quot;The second argument to corFunction only had one unique entry&quot;,
+                           fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#corFunction'>corFunction</a>(&quot;1&quot;, &quot;2&quot;),
+                         &quot;is.numeric(t) | is.integer(t) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#corFunction'>corFunction</a>(3:8, &quot;2&quot;),
+                         &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#corFunction'>corFunction</a>(3:8, 1:2),
+                         &quot;length(t) == length(y) is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## ── Warning (&#39;&lt;text&gt;:3&#39;): corFunction works ─────────────────────────────────────
+## The second argument to corFunction only had one unique entry
+## Backtrace:
+##  1. testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(1:5, rep(1.2, 5)), 0)
+##  4. litr (local) <a href='create-cssr.html#corFunction'>corFunction</a>(1:5, rep(1.2, 5))</code></pre>
 <p>checkSamplingType</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument sampling_type to several 
 #&#39; functions is as expected
@@ -1800,6 +1913,20 @@ getClusterProps.</li>
         stop(&quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;)
     }
 }</code></pre>
+<p>Tests for checkSamplingType</p>
+<pre class="r"><code>testthat::test_that(&quot;checkSamplingType works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(&quot;SS&quot;))
+  testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(&quot;MB&quot;),
+                         &quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(c(&quot;SS&quot;, &quot;SS&quot;)),
+                         &quot;length(sampling_type) == 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(1),
+                         &quot;is.character(sampling_type) is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(as.character(NA)),
+                         &quot;!is.na(sampling_type) is not TRUE&quot;, fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>checkB</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument B to several functions is as
 #&#39; expected
@@ -1820,6 +1947,29 @@ getClusterProps.</li>
         warning(&quot;Large values of B may require long computation times.&quot;)
     }
 }</code></pre>
+<p>Tests for checkB</p>
+<pre class="r"><code>testthat::test_that(&quot;checkB works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkB'>checkB</a>(1500))
+  testthat::expect_null(<a href='create-cssr.html#checkB'>checkB</a>(15))
+  testthat::expect_error(<a href='create-cssr.html#checkB'>checkB</a>(&quot;B&quot;),
+                         &quot;is.numeric(B) | is.integer(B) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkB'>checkB</a>(20:25), &quot;length(B) == 1 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkB'>checkB</a>(as.integer(NA)), &quot;!is.na(B) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkB'>checkB</a>(1.2), &quot;B == round(B) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkB'>checkB</a>(-100), &quot;B &gt; 0 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_warning(<a href='create-cssr.html#checkB'>checkB</a>(5),
+                           &quot;Small values of B may lead to poor results.&quot;,
+                           fixed=TRUE)
+  testthat::expect_warning(<a href='create-cssr.html#checkB'>checkB</a>(2200),
+                           &quot;Large values of B may require long computation times.&quot;,
+                           fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>checkPropFeatsRemove</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument prop_feats_remove to several 
 #&#39; functions is as expected
@@ -1839,6 +1989,27 @@ getClusterProps.</li>
         stopifnot(p &gt;= 2)
     }
 }</code></pre>
+<p>Tests for checkPropFeatsRemove</p>
+<pre class="r"><code>testthat::test_that(&quot;checkPropFeatsRemove works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(0, 5))
+  testthat::expect_null(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(.3, 10))
+  testthat::expect_error(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(1, 3),
+                         &quot;prop_feats_remove &gt;= 0 &amp; prop_feats_remove &lt; 1 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(c(.5, .6), 17),
+                         &quot;length(prop_feats_remove) == 1 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(&quot;.3&quot;, 99),
+                         &quot;is.numeric(prop_feats_remove) | is.integer(prop_feats_remove) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(as.numeric(NA), 172),
+                         &quot;!is.na(prop_feats_remove) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkPropFeatsRemove'>checkPropFeatsRemove</a>(.1, 1),
+                         &quot;p &gt;= 2 is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>cssLoop:</p>
 <pre class="r"><code>#&#39; Helper function run on each subsample
 #&#39; 
@@ -2096,6 +2267,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkPropFeatsRemove&#39;)checkPropFeatsRemove.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSamplingType&#39;)checkSamplingType.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkY&#39;)checkY.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;corFunction&#39;)corFunction.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;createSubsamples&#39;)createSubsamples.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;css&#39;)css.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLasso&#39;)cssLasso.Rd]8;;&#39;
