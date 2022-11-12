@@ -134,6 +134,160 @@ testthat::test_that("checkPropFeatsRemove works", {
                          fixed=TRUE)
 })
 
+testthat::test_that("checkCssInputs works", {
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:8)
+                        # , c4=as.numeric(10:11)
+                        )
+  
+  res <- checkCssInputs(X=x, y=y, lambda=0.01, clusters=good_clusters,
+                        fitfun = cssLasso, sampling_type = "SS", B = 13,
+                        prop_feats_remove = 0, train_inds = integer(),
+                        num_cores = 1L)
+  
+  # Basic output
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("feat_names", "X", "clusters"))
+  
+  # feat_names
+  testthat::expect_true(is.character(res$feat_names))
+  testthat::expect_true(is.na(res$feat_names))
+  testthat::expect_equal(length(res$feat_names), 1)
+
+  # X
+  testthat::expect_true(is.matrix(res$X))
+  testthat::expect_true(all(!is.na(res$X)))
+  testthat::expect_true(is.numeric(res$X))
+  testthat::expect_equal(ncol(res$X), 11)
+  testthat::expect_equal(nrow(res$X), 15)
+
+  # clusters
+  testthat::expect_true(is.list(res$clusters))
+  testthat::expect_equal(length(res$clusters), length(names(res$clusters)))
+  testthat::expect_equal(length(res$clusters),
+                         length(unique(names(res$clusters))))
+  testthat::expect_true(all(!is.na(names(res$clusters))))
+  testthat::expect_true(all(!is.null(names(res$clusters))))
+  clust_feats <- integer()
+  for(i in 1:length(res$clusters)){
+    clust_feats <- c(clust_feats, res$clusters[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:11)))
+
+  ## Trying other inputs
+
+  # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
+  # shouldn't throw any error, because the acceptable input for lambda should be
+  # enforced only by fitfun)
+
+  testFitfun <- function(X, y, lambda){
+    p <- ncol(X)
+    stopifnot(p >= 2)
+    # Choose p/2 features randomly
+    selected <- sample.int(p, size=floor(p/2))
+    return(selected)
+  }
+
+  res_fitfun <- checkCssInputs(X=x, y=y,
+                               lambda=c("foo", as.character(NA), "bar"),
+                               clusters=1:3, fitfun = testFitfun,
+                               sampling_type = "SS", B = 13,
+                               prop_feats_remove = 0, train_inds = integer(),
+                               num_cores = 1L)
+  testthat::expect_true(is.list(res_fitfun))
+
+  # Single cluster
+  res_sing_clust <- checkCssInputs(X=x, y=y,
+                                   lambda=c("foo", as.character(NA), "bar"),
+                                   clusters=1:3, fitfun = testFitfun,
+                                   sampling_type = "SS", B = 13,
+                                   prop_feats_remove = 0,
+                                   train_inds = integer(), num_cores = 1L)
+  testthat::expect_true(is.list(res_sing_clust))
+  testthat::expect_equal(length(res_sing_clust$clusters), 11 - 3 + 1)
+  testthat::expect_true(length(unique(names(res_sing_clust$clusters))) == 11 -
+                          3 + 1)
+  testthat::expect_true(all(!is.na(names(res_sing_clust$clusters))))
+  testthat::expect_true(all(!is.null(names(res_sing_clust$clusters))))
+
+  # Other sampling types
+  testthat::expect_error(checkCssInputs(X=x, y=y, lambda=c("foo",
+                                                           as.character(NA),
+                                                           "bar"), clusters=1:3,
+                                        fitfun = testFitfun,
+                                        sampling_type = "MB", B = 13,
+                                        prop_feats_remove = 0,
+                                        train_inds = integer(), num_cores = 1L),
+                         "sampling_type MB is not yet supported (and isn't recommended anyway)",
+                         fixed=TRUE)
+
+  # Error has quotation marks in it
+  testthat::expect_error(checkCssInputs(X=x, y=y, lambda=c("foo",
+                                                           as.character(NA),
+                                                           "bar"), clusters=1:3,
+                                        fitfun = testFitfun,
+                                        sampling_type = "S", B = 13,
+                                        prop_feats_remove = 0,
+                                        train_inds = integer(), num_cores = 1L))
+  
+  testthat::expect_error(checkCssInputs(X=x, y=y, lambda=c("foo", "bar",
+                                                           as.character(NA)),
+                                        clusters=1:3, fitfun = testFitfun,
+                                        sampling_type = 2, B = 13,
+                                        prop_feats_remove = 0,
+                                        train_inds = integer(), num_cores = 1L),
+                         "is.character(sampling_type) is not TRUE",
+                         fixed=TRUE)
+
+  # B
+  testthat::expect_warning(checkCssInputs(X=x, y=y, lambda=c("foo", "bar",
+                                                           as.character(NA)),
+                                        clusters=1:3, fitfun = testFitfun,
+                                        sampling_type = "SS", B = 5,
+                                        prop_feats_remove = 0,
+                                        train_inds = integer(), num_cores = 1L),
+                           "Small values of B may lead to poor results.",
+                           fixed=TRUE)
+
+  testthat::expect_error(checkCssInputs(X=x, y=y, lambda=c("foo", "bar",
+                                                           as.character(NA)),
+                                        clusters=1:3, fitfun = testFitfun,
+                                        sampling_type = "SS", B = "foo",
+                                        prop_feats_remove = 0,
+                                        train_inds = integer(), num_cores = 1L),
+                           "is.numeric(B) | is.integer(B) is not TRUE",
+                           fixed=TRUE)
+
+  # prop_feats_remove
+  testthat::expect_true(is.list(checkCssInputs(X=x, y=y,
+                                               lambda=c("foo", "bar",
+                                                        as.character(NA)),
+                                               clusters=1:3, fitfun=testFitfun,
+                                               sampling_type = "SS", B = 12,
+                                               prop_feats_remove = 0.3,
+                                               train_inds = integer(),
+                                               num_cores = 1L)))
+
+  # Use train_inds argument
+  testthat::expect_true(is.list(checkCssInputs(X=x, y=y,
+                                               lambda=c("foo", "bar",
+                                                        as.character(NA)),
+                                               clusters=1:3, fitfun=testFitfun,
+                                               sampling_type = "SS", B = 12,
+                                               prop_feats_remove = 0.3,
+                                               train_inds = 11:15,
+                                               num_cores = 1L)))
+
+})
+
 testthat::test_that("createSubsamples works", {
   res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
                           prop_feats_remove=0)
@@ -470,6 +624,10 @@ testthat::test_that("css works", {
   # Weirdly high, but still valid, value of prop_feats_remove
   testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
                                        prop_feats_remove=0.9999999999)), "cssr")
+  
+  # Use train_inds argument
+  res_train <- css(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
+  testthat::expect_equal(res_train$train_inds, 11:15)
 
 })
 
