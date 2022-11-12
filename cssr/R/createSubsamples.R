@@ -42,7 +42,6 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     stopifnot(p == round(p))
     stopifnot(p > 0)
 
-    checkB(B)
     checkSamplingType(sampling_type)
     checkPropFeatsRemove(prop_feats_remove, p)
 

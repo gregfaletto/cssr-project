@@ -52,7 +52,6 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     # Intentionally don't check y or lambda further to allow for flexibility--these
     # inputs should be checked within fitfun.
 
-    checkB(B)
     checkSamplingType(sampling_type)
 
     # Get list of selected feature sets from subsamples

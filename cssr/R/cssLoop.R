@@ -60,6 +60,8 @@ cssLoop <- function(input, x, y, lambda, fitfun){
     selected <- do.call(fitfun, list(X=x[subsample, feats_to_keep],
         y=y[subsample], lambda=lambda))
 
+    selected <- which(feats_to_keep)[selected]
+
     # Check output
     checkCssLoopOutput(selected, p, as.integer(which(feats_to_keep)))
 

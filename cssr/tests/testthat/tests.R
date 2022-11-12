@@ -148,9 +148,9 @@ testthat::test_that("createSubsamples works", {
   testthat::expect_equal(length(intersect(set, comp_set)), 0)
   testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
   testthat::expect_equal(20, length(c(set, comp_set)))
-  
+
   # Try odd n
-  
+
   res_odd <- createSubsamples(n=19L, p=23L, B=13L, sampling_type="SS",
                               prop_feats_remove=0)
   testthat::expect_true(is.list(res_odd))
@@ -165,9 +165,7 @@ testthat::test_that("createSubsamples works", {
   testthat::expect_equal(length(union(set_odd, comp_set_odd)),
                          length(c(set_odd, comp_set_odd)))
   testthat::expect_equal(19 - 1, length(c(set_odd, comp_set_odd)))
-  
-  
-  
+
   testthat::expect_error(createSubsamples(n=20L, p=5L, B=11L, sampling_type="MB",
                           prop_feats_remove=0),
                          "sampling_type MB is not yet supported (and isn't recommended anyway)",
@@ -186,12 +184,8 @@ testthat::test_that("createSubsamples works", {
                          fixed=TRUE)
   testthat::expect_error(createSubsamples(n=20L, p=5L, B=25.6, sampling_type="SS",
                           prop_feats_remove=0),
-                         "B == round(B) is not TRUE",
+                         "length(subsamples) == B is not TRUE",
                          fixed=TRUE)
-  
-  # testthat::expect_null(createSubsamples()
-  # testthat::expect_error(createSubsamples(), "",
-  #                        fixed=TRUE)
 })
 
 testthat::test_that("getSubsamps works", {
@@ -340,5 +334,142 @@ testthat::test_that("getClusterSelMatrix works", {
   testthat::expect_error(getClusterSelMatrix(good_clusters, bad_res),
                          "all(res %in% c(0, 1)) is not TRUE",
                          fixed=TRUE)
+})
+
+testthat::test_that("css works", {
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:8),
+                        c4=as.numeric(10:11))
+  
+  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = "SS", B = 13,
+    prop_feats_remove = 0, train_inds = integer(), num_cores = 1L)
+  
+  # Basic output
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(class(res), "cssr")
+  testthat::expect_identical(names(res), c("feat_sel_mat", "clus_sel_mat", "X",
+                                           "y", "clusters", "train_inds"))
+  
+  # feat_sel mat
+  testthat::expect_true(is.integer(res$feat_sel_mat))
+  testthat::expect_true(is.matrix(res$feat_sel_mat))
+  testthat::expect_true(all(res$feat_sel_mat %in% c(0, 1)))
+  testthat::expect_equal(ncol(res$feat_sel_mat), 11)
+  testthat::expect_null(colnames(res$feat_sel_mat))
+
+  # clus_sel_mat
+  testthat::expect_true(is.integer(res$clus_sel_mat))
+  testthat::expect_true(is.matrix(res$clus_sel_mat))
+  testthat::expect_true(all(res$clus_sel_mat %in% c(0, 1)))
+  # 4 clusters
+  testthat::expect_equal(ncol(res$clus_sel_mat), 4)
+  testthat::expect_identical(colnames(res$clus_sel_mat), names(res$clusters))
+  testthat::expect_equal(length(colnames(res$clus_sel_mat)), 4)
+  testthat::expect_equal(length(unique(colnames(res$clus_sel_mat))), 4)
+  testthat::expect_true(all(!is.na(colnames(res$clus_sel_mat))))
+  testthat::expect_true(all(!is.null(colnames(res$clus_sel_mat))))
+
+  # X
+  testthat::expect_true(is.matrix(res$X))
+  testthat::expect_true(all(!is.na(res$X)))
+  testthat::expect_true(is.numeric(res$X))
+  testthat::expect_equal(ncol(res$X), 11)
+  testthat::expect_equal(nrow(res$X), 15)
+
+  # y
+  testthat::expect_true(is.numeric(res$y))
+  testthat::expect_equal(length(res$y), 15)
+
+  # clusters
+  testthat::expect_true(is.list(res$clusters))
+  testthat::expect_equal(length(res$clusters), length(names(res$clusters)))
+  testthat::expect_equal(length(res$clusters),
+                         length(unique(names(res$clusters))))
+  testthat::expect_true(all(!is.na(names(res$clusters))))
+  testthat::expect_true(all(!is.null(names(res$clusters))))
+  clust_feats <- integer()
+  for(i in 1:length(res$clusters)){
+    clust_feats <- c(clust_feats, res$clusters[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:11)))
+  # train_inds
+  testthat::expect_identical(res$train_inds, integer())
+
+  ## Trying other inputs
+
+  # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
+  # shouldn't throw any error, because the acceptable input for lambda should be
+  # enforced only by fitfun)
+
+  testFitfun <- function(X, y, lambda){
+    p <- ncol(X)
+    stopifnot(p >= 2)
+    # Choose p/2 features randomly
+    selected <- sample.int(p, size=floor(p/2))
+    return(selected)
+  }
+
+  res_fitfun <- css(X=x, y=y, lambda=c("foo", as.character(NA), "bar"),
+                    clusters=1:3, B = 10, fitfun=testFitfun)
+  testthat::expect_identical(class(res_fitfun), "cssr")
+
+  # Bad lambda
+  testthat::expect_error(css(X=x, y=y, lambda=-0.01, B = 10),
+                         "For method cssLasso, lambda must be nonnegative.",
+                         fixed=TRUE)
+
+  testthat::expect_error(css(X=x, y=y, lambda="foo", B = 10),
+                         "For method cssLasso, lambda must be a numeric.",
+                         fixed=TRUE)
+
+  # Single cluster
+  res_sing_clust <- css(X=x, y=y, lambda=0.01, clusters=1:3, B = 10)
+  testthat::expect_identical(class(res_sing_clust), "cssr")
+  testthat::expect_equal(length(res_sing_clust$clusters), 11 - 3 + 1)
+  testthat::expect_true(length(unique(names(res_sing_clust$clusters))) == 11 -
+                          3 + 1)
+  testthat::expect_true(all(!is.na(names(res_sing_clust$clusters))))
+  testthat::expect_true(all(!is.null(names(res_sing_clust$clusters))))
+
+  # No cluster
+  testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10)), "cssr")
+
+  # Other sampling types
+  testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="MB"),
+                         "sampling_type MB is not yet supported (and isn't recommended anyway)",
+                         fixed=TRUE)
+
+  # Error has quotation marks in it
+  testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="S"))
+
+  testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type=1),
+                         "is.character(sampling_type) is not TRUE",
+                         fixed=TRUE)
+
+  # B
+  testthat::expect_warning(css(X=x, y=y, lambda=1, B=5),
+                           "Small values of B may lead to poor results.",
+                           fixed=TRUE)
+
+  testthat::expect_error(css(X=x, y=y, lambda=1, B=list(10)),
+                           "is.numeric(B) | is.integer(B) is not TRUE",
+                           fixed=TRUE)
+
+  # prop_feats_remove
+  testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
+                                       prop_feats_remove=0.3)), "cssr")
+  # Weirdly high, but still valid, value of prop_feats_remove
+  testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
+                                       prop_feats_remove=0.9999999999)), "cssr")
+
 })
 

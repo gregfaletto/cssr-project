@@ -30,11 +30,13 @@ checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
     if(length(selected) > p){
         stop("The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample")
     }
-    if(max(selected) > p){
-        stop("The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample")
-    }
-    if(min(selected) <= 0){
-        stop("The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample")
+    if(length(selected) > 0){
+        if(max(selected) > p){
+            stop("The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample")
+        }
+        if(min(selected) <= 0){
+            stop("The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample")
+        }
     }
     if("try-error" %in% class(selected) |
         "error" %in% class(selected) | "simpleError" %in% class(selected) |
