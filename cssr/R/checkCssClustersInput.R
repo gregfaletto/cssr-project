@@ -29,6 +29,7 @@ checkCssClustersInput <- function(clusters){
                 stopifnot(all(!is.na(clusters[[i]])))
                 stopifnot(is.integer(clusters[[i]]) | is.numeric(clusters[[i]]))
                 stopifnot(all(clusters[[i]] == round(clusters[[i]])))
+                stopifnot(all(clusters[[i]] >= 1))
                 clusters[[i]] <- as.integer(clusters[[i]])
             }
 
@@ -53,6 +54,7 @@ checkCssClustersInput <- function(clusters){
         stopifnot(all(!is.na(clusters)))
         stopifnot(is.integer(clusters) | is.numeric(clusters))
         stopifnot(all(clusters == round(clusters)))
+        stopifnot(all(clusters >= 1))
         clusters <- as.integer(clusters)
     }
     return(clusters)

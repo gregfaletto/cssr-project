@@ -7,6 +7,16 @@
 cssLoop(input, x, y, lambda, fitfun)
 }
 \arguments{
+\item{input}{Could be one of two things: \item{subsample}{An integer vector
+of size \code{n/2} containing the indices of the observations in the subsample.}
+\item{drop_var_input}{A named list containing two elements: one named
+"subsample" and the same as the previous description, and a logical vector
+named "feats_to_keep" containing the indices of the features to be
+automatically selected.} (The first object is the output of the function
+createSubsamples when the provided prop_feats_remove is 0, the default, and
+the second object is the output of createSubsamples when prop_feats_remove >
+0.)}
+
 \item{x}{an n x p numeric matrix containing the predictors. (This should be
 the full design matrix provided to css.)}
 

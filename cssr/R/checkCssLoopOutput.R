@@ -18,11 +18,11 @@ checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
     if(!is.integer(selected) & !is.numeric(selected)){
         stop("The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample")
     }
-    if(!all(selected == round(selected))){
-        stop("The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample")
-    }
     if(any(is.na(selected))){
         stop("The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample")
+    }
+    if(!all(selected == round(selected))){
+        stop("The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample")
     }
     if(length(selected) != length(unique(selected))){
         stop("The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample")

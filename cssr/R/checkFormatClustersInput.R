@@ -31,7 +31,7 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
     get_prototypes, x, y, R){
 
     if(any(is.na(clusters)) & any(is.na(R))){
-        stop("Must specify one of clusters or R.")
+        stop("Must specify one of clusters or R (or does one of these provided inputs contain NA?)")
     }
 
     stopifnot(is.integer(p) | is.numeric(p))

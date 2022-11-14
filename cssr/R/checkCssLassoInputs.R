@@ -25,11 +25,14 @@ checkCssLassoInputs <- function(X, y, lambda){
     if(length(unique(y)) <= 1){
         stop("Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.")
     }
-    if(length(lambda) != 1){
-        stop("For method cssLasso, lambda must be a numeric of length 1.")
-    }
     if(!is.numeric(lambda) & !is.integer(lambda)){
         stop("For method cssLasso, lambda must be a numeric.")
+    }
+    if(any(is.na(lambda))){
+        stop("NA detected in provided lambda input to cssLasso")
+    }
+    if(length(lambda) != 1){
+        stop("For method cssLasso, lambda must be a numeric of length 1.")
     }
     if(lambda < 0){
         stop("For method cssLasso, lambda must be nonnegative.")

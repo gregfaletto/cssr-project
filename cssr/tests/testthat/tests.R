@@ -1,4 +1,74 @@
 # Generated from create-cssr.Rmd: do not edit by hand  
+testthat::test_that("checkCssClustersInput works", {
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=as.integer(1:4),
+                        green_cluster=as.integer(5:8))
+  
+  res <- checkCssClustersInput(good_clusters)
+  
+  # clusters
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), length(names(res)))
+  testthat::expect_equal(length(res), length(unique(names(res))))
+  testthat::expect_true(all(!is.na(names(res))))
+  testthat::expect_true(all(!is.null(names(res))))
+  clust_feats <- integer()
+  for(i in 1:length(res)){
+    clust_feats <- c(clust_feats, res[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:8)))
+
+  ## Trying other inputs
+  
+  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  
+  res <- checkCssClustersInput(unnamed_clusters)
+  
+  # clusters
+  testthat::expect_true(is.list(res))
+  clust_feats <- integer()
+  for(i in 1:length(res)){
+    clust_feats <- c(clust_feats, res[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:8)))
+  
+  testthat::expect_error(checkCssClustersInput(list(1:4, 4:6)),
+                         "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssClustersInput(list(2:3, 2:3)),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssClustersInput(list(2:3, as.integer(NA))),
+                         "!is.na(clusters) are not all TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssClustersInput(list(2:3, c(4, 4, 5))),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssClustersInput(list(2:3, -1)),
+                         "all(clusters[[i]] >= 1) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssClustersInput(c(0.4, 0.6)),
+                         "all(clusters == round(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  # Single cluster
+  res_sing_clust <- checkCssClustersInput(2:5)
+  testthat::expect_equal(length(res_sing_clust), 4)
+
+
+})
+
 testthat::test_that("checkY works", {
   testthat::expect_null(checkY(as.numeric(1:20)*.1, 20))
   testthat::expect_null(checkY(as.integer(1:15), 15))
@@ -12,6 +82,86 @@ testthat::test_that("checkY works", {
   testthat::expect_error(checkY(c(TRUE, FALSE, TRUE), 3),
                          "is.numeric(y) | is.integer(y) is not TRUE",
                          fixed=TRUE)
+})
+
+testthat::test_that("checkFormatClustersInput works", {
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=as.integer(1:4),
+                        green_cluster=as.integer(5:8))
+  
+  res <- checkFormatClustersInput(good_clusters, p=10,
+                                  clust_names=c("red_cluster", "green_cluster"),
+                                  get_prototypes=FALSE, x=NA, y=NA, R=NA)
+  
+  testthat::expect_true(is.list(res))
+  clust_feats <- integer()
+  for(i in 1:length(res)){
+    clust_feats <- c(clust_feats, res[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:8)))
+
+  ## Trying other inputs
+  
+  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+
+  res <- checkFormatClustersInput(unnamed_clusters, p=10, clust_names=NA,
+                                  get_prototypes=FALSE, x=NA, y=NA, R=NA)
+
+  # clusters
+  testthat::expect_true(is.list(res))
+  clust_feats <- integer()
+  for(i in 1:length(res)){
+    clust_feats <- c(clust_feats, res[[i]])
+  }
+  testthat::expect_equal(length(clust_feats), length(unique(clust_feats)))
+  testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
+                                                               1:8)))
+
+  # testthat::expect_error(checkFormatClustersInput(list(1:4, 4:6)),
+  #                        "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
+  #                        fixed=TRUE)
+  # 
+  testthat::expect_error(checkFormatClustersInput(list(2:3, 2:3), p=10,
+                                  clust_names=NA, get_prototypes=FALSE, x=NA,
+                                  y=NA, R=NA),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkFormatClustersInput(list(2:3, as.integer(NA)),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         "Must specify one of clusters or R (or does one of these provided inputs contain NA?)",
+                         fixed=TRUE)
+  # 
+  # testthat::expect_error(checkFormatClustersInput(list(2:3, as.integer(NA))),
+  #                        "!is.na(clusters) are not all TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkFormatClustersInput(list(2:3, c(4, 4, 5))),
+  #                        "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkFormatClustersInput(list(2:3, -1)),
+  #                        "all(clusters[[i]] >= 1) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkFormatClustersInput(c(0.4, 0.6)),
+  #                        "all(clusters == round(clusters)) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # # Single cluster
+  # res_sing_clust <- checkFormatClustersInput(2:5)
+  # testthat::expect_equal(length(res_sing_clust), 4)
+  
+  ## Check that feature of getting prototypes works
+
+
 })
 
 testthat::test_that("checkClusters works", {
@@ -45,20 +195,6 @@ testthat::test_that("checkClusters works", {
                          fixed=TRUE)
 })
 
-testthat::test_that("identifyPrototype works", {
-  testthat::expect_identical(identifyPrototype(10L, "a", 5), 10L)
-  n <- 10
-  p <- 5
-  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
-  y <- X[, p]
-  testthat::expect_equal(identifyPrototype(as.integer(p), X, y), p)
-  testthat::expect_equal(identifyPrototype(2L, X, y), 2)
-  # testthat::expect_equal(identifyPrototype(as.integer(2:p), X, y), p)
-  # testthat::expect_error(identifyPrototype(as.integer(2:p), y, X),
-  #                        "incorrect number of dimensions",
-  #                        fixed=TRUE)
-})
-
 testthat::test_that("corFunction works", {
   testthat::expect_identical(corFunction(rep(1, 10), 1:10), 0)
   testthat::expect_identical(corFunction(rep(1.2, 5), 1:5), 0)
@@ -77,6 +213,71 @@ testthat::test_that("corFunction works", {
   testthat::expect_error(corFunction(3:8, 1:2),
                          "length(t) == length(y) is not TRUE",
                          fixed=TRUE)
+})
+
+testthat::test_that("identifyPrototype works", {
+  testthat::expect_identical(identifyPrototype(10L, "a", 5), 10L)
+  n <- 10
+  p <- 5
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- X[, p]
+  testthat::expect_equal(identifyPrototype(as.integer(p), X, y), p)
+  testthat::expect_equal(identifyPrototype(2L, X, y), 2)
+  testthat::expect_equal(identifyPrototype(as.integer(2:p), X, y), p)
+  testthat::expect_error(identifyPrototype(as.integer(2:p), y, X),
+                         "incorrect number of dimensions",
+                         fixed=TRUE)
+  
+  y2 <- rnorm(n)
+
+  res <- identifyPrototype(c(2L, 3L), X, y2)
+
+  testthat::expect_true(is.integer(res))
+
+  testthat::expect_equal(length(res), 1)
+
+  testthat::expect_true(res %in% c(2L, 3L))
+
+})
+
+testthat::test_that("getPrototypes works", {
+  n <- 10
+  p <- 5
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- X[, p]
+
+  testthat::expect_identical(getPrototypes(list(1L, 2L, 3L, 4L, 5L), X, y), 1:5)
+
+  testthat::expect_identical(getPrototypes(list(as.integer(1:5)), X, y), 5L)
+
+  testthat::expect_identical(getPrototypes(list(1L, as.integer(2:5)), X, y),
+                             c(1L, 5L))
+
+  testthat::expect_identical(getPrototypes(list(as.integer(3:5)), X, y), 5L)
+
+  y2 <- rnorm(n)
+
+  res <- getPrototypes(list(1L, c(2L, 3L), c(4L, 5L)), X, y2)
+
+  testthat::expect_true(is.integer(res))
+
+  testthat::expect_equal(length(res), 3)
+
+  testthat::expect_identical(res[1], 1L)
+
+  testthat::expect_true(res[2] %in% c(2L, 3L))
+
+  testthat::expect_true(res[3] %in% c(4L, 5L))
+
+  testthat::expect_error(getPrototypes(list(1L, 2L, 3L, 4L, 5L), y, X),
+                          "is.matrix(x) is not TRUE",
+                          fixed=TRUE)
+
+  testthat::expect_error(getPrototypes(list(1L, 2L, 3L, 4L, 5L), X, y[1:9]),
+                         "n == length(y) is not TRUE",
+                         fixed=TRUE)
+
+
 })
 
 testthat::test_that("checkSamplingType works", {
@@ -196,12 +397,10 @@ testthat::test_that("checkCssInputs works", {
     return(selected)
   }
 
-  res_fitfun <- checkCssInputs(X=x, y=y,
-                               lambda=c("foo", as.character(NA), "bar"),
-                               clusters=1:3, fitfun = testFitfun,
-                               sampling_type = "SS", B = 13,
-                               prop_feats_remove = 0, train_inds = integer(),
-                               num_cores = 1L)
+  res_fitfun <- checkCssInputs(X=x, y=y, lambda=x, clusters=1:3,
+                               fitfun = testFitfun, sampling_type = "SS",
+                               B = 13, prop_feats_remove = 0,
+                               train_inds = integer(), num_cores = 1L)
   testthat::expect_true(is.list(res_fitfun))
 
   # Single cluster
@@ -286,6 +485,231 @@ testthat::test_that("checkCssInputs works", {
                                                train_inds = 11:15,
                                                num_cores = 1L)))
 
+})
+
+testthat::test_that("checkCssLoopOutput works", {
+  testthat::expect_null(checkCssLoopOutput(selected=1:5, p=6,
+                                           feats_on_subsamp=1:6))
+  
+  testthat::expect_error(checkCssLoopOutput(selected=1:5, p=4,
+                                            feats_on_subsamp=1:6),
+                         "The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=1:5, p=7,
+                                            feats_on_subsamp=1:4),
+                         "The provided feature selection method somehow selected features that were not provided for it to consider.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=c(1, 2, 3, 4.4, 5), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=rep(1, 3), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=c(-1, 5), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=c(0, 5), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=as.integer(NA), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLoopOutput(selected=c("1", "2", "3"), p=7,
+                                            feats_on_subsamp=1:7),
+                         "The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample",
+                         fixed=TRUE)
+
+})
+
+testthat::test_that("checkCssLassoInputs works", {
+  x <- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
+  y <- stats::rnorm(15)
+  
+  testthat::expect_null(checkCssLassoInputs(X=x, y=y, lambda=0.01))
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=logical(15), lambda=0.05),
+                         "For method cssLasso, y must be a numeric vector.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x[1:13, ], y=y, lambda=0.01),
+                         "For method cssLasso, y must be a vector of length equal to nrow(X).",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=rep(1.2, 15), lambda=0.05),
+                         "Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=TRUE),
+                         "For method cssLasso, lambda must be a numeric.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=as.numeric(NA)),
+                         "NA detected in provided lambda input to cssLasso",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=-0.01),
+                         "For method cssLasso, lambda must be nonnegative.",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=x),
+                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=numeric()),
+                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=-0.01),
+                         "For method cssLasso, lambda must be nonnegative.",
+                         fixed=TRUE)
+  
+})
+
+testthat::test_that("cssLoop works", {
+
+  x <- matrix(stats::rnorm(9*8), nrow=9, ncol=8)
+  y <- stats::rnorm(9)
+
+  output <- cssLoop(input=as.integer(1:4), x=x, y=y, lambda=0.05,
+                    fitfun=cssLasso)
+
+  testthat::expect_true(is.integer(output))
+
+  testthat::expect_equal(length(output), length(unique(output)))
+
+  testthat::expect_true(length(output) <= 8)
+
+  testthat::expect_true(all(output >= 1))
+
+  testthat::expect_true(all(output <= 8))
+
+  testthat::expect_error(cssLoop(input=as.integer(1:6), x=x, y=y, lambda=0.05,
+                                 fitfun=cssLasso),
+                         "floor(n/2) == length(subsample) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y[1:8],
+                                 lambda=0.05, fitfun=cssLasso),
+                         "length(y) == n is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=logical(9),
+                                 lambda=0.05, fitfun=cssLasso),
+                         "For method cssLasso, y must be a numeric vector.",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y,
+                                 lambda=x, fitfun=cssLasso),
+                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         fixed=TRUE)
+
+  # Test other input format
+
+  alt_input <- list("subsample"=2:5, "feats_to_keep"=c(FALSE, rep(TRUE, 4),
+                                                       rep(FALSE, 2), TRUE))
+
+  output2 <- cssLoop(input=alt_input, x=x, y=y, lambda=0.08, fitfun=cssLasso)
+
+  testthat::expect_true(is.integer(output2))
+
+  testthat::expect_equal(length(output2), length(unique(output2)))
+
+  testthat::expect_true(length(output2) <= 8)
+
+  testthat::expect_true(all(output2 %in% c(2, 3, 4, 5, 8)))
+
+  testthat::expect_error(cssLoop(input= list("subsample"=2:5,
+                                             "feats_to_keep"=c(FALSE,
+                                                               rep(TRUE, 4),
+                                                               rep(FALSE, 2))),
+                                 x=x, y=y, lambda=0.08, fitfun=cssLasso),
+                         "length(feats_to_keep) == p is not TRUE",
+                         fixed=TRUE)
+
+  # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
+  # shouldn't throw any error, because the acceptable input for lambda should be
+  # enforced only by fitfun) and nonsense y
+
+  testFitfun <- function(X, y, lambda){
+    p <- ncol(X)
+    stopifnot(p >= 2)
+    # Choose p/2 features randomly
+    selected <- sample.int(p, size=floor(p/2))
+    return(selected)
+  }
+
+  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x, y=y,
+                                           lambda=TRUE, fitfun=testFitfun)))
+
+  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x,
+                                           y=character(9), lambda=.05,
+                                           fitfun=testFitfun)))
+
+})
+
+testthat::test_that("checkGetClusterSelMatrixInput works", {
+  
+  good_clusters <- list(happy=as.integer(1:8), sad=as.integer(9:10), med=11L)
+  
+  res <- matrix(sample(c(0, 1), size=6*11, replace=TRUE), nrow=6, ncol=11)
+  
+  testthat::expect_null(checkGetClusterSelMatrixInput(good_clusters, res))
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(happy=as.integer(1:8),
+                                                            med=11L), res),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(good_clusters, 1:9),
+                         "is.matrix(res) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(good_clusters, res + .3),
+                         "all(res %in% c(0, 1)) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(good_clusters,
+                                                       res[, 1:9]),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(as.integer(1:10), res),
+                         "is.list(clusters) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
+                                                            c2=as.integer(6:8),
+                                                            c3=9L,
+                                                            c4=integer()), res),
+                         "all(lengths(clusters) >= 1) is not TRUE",
+                         fixed=TRUE)
+                         
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=9L,
+                                            c4=as.integer(NA)), res),
+                         "all(!is.na(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=9L,
+                                            c2=as.integer(6:8)), res),
+                         "n_clusters == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
+                                            c2=as.integer(6:8), c3=14L), res),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+  
 })
 
 testthat::test_that("createSubsamples works", {

@@ -4,8 +4,8 @@
 #' 
 #' Runs provided feature selection method fitfun on each subsample for cluster
 #' stability selection (this function is called within mclapply).
-#' @param input Could be one of two things: \item{subsample}An integer vector of
-#' size `n/2` containing the indices of the observations in the subsample.}
+#' @param input Could be one of two things: \item{subsample}{An integer vector
+#' of size `n/2` containing the indices of the observations in the subsample.}
 #' \item{drop_var_input}{A named list containing two elements: one named
 #' "subsample" and the same as the previous description, and a logical vector
 #' named "feats_to_keep" containing the indices of the features to be
