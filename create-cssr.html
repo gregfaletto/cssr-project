@@ -394,15 +394,45 @@ usethis::use_mit_license(copyright_holder = &quot;F. Last&quot;)</code></pre>
 </div>
 <div id="now-to-the-package-itself" class="section level2">
 <h2>Now to the package itself</h2>
-<div id="the-core-function-css" class="section level3">
-<h3>The core function: css</h3>
 <p>Cluster stability selection is a feature selection method designed to
 allow stability selection to work effectively in the presence of highly
-correlated features. The workhorse function of this package is css. css
-accepts as an input a design matrix X, a response y, a selection method
-fitfun with specified tuning parameter lambda, and a specification of
-which features belong together in highly correlated clusters. In this
-section, we will build the function css step-by-step.</p>
+correlated features. We will define the functions in this package in
+steps.</p>
+<ul>
+<li>First we define the workhorse function of the package, css. This
+function takes as inputs a data set, a feature selection method, and
+clusters of features appearing in the data. It calculates random
+subsamples of the data and gets selected sets of features on each
+subsample. It returns a matrix of indicator variables for whether each
+feature was selected on each subsample (one row for each subsample, one
+column for each feature). It returns a similar matrix of indicator
+variables for whether any feature from each cluster was selected on each
+subsample. This is the most computationally intensive step of cluster
+stability selection, so it is isolated within its own function that is
+designed to be run only once on a data set.</li>
+<li>Next we define functions that take these indicator matrices and
+return useful output–for example, selected sets of features, or
+predictions on test data. These outputs depend on the selected features,
+which themselves depend on user-selected parameters (for example, the
+cutoff for selection proportions for selected clusters).</li>
+<li>Next, we define wrapper functions that compute all of the above in
+one step in a user-friendly way. (These functions are not recommended
+for large data sets or for “power users” who may want to call these
+functions multiple times on the same data set, because these wrapper
+functions make a new call to css every time they are called, which is
+slow and computationally wasteful if the inputs to css are not
+changed.)</li>
+<li>Finally, we define some other useful functions, like functions that
+generate clustered data to use for simulations or testing, or select a
+tuning parameter for the lasso via cross-validation.</li>
+</ul>
+<div id="the-core-function-css" class="section level3">
+<h3>The core function: css</h3>
+<p>css accepts as an input a design matrix X, a response y, a selection
+method fitfun with specified tuning parameter lambda, and a
+specification of which features belong together in highly correlated
+clusters. In this section, we will build the function css
+step-by-step.</p>
 <ul>
 <li>First, css creates random subsamples of the data. This is
 implemented in the function createSubsamples.</li>
@@ -595,12 +625,13 @@ full details below.)</p>
 
     return(ret)
 }</code></pre>
-<p>Next, we’ll build the individual functions one at a time. (The one
-function above that I didn’t mention at all is checkCssInputs, which
-confirms that the inputs to css are as expected and does some basic
-formatting on the inputs. To streamline presentation, this and other
-helper functions are specified later.) First we specify
-createSubsamples.</p>
+<p>Tests for css and the other functions in this section are located at
+the end of this document. Next, we’ll build the individual functions one
+at a time. (The one function above that I didn’t mention at all is
+checkCssInputs, which confirms that the inputs to css are as expected
+and does some basic formatting on the inputs. To streamline
+presentation, this and other helper functions are specified later.)
+First we specify createSubsamples.</p>
 <pre class="r"><code>#&#39; Creates lists of subsamples for stability selection.
 #&#39;
 #&#39; @param n Integer or numeric; sample size of the data set.
@@ -1070,6 +1101,11 @@ cssLasso, are as needed.</li>
 <li>checkGetClusterSelMatrixInput verifies that the input to
 getClusterSelMatrix is as expected.</li>
 </ul>
+<p>Tests are written for all of these functions and appear as early as
+possible after the function is defined. (For functions that don’t depend
+on any other functions, tests appear immediately after the function; for
+functions with dependencies, the tests appear after all dependencies
+have been defined.)</p>
 <p>checkCssInputs:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that inputs to the function css are as expected,
 #&#39; and modify inputs if needed
@@ -1356,7 +1392,7 @@ getClusterSelMatrix is as expected.</li>
 
 
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1367,7 +1403,8 @@ getClusterSelMatrix is as expected.</li>
 #&#39; vector.) If clusters is specified then R is ignored.
 #&#39; @param p integer or numeric; the numbe of features in x (should match 
 #&#39; ncol(x), if x is provided)
-#&#39; @param clust_names A character vector of the names of the clusters in clusters.
+#&#39; @param clust_names A character vector of the names of the clusters in
+#&#39; clusters.
 #&#39; @param get_prototypes Logical: if TRUE, will identify prototype from each
 #&#39; cluster (the feature from each cluster that is most correlated with the
 #&#39; response) for the protolasso. In this case, x and y must be provided.
@@ -1655,7 +1692,7 @@ getClusterSelMatrix is as expected.</li>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1744,7 +1781,7 @@ getClusterSelMatrix is as expected.</li>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -2054,6 +2091,135 @@ getClusterSelMatrix is as expected.</li>
 })</code></pre>
 <pre><code>## Test passed 🎊</code></pre>
 <p>Finally, tests for formatClusters:</p>
+<pre class="r"><code>testthat::test_that(&quot;formatClusters works&quot;, {
+  
+  # Intentionally don&#39;t provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters &lt;- list(red_cluster=1:3, 5:8)
+  
+  res &lt;- <a href='create-cssr.html#formatClusters'>formatClusters</a>(good_clusters, p=10)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c(&quot;clusters&quot;, &quot;multiple&quot;))
+  
+  # Clusters
+  testthat::expect_true(is.list(res$clusters))
+  testthat::expect_equal(length(res$clusters), 5)
+  testthat::expect_equal(5, length(names(res$clusters)))
+  testthat::expect_equal(5, length(unique(names(res$clusters))))
+  testthat::expect_true(&quot;red_cluster&quot; %in% names(res$clusters))
+  testthat::expect_true(all(!is.na(names(res$clusters))))
+  testthat::expect_true(all(!is.null(names(res$clusters))))
+  testthat::expect_true(all(names(res$clusters) != &quot;&quot;))
+
+  clust_feats &lt;- integer()
+  true_list &lt;- list(1:3, 5:8, 4, 9, 10)
+  for(i in 1:length(res$clusters)){
+    testthat::expect_true(is.integer(res$clusters[[i]]))
+    testthat::expect_equal(length(intersect(clust_feats, res$clusters[[i]])), 0)
+    testthat::expect_true(all(res$clusters[[i]] %in% 1:10))
+    testthat::expect_equal(length(res$clusters[[i]]),
+                           length(unique(res$clusters[[i]])))
+    testthat::expect_true(all(res$clusters[[i]] == true_list[[i]]))
+    clust_feats &lt;- c(clust_feats, res$clusters[[i]])
+  }
+
+  testthat::expect_equal(length(clust_feats), 10)
+  testthat::expect_equal(10, length(unique(clust_feats)))
+  testthat::expect_equal(10, length(intersect(clust_feats, 1:10)))
+  
+  # Multiple
+  testthat::expect_true(res$multiple)
+  testthat::expect_false(<a href='create-cssr.html#formatClusters'>formatClusters</a>(3:5, p=10)$multiple)
+
+  ## Trying other inputs
+
+  testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(3:7, 7:10), p=15),
+                         &quot;length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(5:8, 5:8), p=9),
+                         &quot;length(clusters) == length(unique(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(5:8), p=7),
+                         &quot;length(all_clustered_feats) == p is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(2:3, as.integer(NA)), p=10),
+                         &quot;Must specify one of clusters or R (or does one of these provided inputs contain NA?)&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(2:3, c(4, 4, 5)), p=8),
+                         &quot;length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE&quot;,
+                         fixed=TRUE)
+
+   testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(1:4, -1), p=10),
+                         &quot;all(clusters[[i]] &gt;= 1) is not TRUE&quot;,
+                         fixed=TRUE)
+
+   testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(list(1:4, c(2.3, 1.2))),
+                         &quot;is.integer(clusters[[i]]) is not TRUE&quot;,
+                         fixed=TRUE)
+   
+   ### Test prototypes feature
+   
+    n &lt;- 8
+    p &lt;- 6
+    
+    set.seed(690289)
+    
+    X &lt;- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+    y &lt;- X[, p]
+    
+    res &lt;- <a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=list(), p=p, get_prototypes=TRUE, x=X, y=y)
+    
+    testthat::expect_true(is.list(res))
+    testthat::expect_identical(names(res), c(&quot;clusters&quot;, &quot;multiple&quot;,
+                                             &quot;prototypes&quot;))
+    testthat::expect_true(is.integer(res$prototypes))
+    testthat::expect_identical(res$prototypes, 1:p)
+
+    testthat::expect_equal(<a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=1:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes, p)
+    
+    testthat::expect_identical(<a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=list(1L, 2L:p), p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(1, p)))
+    
+    testthat::expect_identical(<a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=3L:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(p, 1, 2)))
+    
+    y2 &lt;- rnorm(n)
+
+    res &lt;- <a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=list(2:3, 4:5), p=p, get_prototypes=TRUE,
+                          x=X, y=y2)$prototypes
+
+    testthat::expect_true(is.integer(res))
+
+    testthat::expect_equal(length(res), 4)
+
+    testthat::expect_true(res[1] %in% c(2L, 3L))
+
+    testthat::expect_true(res[2] %in% c(4L, 5L))
+    
+    testthat::expect_equal(res[3], 1L)
+    
+    testthat::expect_equal(res[4], p)
+
+    testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=y2, y=X),
+                           &quot;is.matrix(x) is not TRUE&quot;, fixed=TRUE)
+
+    testthat::expect_error(<a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=X,
+                                          y=y2[1:(n-1)]),
+                           &quot;n == length(y) is not TRUE&quot;, fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>checkSamplingType</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument sampling_type to several 
 #&#39; functions is as expected
@@ -2083,7 +2249,7 @@ getClusterSelMatrix is as expected.</li>
   testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(as.character(NA)),
                          &quot;!is.na(sampling_type) is not TRUE&quot;, fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>checkB</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument B to several functions is as
 #&#39; expected
@@ -2126,7 +2292,7 @@ getClusterSelMatrix is as expected.</li>
                            &quot;Large values of B may require long computation times.&quot;,
                            fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>checkPropFeatsRemove</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument prop_feats_remove to several 
 #&#39; functions is as expected
@@ -2166,7 +2332,7 @@ getClusterSelMatrix is as expected.</li>
                          &quot;p &gt;= 2 is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>Finally, tests for checkCssInputs:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkCssInputs works&quot;, {
   set.seed(80526)
@@ -3086,6 +3252,170 @@ defined)</h1>
 
 })</code></pre>
 <pre><code>## Test passed 🎊</code></pre>
+<div id="selection-and-prediction-functions" class="section level3">
+<h3>Selection and Prediction Functions</h3>
+<p>Now that css has been defined and tested, we write functions to work
+with the output of css. The output of these functions will be of more
+direct interest for most end users than the output of css. These
+functions are defined separately from css because the most
+computationally intensive steps happen within css. css can be called
+only once on a data set, and then the functions that follow can be
+explored relatively quickly (one can try different parameters,
+etc.).</p>
+<ul>
+<li>getCssSelections takes in the results of css along with user-defined
+parameters on how to select clusters (a mininmum or maximum number of
+clusters to select, along with a cutoff for cluster selection
+proportions) and selects clusters as well as features from those
+clusters.</li>
+<li>getCssDesign takes in the same inputs as getCssSelections along with
+an unlabeled test matrix of features X (containing the same features as
+the X matrix provided originally to css). It uses the results from css
+to select clusters like getCssSelections, then it uses a user-selected
+weighting scheme to compute weighted averages of the cluster members. It
+returns a test matrix of cluster representatives, which can be used for
+downstream predictive tasks.</li>
+<li>Finally, getCssPreds has the same inputs as getCssPreds, except it
+also accepts a set of labeled training data (where the response must be
+real-valued). getCssPreds selects clusters, forms matrices of cluster
+representatives on the training and test data, uses the training matrix
+of cluster representatives (along with the vector of responses for the
+training data) to estimate a linear model via ordinary least squares,
+and finally generates predictions on the test data using this linear
+model.</li>
+</ul>
+<p>As in the previous section, we first define each function and then
+define the helper functions called by that function. Tests are written
+for each function as soon as all of its dependencies have been
+defined.</p>
+<ul>
+<li>getCssSelections
+<ul>
+<li>Calls checkCutoff, which checks that the specified cutoff input is
+as expected</li>
+<li>checkWeighting verifies the weighting input to getCssSelections</li>
+<li>checkMinNumClusts confirms that the min_num_clusts parameter
+provided to getCssSelections is as expected</li>
+<li>Likewise for checkMaxNumClusts</li>
+<li>getSelectedClusters is the workhorse function of getCssSelections,
+doing most of the work to get the selected clusters (and the selected
+features from those clusters) with the verified inputs
+<ul>
+<li>checkSelectedClusters checks internally that the selected clusters
+are as expected</li>
+<li>getAllClustWeights gets the weights for each of the members of the
+selected clusters
+<ul>
+<li>getClustWeights gets the weights for a single cluster</li>
+</ul></li>
+<li>checkGetSelectedClustersOutput verifies the output of
+getSelectedClusters</li>
+</ul></li>
+</ul></li>
+<li>getCssDesign
+<ul>
+<li>checkNewXProvided confirms that the design matrix provided to
+getCssDesign matches the characteristics of the matrix that waas
+provided to css.</li>
+<li>checkXInputResults also verifies these inputs (and is also used by
+getCssPreds on both the training and test data)</li>
+<li>formCssDesign is the workhorse function, generating a matrix of
+cluster representatives with the verified inputs to getCssDesign
+<ul>
+<li>checkFormCssDesignInputs verifies the inputs to formCssDesign
+(somewhat redundantly here, but formCssDesign is called by more than one
+function, so this verifies the inputs to formCssDesign regardless of
+where it is called).</li>
+</ul></li>
+</ul></li>
+<li>getCssPreds
+<ul>
+<li>checkGetCssPredsInputs verifies the inputs to getCssPreds</li>
+</ul></li>
+</ul>
+<pre class="r"><code>#&#39; Obtain a selected set of clusters and features
+#&#39;
+#&#39; Generate sets of selected clusters and features from cluster stability
+#&#39; selection.
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param weighting Character; determines how to calculate the weights for
+#&#39; individual features within the selected clusters. Only those features with
+#&#39; nonzero weight within the selected clusters will be returned. Must be one of
+#&#39; &quot;sparse&quot;, &quot;weighted_avg&quot;, or &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is
+#&#39; put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, only the features within a selected cluster that were
+#&#39; themselves selected on at least one subsample will have nonzero weight. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, all cluster members within
+#&#39; each selected cluster will be returned.). See Faletto and Bien (2022) for
+#&#39; details. Default is &quot;sparse&quot;.
+#&#39; @param cutoff Numeric; getCssSelections will select and return only of those
+#&#39; clusters with selection proportions equal to at least cutoff. Must be between
+#&#39; 0 and 1. Default is 0 (in which case either all clusters are selected, or
+#&#39; max_num_clusts are selected, if max_num_clusts is specified).
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.) Default is 1.
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) Default is NA (in which case
+#&#39; max_num_clusts is ignored).
+#&#39; @return A named list with two items. \item{selected_clusts}{A list of
+#&#39; integer vectors; each vector contains the indices of the features in one of
+#&#39; the selected clusters.} \item{selected_feats}{A named integer vector; the
+#&#39; indices of the features with nonzero weights from all of the selected
+#&#39; clusters.}
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Faletto, G., &amp; Bien, J. (2022). Cluster Stability Selection.
+#&#39; \emph{arXiv preprint arXiv:2201.00494}.
+#&#39; \url{https://arxiv.org/abs/2201.00494}.
+#&#39; @export
+<span id='getCssSelections'>getCssSelections</span> &lt;- function(css_results, weighting=&quot;sparse&quot;, cutoff=0,
+    min_num_clusts=1, max_num_clusts=NA){
+    # Check inputs
+    stopifnot(class(css_results) == &quot;cssr&quot;)
+    checkCutoff(cutoff)
+    checkWeighting(weighting)
+
+    p &lt;- ncol(css_results$feat_sel_mat)
+
+    checkMinNumClusts(min_num_clusts, p)
+
+    max_num_clusts &lt;- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        css_results$clusters)
+
+    sel_results &lt;- getSelectedClusters(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)
+
+    sel_clust_names &lt;- names(sel_results$selected_clusts)
+
+    stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
+
+    sel_clusts &lt;- list()
+    for(i in 1:length(sel_clust_names)){
+        sel_clusts[[i]] &lt;- css_results$clusters[[sel_clust_names[i]]]
+        names(sel_clusts)[i] &lt;- sel_clust_names[i]
+    }
+
+    return(list(selected_clusts=sel_clusts,
+        selected_feats=sel_results$selected_feats))
+}</code></pre>
+<p>getCssPreds, getCssSelections, getCssDesign</p>
+</div>
+<div id="convenient-wrapper-functions" class="section level3">
+<h3>Convenient Wrapper Functions</h3>
+<p>Finally,</p>
+<p>cssSelect, cssPredict</p>
+</div>
+<div id="other-useful-functions" class="section level3">
+<h3>Other useful functions</h3>
+<p>genLatentData, getLassoLambda, print.cssr</p>
+</div>
 <div id="documenting-the-package-and-building" class="section level2">
 <h2>Documenting the package and building</h2>
 <p>We finish by running commands that will document, build, and install
@@ -3117,6 +3447,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLoop&#39;)cssLoop.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formatClusters&#39;)formatClusters.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelMatrix&#39;)getClusterSelMatrix.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssSelections&#39;)getCssSelections.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getPrototypes&#39;)getPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelMatrix&#39;)getSelMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSubsamps&#39;)getSubsamps.Rd]8;;&#39;

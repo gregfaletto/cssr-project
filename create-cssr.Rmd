@@ -41,16 +41,22 @@ usethis::use_mit_license(copyright_holder = "F. Last")
 
 ## Now to the package itself
 
+Cluster stability selection is a feature selection method designed to allow stability selection to work effectively in the presence of highly correlated features. We will define the functions in this package in steps.
+
+* First we define the workhorse function of the package, css. This function takes as inputs a data set, a feature selection method, and clusters of features appearing in the data. It calculates random subsamples of the data and gets selected sets of features on each subsample. It returns a matrix of indicator variables for whether each feature was selected on each subsample (one row for each subsample, one column for each feature). It returns a similar matrix of indicator variables for whether any feature from each cluster was selected on each subsample. This is the most computationally intensive step of cluster stability selection, so it is isolated within its own function that is designed to be run only once on a data set.
+* Next we define functions that take these indicator matrices and return useful output--for example, selected sets of features, or predictions on test data. These outputs depend on the selected features, which themselves depend on user-selected parameters (for example, the cutoff for selection proportions for selected clusters). 
+* Next, we define wrapper functions that compute all of the above in one step in a user-friendly way. (These functions are not recommended for large data sets or for "power users" who may want to call these functions multiple times on the same data set, because these wrapper functions make a new call to css every time they are called, which is slow and computationally wasteful if the inputs to css are not changed.)
+* Finally, we define some other useful functions, like functions that generate clustered data to use for simulations or testing, or select a tuning parameter for the lasso via cross-validation.
+
 ### The core function: css
 
-Cluster stability selection is a feature selection method designed to allow stability selection to work effectively in the presence of highly correlated features. The workhorse function of this package is css. css accepts as an input a design matrix X, a response y, a selection method fitfun with specified tuning parameter lambda, and a specification of which features belong together in highly correlated clusters. In this section, we will build the function css step-by-step.
+css accepts as an input a design matrix X, a response y, a selection method fitfun with specified tuning parameter lambda, and a specification of which features belong together in highly correlated clusters. In this section, we will build the function css step-by-step.
 
 * First, css creates random subsamples of the data. This is implemented in the function createSubsamples.
 * Next, css executes the specified feature selection method on each subsample. This generates a binary matrix, feat_sel_mat, with one row for each subsample and one column for each feature in X. In each row, the entry corresponding to each feature equals 1 if the feature was selected on that subsample and 0 otherwise. feat_sel_mat is one of the outputs of css; it is used to calculate the selection proportions for individual features. This is implemented in the function getSelMatrix.
 * So far this is the same as the original stability selection procedure. Now we take into account the clusters. The function getClusterSelMatrix takes in the formatted clusters as well as feat_sel_mat and generates the binary matrix clus_sel_mat, which contains selection indicators for each cluster. clus_sel_mat has the same number of rows as feat_sel_mat and one column for each cluster rather than one for each feature. This is used to calculate the cluster selection proportions.
 
 The function css is specified below. (There are some extra details that I omitted in the above description for brevity; you can read the full details below.)
-
 
 ```{r}
 #' Cluster Stability Selection
@@ -224,7 +230,7 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 }
 ```
 
-Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is checkCssInputs, which confirms that the inputs to css are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.) First we specify createSubsamples.
+Tests for css and the other functions in this section are located at the end of this document. Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is checkCssInputs, which confirms that the inputs to css are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.) First we specify createSubsamples.
 
 ```{r}
 #' Creates lists of subsamples for stability selection.
@@ -653,6 +659,7 @@ Below, we specify some of the helper functions for css, which are less important
 * checkCssLassoInputs checks that the inputs to the provided fitfun, cssLasso, are as needed.
 * checkGetClusterSelMatrixInput verifies that the input to getClusterSelMatrix is as expected.
 
+Tests are written for all of these functions and appear as early as possible after the function is defined. (For functions that don't depend on any other functions, tests appear immediately after the function; for functions with dependencies, the tests appear after all dependencies have been defined.)
       
 checkCssInputs:
 
@@ -965,7 +972,8 @@ formatClusters:
 #' vector.) If clusters is specified then R is ignored.
 #' @param p integer or numeric; the numbe of features in x (should match 
 #' ncol(x), if x is provided)
-#' @param clust_names A character vector of the names of the clusters in clusters.
+#' @param clust_names A character vector of the names of the clusters in
+#' clusters.
 #' @param get_prototypes Logical: if TRUE, will identify prototype from each
 #' cluster (the feature from each cluster that is most correlated with the
 #' response) for the protolasso. In this case, x and y must be provided.
@@ -1700,6 +1708,137 @@ testthat::test_that("getPrototypes works", {
 
 Finally, tests for formatClusters:
 
+
+```{r}
+testthat::test_that("formatClusters works", {
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=1:3, 5:8)
+  
+  res <- formatClusters(good_clusters, p=10)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("clusters", "multiple"))
+  
+  # Clusters
+  testthat::expect_true(is.list(res$clusters))
+  testthat::expect_equal(length(res$clusters), 5)
+  testthat::expect_equal(5, length(names(res$clusters)))
+  testthat::expect_equal(5, length(unique(names(res$clusters))))
+  testthat::expect_true("red_cluster" %in% names(res$clusters))
+  testthat::expect_true(all(!is.na(names(res$clusters))))
+  testthat::expect_true(all(!is.null(names(res$clusters))))
+  testthat::expect_true(all(names(res$clusters) != ""))
+
+  clust_feats <- integer()
+  true_list <- list(1:3, 5:8, 4, 9, 10)
+  for(i in 1:length(res$clusters)){
+    testthat::expect_true(is.integer(res$clusters[[i]]))
+    testthat::expect_equal(length(intersect(clust_feats, res$clusters[[i]])), 0)
+    testthat::expect_true(all(res$clusters[[i]] %in% 1:10))
+    testthat::expect_equal(length(res$clusters[[i]]),
+                           length(unique(res$clusters[[i]])))
+    testthat::expect_true(all(res$clusters[[i]] == true_list[[i]]))
+    clust_feats <- c(clust_feats, res$clusters[[i]])
+  }
+
+  testthat::expect_equal(length(clust_feats), 10)
+  testthat::expect_equal(10, length(unique(clust_feats)))
+  testthat::expect_equal(10, length(intersect(clust_feats, 1:10)))
+  
+  # Multiple
+  testthat::expect_true(res$multiple)
+  testthat::expect_false(formatClusters(3:5, p=10)$multiple)
+
+  ## Trying other inputs
+
+  testthat::expect_error(formatClusters(list(3:7, 7:10), p=15),
+                         "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(formatClusters(list(5:8, 5:8), p=9),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(5:8), p=7),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(2:3, as.integer(NA)), p=10),
+                         "Must specify one of clusters or R (or does one of these provided inputs contain NA?)",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(2:3, c(4, 4, 5)), p=8),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
+
+   testthat::expect_error(formatClusters(list(1:4, -1), p=10),
+                         "all(clusters[[i]] >= 1) is not TRUE",
+                         fixed=TRUE)
+
+   testthat::expect_error(formatClusters(list(1:4, c(2.3, 1.2))),
+                         "is.integer(clusters[[i]]) is not TRUE",
+                         fixed=TRUE)
+   
+   ### Test prototypes feature
+   
+    n <- 8
+    p <- 6
+    
+    set.seed(690289)
+    
+    X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+    y <- X[, p]
+    
+    res <- formatClusters(clusters=list(), p=p, get_prototypes=TRUE, x=X, y=y)
+    
+    testthat::expect_true(is.list(res))
+    testthat::expect_identical(names(res), c("clusters", "multiple",
+                                             "prototypes"))
+    testthat::expect_true(is.integer(res$prototypes))
+    testthat::expect_identical(res$prototypes, 1:p)
+
+    testthat::expect_equal(formatClusters(clusters=1:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes, p)
+    
+    testthat::expect_identical(formatClusters(clusters=list(1L, 2L:p), p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(1, p)))
+    
+    testthat::expect_identical(formatClusters(clusters=3L:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(p, 1, 2)))
+    
+    y2 <- rnorm(n)
+
+    res <- formatClusters(clusters=list(2:3, 4:5), p=p, get_prototypes=TRUE,
+                          x=X, y=y2)$prototypes
+
+    testthat::expect_true(is.integer(res))
+
+    testthat::expect_equal(length(res), 4)
+
+    testthat::expect_true(res[1] %in% c(2L, 3L))
+
+    testthat::expect_true(res[2] %in% c(4L, 5L))
+    
+    testthat::expect_equal(res[3], 1L)
+    
+    testthat::expect_equal(res[4], p)
+
+    testthat::expect_error(formatClusters(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=y2, y=X),
+                           "is.matrix(x) is not TRUE", fixed=TRUE)
+
+    testthat::expect_error(formatClusters(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=X,
+                                          y=y2[1:(n-1)]),
+                           "n == length(y) is not TRUE", fixed=TRUE)
+})
+```
 
 checkSamplingType
 
@@ -2666,7 +2805,6 @@ testthat::test_that("getClusterSelMatrix works", {
 
 Finally, test css itself!
 
-
 ```{r}
 testthat::test_that("css works", {
   set.seed(8712)
@@ -2811,8 +2949,121 @@ testthat::test_that("css works", {
 })
 ```
 
+### Selection and Prediction Functions
+
+Now that css has been defined and tested, we write functions to work with the output of css. The output of these functions will be of more direct interest for most end users than the output of css. These functions are defined separately from css because the most computationally intensive steps happen within css. css can be called only once on a data set, and then the functions that follow can be explored relatively quickly (one can try different parameters, etc.).
+
+* getCssSelections takes in the results of css along with user-defined parameters on how to select clusters (a mininmum or maximum number of clusters to select, along with a cutoff for cluster selection proportions) and selects clusters as well as features from those clusters.
+* getCssDesign takes in the same inputs as getCssSelections along with an unlabeled test matrix of features X (containing the same features as the X matrix provided originally to css). It uses the results from css to select clusters like getCssSelections, then it uses a user-selected weighting scheme to compute weighted averages of the cluster members. It returns a test matrix of cluster representatives, which can be used for downstream predictive tasks.
+* Finally, getCssPreds has the same inputs as getCssPreds, except it also accepts a set of labeled training data (where the response must be real-valued). getCssPreds selects clusters, forms matrices of cluster representatives on the training and test data, uses the training matrix of cluster representatives (along with the vector of responses for the training data) to estimate a linear model via ordinary least squares, and finally generates predictions on the test data using this linear model.
+
+As in the previous section, we first define each function and then define the helper functions called by that function. Tests are written for each function as soon as all of its dependencies have been defined.
+
+* getCssSelections
+  - Calls checkCutoff, which checks that the specified cutoff input is as expected
+  - checkWeighting verifies the weighting input to getCssSelections
+  - checkMinNumClusts confirms that the min_num_clusts parameter provided to getCssSelections is as expected
+  - Likewise for checkMaxNumClusts
+  - getSelectedClusters is the workhorse function of getCssSelections, doing most of the work to get the selected clusters (and the selected features from those clusters) with the verified inputs
+    - checkSelectedClusters checks internally that the selected clusters are as expected
+    - getAllClustWeights gets the weights for each of the members of the selected clusters
+      - getClustWeights gets the weights for a single cluster
+    - checkGetSelectedClustersOutput verifies the output of getSelectedClusters
+* getCssDesign
+  - checkNewXProvided confirms that the design matrix provided to getCssDesign matches the characteristics of the matrix that waas provided to css. 
+  - checkXInputResults also verifies these inputs (and is also used by getCssPreds on both the training and test data)
+  - formCssDesign is the workhorse function, generating a matrix of cluster representatives with the verified inputs to getCssDesign
+    - checkFormCssDesignInputs verifies the inputs to formCssDesign (somewhat redundantly here, but formCssDesign is called by more than one function, so this verifies the inputs to formCssDesign regardless of where it is called).
+* getCssPreds
+  - checkGetCssPredsInputs verifies the inputs to getCssPreds
+
+```{r}
+#' Obtain a selected set of clusters and features
+#'
+#' Generate sets of selected clusters and features from cluster stability
+#' selection.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param weighting Character; determines how to calculate the weights for
+#' individual features within the selected clusters. Only those features with
+#' nonzero weight within the selected clusters will be returned. Must be one of
+#' "sparse", "weighted_avg", or "simple_avg'. For "sparse", all the weight is
+#' put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", only the features within a selected cluster that were
+#' themselves selected on at least one subsample will have nonzero weight. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, all cluster members within
+#' each selected cluster will be returned.). See Faletto and Bien (2022) for
+#' details. Default is "sparse".
+#' @param cutoff Numeric; getCssSelections will select and return only of those
+#' clusters with selection proportions equal to at least cutoff. Must be between
+#' 0 and 1. Default is 0 (in which case either all clusters are selected, or
+#' max_num_clusts are selected, if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) Default is 1.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @return A named list with two items. \item{selected_clusts}{A list of
+#' integer vectors; each vector contains the indices of the features in one of
+#' the selected clusters.} \item{selected_feats}{A named integer vector; the
+#' indices of the features with nonzero weights from all of the selected
+#' clusters.}
+#' @author Gregory Faletto, Jacob Bien
+#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+#' @export
+getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
+    min_num_clusts=1, max_num_clusts=NA){
+    # Check inputs
+    stopifnot(class(css_results) == "cssr")
+    checkCutoff(cutoff)
+    checkWeighting(weighting)
+
+    p <- ncol(css_results$feat_sel_mat)
+
+    checkMinNumClusts(min_num_clusts, p)
+
+    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        css_results$clusters)
+
+    sel_results <- getSelectedClusters(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)
+
+    sel_clust_names <- names(sel_results$selected_clusts)
+
+    stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
+
+    sel_clusts <- list()
+    for(i in 1:length(sel_clust_names)){
+        sel_clusts[[i]] <- css_results$clusters[[sel_clust_names[i]]]
+        names(sel_clusts)[i] <- sel_clust_names[i]
+    }
+
+    return(list(selected_clusts=sel_clusts,
+        selected_feats=sel_results$selected_feats))
+}
+```
 
 
+getCssPreds, getCssSelections, getCssDesign
+
+### Convenient Wrapper Functions
+
+Finally, 
+
+cssSelect, cssPredict
+
+### Other useful functions
+
+genLatentData, getLassoLambda, print.cssr
 
 ## Documenting the package and building
 

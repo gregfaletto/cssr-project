@@ -24,7 +24,8 @@ vector.) If clusters is specified then R is ignored.}
 \item{p}{integer or numeric; the numbe of features in x (should match
 ncol(x), if x is provided)}
 
-\item{clust_names}{A character vector of the names of the clusters in clusters.}
+\item{clust_names}{A character vector of the names of the clusters in
+clusters.}
 
 \item{get_prototypes}{Logical: if TRUE, will identify prototype from each
 cluster (the feature from each cluster that is most correlated with the

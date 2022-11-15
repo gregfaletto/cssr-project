@@ -296,6 +296,135 @@ testthat::test_that("getPrototypes works", {
 
 })
 
+testthat::test_that("formatClusters works", {
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=1:3, 5:8)
+  
+  res <- formatClusters(good_clusters, p=10)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("clusters", "multiple"))
+  
+  # Clusters
+  testthat::expect_true(is.list(res$clusters))
+  testthat::expect_equal(length(res$clusters), 5)
+  testthat::expect_equal(5, length(names(res$clusters)))
+  testthat::expect_equal(5, length(unique(names(res$clusters))))
+  testthat::expect_true("red_cluster" %in% names(res$clusters))
+  testthat::expect_true(all(!is.na(names(res$clusters))))
+  testthat::expect_true(all(!is.null(names(res$clusters))))
+  testthat::expect_true(all(names(res$clusters) != ""))
+
+  clust_feats <- integer()
+  true_list <- list(1:3, 5:8, 4, 9, 10)
+  for(i in 1:length(res$clusters)){
+    testthat::expect_true(is.integer(res$clusters[[i]]))
+    testthat::expect_equal(length(intersect(clust_feats, res$clusters[[i]])), 0)
+    testthat::expect_true(all(res$clusters[[i]] %in% 1:10))
+    testthat::expect_equal(length(res$clusters[[i]]),
+                           length(unique(res$clusters[[i]])))
+    testthat::expect_true(all(res$clusters[[i]] == true_list[[i]]))
+    clust_feats <- c(clust_feats, res$clusters[[i]])
+  }
+
+  testthat::expect_equal(length(clust_feats), 10)
+  testthat::expect_equal(10, length(unique(clust_feats)))
+  testthat::expect_equal(10, length(intersect(clust_feats, 1:10)))
+  
+  # Multiple
+  testthat::expect_true(res$multiple)
+  testthat::expect_false(formatClusters(3:5, p=10)$multiple)
+
+  ## Trying other inputs
+
+  testthat::expect_error(formatClusters(list(3:7, 7:10), p=15),
+                         "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(formatClusters(list(5:8, 5:8), p=9),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(5:8), p=7),
+                         "length(all_clustered_feats) == p is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(2:3, as.integer(NA)), p=10),
+                         "Must specify one of clusters or R (or does one of these provided inputs contain NA?)",
+                         fixed=TRUE)
+
+  testthat::expect_error(formatClusters(list(2:3, c(4, 4, 5)), p=8),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
+
+   testthat::expect_error(formatClusters(list(1:4, -1), p=10),
+                         "all(clusters[[i]] >= 1) is not TRUE",
+                         fixed=TRUE)
+
+   testthat::expect_error(formatClusters(list(1:4, c(2.3, 1.2))),
+                         "is.integer(clusters[[i]]) is not TRUE",
+                         fixed=TRUE)
+   
+   ### Test prototypes feature
+   
+    n <- 8
+    p <- 6
+    
+    set.seed(690289)
+    
+    X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+    y <- X[, p]
+    
+    res <- formatClusters(clusters=list(), p=p, get_prototypes=TRUE, x=X, y=y)
+    
+    testthat::expect_true(is.list(res))
+    testthat::expect_identical(names(res), c("clusters", "multiple",
+                                             "prototypes"))
+    testthat::expect_true(is.integer(res$prototypes))
+    testthat::expect_identical(res$prototypes, 1:p)
+
+    testthat::expect_equal(formatClusters(clusters=1:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes, p)
+    
+    testthat::expect_identical(formatClusters(clusters=list(1L, 2L:p), p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(1, p)))
+    
+    testthat::expect_identical(formatClusters(clusters=3L:p, p=p,
+                                              get_prototypes=TRUE, x=X,
+                                              y=y)$prototypes,
+                               as.integer(c(p, 1, 2)))
+    
+    y2 <- rnorm(n)
+
+    res <- formatClusters(clusters=list(2:3, 4:5), p=p, get_prototypes=TRUE,
+                          x=X, y=y2)$prototypes
+
+    testthat::expect_true(is.integer(res))
+
+    testthat::expect_equal(length(res), 4)
+
+    testthat::expect_true(res[1] %in% c(2L, 3L))
+
+    testthat::expect_true(res[2] %in% c(4L, 5L))
+    
+    testthat::expect_equal(res[3], 1L)
+    
+    testthat::expect_equal(res[4], p)
+
+    testthat::expect_error(formatClusters(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=y2, y=X),
+                           "is.matrix(x) is not TRUE", fixed=TRUE)
+
+    testthat::expect_error(formatClusters(clusters=list(2:3, 4:5), p=p,
+                                          get_prototypes=TRUE, x=X,
+                                          y=y2[1:(n-1)]),
+                           "n == length(y) is not TRUE", fixed=TRUE)
+})
+
 testthat::test_that("checkSamplingType works", {
   testthat::expect_null(checkSamplingType("SS"))
   testthat::expect_error(checkSamplingType("MB"),
