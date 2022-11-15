@@ -121,10 +121,12 @@ testthat::test_that("checkFormatClustersInput works", {
   testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
                                                                1:8)))
 
-  # testthat::expect_error(checkFormatClustersInput(list(1:4, 4:6)),
-  #                        "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
-  #                        fixed=TRUE)
-  # 
+  testthat::expect_error(checkFormatClustersInput(list(1:4, 4:6), p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
+                         fixed=TRUE)
   testthat::expect_error(checkFormatClustersInput(list(2:3, 2:3), p=10,
                                   clust_names=NA, get_prototypes=FALSE, x=NA,
                                   y=NA, R=NA),
@@ -146,22 +148,28 @@ testthat::test_that("checkFormatClustersInput works", {
                                                   y=NA, R=NA),
                          "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
                          fixed=TRUE)
-  # 
-  # testthat::expect_error(checkFormatClustersInput(list(2:3, -1)),
-  #                        "all(clusters[[i]] >= 1) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkFormatClustersInput(c(0.4, 0.6)),
-  #                        "all(clusters == round(clusters)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # # Single cluster
-  # res_sing_clust <- checkFormatClustersInput(2:5)
-  # testthat::expect_equal(length(res_sing_clust), 4)
   
-  ## Check that feature of getting prototypes works
+   testthat::expect_error(checkFormatClustersInput(list(1:4, -1),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         "all(clusters[[i]] >= 1) is not TRUE",
+                         fixed=TRUE)
+   
+   testthat::expect_error(checkFormatClustersInput(list(1:4, c(2.3, 1.2)),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         "is.integer(clusters[[i]]) is not TRUE",
+                         fixed=TRUE)
 
-
+  # Single cluster
+   testthat::expect_true(is.list(checkFormatClustersInput(c(1:5), p=10,
+                                                          clust_names=NA,
+                                                          get_prototypes=FALSE,
+                                                          x=NA, y=NA, R=NA)))
 })
 
 testthat::test_that("checkClusters works", {
@@ -198,6 +206,9 @@ testthat::test_that("checkClusters works", {
 testthat::test_that("corFunction works", {
   testthat::expect_identical(corFunction(rep(1, 10), 1:10), 0)
   testthat::expect_identical(corFunction(rep(1.2, 5), 1:5), 0)
+  
+  set.seed(23451)
+  
   x <- stats::rnorm(8)
   y <- stats::rnorm(8)
   testthat::expect_identical(corFunction(x, y), abs(stats::cor(x, y)))
@@ -219,6 +230,9 @@ testthat::test_that("identifyPrototype works", {
   testthat::expect_identical(identifyPrototype(10L, "a", 5), 10L)
   n <- 10
   p <- 5
+  
+  set.seed(9834)
+  
   X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y <- X[, p]
   testthat::expect_equal(identifyPrototype(as.integer(p), X, y), p)
@@ -243,6 +257,9 @@ testthat::test_that("identifyPrototype works", {
 testthat::test_that("getPrototypes works", {
   n <- 10
   p <- 5
+  
+  set.seed(902689)
+  
   X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y <- X[, p]
 
@@ -276,7 +293,6 @@ testthat::test_that("getPrototypes works", {
   testthat::expect_error(getPrototypes(list(1L, 2L, 3L, 4L, 5L), X, y[1:9]),
                          "n == length(y) is not TRUE",
                          fixed=TRUE)
-
 
 })
 
@@ -336,6 +352,7 @@ testthat::test_that("checkPropFeatsRemove works", {
 })
 
 testthat::test_that("checkCssInputs works", {
+  set.seed(80526)
   
   x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
   y <- stats::rnorm(15)
@@ -534,6 +551,8 @@ testthat::test_that("checkCssLoopOutput works", {
 })
 
 testthat::test_that("checkCssLassoInputs works", {
+  set.seed(761)
+  
   x <- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
   y <- stats::rnorm(15)
   
@@ -578,6 +597,7 @@ testthat::test_that("checkCssLassoInputs works", {
 })
 
 testthat::test_that("cssLoop works", {
+  set.seed(89134)
 
   x <- matrix(stats::rnorm(9*8), nrow=9, ncol=8)
   y <- stats::rnorm(9)
@@ -783,6 +803,7 @@ testthat::test_that("getSubsamps works", {
 })
 
 testthat::test_that("getSelMatrix works", {
+  set.seed(98623)
   x <- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
   y <- stats::rnorm(25)
   subsamps_object <- createSubsamples(n=25, p=6, B=12, sampling_type="SS",
@@ -842,6 +863,7 @@ testthat::test_that("getSelMatrix works", {
 })
 
 testthat::test_that("cssLasso works", {
+  set.seed(24509)
   x <- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
   y <- stats::rnorm(15)
   
@@ -915,6 +937,7 @@ testthat::test_that("getClusterSelMatrix works", {
 })
 
 testthat::test_that("css works", {
+  set.seed(8712)
   
   x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
   y <- stats::rnorm(15)

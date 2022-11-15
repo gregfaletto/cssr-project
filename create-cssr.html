@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-11-14" />
+<meta name="date" content="2022-11-15" />
 
 <title>Creating the cssr R package</title>
 
@@ -359,7 +359,7 @@ pre code {
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">November 14, 2022</h4>
+<h4 class="date">November 15, 2022</h4>
 
 </div>
 
@@ -1356,7 +1356,7 @@ getClusterSelMatrix is as expected.</li>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1655,7 +1655,7 @@ getClusterSelMatrix is as expected.</li>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1694,10 +1694,12 @@ getClusterSelMatrix is as expected.</li>
   testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
                                                                1:8)))
 
-  # testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(1:4, 4:6)),
-  #                        &quot;Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.&quot;,
-  #                        fixed=TRUE)
-  # 
+  testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(1:4, 4:6), p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         &quot;length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE&quot;,
+                         fixed=TRUE)
   testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(2:3, 2:3), p=10,
                                   clust_names=NA, get_prototypes=FALSE, x=NA,
                                   y=NA, R=NA),
@@ -1719,22 +1721,28 @@ getClusterSelMatrix is as expected.</li>
                                                   y=NA, R=NA),
                          &quot;length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE&quot;,
                          fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(2:3, -1)),
-  #                        &quot;all(clusters[[i]] &gt;= 1) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(c(0.4, 0.6)),
-  #                        &quot;all(clusters == round(clusters)) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # # Single cluster
-  # res_sing_clust &lt;- <a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(2:5)
-  # testthat::expect_equal(length(res_sing_clust), 4)
   
-  ## Check that feature of getting prototypes works
+   testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(1:4, -1),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         &quot;all(clusters[[i]] &gt;= 1) is not TRUE&quot;,
+                         fixed=TRUE)
+   
+   testthat::expect_error(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(list(1:4, c(2.3, 1.2)),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         &quot;is.integer(clusters[[i]]) is not TRUE&quot;,
+                         fixed=TRUE)
 
-
+  # Single cluster
+   testthat::expect_true(is.list(<a href='create-cssr.html#checkFormatClustersInput'>checkFormatClustersInput</a>(c(1:5), p=10,
+                                                          clust_names=NA,
+                                                          get_prototypes=FALSE,
+                                                          x=NA, y=NA, R=NA)))
 })</code></pre>
 <pre><code>## Test passed 🎊</code></pre>
 <p>checkClusters:</p>
@@ -1806,7 +1814,7 @@ getClusterSelMatrix is as expected.</li>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -1953,6 +1961,9 @@ getClusterSelMatrix is as expected.</li>
 <pre class="r"><code>testthat::test_that(&quot;corFunction works&quot;, {
   testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(rep(1, 10), 1:10), 0)
   testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(rep(1.2, 5), 1:5), 0)
+  
+  set.seed(23451)
+  
   x &lt;- stats::rnorm(8)
   y &lt;- stats::rnorm(8)
   testthat::expect_identical(<a href='create-cssr.html#corFunction'>corFunction</a>(x, y), abs(stats::cor(x, y)))
@@ -1975,6 +1986,9 @@ getClusterSelMatrix is as expected.</li>
   testthat::expect_identical(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(10L, &quot;a&quot;, 5), 10L)
   n &lt;- 10
   p &lt;- 5
+  
+  set.seed(9834)
+  
   X &lt;- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y &lt;- X[, p]
   testthat::expect_equal(<a href='create-cssr.html#identifyPrototype'>identifyPrototype</a>(as.integer(p), X, y), p)
@@ -1995,11 +2009,14 @@ getClusterSelMatrix is as expected.</li>
   testthat::expect_true(res %in% c(2L, 3L))
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Tests for getPrototypes</p>
 <pre class="r"><code>testthat::test_that(&quot;getPrototypes works&quot;, {
   n &lt;- 10
   p &lt;- 5
+  
+  set.seed(902689)
+  
   X &lt;- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y &lt;- X[, p]
 
@@ -2034,7 +2051,6 @@ getClusterSelMatrix is as expected.</li>
                          &quot;n == length(y) is not TRUE&quot;,
                          fixed=TRUE)
 
-
 })</code></pre>
 <pre><code>## Test passed 🎊</code></pre>
 <p>Finally, tests for formatClusters:</p>
@@ -2067,7 +2083,7 @@ getClusterSelMatrix is as expected.</li>
   testthat::expect_error(<a href='create-cssr.html#checkSamplingType'>checkSamplingType</a>(as.character(NA)),
                          &quot;!is.na(sampling_type) is not TRUE&quot;, fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>checkB</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument B to several functions is as
 #&#39; expected
@@ -2110,7 +2126,7 @@ getClusterSelMatrix is as expected.</li>
                            &quot;Large values of B may require long computation times.&quot;,
                            fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkPropFeatsRemove</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument prop_feats_remove to several 
 #&#39; functions is as expected
@@ -2150,9 +2166,10 @@ getClusterSelMatrix is as expected.</li>
                          &quot;p &gt;= 2 is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Finally, tests for checkCssInputs:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkCssInputs works&quot;, {
+  set.seed(80526)
   
   x &lt;- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
   y &lt;- stats::rnorm(15)
@@ -2303,7 +2320,7 @@ getClusterSelMatrix is as expected.</li>
                                                num_cores = 1L)))
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>cssLoop:</p>
 <pre class="r"><code>#&#39; Helper function run on each subsample
 #&#39; 
@@ -2466,7 +2483,7 @@ getClusterSelMatrix is as expected.</li>
                          fixed=TRUE)
 
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>checkCssLassoInputs:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the inputs to cssLasso are as expected. 
 #&#39;
@@ -2508,6 +2525,8 @@ getClusterSelMatrix is as expected.</li>
 }</code></pre>
 <p>Tests for checkCssLassoInputs</p>
 <pre class="r"><code>testthat::test_that(&quot;checkCssLassoInputs works&quot;, {
+  set.seed(761)
+  
   x &lt;- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
   y &lt;- stats::rnorm(15)
   
@@ -2550,9 +2569,10 @@ getClusterSelMatrix is as expected.</li>
                          fixed=TRUE)
   
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for cssLoop (had to define checkCssLassoInputs first):</p>
 <pre class="r"><code>testthat::test_that(&quot;cssLoop works&quot;, {
+  set.seed(89134)
 
   x &lt;- matrix(stats::rnorm(9*8), nrow=9, ncol=8)
   y &lt;- stats::rnorm(9)
@@ -2633,7 +2653,7 @@ getClusterSelMatrix is as expected.</li>
                                            fitfun=testFitfun)))
 
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>checkGetClusterSelMatrixInput:</p>
 <pre class="r"><code>#&#39; Helper function to check inputs to getClusterSelMatrix function
 #&#39;
@@ -2709,7 +2729,7 @@ getClusterSelMatrix is as expected.</li>
                          fixed=TRUE)
   
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 </div>
 <div id="tests-for-main-functions-in-css-now-that-helper-functions-have-been-defined" class="section level1">
 <h1>Tests for main functions in css (now that helper functions have been
@@ -2768,7 +2788,7 @@ defined)</h1>
                          &quot;length(subsamples) == B is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for getSubsamps</p>
 <pre class="r"><code>testthat::test_that(&quot;getSubsamps works&quot;, {
   res &lt;- <a href='create-cssr.html#getSubsamps'>getSubsamps</a>(n=18L, B=21L, sampling_type=&quot;SS&quot;)
@@ -2785,9 +2805,10 @@ defined)</h1>
   testthat::expect_equal(length(union(set, comp_set)), length(c(set, comp_set)))
   testthat::expect_equal(18, length(c(set, comp_set)))
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for getSelMatrix</p>
 <pre class="r"><code>testthat::test_that(&quot;getSelMatrix works&quot;, {
+  set.seed(98623)
   x &lt;- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
   y &lt;- stats::rnorm(25)
   subsamps_object &lt;- <a href='create-cssr.html#createSubsamples'>createSubsamples</a>(n=25, p=6, B=12, sampling_type=&quot;SS&quot;,
@@ -2845,9 +2866,10 @@ defined)</h1>
                       &quot;length(res_list) == nrow(res) is not TRUE&quot;,
                       fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>Tests for cssLasso</p>
 <pre class="r"><code>testthat::test_that(&quot;cssLasso works&quot;, {
+  set.seed(24509)
   x &lt;- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
   y &lt;- stats::rnorm(15)
   
@@ -2868,7 +2890,7 @@ defined)</h1>
                          fixed=TRUE)
 
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>Tests for getClusterSelMatrix:</p>
 <pre class="r"><code>testthat::test_that(&quot;getClusterSelMatrix works&quot;, {
   good_clusters &lt;- list(red_cluster=as.integer(1:5),
@@ -2923,6 +2945,7 @@ defined)</h1>
 <pre><code>## Test passed 🌈</code></pre>
 <p>Finally, test css itself!</p>
 <pre class="r"><code>testthat::test_that(&quot;css works&quot;, {
+  set.seed(8712)
   
   x &lt;- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
   y &lt;- stats::rnorm(15)
@@ -3062,7 +3085,7 @@ defined)</h1>
   testthat::expect_equal(res_train$train_inds, 11:15)
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <div id="documenting-the-package-and-building" class="section level2">
 <h2>Documenting the package and building</h2>
 <p>We finish by running commands that will document, build, and install
