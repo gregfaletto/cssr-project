@@ -138,14 +138,14 @@ testthat::test_that("checkFormatClustersInput works", {
                                                   y=NA, R=NA),
                          "Must specify one of clusters or R (or does one of these provided inputs contain NA?)",
                          fixed=TRUE)
-  # 
-  # testthat::expect_error(checkFormatClustersInput(list(2:3, as.integer(NA))),
-  #                        "!is.na(clusters) are not all TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkFormatClustersInput(list(2:3, c(4, 4, 5))),
-  #                        "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
-  #                        fixed=TRUE)
+  
+  testthat::expect_error(checkFormatClustersInput(list(2:3, c(4, 4, 5)),
+                                                  p=10,
+                                                  clust_names=NA,
+                                                  get_prototypes=FALSE, x=NA,
+                                                  y=NA, R=NA),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
   # 
   # testthat::expect_error(checkFormatClustersInput(list(2:3, -1)),
   #                        "all(clusters[[i]] >= 1) is not TRUE",
