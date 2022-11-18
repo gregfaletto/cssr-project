@@ -1172,6 +1172,12 @@ testthat::test_that("css works", {
 
   # No cluster
   testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10)), "cssr")
+  
+  # All clusters named
+  testthat::expect_identical(class(css(X=x, y=y, clusters=list("a"=1:5,
+                                                               "b"=6:10,
+                                                               "c"=11),
+                                       lambda=0.01, B=10)), "cssr")
 
   # Other sampling types
   testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="MB"),
@@ -1204,6 +1210,257 @@ testthat::test_that("css works", {
   # Use train_inds argument
   res_train <- css(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
   testthat::expect_equal(res_train$train_inds, 11:15)
+
+})
+
+testthat::test_that("checkCutoff works", {
+  testthat::expect_null(checkCutoff(0))
+  testthat::expect_null(checkCutoff(0.2))
+  testthat::expect_null(checkCutoff(1))
+  
+  testthat::expect_error(checkCutoff(-.2), "cutoff >= 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(2), "cutoff <= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(".3"),
+                        "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
+                        fixed=TRUE)
+  testthat::expect_error(checkCutoff(matrix(1:12, nrow=4, ncol=3)),
+                         "length(cutoff) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(numeric()),
+                         "length(cutoff) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(as.numeric(NA)),
+                         "!is.na(cutoff) is not TRUE", fixed=TRUE)
+
+})
+
+testthat::test_that("checkWeighting works", {
+  testthat::expect_null(checkWeighting("sparse"))
+  testthat::expect_null(checkWeighting("simple_avg"))
+  testthat::expect_null(checkWeighting("weighted_avg"))
+  
+  testthat::expect_error(checkWeighting(c("sparse", "simple_avg")),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkWeighting(NA), "!is.na(weighting) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkWeighting(1), "Weighting must be a character",
+                         fixed=TRUE)
+  testthat::expect_error(checkWeighting("spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+})
+
+testthat::test_that("checkMinNumClusts works", {
+  testthat::expect_null(checkMinNumClusts(1, 5, 4))
+  testthat::expect_null(checkMinNumClusts(6, 6, 6))
+  testthat::expect_null(checkMinNumClusts(3, 1932, 3))
+  
+  testthat::expect_error(checkMinNumClusts(c(2, 4), 5, 4),
+                         "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts("3", "1932", "3"),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(NA, NA, NA),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(as.numeric(NA), as.numeric(NA),
+                                           as.numeric(NA)),
+                         "!is.na(min_num_clusts) is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(0, 13, 7),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(-1, 9, 8),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(6, 5, 5),
+                         "min_num_clusts <= p is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(6, 7, 5),
+                         "min_num_clusts <= n_clusters is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("checkMaxNumClusts works", {
+  testthat::expect_equal(checkMaxNumClusts(max_num_clusts=4, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_equal(checkMaxNumClusts(max_num_clusts=5, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_true(is.na(checkMaxNumClusts(max_num_clusts=NA,
+                                                min_num_clusts=3, p=5,
+                                                n_clusters=4)))
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts="4", min_num_clusts=1,
+                                           p=5, n_clusters=4),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=3.2, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts == round(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=c(3, 4),
+                                           min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "length(max_num_clusts) == 1 is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts="4",
+                                           min_num_clusts="2",
+                                           p="5", n_clusters="4"),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=-1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=6, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+})
+
+testthat::test_that("checkSelectedClusters works", {
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=5, min_num_clusts=1,
+                                              max_num_clusts=NA, max_sel_prop=.8))
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=5, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=2, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  
+
+  testthat::expect_error(checkSelectedClusters(n_sel_clusts=0, min_num_clusts=2,
+                                               max_num_clusts=5,
+                                               max_sel_prop=.6),
+                         "No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, 0.6)",
+                         fixed=TRUE)
+  
+  testthat::expect_warning(checkSelectedClusters(n_sel_clusts=1,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         "Returning fewer than min_num_clusts = 2 clusters because decreasing the cutoff any further would require returning more than max_num_clusts = 5 clusters",
+                         fixed=TRUE)
+  testthat::expect_warning(checkSelectedClusters(n_sel_clusts=6,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         "Returning more than max_num_clusts = 5 clusters because increasing the cutoff any further would require returning 0 clusters",
+                         fixed=TRUE)
+  
+})
+
+testthat::test_that("getClustWeights works", {
+  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  
+  # sparse
+  testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
+                                             weighting="sparse",
+                                             feat_sel_props=sel_props),
+                             c(0, 0, 1))
+  
+  # weighted_avg
+  cluster=c(1L, 3L, 5L)
+  true_weights <- sel_props[cluster]/sum(sel_props[cluster])
+  
+  testthat::expect_identical(getClustWeights(cluster_i=cluster,
+                                             weighting="weighted_avg",
+                                             feat_sel_props=sel_props),
+                             true_weights)
+  
+  # simple_avg
+  testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
+                                             weighting="simple_avg",
+                                             feat_sel_props=sel_props),
+                             rep(0.25, 4))
+})
+
+testthat::test_that("getAllClustWeights works", {
+  
+  set.seed(1872)
+  
+  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y <- stats::rnorm(10)
+  
+  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  
+  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props <- colMeans(res$feat_sel_mat)
+  
+  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+  
+  true_weights <- list()
+  
+  for(i in 1:2){
+    weights_i <- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+    true_weights[[i]] <- rep(0, length(weights_i))
+    true_weights[[i]][weights_i == max(weights_i)] <- 1
+  }
+  
+  names(true_weights) <- c("a", "b")
+  
+  # sparse
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "sparse"), true_weights)
+  
+  # weighted_avg
+  for(i in 1:2){
+    true_weights[[i]] <- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+  }
+
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "weighted_avg"), true_weights)
+
+  # simple_avg
+  for(i in 1:2){
+    n_weights_i <- length(sel_clusts[[i]])
+    true_weights[[i]] <- rep(1/n_weights_i, n_weights_i)
+  }
+  
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "simple_avg"), true_weights)
+  
+  # Errors
+  
+  testthat::expect_error(getAllClustWeights(1:4, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "simple_avg"))
+  
+  bad_sel_clusts <- colMeans(res$clus_sel_mat[, 1:2])
+  names(bad_sel_clusts) <- c("apple", "banana")
+  testthat::expect_error(getAllClustWeights(res, bad_sel_clusts, "sparse"),
+                         "all(names(sel_clusters) %in% names(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            c("sparse", "simple_avg")),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            NA),
+                         "!is.na(weighting) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            1),
+                         "Weighting must be a character", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
 
 })
 

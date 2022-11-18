@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-11-15" />
+<meta name="date" content="2022-11-18" />
 
 <title>Creating the cssr R package</title>
 
@@ -359,7 +359,7 @@ pre code {
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">November 15, 2022</h4>
+<h4 class="date">November 18, 2022</h4>
 
 </div>
 
@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1485,24 +1485,30 @@ have been defined.)</p>
     } else{
         # What clusters need names?
         unnamed_clusts &lt;- which(is.na(names(clusters)) | names(clusters) == &quot;&quot;)
-        proposed_clust_names &lt;- paste(&quot;c&quot;, unnamed_clusts, sep=&quot;&quot;)
-        # Replace any proposed cluster names that are already in use
-        if(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] &lt;- paste(&quot;c&quot;,
-                unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
-                sep=&quot;&quot;)
-        }
-        while_counter &lt;- 0
-        while(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] &lt;- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
-                &quot;_1&quot;, sep=&quot;&quot;)
-            while_counter &lt;- while_counter + 1
-            if(while_counter &gt;= 100){
-                stop(&quot;Function formatClusters stuck in an infinite while loop&quot;)
+        if(length(unnamed_clusts) &gt; 0){
+            proposed_clust_names &lt;- paste(&quot;c&quot;, unnamed_clusts, sep=&quot;&quot;)
+            # Replace any proposed cluster names that are already in use
+            if(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] &lt;- paste(&quot;c&quot;,
+                    unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
+                    sep=&quot;&quot;)
             }
+            while_counter &lt;- 0
+            while(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] &lt;- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
+                    &quot;_1&quot;, sep=&quot;&quot;)
+                while_counter &lt;- while_counter + 1
+                if(while_counter &gt;= 100){
+                    stop(&quot;Function formatClusters stuck in an infinite while loop&quot;)
+                }
+            }
+            print(&quot;unnamed_clusts:&quot;)
+            print(unnamed_clusts)
+            print(&quot;proposed_clust_names:&quot;)
+            print(proposed_clust_names)
+            stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
+            names(clusters)[unnamed_clusts] &lt;- proposed_clust_names
         }
-        stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
-        names(clusters)[unnamed_clusts] &lt;- proposed_clust_names
     }
 
     # Check output
@@ -1692,7 +1698,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1781,7 +1787,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1851,7 +1857,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -2219,7 +2225,11 @@ have been defined.)</p>
                                           y=y2[1:(n-1)]),
                            &quot;n == length(y) is not TRUE&quot;, fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## [1] &quot;unnamed_clusts:&quot;
+## [1] 2 3 4 5
+## [1] &quot;proposed_clust_names:&quot;
+## [1] &quot;c2&quot; &quot;c3&quot; &quot;c4&quot; &quot;c5&quot;
+## Test passed 😀</code></pre>
 <p>checkSamplingType</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument sampling_type to several 
 #&#39; functions is as expected
@@ -2486,7 +2496,11 @@ have been defined.)</p>
                                                num_cores = 1L)))
 
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## [1] &quot;unnamed_clusts:&quot;
+## [1] 3 4 5
+## [1] &quot;proposed_clust_names:&quot;
+## [1] &quot;c3&quot; &quot;c4&quot; &quot;c5&quot;
+## Test passed 🥳</code></pre>
 <p>cssLoop:</p>
 <pre class="r"><code>#&#39; Helper function run on each subsample
 #&#39; 
@@ -3217,6 +3231,12 @@ defined)</h1>
 
   # No cluster
   testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, B = 10)), &quot;cssr&quot;)
+  
+  # All clusters named
+  testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, clusters=list(&quot;a&quot;=1:5,
+                                                               &quot;b&quot;=6:10,
+                                                               &quot;c&quot;=11),
+                                       lambda=0.01, B=10)), &quot;cssr&quot;)
 
   # Other sampling types
   testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, sampling_type=&quot;MB&quot;),
@@ -3251,7 +3271,11 @@ defined)</h1>
   testthat::expect_equal(res_train$train_inds, 11:15)
 
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## [1] &quot;unnamed_clusts:&quot;
+## [1] 4
+## [1] &quot;proposed_clust_names:&quot;
+## [1] &quot;c15&quot;
+## Test passed 🌈</code></pre>
 <div id="selection-and-prediction-functions" class="section level3">
 <h3>Selection and Prediction Functions</h3>
 <p>Now that css has been defined and tested, we write functions to work
@@ -3333,6 +3357,7 @@ where it is called).</li>
 <li>checkGetCssPredsInputs verifies the inputs to getCssPreds</li>
 </ul></li>
 </ul>
+<p>getCssSelections:</p>
 <pre class="r"><code>#&#39; Obtain a selected set of clusters and features
 #&#39;
 #&#39; Generate sets of selected clusters and features from cluster stability
@@ -3379,17 +3404,17 @@ where it is called).</li>
     min_num_clusts=1, max_num_clusts=NA){
     # Check inputs
     stopifnot(class(css_results) == &quot;cssr&quot;)
-    checkCutoff(cutoff)
-    checkWeighting(weighting)
+    <a href='create-cssr.html#checkCutoff'>checkCutoff</a>(cutoff)
+    <a href='create-cssr.html#checkWeighting'>checkWeighting</a>(weighting)
 
     p &lt;- ncol(css_results$feat_sel_mat)
 
-    checkMinNumClusts(min_num_clusts, p)
+    <a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(min_num_clusts, p, length(css_results$clusters))
 
-    max_num_clusts &lt;- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
-        css_results$clusters)
+    max_num_clusts &lt;- <a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,
+        length(css_results$clusters))
 
-    sel_results &lt;- getSelectedClusters(css_results, weighting, cutoff,
+    sel_results &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)
 
     sel_clust_names &lt;- names(sel_results$selected_clusts)
@@ -3405,7 +3430,682 @@ where it is called).</li>
     return(list(selected_clusts=sel_clusts,
         selected_feats=sel_results$selected_feats))
 }</code></pre>
-<p>getCssPreds, getCssSelections, getCssDesign</p>
+<p>checkCutoff:</p>
+<pre class="r"><code>#&#39; Helper function to confirm that the argument cutoff to several functions is
+#&#39; as expected
+#&#39;
+#&#39; @param cutoff Numeric; only those clusters with selection proportions equal
+#&#39; to at least cutoff will be selected by cluster stability selection. Must be
+#&#39; between 0 and 1.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkCutoff'>checkCutoff</span> &lt;- function(cutoff){
+    stopifnot(is.numeric(cutoff) | is.integer(cutoff))
+    stopifnot(length(cutoff) == 1)
+    stopifnot(!is.na(cutoff))
+    stopifnot(cutoff &gt;= 0)
+    stopifnot(cutoff &lt;= 1)
+}</code></pre>
+<p>Tests for checkCutoff:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkCutoff works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(0))
+  testthat::expect_null(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(0.2))
+  testthat::expect_null(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(1))
+  
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(-.2), &quot;cutoff &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(2), &quot;cutoff &lt;= 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(&quot;.3&quot;),
+                        &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
+                        fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(matrix(1:12, nrow=4, ncol=3)),
+                         &quot;length(cutoff) == 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(numeric()),
+                         &quot;length(cutoff) == 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkCutoff'>checkCutoff</a>(as.numeric(NA)),
+                         &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
+
+})</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
+<p>checkWeighting:</p>
+<pre class="r"><code>#&#39; Helper function to confirm that the argument weighting to several 
+#&#39; functions is as expected
+#&#39;
+#&#39; @param weighting Character; determines how to calculate the weights to
+#&#39; combine features from the selected clusters into weighted averages, called
+#&#39; cluster representatives. Must be one of &quot;sparse&quot;, &quot;weighted_avg&quot;, or
+#&#39; &quot;simple_avg&#39;.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkWeighting'>checkWeighting</span> &lt;- function(weighting){
+    stopifnot(length(weighting)==1)
+    stopifnot(!is.na(weighting))
+    if(!is.character(weighting)){
+        stop(&quot;Weighting must be a character&quot;)
+    }
+    if(!(weighting %in% c(&quot;sparse&quot;, &quot;simple_avg&quot;, &quot;weighted_avg&quot;))){
+        stop(&quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;)
+    }
+}</code></pre>
+<p>Tests for checkWeighting:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkWeighting works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(&quot;sparse&quot;))
+  testthat::expect_null(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(&quot;simple_avg&quot;))
+  testthat::expect_null(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(&quot;weighted_avg&quot;))
+  
+  testthat::expect_error(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(c(&quot;sparse&quot;, &quot;simple_avg&quot;)),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(NA), &quot;!is.na(weighting) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(1), &quot;Weighting must be a character&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkWeighting'>checkWeighting</a>(&quot;spasre&quot;),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
+<p>checkMinNumClusts:</p>
+<pre class="r"><code>#&#39; Helper function to confirm that the argument min_num_clusts to several 
+#&#39; functions is as expected
+#&#39;
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.)
+#&#39; @param p The number of features; since this is an upper bound on the number
+#&#39; of clusters of features, it is also an upper bound on min_num_clusts.
+#&#39; @param n_clusters The number of clusters; note that this is an upper bound
+#&#39; on min_num_clusts
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkMinNumClusts'>checkMinNumClusts</span> &lt;- function(min_num_clusts, p, n_clusters){
+    stopifnot(length(min_num_clusts) == 1)
+    stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
+    stopifnot(!is.na(min_num_clusts))
+    stopifnot(min_num_clusts == round(min_num_clusts))
+    stopifnot(min_num_clusts &gt;= 1)
+    stopifnot(min_num_clusts &lt;= p)
+    stopifnot(min_num_clusts &lt;= n_clusters)
+}</code></pre>
+<p>Tests for checkMinNumClusts:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkMinNumClusts works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(1, 5, 4))
+  testthat::expect_null(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(6, 6, 6))
+  testthat::expect_null(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(3, 1932, 3))
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(c(2, 4), 5, 4),
+                         &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(&quot;3&quot;, &quot;1932&quot;, &quot;3&quot;),
+                         &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(NA, NA, NA),
+                         &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(as.numeric(NA), as.numeric(NA),
+                                           as.numeric(NA)),
+                         &quot;!is.na(min_num_clusts) is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(0, 13, 7),
+                         &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(-1, 9, 8),
+                         &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(6, 5, 5),
+                         &quot;min_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(6, 7, 5),
+                         &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
+<p>checkMaxNumClusts:</p>
+<pre class="r"><code>#&#39; Helper function to confirm that the argument max_num_clusts to several 
+#&#39; functions is as expected
+#&#39;
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) Can be NA, in which case
+#&#39; max_num_clusts will be ignored.
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.) max_num_clusts must be at least as
+#&#39; large as min_num_clusts.
+#&#39; @param p The number of features; since this is an upper bound on the number
+#&#39; of clusters of features, it is also an upper bound on max_num_clusts.
+#&#39; @param n_clusters The number of clusters; note that this is an upper bound
+#&#39; on max_num_clusts
+#&#39; @return The provided max_num_clusts, coerced to an integer if needed, and
+#&#39; coerced to be less than or equal to the total number of clusters.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkMaxNumClusts'>checkMaxNumClusts</span> &lt;- function(max_num_clusts, min_num_clusts, p, n_clusters){
+    stopifnot(length(max_num_clusts) == 1)
+    if(!is.na(max_num_clusts)){
+        stopifnot(is.numeric(max_num_clusts) | is.integer(max_num_clusts))
+        stopifnot(max_num_clusts == round(max_num_clusts))
+        stopifnot(max_num_clusts &gt;= 1)
+        stopifnot(max_num_clusts &lt;= p)
+        max_num_clusts &lt;- as.integer(min(n_clusters, max_num_clusts))
+        stopifnot(max_num_clusts &gt;= min_num_clusts)
+    }
+    return(max_num_clusts)
+}</code></pre>
+<p>Tests for checkMaxNumClusts:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkMaxNumClusts works&quot;, {
+  testthat::expect_equal(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=4, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_equal(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=5, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_true(is.na(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=NA,
+                                                min_num_clusts=3, p=5,
+                                                n_clusters=4)))
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=&quot;4&quot;, min_num_clusts=1,
+                                           p=5, n_clusters=4),
+                         &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=3.2, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=c(3, 4),
+                                           min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;length(max_num_clusts) == 1 is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=&quot;4&quot;,
+                                           min_num_clusts=&quot;2&quot;,
+                                           p=&quot;5&quot;, n_clusters=&quot;4&quot;),
+                         &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=-1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;max_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=6, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
+                         fixed=TRUE)
+})</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
+<p>getSelectedClusters:</p>
+<pre class="r"><code>#&#39; From css output, obtain names of selected clusters and selection proportions,
+#&#39; indices of all selected features, and weights of individual cluster members
+#&#39;
+#&#39; If cutoff is too high for at least min_num_clusts clusters to be selected,
+#&#39; then it will be lowered until min_num_clusts can be selected. After that, if
+#&#39; the cutoff is too low such that more than max_num_clusts are selected, then
+#&#39; the cutoff will be increased until no more than max_num_clusts are selected.
+#&#39; Note that because clusters can have tied selection proportions, it is
+#&#39; possible that the number of selected clusters will be strictly lower than
+#&#39; max_num_clusts or strictly greater than min_num_clusts. In fact, it is
+#&#39; possible that both cutoffs won&#39;t be able to be satisfied simulteaneously,
+#&#39; even if there is a strictly positive difference between max_num_clusts and
+#&#39; min_num_clusts. If this occurs, max_num_clusts will take precedence over
+#&#39; min_num_clusts. getSelectedClusters will throw an error if the provided
+#&#39; inputs don&#39;t allow it to select any clusters. 
+#&#39; 
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param weighting Character; determines how to calculate the weights for
+#&#39; individual features within the selected clusters. Only those features with
+#&#39; nonzero weight within the selected clusters will be returned. Must be one of
+#&#39; &quot;sparse&quot;, &quot;weighted_avg&quot;, or &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is
+#&#39; put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, only the features within a selected cluster that were
+#&#39; themselves selected on at least one subsample will have nonzero weight. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, all cluster members within
+#&#39; each selected cluster will be returned.). See Faletto and Bien (2022) for
+#&#39; details.
+#&#39; @param cutoff Numeric; getCssSelections will select and return only of those
+#&#39; clusters with selection proportions equal to at least cutoff. Must be between
+#&#39; 0 and 1.
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.)
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
+#&#39; @return A named list with the following elements: \item{selected_clusts}{A
+#&#39; named numeric vector containing the selection proportions for the selected
+#&#39; clusters. The name of each entry is the name of the corresponding cluster.}
+#&#39; \item{selected_feats}{A named integer vector; the indices of the features
+#&#39; with nonzero weights from all of the selected clusters.} \item{weights}{A
+#&#39; named list of the same length as the number of selected clusters. Each list
+#&#39; element weights[[j]] is a numeric  vector of the weights to use for the jth
+#&#39; selected cluster, and it has the same name as the  cluster it corresponds
+#&#39; to.}
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='getSelectedClusters'>getSelectedClusters</span> &lt;- function(css_results, weighting, cutoff, min_num_clusts,
+    max_num_clusts){
+    # Check input
+
+    stopifnot(&quot;clus_sel_mat&quot; %in% names(css_results))
+    stopifnot(&quot;feat_sel_mat&quot; %in% names(css_results))
+    stopifnot(&quot;clusters&quot; %in% names(css_results))
+    stopifnot(all(colnames(css_results$clus_sel_mat) ==
+        names(css_results$clusters)))
+
+    # Eliminate clusters with selection proportions below cutoff
+    clus_sel_props &lt;- colMeans(css_results$clus_sel_mat)
+
+    # Get selected clusters
+    selected_clusts &lt;- clus_sel_props[clus_sel_props &gt;= cutoff]
+    B &lt;- nrow(css_results$feat_sel_mat)
+
+    # Check that selected_clusts has length at least min_num_clusts
+    while(length(selected_clusts) &lt; min_num_clusts){
+        cutoff &lt;- cutoff - 1/B
+        selected_clusts &lt;- clus_sel_props[clus_sel_props &gt;= cutoff]
+    }
+
+    # Check that selected_clusts has length at most max_num_clusts
+    if(!is.na(max_num_clusts)){
+        n_clusters &lt;- ncol(css_results$clus_sel_mat)
+        while(length(selected_clusts) &gt; max_num_clusts){
+            cutoff &lt;- cutoff + 1/B
+            if(cutoff &gt; 1){
+                break
+            }
+            # Make sure we don&#39;t reduce to a selected set of size 0
+            if(any(clus_sel_props &gt;= cutoff)){
+                selected_clusts &lt;- clus_sel_props[clus_sel_props &gt;= cutoff]
+            } else{
+                break
+            }
+        }
+    }
+
+    clust_names &lt;- names(selected_clusts)
+
+    n_sel_clusts &lt;- length(selected_clusts)
+
+    # Check that n_sel_clusts is as expected, and throw warnings or an error if
+    # not
+    <a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts, min_num_clusts, max_num_clusts,
+        max(clus_sel_props))
+    
+    ### Get selected features from selected clusters
+    clusters &lt;- css_results$clusters
+    stopifnot(all(clust_names %in% names(clusters)))
+
+    # Get a list of weights for all of the selected clusters
+    weights &lt;- <a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(css_results, selected_clusts, weighting)
+
+    # Get selected features from each cluster (those features with nonzero
+    # weights)
+    selected_feats &lt;- integer()
+    for(i in 1:n_sel_clusts){
+        clus_i_name &lt;- clust_names[i]
+        clust_i &lt;- clusters[[clus_i_name]]
+        weights_i &lt;- weights[[i]]
+        selected_feats &lt;- c(selected_feats, clust_i[weights_i != 0])
+    }
+
+    feat_names &lt;- colnames(css_results$feat_sel_mat)
+
+    names(selected_feats) &lt;- feat_names[selected_feats]
+
+    # Check output (already checked weights wihin getAllClustWeights)
+
+    checkGetSelectedClustersOutput(selected_clusts, css_results,
+        selected_feats)
+
+    return(list(selected_clusts=selected_clusts,
+        selected_feats=selected_feats, weights=weights))
+}</code></pre>
+<p>checkSelectedClusters:</p>
+<pre class="r"><code>#&#39; Helper function to check operations within getSelectedClusters function
+#&#39;
+#&#39; @param n_sel_clusts The number of selected clusters; should be constrained
+#&#39; by min_num_clusts and max_num_clusts (though it may not be possible to
+#&#39; satisfy both constraints simulteneously, in which case a warning will be
+#&#39; thrown).
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.)
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
+#&#39; @param max_sel_prop Numeric; the maximum selection proportion observed for 
+#&#39; any cluster.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkSelectedClusters'>checkSelectedClusters</span> &lt;- function(n_sel_clusts, min_num_clusts, max_num_clusts,
+    max_sel_prop){
+    if(n_sel_clusts == 0){
+        err &lt;- paste(&quot;No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, &quot;,
+            max_sel_prop, &quot;)&quot;, sep=&quot;&quot;)
+        stop(err)
+    }
+
+    # It may be impossible to get at least min_num_clusts or at most
+    # max_num_clusts; if so, give a warning
+    if(n_sel_clusts &lt; min_num_clusts){
+        warn &lt;- paste(&quot;Returning fewer than min_num_clusts = &quot;, min_num_clusts,
+            &quot; clusters because decreasing the cutoff any further would require returning more than max_num_clusts = &quot;,
+            max_num_clusts, &quot; clusters&quot;, sep=&quot;&quot;)
+        warning(warn)
+    }
+    if(!is.na(max_num_clusts)){
+        if(n_sel_clusts &gt; max_num_clusts){
+            warn &lt;- paste(&quot;Returning more than max_num_clusts = &quot;,
+                max_num_clusts,
+                &quot; clusters because increasing the cutoff any further would require returning 0 clusters&quot;,
+                sep=&quot;&quot;)
+            warning(warn)
+        }
+    }
+}</code></pre>
+<p>Test for checkSelectedClusters:</p>
+<pre class="r"><code>testthat::test_that(&quot;checkSelectedClusters works&quot;, {
+  testthat::expect_null(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=5, min_num_clusts=1,
+                                              max_num_clusts=NA, max_sel_prop=.8))
+  testthat::expect_null(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=5, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  testthat::expect_null(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=2, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  
+
+  testthat::expect_error(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=0, min_num_clusts=2,
+                                               max_num_clusts=5,
+                                               max_sel_prop=.6),
+                         &quot;No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, 0.6)&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_warning(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=1,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         &quot;Returning fewer than min_num_clusts = 2 clusters because decreasing the cutoff any further would require returning more than max_num_clusts = 5 clusters&quot;,
+                         fixed=TRUE)
+  testthat::expect_warning(<a href='create-cssr.html#checkSelectedClusters'>checkSelectedClusters</a>(n_sel_clusts=6,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         &quot;Returning more than max_num_clusts = 5 clusters because increasing the cutoff any further would require returning 0 clusters&quot;,
+                         fixed=TRUE)
+  
+})</code></pre>
+<pre><code>## Test passed 😀</code></pre>
+<p>getAllClustWeights:</p>
+<pre class="r"><code>#&#39; Calculate weights for each cluster member of all of the selected clusters.
+#&#39; 
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param sel_clusters A named numeric vector containing the selection
+#&#39; proportions for the selected clusters. The name of each entry is the name
+#&#39; of the corresponding cluster.
+#&#39; @param weighting Character; determines how to calculate the weights for
+#&#39; individual features within the selected clusters. Only those features with
+#&#39; nonzero weight within the selected clusters will be returned. Must be one of
+#&#39; &quot;sparse&quot;, &quot;weighted_avg&quot;, or &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is
+#&#39; put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, only the features within a selected cluster that were
+#&#39; themselves selected on at least one subsample will have nonzero weight. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, all cluster members within
+#&#39; each selected cluster will be returned.). See Faletto and Bien (2022) for
+#&#39; details.
+#&#39; @return A named list of the same length as sel_clusters of numeric vectors.
+#&#39; weights[[j]] is the weights to use for the jth selected cluster, and it has
+#&#39; the same name as the cluster it corresponds to.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='getAllClustWeights'>getAllClustWeights</span> &lt;- function(css_results, sel_clusters, weighting){
+
+    # Check inputs
+    stopifnot(class(css_results) == &quot;cssr&quot;)
+
+    stopifnot(is.numeric(sel_clusters))
+    p_ret &lt;- length(sel_clusters)
+    stopifnot(length(unique(names(sel_clusters))) == p_ret)
+    stopifnot(p_ret &gt; 0)
+
+    <a href='create-cssr.html#checkWeighting'>checkWeighting</a>(weighting)
+
+    # Get selection proportions and clusters
+    feat_sel_props &lt;- colMeans(css_results$feat_sel_mat)
+
+    p &lt;- length(feat_sel_props)
+    stopifnot(p &gt;= p_ret)
+
+    clusters &lt;- css_results$clusters
+    stopifnot(all(names(sel_clusters) %in% names(clusters)))
+
+    # Identify weights
+    weights &lt;- list()
+
+    for(j in 1:p_ret){
+        # Find the members of the cluster feature j is a member of
+        cluster_j &lt;- clusters[[names(sel_clusters)[j]]]
+        # Get the weights for this cluster and add them to the list
+        weights[[j]] &lt;- <a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_j, weighting, feat_sel_props)
+    }
+
+    # Add names to weights
+    names(weights) &lt;- names(sel_clusters)
+
+    # Check output
+
+    stopifnot(length(weights) == p_ret)
+    stopifnot(is.list(weights))
+
+    for(i in 1:p_ret){
+        stopifnot(length(clusters[[names(sel_clusters)[i]]]) == length(weights[[i]]))
+        stopifnot(all(weights[[i]] &gt;= 0))
+        stopifnot(all(weights[[i]] &lt;= 1))
+        stopifnot(abs(sum(weights[[i]]) - 1) &lt; 10^(-6))
+    }
+    return(weights)
+}</code></pre>
+<p>getClustWeights:</p>
+<pre class="r"><code>#&#39; Calculate weights for members of a cluster using selection proportions
+#&#39;
+#&#39; Given a cluster of features, the selection proportions for each cluster
+#&#39; member, and a specified weighting scheme, calculate the appropriate weights
+#&#39; for the cluster.
+#&#39; @param cluster_i An integer vector containing the indices of the members
+#&#39; of a cluster.
+#&#39; @param weighting Character; determines how to calculate the weights for
+#&#39; individual features within the selected clusters. Only those features with
+#&#39; nonzero weight within the selected clusters will be returned. Must be one of
+#&#39; &quot;sparse&quot;, &quot;weighted_avg&quot;, or &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is
+#&#39; put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, only the features within a selected cluster that were
+#&#39; themselves selected on at least one subsample will have nonzero weight. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, all cluster members within
+#&#39; each selected cluster will be returned.). See Faletto and Bien (2022) for
+#&#39; details.
+#&#39; @param feat_sel_props A numeric vector of selection proportions corresponding
+#&#39; to each of the p features.
+#&#39; @return A numeric vector of the same length as cluster_i containing the
+#&#39; weights corresponding to each of the features in cluster_i. The weights
+#&#39; will all be nonnegative and sum to 1.
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='getClustWeights'>getClustWeights</span> &lt;- function(cluster_i, weighting, feat_sel_props){
+
+    stopifnot(is.integer(cluster_i) | is.numeric(cluster_i))
+    stopifnot(all(cluster_i == round(cluster_i)))
+    n_weights &lt;- length(cluster_i)
+    stopifnot(length(unique(cluster_i)) == n_weights)
+
+    p &lt;- length(feat_sel_props)
+    stopifnot(all(cluster_i %in% 1:p))
+
+    # Get the selection proportions of each cluster member
+    sel_props &lt;- feat_sel_props[cluster_i]
+
+    stopifnot(all(sel_props &gt;= 0))
+    stopifnot(all(sel_props &lt;= 1))
+
+    weights_i &lt;- rep(as.numeric(NA), n_weights)
+
+    # Weighted or simple average?
+    if(weighting == &quot;sparse&quot;){
+        # Sparse cluster stability selection: All features in cluster with
+        # selection proportion equal to the max
+        # for the cluster get equal weight; rest of cluster gets 0 weight
+        if(sum(sel_props) == 0){
+            weights_i &lt;- rep(1/n_weights, n_weights)
+        } else{
+            maxes &lt;- sel_props==max(sel_props)
+
+            stopifnot(sum(maxes) &gt; 0)
+            stopifnot(sum(maxes) &lt;= n_weights)
+
+            weights_i &lt;- rep(0, n_weights)
+            weights_i[maxes] &lt;- 1/sum(maxes)
+        }
+    } else if(weighting == &quot;weighted_avg&quot;){
+        # Get weights for weighted average
+        if(sum(sel_props) == 0){
+            weights_i &lt;- rep(1/n_weights, n_weights)
+        } else{
+            weights_i &lt;- sel_props/sum(sel_props)
+        }
+    } else if(weighting == &quot;simple_avg&quot;){
+        weights_i &lt;- rep(1/n_weights, n_weights)
+    } else{
+        stop(&quot;weighting must be one of sparse, simple_avg, or weighted_avg&quot;)
+    }
+
+    stopifnot(abs(sum(weights_i) - 1) &lt; 10^(-6))
+    stopifnot(length(weights_i) == n_weights)
+    stopifnot(length(weights_i) &gt;= 1)
+    stopifnot(all(weights_i &gt;= 0))
+    stopifnot(all(weights_i &lt;= 1))
+
+    return(weights_i)
+}</code></pre>
+<p>Tests for getClustWeights:</p>
+<pre class="r"><code>testthat::test_that(&quot;getClustWeights works&quot;, {
+  sel_props &lt;- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  
+  # sparse
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(3L, 4L, 5L),
+                                             weighting=&quot;sparse&quot;,
+                                             feat_sel_props=sel_props),
+                             c(0, 0, 1))
+  
+  # weighted_avg
+  cluster=c(1L, 3L, 5L)
+  true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
+  
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
+                                             weighting=&quot;weighted_avg&quot;,
+                                             feat_sel_props=sel_props),
+                             true_weights)
+  
+  # simple_avg
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
+                                             weighting=&quot;simple_avg&quot;,
+                                             feat_sel_props=sel_props),
+                             rep(0.25, 4))
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
+<p>Tests for getAllClustWeights:</p>
+<pre class="r"><code>testthat::test_that(&quot;getAllClustWeights works&quot;, {
+  
+  set.seed(1872)
+  
+  x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y &lt;- stats::rnorm(10)
+  
+  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+  
+  res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props &lt;- colMeans(res$feat_sel_mat)
+  
+  sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
+  
+  true_weights &lt;- list()
+  
+  for(i in 1:2){
+    weights_i &lt;- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+    true_weights[[i]] &lt;- rep(0, length(weights_i))
+    true_weights[[i]][weights_i == max(weights_i)] &lt;- 1
+  }
+  
+  names(true_weights) &lt;- c(&quot;a&quot;, &quot;b&quot;)
+  
+  # sparse
+  testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                &quot;sparse&quot;), true_weights)
+  
+  # weighted_avg
+  for(i in 1:2){
+    true_weights[[i]] &lt;- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+  }
+
+  testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                &quot;weighted_avg&quot;), true_weights)
+
+  # simple_avg
+  for(i in 1:2){
+    n_weights_i &lt;- length(sel_clusts[[i]])
+    true_weights[[i]] &lt;- rep(1/n_weights_i, n_weights_i)
+  }
+  
+  testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                &quot;simple_avg&quot;), true_weights)
+  
+  # Errors
+  
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(1:4, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            &quot;simple_avg&quot;))
+  
+  bad_sel_clusts &lt;- colMeans(res$clus_sel_mat[, 1:2])
+  names(bad_sel_clusts) &lt;- c(&quot;apple&quot;, &quot;banana&quot;)
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, bad_sel_clusts, &quot;sparse&quot;),
+                         &quot;all(names(sel_clusters) %in% names(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            c(&quot;sparse&quot;, &quot;simple_avg&quot;)),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            NA),
+                         &quot;!is.na(weighting) is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            1),
+                         &quot;Weighting must be a character&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            &quot;spasre&quot;),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
+
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>
@@ -3435,10 +4135,15 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssInputs&#39;)checkCssInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLassoInputs&#39;)checkCssLassoInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLoopOutput&#39;)checkCssLoopOutput.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCutoff&#39;)checkCutoff.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormatClustersInput&#39;)checkFormatClustersInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterSelMatrixInput&#39;)checkGetClusterSelMatrixInput.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMaxNumClusts&#39;)checkMaxNumClusts.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMinNumClusts&#39;)checkMinNumClusts.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkPropFeatsRemove&#39;)checkPropFeatsRemove.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSamplingType&#39;)checkSamplingType.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSelectedClusters&#39;)checkSelectedClusters.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkWeighting&#39;)checkWeighting.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkY&#39;)checkY.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;corFunction&#39;)corFunction.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;createSubsamples&#39;)createSubsamples.Rd]8;;&#39;
@@ -3446,10 +4151,13 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLasso&#39;)cssLasso.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLoop&#39;)cssLoop.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formatClusters&#39;)formatClusters.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getAllClustWeights&#39;)getAllClustWeights.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClustWeights&#39;)getClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelMatrix&#39;)getClusterSelMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssSelections&#39;)getCssSelections.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getPrototypes&#39;)getPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelMatrix&#39;)getSelMatrix.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelectedClusters&#39;)getSelectedClusters.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSubsamps&#39;)getSubsamps.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;identifyPrototype&#39;)identifyPrototype.Rd]8;;&#39;</code></pre>
 </div>

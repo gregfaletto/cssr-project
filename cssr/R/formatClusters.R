@@ -91,24 +91,30 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
     } else{
         # What clusters need names?
         unnamed_clusts <- which(is.na(names(clusters)) | names(clusters) == "")
-        proposed_clust_names <- paste("c", unnamed_clusts, sep="")
-        # Replace any proposed cluster names that are already in use
-        if(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste("c",
-                unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
-                sep="")
-        }
-        while_counter <- 0
-        while(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
-                "_1", sep="")
-            while_counter <- while_counter + 1
-            if(while_counter >= 100){
-                stop("Function formatClusters stuck in an infinite while loop")
+        if(length(unnamed_clusts) > 0){
+            proposed_clust_names <- paste("c", unnamed_clusts, sep="")
+            # Replace any proposed cluster names that are already in use
+            if(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste("c",
+                    unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
+                    sep="")
             }
+            while_counter <- 0
+            while(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
+                    "_1", sep="")
+                while_counter <- while_counter + 1
+                if(while_counter >= 100){
+                    stop("Function formatClusters stuck in an infinite while loop")
+                }
+            }
+            print("unnamed_clusts:")
+            print(unnamed_clusts)
+            print("proposed_clust_names:")
+            print(proposed_clust_names)
+            stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
+            names(clusters)[unnamed_clusts] <- proposed_clust_names
         }
-        stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
-        names(clusters)[unnamed_clusts] <- proposed_clust_names
     }
 
     # Check output

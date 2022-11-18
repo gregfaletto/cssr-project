@@ -51,10 +51,10 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 
     p <- ncol(css_results$feat_sel_mat)
 
-    checkMinNumClusts(min_num_clusts, p)
+    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
 
     max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
-        css_results$clusters)
+        length(css_results$clusters))
 
     sel_results <- getSelectedClusters(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)

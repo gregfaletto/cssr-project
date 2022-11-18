@@ -1054,24 +1054,26 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
     } else{
         # What clusters need names?
         unnamed_clusts <- which(is.na(names(clusters)) | names(clusters) == "")
-        proposed_clust_names <- paste("c", unnamed_clusts, sep="")
-        # Replace any proposed cluster names that are already in use
-        if(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste("c",
-                unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
-                sep="")
-        }
-        while_counter <- 0
-        while(any(proposed_clust_names %in% names(clusters))){
-            proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
-                "_1", sep="")
-            while_counter <- while_counter + 1
-            if(while_counter >= 100){
-                stop("Function formatClusters stuck in an infinite while loop")
+        if(length(unnamed_clusts) > 0){
+            proposed_clust_names <- paste("c", unnamed_clusts, sep="")
+            # Replace any proposed cluster names that are already in use
+            if(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste("c",
+                    unnamed_clusts[proposed_clust_names %in% names(clusters)] + p,
+                    sep="")
             }
+            while_counter <- 0
+            while(any(proposed_clust_names %in% names(clusters))){
+                proposed_clust_names[proposed_clust_names %in% names(clusters)] <- paste(proposed_clust_names[proposed_clust_names %in% names(clusters)],
+                    "_1", sep="")
+                while_counter <- while_counter + 1
+                if(while_counter >= 100){
+                    stop("Function formatClusters stuck in an infinite while loop")
+                }
+            }
+            stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
+            names(clusters)[unnamed_clusts] <- proposed_clust_names
         }
-        stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
-        names(clusters)[unnamed_clusts] <- proposed_clust_names
     }
 
     # Check output
@@ -2913,6 +2915,12 @@ testthat::test_that("css works", {
 
   # No cluster
   testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10)), "cssr")
+  
+  # All clusters named
+  testthat::expect_identical(class(css(X=x, y=y, clusters=list("a"=1:5,
+                                                               "b"=6:10,
+                                                               "c"=11),
+                                       lambda=0.01, B=10)), "cssr")
 
   # Other sampling types
   testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="MB"),
@@ -2965,17 +2973,19 @@ As in the previous section, we first define each function and then define the he
   - checkMinNumClusts confirms that the min_num_clusts parameter provided to getCssSelections is as expected
   - Likewise for checkMaxNumClusts
   - getSelectedClusters is the workhorse function of getCssSelections, doing most of the work to get the selected clusters (and the selected features from those clusters) with the verified inputs
-    - checkSelectedClusters checks internally that the selected clusters are as expected
-    - getAllClustWeights gets the weights for each of the members of the selected clusters
+    * checkSelectedClusters checks internally that the selected clusters are as expected
+    * getAllClustWeights gets the weights for each of the members of the selected clusters
       - getClustWeights gets the weights for a single cluster
-    - checkGetSelectedClustersOutput verifies the output of getSelectedClusters
+    * checkGetSelectedClustersOutput verifies the output of getSelectedClusters
 * getCssDesign
   - checkNewXProvided confirms that the design matrix provided to getCssDesign matches the characteristics of the matrix that waas provided to css. 
   - checkXInputResults also verifies these inputs (and is also used by getCssPreds on both the training and test data)
   - formCssDesign is the workhorse function, generating a matrix of cluster representatives with the verified inputs to getCssDesign
-    - checkFormCssDesignInputs verifies the inputs to formCssDesign (somewhat redundantly here, but formCssDesign is called by more than one function, so this verifies the inputs to formCssDesign regardless of where it is called).
+    * checkFormCssDesignInputs verifies the inputs to formCssDesign (somewhat redundantly here, but formCssDesign is called by more than one function, so this verifies the inputs to formCssDesign regardless of where it is called).
 * getCssPreds
   - checkGetCssPredsInputs verifies the inputs to getCssPreds
+
+getCssSelections: 
 
 ```{r}
 #' Obtain a selected set of clusters and features
@@ -3029,10 +3039,10 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 
     p <- ncol(css_results$feat_sel_mat)
 
-    checkMinNumClusts(min_num_clusts, p)
+    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
 
     max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
-        css_results$clusters)
+        length(css_results$clusters))
 
     sel_results <- getSelectedClusters(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)
@@ -3052,8 +3062,770 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 }
 ```
 
+checkCutoff:
 
-getCssPreds, getCssSelections, getCssDesign
+```{r}
+#' Helper function to confirm that the argument cutoff to several functions is
+#' as expected
+#'
+#' @param cutoff Numeric; only those clusters with selection proportions equal
+#' to at least cutoff will be selected by cluster stability selection. Must be
+#' between 0 and 1.
+#' @author Gregory Faletto, Jacob Bien
+checkCutoff <- function(cutoff){
+    stopifnot(is.numeric(cutoff) | is.integer(cutoff))
+    stopifnot(length(cutoff) == 1)
+    stopifnot(!is.na(cutoff))
+    stopifnot(cutoff >= 0)
+    stopifnot(cutoff <= 1)
+}
+```
+
+Tests for checkCutoff:
+
+```{r}
+testthat::test_that("checkCutoff works", {
+  testthat::expect_null(checkCutoff(0))
+  testthat::expect_null(checkCutoff(0.2))
+  testthat::expect_null(checkCutoff(1))
+  
+  testthat::expect_error(checkCutoff(-.2), "cutoff >= 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(2), "cutoff <= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(".3"),
+                        "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
+                        fixed=TRUE)
+  testthat::expect_error(checkCutoff(matrix(1:12, nrow=4, ncol=3)),
+                         "length(cutoff) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(numeric()),
+                         "length(cutoff) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkCutoff(as.numeric(NA)),
+                         "!is.na(cutoff) is not TRUE", fixed=TRUE)
+
+})
+```
+
+checkWeighting:
+
+```{r}
+#' Helper function to confirm that the argument weighting to several 
+#' functions is as expected
+#'
+#' @param weighting Character; determines how to calculate the weights to
+#' combine features from the selected clusters into weighted averages, called
+#' cluster representatives. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg'.
+#' @author Gregory Faletto, Jacob Bien
+checkWeighting <- function(weighting){
+    stopifnot(length(weighting)==1)
+    stopifnot(!is.na(weighting))
+    if(!is.character(weighting)){
+        stop("Weighting must be a character")
+    }
+    if(!(weighting %in% c("sparse", "simple_avg", "weighted_avg"))){
+        stop("Weighting must be a character and one of sparse, simple_avg, or weighted_avg")
+    }
+}
+```
+
+Tests for checkWeighting:
+
+```{r}
+testthat::test_that("checkWeighting works", {
+  testthat::expect_null(checkWeighting("sparse"))
+  testthat::expect_null(checkWeighting("simple_avg"))
+  testthat::expect_null(checkWeighting("weighted_avg"))
+  
+  testthat::expect_error(checkWeighting(c("sparse", "simple_avg")),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkWeighting(NA), "!is.na(weighting) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkWeighting(1), "Weighting must be a character",
+                         fixed=TRUE)
+  testthat::expect_error(checkWeighting("spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+})
+```
+
+checkMinNumClusts:
+
+```{r}
+#' Helper function to confirm that the argument min_num_clusts to several 
+#' functions is as expected
+#'
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param p The number of features; since this is an upper bound on the number
+#' of clusters of features, it is also an upper bound on min_num_clusts.
+#' @param n_clusters The number of clusters; note that this is an upper bound
+#' on min_num_clusts
+#' @author Gregory Faletto, Jacob Bien
+checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
+    stopifnot(length(min_num_clusts) == 1)
+    stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
+    stopifnot(!is.na(min_num_clusts))
+    stopifnot(min_num_clusts == round(min_num_clusts))
+    stopifnot(min_num_clusts >= 1)
+    stopifnot(min_num_clusts <= p)
+    stopifnot(min_num_clusts <= n_clusters)
+}
+```
+
+Tests for checkMinNumClusts:
+
+```{r}
+testthat::test_that("checkMinNumClusts works", {
+  testthat::expect_null(checkMinNumClusts(1, 5, 4))
+  testthat::expect_null(checkMinNumClusts(6, 6, 6))
+  testthat::expect_null(checkMinNumClusts(3, 1932, 3))
+  
+  testthat::expect_error(checkMinNumClusts(c(2, 4), 5, 4),
+                         "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts("3", "1932", "3"),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(NA, NA, NA),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(as.numeric(NA), as.numeric(NA),
+                                           as.numeric(NA)),
+                         "!is.na(min_num_clusts) is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(0, 13, 7),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(-1, 9, 8),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(6, 5, 5),
+                         "min_num_clusts <= p is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(6, 7, 5),
+                         "min_num_clusts <= n_clusters is not TRUE", fixed=TRUE)
+})
+```
+
+checkMaxNumClusts:
+
+```{r}
+#' Helper function to confirm that the argument max_num_clusts to several 
+#' functions is as expected
+#'
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Can be NA, in which case
+#' max_num_clusts will be ignored.
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) max_num_clusts must be at least as
+#' large as min_num_clusts.
+#' @param p The number of features; since this is an upper bound on the number
+#' of clusters of features, it is also an upper bound on max_num_clusts.
+#' @param n_clusters The number of clusters; note that this is an upper bound
+#' on max_num_clusts
+#' @return The provided max_num_clusts, coerced to an integer if needed, and
+#' coerced to be less than or equal to the total number of clusters.
+#' @author Gregory Faletto, Jacob Bien
+checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
+    stopifnot(length(max_num_clusts) == 1)
+    if(!is.na(max_num_clusts)){
+        stopifnot(is.numeric(max_num_clusts) | is.integer(max_num_clusts))
+        stopifnot(max_num_clusts == round(max_num_clusts))
+        stopifnot(max_num_clusts >= 1)
+        stopifnot(max_num_clusts <= p)
+        max_num_clusts <- as.integer(min(n_clusters, max_num_clusts))
+        stopifnot(max_num_clusts >= min_num_clusts)
+    }
+    return(max_num_clusts)
+}
+```
+
+Tests for checkMaxNumClusts:
+
+```{r}
+testthat::test_that("checkMaxNumClusts works", {
+  testthat::expect_equal(checkMaxNumClusts(max_num_clusts=4, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_equal(checkMaxNumClusts(max_num_clusts=5, min_num_clusts=1,
+                                           p=5, n_clusters=4), 4)
+  testthat::expect_true(is.na(checkMaxNumClusts(max_num_clusts=NA,
+                                                min_num_clusts=3, p=5,
+                                                n_clusters=4)))
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts="4", min_num_clusts=1,
+                                           p=5, n_clusters=4),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=3.2, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts == round(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=c(3, 4),
+                                           min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "length(max_num_clusts) == 1 is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts="4",
+                                           min_num_clusts="2",
+                                           p="5", n_clusters="4"),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=-1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=6, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkMaxNumClusts(max_num_clusts=1, min_num_clusts=2,
+                                           p=5, n_clusters=4),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+})
+```
+
+getSelectedClusters:
+
+```{r}
+#' From css output, obtain names of selected clusters and selection proportions,
+#' indices of all selected features, and weights of individual cluster members
+#'
+#' If cutoff is too high for at least min_num_clusts clusters to be selected,
+#' then it will be lowered until min_num_clusts can be selected. After that, if
+#' the cutoff is too low such that more than max_num_clusts are selected, then
+#' the cutoff will be increased until no more than max_num_clusts are selected.
+#' Note that because clusters can have tied selection proportions, it is
+#' possible that the number of selected clusters will be strictly lower than
+#' max_num_clusts or strictly greater than min_num_clusts. In fact, it is
+#' possible that both cutoffs won't be able to be satisfied simulteaneously,
+#' even if there is a strictly positive difference between max_num_clusts and
+#' min_num_clusts. If this occurs, max_num_clusts will take precedence over
+#' min_num_clusts. getSelectedClusters will throw an error if the provided
+#' inputs don't allow it to select any clusters. 
+#' 
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param weighting Character; determines how to calculate the weights for
+#' individual features within the selected clusters. Only those features with
+#' nonzero weight within the selected clusters will be returned. Must be one of
+#' "sparse", "weighted_avg", or "simple_avg'. For "sparse", all the weight is
+#' put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", only the features within a selected cluster that were
+#' themselves selected on at least one subsample will have nonzero weight. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, all cluster members within
+#' each selected cluster will be returned.). See Faletto and Bien (2022) for
+#' details.
+#' @param cutoff Numeric; getCssSelections will select and return only of those
+#' clusters with selection proportions equal to at least cutoff. Must be between
+#' 0 and 1.
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
+#' @return A named list with the following elements: \item{selected_clusts}{A
+#' named numeric vector containing the selection proportions for the selected
+#' clusters. The name of each entry is the name of the corresponding cluster.}
+#' \item{selected_feats}{A named integer vector; the indices of the features
+#' with nonzero weights from all of the selected clusters.} \item{weights}{A
+#' named list of the same length as the number of selected clusters. Each list
+#' element weights[[j]] is a numeric  vector of the weights to use for the jth
+#' selected cluster, and it has the same name as the  cluster it corresponds
+#' to.}
+#' @author Gregory Faletto, Jacob Bien
+getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
+    max_num_clusts){
+    # Check input
+
+    stopifnot("clus_sel_mat" %in% names(css_results))
+    stopifnot("feat_sel_mat" %in% names(css_results))
+    stopifnot("clusters" %in% names(css_results))
+    stopifnot(all(colnames(css_results$clus_sel_mat) ==
+        names(css_results$clusters)))
+
+    # Eliminate clusters with selection proportions below cutoff
+    clus_sel_props <- colMeans(css_results$clus_sel_mat)
+
+    # Get selected clusters
+    selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+    B <- nrow(css_results$feat_sel_mat)
+
+    # Check that selected_clusts has length at least min_num_clusts
+    while(length(selected_clusts) < min_num_clusts){
+        cutoff <- cutoff - 1/B
+        selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+    }
+
+    # Check that selected_clusts has length at most max_num_clusts
+    if(!is.na(max_num_clusts)){
+        n_clusters <- ncol(css_results$clus_sel_mat)
+        while(length(selected_clusts) > max_num_clusts){
+            cutoff <- cutoff + 1/B
+            if(cutoff > 1){
+                break
+            }
+            # Make sure we don't reduce to a selected set of size 0
+            if(any(clus_sel_props >= cutoff)){
+                selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+            } else{
+                break
+            }
+        }
+    }
+
+    clust_names <- names(selected_clusts)
+
+    n_sel_clusts <- length(selected_clusts)
+
+    # Check that n_sel_clusts is as expected, and throw warnings or an error if
+    # not
+    checkSelectedClusters(n_sel_clusts, min_num_clusts, max_num_clusts,
+        max(clus_sel_props))
+    
+    ### Get selected features from selected clusters
+    clusters <- css_results$clusters
+    stopifnot(all(clust_names %in% names(clusters)))
+
+    # Get a list of weights for all of the selected clusters
+    weights <- getAllClustWeights(css_results, selected_clusts, weighting)
+
+    # Get selected features from each cluster (those features with nonzero
+    # weights)
+    selected_feats <- integer()
+    for(i in 1:n_sel_clusts){
+        clus_i_name <- clust_names[i]
+        clust_i <- clusters[[clus_i_name]]
+        weights_i <- weights[[i]]
+        selected_feats <- c(selected_feats, clust_i[weights_i != 0])
+    }
+
+    feat_names <- colnames(css_results$feat_sel_mat)
+
+    names(selected_feats) <- feat_names[selected_feats]
+
+    # Check output (already checked weights wihin getAllClustWeights)
+
+    checkGetSelectedClustersOutput(selected_clusts, css_results,
+        selected_feats)
+
+    return(list(selected_clusts=selected_clusts,
+        selected_feats=selected_feats, weights=weights))
+}
+```
+
+checkSelectedClusters:
+
+```{r}
+#' Helper function to check operations within getSelectedClusters function
+#'
+#' @param n_sel_clusts The number of selected clusters; should be constrained
+#' by min_num_clusts and max_num_clusts (though it may not be possible to
+#' satisfy both constraints simulteneously, in which case a warning will be
+#' thrown).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.)
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
+#' @param max_sel_prop Numeric; the maximum selection proportion observed for 
+#' any cluster.
+#' @author Gregory Faletto, Jacob Bien
+checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
+    max_sel_prop){
+    if(n_sel_clusts == 0){
+        err <- paste("No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, ",
+            max_sel_prop, ")", sep="")
+        stop(err)
+    }
+
+    # It may be impossible to get at least min_num_clusts or at most
+    # max_num_clusts; if so, give a warning
+    if(n_sel_clusts < min_num_clusts){
+        warn <- paste("Returning fewer than min_num_clusts = ", min_num_clusts,
+            " clusters because decreasing the cutoff any further would require returning more than max_num_clusts = ",
+            max_num_clusts, " clusters", sep="")
+        warning(warn)
+    }
+    if(!is.na(max_num_clusts)){
+        if(n_sel_clusts > max_num_clusts){
+            warn <- paste("Returning more than max_num_clusts = ",
+                max_num_clusts,
+                " clusters because increasing the cutoff any further would require returning 0 clusters",
+                sep="")
+            warning(warn)
+        }
+    }
+}
+```
+
+Test for checkSelectedClusters:
+
+```{r}
+testthat::test_that("checkSelectedClusters works", {
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=5, min_num_clusts=1,
+                                              max_num_clusts=NA, max_sel_prop=.8))
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=5, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  testthat::expect_null(checkSelectedClusters(n_sel_clusts=2, min_num_clusts=2,
+                                              max_num_clusts=5, max_sel_prop=.3))
+  
+
+  testthat::expect_error(checkSelectedClusters(n_sel_clusts=0, min_num_clusts=2,
+                                               max_num_clusts=5,
+                                               max_sel_prop=.6),
+                         "No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, 0.6)",
+                         fixed=TRUE)
+  
+  testthat::expect_warning(checkSelectedClusters(n_sel_clusts=1,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         "Returning fewer than min_num_clusts = 2 clusters because decreasing the cutoff any further would require returning more than max_num_clusts = 5 clusters",
+                         fixed=TRUE)
+  testthat::expect_warning(checkSelectedClusters(n_sel_clusts=6,
+                                                 min_num_clusts=2,
+                                                 max_num_clusts=5,
+                                                 max_sel_prop=.6),
+                         "Returning more than max_num_clusts = 5 clusters because increasing the cutoff any further would require returning 0 clusters",
+                         fixed=TRUE)
+  
+})
+```
+
+getAllClustWeights:
+
+```{r}
+#' Calculate weights for each cluster member of all of the selected clusters.
+#' 
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param sel_clusters A named numeric vector containing the selection
+#' proportions for the selected clusters. The name of each entry is the name
+#' of the corresponding cluster.
+#' @param weighting Character; determines how to calculate the weights for
+#' individual features within the selected clusters. Only those features with
+#' nonzero weight within the selected clusters will be returned. Must be one of
+#' "sparse", "weighted_avg", or "simple_avg'. For "sparse", all the weight is
+#' put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", only the features within a selected cluster that were
+#' themselves selected on at least one subsample will have nonzero weight. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, all cluster members within
+#' each selected cluster will be returned.). See Faletto and Bien (2022) for
+#' details.
+#' @return A named list of the same length as sel_clusters of numeric vectors.
+#' weights[[j]] is the weights to use for the jth selected cluster, and it has
+#' the same name as the cluster it corresponds to.
+#' @author Gregory Faletto, Jacob Bien
+getAllClustWeights <- function(css_results, sel_clusters, weighting){
+
+    # Check inputs
+    stopifnot(class(css_results) == "cssr")
+
+    stopifnot(is.numeric(sel_clusters))
+    p_ret <- length(sel_clusters)
+    stopifnot(length(unique(names(sel_clusters))) == p_ret)
+    stopifnot(p_ret > 0)
+
+    checkWeighting(weighting)
+
+    # Get selection proportions and clusters
+    feat_sel_props <- colMeans(css_results$feat_sel_mat)
+
+    p <- length(feat_sel_props)
+    stopifnot(p >= p_ret)
+
+    clusters <- css_results$clusters
+    stopifnot(all(names(sel_clusters) %in% names(clusters)))
+
+    # Identify weights
+    weights <- list()
+
+    for(j in 1:p_ret){
+        # Find the members of the cluster feature j is a member of
+        cluster_j <- clusters[[names(sel_clusters)[j]]]
+        # Get the weights for this cluster and add them to the list
+        weights[[j]] <- getClustWeights(cluster_j, weighting, feat_sel_props)
+    }
+
+    # Add names to weights
+    names(weights) <- names(sel_clusters)
+
+    # Check output
+
+    stopifnot(length(weights) == p_ret)
+    stopifnot(is.list(weights))
+
+    for(i in 1:p_ret){
+        stopifnot(length(clusters[[names(sel_clusters)[i]]]) == length(weights[[i]]))
+        stopifnot(all(weights[[i]] >= 0))
+        stopifnot(all(weights[[i]] <= 1))
+        stopifnot(abs(sum(weights[[i]]) - 1) < 10^(-6))
+    }
+    return(weights)
+}
+```
+
+getClustWeights:
+
+```{r}
+#' Calculate weights for members of a cluster using selection proportions
+#'
+#' Given a cluster of features, the selection proportions for each cluster
+#' member, and a specified weighting scheme, calculate the appropriate weights
+#' for the cluster.
+#' @param cluster_i An integer vector containing the indices of the members
+#' of a cluster.
+#' @param weighting Character; determines how to calculate the weights for
+#' individual features within the selected clusters. Only those features with
+#' nonzero weight within the selected clusters will be returned. Must be one of
+#' "sparse", "weighted_avg", or "simple_avg'. For "sparse", all the weight is
+#' put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", only the features within a selected cluster that were
+#' themselves selected on at least one subsample will have nonzero weight. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, all cluster members within
+#' each selected cluster will be returned.). See Faletto and Bien (2022) for
+#' details.
+#' @param feat_sel_props A numeric vector of selection proportions corresponding
+#' to each of the p features.
+#' @return A numeric vector of the same length as cluster_i containing the
+#' weights corresponding to each of the features in cluster_i. The weights
+#' will all be nonnegative and sum to 1.
+#' @author Gregory Faletto, Jacob Bien
+getClustWeights <- function(cluster_i, weighting, feat_sel_props){
+
+    stopifnot(is.integer(cluster_i) | is.numeric(cluster_i))
+    stopifnot(all(cluster_i == round(cluster_i)))
+    n_weights <- length(cluster_i)
+    stopifnot(length(unique(cluster_i)) == n_weights)
+
+    p <- length(feat_sel_props)
+    stopifnot(all(cluster_i %in% 1:p))
+
+    # Get the selection proportions of each cluster member
+    sel_props <- feat_sel_props[cluster_i]
+
+    stopifnot(all(sel_props >= 0))
+    stopifnot(all(sel_props <= 1))
+
+    weights_i <- rep(as.numeric(NA), n_weights)
+
+    # Weighted or simple average?
+    if(weighting == "sparse"){
+        # Sparse cluster stability selection: All features in cluster with
+        # selection proportion equal to the max
+        # for the cluster get equal weight; rest of cluster gets 0 weight
+        if(sum(sel_props) == 0){
+            weights_i <- rep(1/n_weights, n_weights)
+        } else{
+            maxes <- sel_props==max(sel_props)
+
+            stopifnot(sum(maxes) > 0)
+            stopifnot(sum(maxes) <= n_weights)
+
+            weights_i <- rep(0, n_weights)
+            weights_i[maxes] <- 1/sum(maxes)
+        }
+    } else if(weighting == "weighted_avg"){
+        # Get weights for weighted average
+        if(sum(sel_props) == 0){
+            weights_i <- rep(1/n_weights, n_weights)
+        } else{
+            weights_i <- sel_props/sum(sel_props)
+        }
+    } else if(weighting == "simple_avg"){
+        weights_i <- rep(1/n_weights, n_weights)
+    } else{
+        stop("weighting must be one of sparse, simple_avg, or weighted_avg")
+    }
+
+    stopifnot(abs(sum(weights_i) - 1) < 10^(-6))
+    stopifnot(length(weights_i) == n_weights)
+    stopifnot(length(weights_i) >= 1)
+    stopifnot(all(weights_i >= 0))
+    stopifnot(all(weights_i <= 1))
+
+    return(weights_i)
+}
+```
+
+
+Tests for getClustWeights:
+
+```{r}
+testthat::test_that("getClustWeights works", {
+  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  
+  # sparse
+  testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
+                                             weighting="sparse",
+                                             feat_sel_props=sel_props),
+                             c(0, 0, 1))
+  
+  # weighted_avg
+  cluster=c(1L, 3L, 5L)
+  true_weights <- sel_props[cluster]/sum(sel_props[cluster])
+  
+  testthat::expect_identical(getClustWeights(cluster_i=cluster,
+                                             weighting="weighted_avg",
+                                             feat_sel_props=sel_props),
+                             true_weights)
+  
+  # simple_avg
+  testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
+                                             weighting="simple_avg",
+                                             feat_sel_props=sel_props),
+                             rep(0.25, 4))
+})
+```
+
+
+Tests for getAllClustWeights:
+
+```{r}
+testthat::test_that("getAllClustWeights works", {
+  
+  set.seed(1872)
+  
+  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y <- stats::rnorm(10)
+  
+  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  
+  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props <- colMeans(res$feat_sel_mat)
+  
+  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+  
+  true_weights <- list()
+  
+  for(i in 1:2){
+    weights_i <- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+    true_weights[[i]] <- rep(0, length(weights_i))
+    true_weights[[i]][weights_i == max(weights_i)] <- 1
+  }
+  
+  names(true_weights) <- c("a", "b")
+  
+  # sparse
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "sparse"), true_weights)
+  
+  # weighted_avg
+  for(i in 1:2){
+    true_weights[[i]] <- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+  }
+
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "weighted_avg"), true_weights)
+
+  # simple_avg
+  for(i in 1:2){
+    n_weights_i <- length(sel_clusts[[i]])
+    true_weights[[i]] <- rep(1/n_weights_i, n_weights_i)
+  }
+  
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "simple_avg"), true_weights)
+  
+  # Errors
+  
+  # css_results not correct (error has quotation marks)
+  testthat::expect_error(getAllClustWeights(1:4, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "simple_avg"))
+  
+  bad_sel_clusts <- colMeans(res$clus_sel_mat[, 1:2])
+  names(bad_sel_clusts) <- c("apple", "banana")
+  testthat::expect_error(getAllClustWeights(res, bad_sel_clusts, "sparse"),
+                         "all(names(sel_clusters) %in% names(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            c("sparse", "simple_avg")),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            NA),
+                         "!is.na(weighting) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            1),
+                         "Weighting must be a character", fixed=TRUE)
+  
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+
+})
+```
+
+checkGetSelectedClustersOutput:
+
+```{r}
+#' Helper function to check that output of getSelectedClusters is as expected
+#'
+#' @param selected_clusts A named numeric vector containing the selection
+#' proportions for the selected clusters. The name of each entry is the name of
+#' the corresponding cluster.
+#' @param selected_feats A named integer vector; the indices of the features
+#' with nonzero weights from all of the selected clusters.
+#' @param n_clusters Integer; the number of clusters in the data (upper bound
+#' for the length of selected_clusts)
+#' @param p Integer; number of features in the data (all selected_feats should
+#' be in 1:p)
+#' @author Gregory Faletto, Jacob Bien
+checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
+    n_clusters, p){
+    stopifnot(is.numeric(selected_clusts))
+    stopifnot(all(selected_clusts >= 0))
+    stopifnot(all(selected_clusts <= 1))
+    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) <= n_clusters)
+    stopifnot(length(names(selected_clusts)) ==
+        length(unique(names(selected_clusts))))
+
+    stopifnot(is.integer(selected_feats))
+    stopifnot(length(selected_feats) == length(unique(selected_feats)))
+    stopifnot(all(selected_feats %in% 1:p))
+}
+```
+
+Tests for checkGetSelectedClustersOutput:
 
 ### Convenient Wrapper Functions
 
@@ -3061,9 +3833,11 @@ Finally,
 
 cssSelect, cssPredict
 
+getModelSize
+
 ### Other useful functions
 
-genLatentData, getLassoLambda, print.cssr
+genLatentData, getLassoLambda, print.cssr, getModelSize
 
 ## Documenting the package and building
 
