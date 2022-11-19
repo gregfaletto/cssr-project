@@ -108,10 +108,6 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
                     stop("Function formatClusters stuck in an infinite while loop")
                 }
             }
-            print("unnamed_clusts:")
-            print(unnamed_clusts)
-            print("proposed_clust_names:")
-            print(proposed_clust_names)
             stopifnot(length(unnamed_clusts) == length(proposed_clust_names))
             names(clusters)[unnamed_clusts] <- proposed_clust_names
         }
