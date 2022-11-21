@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-11-18" />
+<meta name="date" content="2022-11-20" />
 
 <title>Creating the cssr R package</title>
 
@@ -359,7 +359,7 @@ pre code {
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">November 18, 2022</h4>
+<h4 class="date">November 20, 2022</h4>
 
 </div>
 
@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1694,7 +1694,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1783,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -3323,8 +3323,8 @@ getSelectedClusters</li>
 <li>getCssDesign
 <ul>
 <li>checkNewXProvided confirms that the design matrix provided to
-getCssDesign matches the characteristics of the matrix that waas
-provided to css.</li>
+getCssDesign matches the characteristics of the matrix that was provided
+to css.</li>
 <li>checkXInputResults also verifies these inputs (and is also used by
 getCssPreds on both the training and test data)</li>
 <li>formCssDesign is the workhorse function, generating a matrix of
@@ -4279,6 +4279,48 @@ where it is called).</li>
                              rep(0.25, 4))
 })</code></pre>
 <pre><code>## Test passed 😀</code></pre>
+<p>Finally, tests for getCssSelections</p>
+<pre class="r"><code>testthat::test_that(&quot;getCssSelections works&quot;, {
+  set.seed(26717)
+  
+  x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y &lt;- stats::rnorm(10)
+  
+  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+  
+  res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props &lt;- colMeans(res$feat_sel_mat)
+
+  sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
+
+  sel_props &lt;- c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+  # # sparse
+  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(3L, 4L, 5L),
+  #                                            weighting=&quot;sparse&quot;,
+  #                                            feat_sel_props=sel_props),
+  #                            c(0, 0, 1))
+  # 
+  # # weighted_avg
+  # cluster=c(1L, 3L, 5L)
+  # true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
+  # 
+  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
+  #                                            weighting=&quot;weighted_avg&quot;,
+  #                                            feat_sel_props=sel_props),
+  #                            true_weights)
+  # 
+  # # simple_avg
+  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
+  #                                            weighting=&quot;simple_avg&quot;,
+  #                                            feat_sel_props=sel_props),
+  #                            rep(0.25, 4))
+})</code></pre>
+<pre><code>## ── Skip (???): getCssSelections works ──────────────────────────────────────────
+## Reason: empty test</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>

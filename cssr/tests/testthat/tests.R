@@ -1621,3 +1621,43 @@ testthat::test_that("getSelectedClusters works", {
                              rep(0.25, 4))
 })
 
+testthat::test_that("getCssSelections works", {
+  set.seed(26717)
+  
+  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y <- stats::rnorm(10)
+  
+  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  
+  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props <- colMeans(res$feat_sel_mat)
+
+  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+
+  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+  # # sparse
+  # testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
+  #                                            weighting="sparse",
+  #                                            feat_sel_props=sel_props),
+  #                            c(0, 0, 1))
+  # 
+  # # weighted_avg
+  # cluster=c(1L, 3L, 5L)
+  # true_weights <- sel_props[cluster]/sum(sel_props[cluster])
+  # 
+  # testthat::expect_identical(getClustWeights(cluster_i=cluster,
+  #                                            weighting="weighted_avg",
+  #                                            feat_sel_props=sel_props),
+  #                            true_weights)
+  # 
+  # # simple_avg
+  # testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
+  #                                            weighting="simple_avg",
+  #                                            feat_sel_props=sel_props),
+  #                            rep(0.25, 4))
+})
+
