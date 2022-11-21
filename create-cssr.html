@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1694,7 +1694,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1783,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1853,7 +1853,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -4010,7 +4010,11 @@ where it is called).</li>
   x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
   y &lt;- stats::rnorm(10)
   
-  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+  clust_names &lt;- letters[1:3]
+  
+  good_clusters &lt;- list(1:2, 3:4, 5)
+  
+  names(good_clusters) &lt;- clust_names
   
   res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
     sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
@@ -4018,7 +4022,9 @@ where it is called).</li>
   
   sel_props &lt;- colMeans(res$feat_sel_mat)
   
-  sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
+  sel_clusts &lt;- list(1L:2L, 3L:4L)
+  
+  names(sel_clusts) &lt;- clust_names[1:2]
   
   # sparse
   true_weights &lt;- list()
@@ -4029,69 +4035,73 @@ where it is called).</li>
     true_weights[[i]][weights_i == max(weights_i)] &lt;- 1
   }
   
-  names(true_weights) &lt;- c(&quot;a&quot;, &quot;b&quot;)
+  names(true_weights) &lt;- clust_names[1:2]
   
   testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
                                                 colMeans(res$clus_sel_mat[, 1:2]),
                                                 &quot;sparse&quot;), true_weights)
 
-  # # weighted_avg
-  # true_weights &lt;- list()
-  # 
-  # for(i in 1:2){
-  #   true_weights[[i]] &lt;- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
-  # }
-  # 
-  # testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
-  #                                               colMeans(res$clus_sel_mat[, 1:2]),
-  #                                               &quot;weighted_avg&quot;), true_weights)
-  # 
-  # # simple_avg
-  # true_weights &lt;- list()
-  # 
-  # for(i in 1:2){
-  #   n_weights_i &lt;- length(sel_clusts[[i]])
-  #   true_weights[[i]] &lt;- rep(1/n_weights_i, n_weights_i)
-  # }
-  # 
-  # testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
-  #                                               colMeans(res$clus_sel_mat[, 1:2]),
-  #                                               &quot;simple_avg&quot;), true_weights)
-  # 
-  # # Errors
-  # 
-  # # css_results not correct (error has quotation marks)
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(1:4, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           &quot;simple_avg&quot;))
-  # 
-  # bad_sel_clusts &lt;- colMeans(res$clus_sel_mat[, 1:2])
-  # names(bad_sel_clusts) &lt;- c(&quot;apple&quot;, &quot;banana&quot;)
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, bad_sel_clusts, &quot;sparse&quot;),
-  #                        &quot;all(names(sel_clusters) %in% names(clusters)) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           c(&quot;sparse&quot;, &quot;simple_avg&quot;)),
-  #                        &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           NA),
-  #                        &quot;!is.na(weighting) is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           1),
-  #                        &quot;Weighting must be a character&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           &quot;spasre&quot;),
-  #                        &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
-  #                        fixed=TRUE)
+  # weighted_avg
+  true_weights &lt;- list()
+
+  for(i in 1:2){
+    true_weights[[i]] &lt;- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
+  }
+  
+  names(true_weights) &lt;- clust_names[1:2]
+
+  testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                &quot;weighted_avg&quot;), true_weights)
+
+  # simple_avg
+  true_weights &lt;- list()
+
+  for(i in 1:2){
+    n_weights_i &lt;- length(sel_clusts[[i]])
+    true_weights[[i]] &lt;- rep(1/n_weights_i, n_weights_i)
+  }
+  
+  names(true_weights) &lt;- clust_names[1:2]
+
+  testthat::expect_identical(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                &quot;simple_avg&quot;), true_weights)
+
+  # Errors
+
+  # css_results not correct (error has quotation marks)
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(1:4, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            &quot;simple_avg&quot;))
+
+  bad_sel_clusts &lt;- colMeans(res$clus_sel_mat[, 1:2])
+  names(bad_sel_clusts) &lt;- c(&quot;apple&quot;, &quot;banana&quot;)
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, bad_sel_clusts, &quot;sparse&quot;),
+                         &quot;all(names(sel_clusters) %in% names(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            c(&quot;sparse&quot;, &quot;simple_avg&quot;)),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            NA),
+                         &quot;!is.na(weighting) is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            1),
+                         &quot;Weighting must be a character&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getAllClustWeights'>getAllClustWeights</a>(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            &quot;spasre&quot;),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
 
 })</code></pre>
 <pre><code>## Test passed 🥇</code></pre>
@@ -4241,35 +4251,34 @@ where it is called).</li>
     sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
     num_cores = 1L)
   
-  # sel_props &lt;- colMeans(res$feat_sel_mat)
-  # 
-  # sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
-  # 
-  # sel_props &lt;- c(0.1, 0.3, 0.5, 0.7, 0.9)
-  # 
-  # # sparse
-  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(3L, 4L, 5L),
-  #                                            weighting=&quot;sparse&quot;,
-  #                                            feat_sel_props=sel_props),
-  #                            c(0, 0, 1))
-  # 
-  # # weighted_avg
-  # cluster=c(1L, 3L, 5L)
-  # true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
-  # 
-  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
-  #                                            weighting=&quot;weighted_avg&quot;,
-  #                                            feat_sel_props=sel_props),
-  #                            true_weights)
-  # 
-  # # simple_avg
-  # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
-  #                                            weighting=&quot;simple_avg&quot;,
-  #                                            feat_sel_props=sel_props),
-  #                            rep(0.25, 4))
+  sel_props &lt;- colMeans(res$feat_sel_mat)
+
+  sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
+
+  sel_props &lt;- c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+  # sparse
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(3L, 4L, 5L),
+                                             weighting=&quot;sparse&quot;,
+                                             feat_sel_props=sel_props),
+                             c(0, 0, 1))
+
+  # weighted_avg
+  cluster=c(1L, 3L, 5L)
+  true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
+
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
+                                             weighting=&quot;weighted_avg&quot;,
+                                             feat_sel_props=sel_props),
+                             true_weights)
+
+  # simple_avg
+  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
+                                             weighting=&quot;simple_avg&quot;,
+                                             feat_sel_props=sel_props),
+                             rep(0.25, 4))
 })</code></pre>
-<pre><code>## ── Skip (???): getSelectedClusters works ───────────────────────────────────────
-## Reason: empty test</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>

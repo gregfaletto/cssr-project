@@ -1384,7 +1384,11 @@ testthat::test_that("getAllClustWeights works", {
   x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
   y <- stats::rnorm(10)
   
-  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  clust_names <- letters[1:3]
+  
+  good_clusters <- list(1:2, 3:4, 5)
+  
+  names(good_clusters) <- clust_names
   
   res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
     sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
@@ -1392,7 +1396,9 @@ testthat::test_that("getAllClustWeights works", {
   
   sel_props <- colMeans(res$feat_sel_mat)
   
-  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+  sel_clusts <- list(1L:2L, 3L:4L)
+  
+  names(sel_clusts) <- clust_names[1:2]
   
   # sparse
   true_weights <- list()
@@ -1403,7 +1409,7 @@ testthat::test_that("getAllClustWeights works", {
     true_weights[[i]][weights_i == max(weights_i)] <- 1
   }
   
-  names(true_weights) <- c("a", "b")
+  names(true_weights) <- clust_names[1:2]
   
   testthat::expect_identical(getAllClustWeights(res,
                                                 colMeans(res$clus_sel_mat[, 1:2]),
@@ -1415,57 +1421,203 @@ testthat::test_that("getAllClustWeights works", {
   for(i in 1:2){
     true_weights[[i]] <- sel_props[sel_clusts[[i]]]/sum(sel_props[sel_clusts[[i]]])
   }
+  
+  names(true_weights) <- clust_names[1:2]
 
   testthat::expect_identical(getAllClustWeights(res,
                                                 colMeans(res$clus_sel_mat[, 1:2]),
                                                 "weighted_avg"), true_weights)
-  # 
-  # # simple_avg
-  # true_weights <- list()
-  # 
-  # for(i in 1:2){
-  #   n_weights_i <- length(sel_clusts[[i]])
-  #   true_weights[[i]] <- rep(1/n_weights_i, n_weights_i)
-  # }
-  # 
-  # testthat::expect_identical(getAllClustWeights(res,
-  #                                               colMeans(res$clus_sel_mat[, 1:2]),
-  #                                               "simple_avg"), true_weights)
-  # 
-  # # Errors
-  # 
-  # # css_results not correct (error has quotation marks)
-  # testthat::expect_error(getAllClustWeights(1:4, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           "simple_avg"))
-  # 
-  # bad_sel_clusts <- colMeans(res$clus_sel_mat[, 1:2])
-  # names(bad_sel_clusts) <- c("apple", "banana")
-  # testthat::expect_error(getAllClustWeights(res, bad_sel_clusts, "sparse"),
-  #                        "all(names(sel_clusters) %in% names(clusters)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # 
-  # testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           c("sparse", "simple_avg")),
-  #                        "length(weighting) == 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           NA),
-  #                        "!is.na(weighting) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           1),
-  #                        "Weighting must be a character", fixed=TRUE)
-  # 
-  # testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
-  #                                                                          1:2]),
-  #                                           "spasre"),
-  #                        "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
-  #                        fixed=TRUE)
 
+  # simple_avg
+  true_weights <- list()
+
+  for(i in 1:2){
+    n_weights_i <- length(sel_clusts[[i]])
+    true_weights[[i]] <- rep(1/n_weights_i, n_weights_i)
+  }
+  
+  names(true_weights) <- clust_names[1:2]
+
+  testthat::expect_identical(getAllClustWeights(res,
+                                                colMeans(res$clus_sel_mat[, 1:2]),
+                                                "simple_avg"), true_weights)
+
+  # Errors
+
+  # css_results not correct (error has quotation marks)
+  testthat::expect_error(getAllClustWeights(1:4, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "simple_avg"))
+
+  bad_sel_clusts <- colMeans(res$clus_sel_mat[, 1:2])
+  names(bad_sel_clusts) <- c("apple", "banana")
+  testthat::expect_error(getAllClustWeights(res, bad_sel_clusts, "sparse"),
+                         "all(names(sel_clusters) %in% names(clusters)) is not TRUE",
+                         fixed=TRUE)
+
+
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            c("sparse", "simple_avg")),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            NA),
+                         "!is.na(weighting) is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            1),
+                         "Weighting must be a character", fixed=TRUE)
+
+  testthat::expect_error(getAllClustWeights(res, colMeans(res$clus_sel_mat[,
+                                                                           1:2]),
+                                            "spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+
+})
+
+testthat::test_that("checkGetSelectedClustersOutput works", {
+  
+  sel_clusts <- 0.1*(1:9)
+  names(sel_clusts) <- letters[1:9]
+  
+  sel_feats <- 10:26
+  names(sel_feats) <- LETTERS[10:26]
+  
+  testthat::expect_null(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30))
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=letters[1:4],
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30),
+                         "is.numeric(selected_clusts) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=-sel_clusts,
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30),
+                         "all(selected_clusts >= 0) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=10*sel_clusts,
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30),
+                         "all(selected_clusts <= 1) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=numeric(),
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30),
+                         "length(selected_clusts) >= 1 is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                               selected_feats=sel_feats,
+                               n_clusters=8, p=30),
+                         "length(selected_clusts) <= n_clusters is not TRUE",
+                         fixed=TRUE)
+  
+  bad_clusts <- sel_clusts
+  names(bad_clusts) <- rep("a", length(bad_clusts))
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
+                               selected_feats=sel_feats,
+                               n_clusters=10, p=30),
+                         "length(names(selected_clusts)) == length(unique(names(selected_clusts))) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=unname(sel_clusts),
+                                                       selected_feats=sel_feats,
+                                                       n_clusters=10, p=30),
+                         "!is.null(names(selected_clusts)) is not TRUE",
+                         fixed=TRUE)
+  
+  bad_clusts <- sel_clusts
+  names(bad_clusts)[1] <- ""
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
+                               selected_feats=sel_feats,
+                               n_clusters=10, p=30),
+                         "all(!is.na(names(selected_clusts)) & names(selected_clusts) !=  .... is not TRUE",
+                         fixed=TRUE)
+  
+  names(bad_clusts)[1] <- as.character(NA)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
+                               selected_feats=sel_feats,
+                               n_clusters=10, p=30),
+                         "all(!is.na(names(selected_clusts)) & names(selected_clusts) !=  .... is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                                                       selected_feats=0.1,
+                                                       n_clusters=10, p=30),
+                         "is.integer(selected_feats) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                                                       selected_feats=c(1L,
+                                                                        rep(2L,
+                                                                            2)),
+                                                       n_clusters=10, p=30),
+                         "length(selected_feats) == length(unique(selected_feats)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                               selected_feats=sel_feats,
+                               n_clusters=10, p=25),
+                         "all(selected_feats %in% 1:p) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
+                               selected_feats=sel_feats[1:8],
+                               n_clusters=10, p=25),
+                         "length(selected_clusts) <= length(selected_feats) is not TRUE",
+                         fixed=TRUE)
+  
+})
+
+testthat::test_that("getSelectedClusters works", {
+  set.seed(26717)
+  
+  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y <- stats::rnorm(10)
+  
+  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  
+  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
+    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
+    num_cores = 1L)
+  
+  sel_props <- colMeans(res$feat_sel_mat)
+
+  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+
+  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+
+  # sparse
+  testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
+                                             weighting="sparse",
+                                             feat_sel_props=sel_props),
+                             c(0, 0, 1))
+
+  # weighted_avg
+  cluster=c(1L, 3L, 5L)
+  true_weights <- sel_props[cluster]/sum(sel_props[cluster])
+
+  testthat::expect_identical(getClustWeights(cluster_i=cluster,
+                                             weighting="weighted_avg",
+                                             feat_sel_props=sel_props),
+                             true_weights)
+
+  # simple_avg
+  testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
+                                             weighting="simple_avg",
+                                             feat_sel_props=sel_props),
+                             rep(0.25, 4))
 })
 
