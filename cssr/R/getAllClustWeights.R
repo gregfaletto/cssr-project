@@ -64,7 +64,8 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     stopifnot(is.list(weights))
 
     for(i in 1:p_ret){
-        stopifnot(length(clusters[[names(sel_clusters)[i]]]) == length(weights[[i]]))
+        stopifnot(length(clusters[[names(sel_clusters)[i]]]) ==
+            length(weights[[i]]))
         stopifnot(all(weights[[i]] >= 0))
         stopifnot(all(weights[[i]] <= 1))
         stopifnot(abs(sum(weights[[i]]) - 1) < 10^(-6))

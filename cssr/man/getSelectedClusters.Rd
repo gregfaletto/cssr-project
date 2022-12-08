@@ -53,7 +53,7 @@ clusters. The name of each entry is the name of the corresponding cluster.}
 with nonzero weights from all of the selected clusters.} \item{weights}{A
 named list of the same length as the number of selected clusters. Each list
 element weights[\link{j}] is a numeric  vector of the weights to use for the jth
-selected cluster, and it has the same name as the  cluster it corresponds
+selected cluster, and it has the same name as the cluster it corresponds
 to.}
 }
 \description{

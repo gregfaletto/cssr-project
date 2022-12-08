@@ -61,6 +61,7 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 
     sel_clust_names <- names(sel_results$selected_clusts)
 
+    stopifnot(length(sel_clust_names) >= 1)
     stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
 
     sel_clusts <- list()

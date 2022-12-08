@@ -1135,6 +1135,31 @@ testthat::test_that("css works", {
   testthat::expect_identical(res$train_inds, integer())
 
   ## Trying other inputs
+  
+  # X as a data.frame
+  X_df <- datasets::mtcars
+  res_fitfun <- css(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  testthat::expect_identical(class(res_fitfun), "cssr")
+  
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+  
+  res_fitfun <- css(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  testthat::expect_identical(class(res_fitfun), "cssr")
+  
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+  res_names <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
+  testthat::expect_identical(class(res_names), "cssr")
+  testthat::expect_identical(colnames(x2), colnames(res_names$X))
+  testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
 
   # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
   # shouldn't throw any error, because the acceptable input for lambda should be
@@ -1587,52 +1612,256 @@ testthat::test_that("getSelectedClusters works", {
   x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
   y <- stats::rnorm(10)
   
-  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
   
-  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
-    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
-    num_cores = 1L)
-  
-  sel_props <- colMeans(res$feat_sel_mat)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
 
-  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+  res <- getSelectedClusters(css_res, weighting="sparse", cutoff=0.05,
+                             min_num_clusts=1, max_num_clusts=NA)
 
-  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
 
-  # sparse
-  testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
-                                             weighting="sparse",
-                                             feat_sel_props=sel_props),
-                             c(0, 0, 1))
+  testthat::expect_true(is.numeric(res$selected_clusts))
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(unique(names(res$selected_clusts))))
+  testthat::expect_true(all(res$selected_clusts >= 0))
+  testthat::expect_true(all(res$selected_clusts <= 1))
+
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 5))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  testthat::expect_equal(length(res$selected_clusts), length(res$weights))
+  for(i in 1:length(res$weights)){
+    weights_i <- res$weights[[i]]
+    num_nonzero_weights <- sum(weights_i > 0)
+    # For "sparse" weighting, tither there should only be one nonzero weight and
+    # it should equal 1 (if there were no ties in selection proportions among
+    # cluster members) or the nonzero weights should all be
+    # 1/num_nonzero_weights
+    testthat::expect_true(all(weights_i[weights_i > 0] == 1/num_nonzero_weights))
+  }
 
   # weighted_avg
-  cluster=c(1L, 3L, 5L)
-  true_weights <- sel_props[cluster]/sum(sel_props[cluster])
+  res_weighted <- getSelectedClusters(css_res, weighting="weighted_avg",
+                                      cutoff=0.05, min_num_clusts=1,
+                                      max_num_clusts=NA)
 
-  testthat::expect_identical(getClustWeights(cluster_i=cluster,
-                                             weighting="weighted_avg",
-                                             feat_sel_props=sel_props),
-                             true_weights)
+  testthat::expect_equal(length(res_weighted$selected_clusts),
+                         length(res_weighted$weights))
+  for(i in 1:length(res_weighted$weights)){
+    weights_i <- res_weighted$weights[[i]]
+    testthat::expect_true(all(weights_i >= 0))
+    testthat::expect_true(all(weights_i <= 1))
+  }
 
   # simple_avg
-  testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
-                                             weighting="simple_avg",
-                                             feat_sel_props=sel_props),
-                             rep(0.25, 4))
+  res_simple <- getSelectedClusters(css_res, weighting="simple_avg",
+                                    cutoff=0.05, min_num_clusts=1,
+                                    max_num_clusts=NA)
+
+  testthat::expect_equal(length(res_simple$selected_clusts),
+                         length(res_simple$weights))
+  for(i in 1:length(res_simple$weights)){
+    weights_i <- res_simple$weights[[i]]
+    testthat::expect_equal(length(unique(weights_i)), 1)
+    testthat::expect_equal(length(weights_i), sum(weights_i > 0))
+  }
+
+  # Test min_num_clusts
+  res2 <- getSelectedClusters(css_res, weighting="weighted_avg", cutoff=1,
+                             min_num_clusts=3, max_num_clusts=NA)
+  testthat::expect_true(is.list(res2))
+  testthat::expect_equal(length(res2$selected_clusts), 3)
+
+  res3 <- getSelectedClusters(css_res, weighting="sparse", cutoff=1,
+                             min_num_clusts=2, max_num_clusts=NA)
+  testthat::expect_true(length(res3$selected_clusts) >= 2)
+
+  # Test max_num_clusts
+  # Ensure there is at least one relevant feature
+  x2 <- x
+  x2[, 5] <- y
+  css_res2 <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res4 <- getSelectedClusters(css_res2, weighting="simple_avg", cutoff=0,
+                             min_num_clusts=1, max_num_clusts=1)
+  testthat::expect_true(is.list(res4))
+  testthat::expect_equal(length(res4$selected_clusts), 1)
+
+  res5 <- getSelectedClusters(css_res, weighting="weighted_avg", cutoff=0,
+                             min_num_clusts=1, max_num_clusts=2)
+  testthat::expect_true(length(res5$selected_clusts) <= 2)
+  
+  # Name features
+  colnames(x) <- LETTERS[1:ncol(x)]
+  css_res3 <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res <- getSelectedClusters(css_res3, weighting="sparse", cutoff=0.05,
+                             min_num_clusts=1, max_num_clusts=NA)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+
+  testthat::expect_true(is.numeric(res$selected_clusts))
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(unique(names(res$selected_clusts))))
+  testthat::expect_true(all(res$selected_clusts >= 0))
+  testthat::expect_true(all(res$selected_clusts <= 1))
+
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 5))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(res$selected_feats))
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
 })
 
 testthat::test_that("getCssSelections works", {
+
   set.seed(26717)
   
-  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
   y <- stats::rnorm(10)
   
-  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
   
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  res <- getCssSelections(css_res)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:11))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= 11)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:11))
+  
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 7))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  # Test min_num_clusts (should be 5 clusters--3 named ones, plus last two get
+  # put in their own unnamed clusters automatically by css)
+  res2 <- getCssSelections(css_res, weighting="weighted_avg", cutoff=1,
+                             min_num_clusts=5, max_num_clusts=NA)
+  testthat::expect_true(is.list(res2))
+  testthat::expect_equal(length(res2$selected_clusts), 5)
+
+  res3 <- getCssSelections(css_res, weighting="sparse", cutoff=1,
+                             min_num_clusts=3, max_num_clusts=NA)
+  testthat::expect_true(length(res3$selected_clusts) >= 3)
+
+  # Test max_num_clusts
+  # Ensure there is at least one relevant feature
+  x2 <- x
+  x2[, 5] <- y
+  css_res2 <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res4 <- getCssSelections(css_res2, weighting="simple_avg", cutoff=0,
+                             min_num_clusts=1, max_num_clusts=1)
+  testthat::expect_true(is.list(res4))
+  testthat::expect_equal(length(res4$selected_clusts), 1)
+
+  res5 <- getCssSelections(css_res, weighting="weighted_avg", cutoff=0,
+                             min_num_clusts=1, max_num_clusts=2)
+  testthat::expect_true(length(res5$selected_clusts) <= 2)
+
+  # # Name features
+  # colnames(x) <- LETTERS[1:ncol(x)]
+  # css_res3 <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  # res <- getCssSelections(css_res3, weighting="sparse", cutoff=0.05,
+  #                            min_num_clusts=1, max_num_clusts=NA)
+  # 
+  # testthat::expect_true(is.list(res))
+  # testthat::expect_equal(length(res), 3)
+  # testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+  #                                          "weights"))
+  # testthat::expect_true(length(res$selected_clusts) <=
+  #                         length(res$selected_feats))
+  # 
+  # testthat::expect_true(is.numeric(res$selected_clusts))
+  # testthat::expect_true(length(res$selected_clusts) >= 1)
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                        length(res$selected_clusts))
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                        length(unique(names(res$selected_clusts))))
+  # testthat::expect_true(all(res$selected_clusts >= 0))
+  # testthat::expect_true(all(res$selected_clusts <= 1))
+  # 
+  # testthat::expect_true(is.integer(res$selected_feats))
+  # testthat::expect_true(length(res$selected_feats) >= 1)
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(unique(names(res$selected_feats))))
+  # testthat::expect_true(all(res$selected_feats >= 1))
+  # testthat::expect_true(all(res$selected_feats <= 5))
+  # testthat::expect_equal(length(res$selected_feats),
+  #                            length(unique(res$selected_feats)))
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(res$selected_feats))
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(unique(names(res$selected_feats))))
+})
+
+testthat::test_that("checkXInputResults works", {
+  set.seed(26717)
+
+  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y <- stats::rnorm(10)
+
+  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+
   res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
     sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
     num_cores = 1L)
-  
+
   sel_props <- colMeans(res$feat_sel_mat)
 
   sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
@@ -1642,16 +1871,16 @@ testthat::test_that("getCssSelections works", {
   #                                            weighting="sparse",
   #                                            feat_sel_props=sel_props),
   #                            c(0, 0, 1))
-  # 
+  #
   # # weighted_avg
   # cluster=c(1L, 3L, 5L)
   # true_weights <- sel_props[cluster]/sum(sel_props[cluster])
-  # 
+  #
   # testthat::expect_identical(getClustWeights(cluster_i=cluster,
   #                                            weighting="weighted_avg",
   #                                            feat_sel_props=sel_props),
   #                            true_weights)
-  # 
+  #
   # # simple_avg
   # testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
   #                                            weighting="simple_avg",

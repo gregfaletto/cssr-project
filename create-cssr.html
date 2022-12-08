@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-12-07" />
+<meta name="date" content="2022-12-08" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">December 07, 2022</h4>
+<h4 class="date">December 08, 2022</h4>
 
 </div>
 
@@ -1183,10 +1183,6 @@ have been defined.)</p>
 
     stopifnot(is.matrix(X) | is.data.frame(X))
 
-    feat_names &lt;- as.character(NA)
-    if(!is.null(colnames(X))){
-        feat_names &lt;- colnames(X)
-    }
     clust_names &lt;- as.character(NA)
     if(!is.null(names(clusters))){
         clust_names &lt;- names(clusters)
@@ -1202,6 +1198,11 @@ have been defined.)</p>
 
     n &lt;- nrow(X)
     p &lt;- ncol(X)
+
+    feat_names &lt;- as.character(NA)
+    if(!is.null(colnames(X))){
+        feat_names &lt;- colnames(X)
+    }
 
     stopifnot(p &gt;= 2)
     if(length(feat_names) &gt; 1){
@@ -1688,7 +1689,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1777,7 +1778,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1847,7 +1848,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -3105,7 +3106,7 @@ defined)</h1>
                          fixed=TRUE)
 })</code></pre>
 <pre><code>## Test passed 🌈</code></pre>
-<p>Finally, test css itself!</p>
+<p>Finally, tests for css itself!</p>
 <pre class="r"><code>testthat::test_that(&quot;css works&quot;, {
   set.seed(8712)
   
@@ -3176,6 +3177,31 @@ defined)</h1>
   testthat::expect_identical(res$train_inds, integer())
 
   ## Trying other inputs
+  
+  # X as a data.frame
+  X_df &lt;- datasets::mtcars
+  res_fitfun &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  testthat::expect_identical(class(res_fitfun), &quot;cssr&quot;)
+  
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won&#39;t match number of columns of df2)
+  df2 &lt;- X_df
+  df2$cyl &lt;- as.factor(df2$cyl)
+  df2$vs &lt;- as.factor(df2$vs)
+  df2$am &lt;- as.factor(df2$am)
+  df2$gear &lt;- as.factor(df2$gear)
+  df2$carb &lt;- as.factor(df2$carb)
+  
+  res_fitfun &lt;- <a href='create-cssr.html#css'>css</a>(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  testthat::expect_identical(class(res_fitfun), &quot;cssr&quot;)
+  
+  # X as a matrix with column names
+  x2 &lt;- x
+  colnames(x2) &lt;- LETTERS[1:11]
+  res_names &lt;- <a href='create-cssr.html#css'>css</a>(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
+  testthat::expect_identical(class(res_names), &quot;cssr&quot;)
+  testthat::expect_identical(colnames(x2), colnames(res_names$X))
+  testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
 
   # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
   # shouldn&#39;t throw any error, because the acceptable input for lambda should be
@@ -3253,7 +3279,7 @@ defined)</h1>
   testthat::expect_equal(res_train$train_inds, 11:15)
 
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <div id="selection-and-prediction-functions" class="section level3">
 <h3>Selection and Prediction Functions</h3>
 <p>Now that css has been defined and tested, we write functions to work
@@ -3318,9 +3344,11 @@ getSelectedClusters</li>
 <ul>
 <li>checkNewXProvided confirms that the design matrix provided to
 getCssDesign matches the characteristics of the matrix that was provided
-to css.</li>
+to css.
+<ul>
 <li>checkXInputResults also verifies these inputs (and is also used by
 getCssPreds on both the training and test data)</li>
+</ul></li>
 <li>formCssDesign is the workhorse function, generating a matrix of
 cluster representatives with the verified inputs to getCssDesign
 <ul>
@@ -3397,6 +3425,7 @@ where it is called).</li>
 
     sel_clust_names &lt;- names(sel_results$selected_clusts)
 
+    stopifnot(length(sel_clust_names) &gt;= 1)
     stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
 
     sel_clusts &lt;- list()
@@ -3442,7 +3471,7 @@ where it is called).</li>
                          &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
 
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>checkWeighting:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument weighting to several 
 #&#39; functions is as expected
@@ -3478,7 +3507,7 @@ where it is called).</li>
                          &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>checkMinNumClusts:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument min_num_clusts to several 
 #&#39; functions is as expected
@@ -3527,7 +3556,7 @@ where it is called).</li>
   testthat::expect_error(<a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(6, 7, 5),
                          &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>checkMaxNumClusts:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument max_num_clusts to several 
 #&#39; functions is as expected
@@ -3609,7 +3638,7 @@ where it is called).</li>
                          &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>getSelectedClusters:</p>
 <pre class="r"><code>#&#39; From css output, obtain names of selected clusters and selection proportions,
 #&#39; indices of all selected features, and weights of individual cluster members
@@ -3660,18 +3689,13 @@ where it is called).</li>
 #&#39; with nonzero weights from all of the selected clusters.} \item{weights}{A
 #&#39; named list of the same length as the number of selected clusters. Each list
 #&#39; element weights[[j]] is a numeric  vector of the weights to use for the jth
-#&#39; selected cluster, and it has the same name as the  cluster it corresponds
+#&#39; selected cluster, and it has the same name as the cluster it corresponds
 #&#39; to.}
 #&#39; @author Gregory Faletto, Jacob Bien
 <span id='getSelectedClusters'>getSelectedClusters</span> &lt;- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input
-
-    stopifnot(&quot;clus_sel_mat&quot; %in% names(css_results))
-    stopifnot(&quot;feat_sel_mat&quot; %in% names(css_results))
-    stopifnot(&quot;clusters&quot; %in% names(css_results))
-    stopifnot(all(colnames(css_results$clus_sel_mat) ==
-        names(css_results$clusters)))
+    stopifnot(class(css_results) == &quot;cssr&quot;)
 
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props &lt;- colMeans(css_results$clus_sel_mat)
@@ -3735,8 +3759,8 @@ where it is called).</li>
 
     # Check output (already checked weights wihin getAllClustWeights)
 
-    <a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts, css_results,
-        selected_feats)
+    <a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts, selected_feats,
+        n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
 
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
@@ -3766,6 +3790,8 @@ where it is called).</li>
             max_sel_prop, &quot;)&quot;, sep=&quot;&quot;)
         stop(err)
     }
+
+    stopifnot(n_sel_clusts &gt;= 1)
 
     # It may be impossible to get at least min_num_clusts or at most
     # max_num_clusts; if so, give a warning
@@ -3815,7 +3841,7 @@ where it is called).</li>
                          fixed=TRUE)
   
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>getAllClustWeights:</p>
 <pre class="r"><code>#&#39; Calculate weights for each cluster member of all of the selected clusters.
 #&#39; 
@@ -3881,7 +3907,8 @@ where it is called).</li>
     stopifnot(is.list(weights))
 
     for(i in 1:p_ret){
-        stopifnot(length(clusters[[names(sel_clusters)[i]]]) == length(weights[[i]]))
+        stopifnot(length(clusters[[names(sel_clusters)[i]]]) ==
+            length(weights[[i]]))
         stopifnot(all(weights[[i]] &gt;= 0))
         stopifnot(all(weights[[i]] &lt;= 1))
         stopifnot(abs(sum(weights[[i]]) - 1) &lt; 10^(-6))
@@ -3995,7 +4022,7 @@ where it is called).</li>
                                              feat_sel_props=sel_props),
                              rep(0.25, 4))
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>Tests for getAllClustWeights:</p>
 <pre class="r"><code>testthat::test_that(&quot;getAllClustWeights works&quot;, {
   
@@ -4124,6 +4151,7 @@ where it is called).</li>
     stopifnot(!is.null(names(selected_clusts)))
     stopifnot(all(!is.na(names(selected_clusts)) &amp;
         names(selected_clusts) != &quot;&quot;))
+    stopifnot(length(names(selected_clusts)) == length(selected_clusts))
     stopifnot(is.integer(selected_feats))
     stopifnot(length(selected_feats) == length(unique(selected_feats)))
     stopifnot(all(selected_feats %in% 1:p))
@@ -4239,53 +4267,427 @@ where it is called).</li>
   x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
   y &lt;- stats::rnorm(10)
   
-  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+  good_clusters &lt;- list(&quot;apple&quot;=1:2, &quot;banana&quot;=3:4, &quot;cantaloupe&quot;=5)
   
-  res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
-    sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
-    num_cores = 1L)
-  
-  sel_props &lt;- colMeans(res$feat_sel_mat)
+  css_res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
 
-  sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
+  res &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;sparse&quot;, cutoff=0.05,
+                             min_num_clusts=1, max_num_clusts=NA)
 
-  sel_props &lt;- c(0.1, 0.3, 0.5, 0.7, 0.9)
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c(&quot;selected_clusts&quot;, &quot;selected_feats&quot;,
+                                           &quot;weights&quot;))
+  testthat::expect_true(length(res$selected_clusts) &lt;=
+                          length(res$selected_feats))
 
-  # sparse
-  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(3L, 4L, 5L),
-                                             weighting=&quot;sparse&quot;,
-                                             feat_sel_props=sel_props),
-                             c(0, 0, 1))
+  testthat::expect_true(is.numeric(res$selected_clusts))
+  testthat::expect_true(length(res$selected_clusts) &gt;= 1)
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(unique(names(res$selected_clusts))))
+  testthat::expect_true(all(res$selected_clusts &gt;= 0))
+  testthat::expect_true(all(res$selected_clusts &lt;= 1))
+
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) &gt;= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats &gt;= 1))
+  testthat::expect_true(all(res$selected_feats &lt;= 5))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  testthat::expect_equal(length(res$selected_clusts), length(res$weights))
+  for(i in 1:length(res$weights)){
+    weights_i &lt;- res$weights[[i]]
+    num_nonzero_weights &lt;- sum(weights_i &gt; 0)
+    # For &quot;sparse&quot; weighting, tither there should only be one nonzero weight and
+    # it should equal 1 (if there were no ties in selection proportions among
+    # cluster members) or the nonzero weights should all be
+    # 1/num_nonzero_weights
+    testthat::expect_true(all(weights_i[weights_i &gt; 0] == 1/num_nonzero_weights))
+  }
 
   # weighted_avg
-  cluster=c(1L, 3L, 5L)
-  true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
+  res_weighted &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;weighted_avg&quot;,
+                                      cutoff=0.05, min_num_clusts=1,
+                                      max_num_clusts=NA)
 
-  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
-                                             weighting=&quot;weighted_avg&quot;,
-                                             feat_sel_props=sel_props),
-                             true_weights)
+  testthat::expect_equal(length(res_weighted$selected_clusts),
+                         length(res_weighted$weights))
+  for(i in 1:length(res_weighted$weights)){
+    weights_i &lt;- res_weighted$weights[[i]]
+    testthat::expect_true(all(weights_i &gt;= 0))
+    testthat::expect_true(all(weights_i &lt;= 1))
+  }
 
   # simple_avg
-  testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
-                                             weighting=&quot;simple_avg&quot;,
-                                             feat_sel_props=sel_props),
-                             rep(0.25, 4))
+  res_simple &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;simple_avg&quot;,
+                                    cutoff=0.05, min_num_clusts=1,
+                                    max_num_clusts=NA)
+
+  testthat::expect_equal(length(res_simple$selected_clusts),
+                         length(res_simple$weights))
+  for(i in 1:length(res_simple$weights)){
+    weights_i &lt;- res_simple$weights[[i]]
+    testthat::expect_equal(length(unique(weights_i)), 1)
+    testthat::expect_equal(length(weights_i), sum(weights_i &gt; 0))
+  }
+
+  # Test min_num_clusts
+  res2 &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;weighted_avg&quot;, cutoff=1,
+                             min_num_clusts=3, max_num_clusts=NA)
+  testthat::expect_true(is.list(res2))
+  testthat::expect_equal(length(res2$selected_clusts), 3)
+
+  res3 &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;sparse&quot;, cutoff=1,
+                             min_num_clusts=2, max_num_clusts=NA)
+  testthat::expect_true(length(res3$selected_clusts) &gt;= 2)
+
+  # Test max_num_clusts
+  # Ensure there is at least one relevant feature
+  x2 &lt;- x
+  x2[, 5] &lt;- y
+  css_res2 &lt;- <a href='create-cssr.html#css'>css</a>(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res4 &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res2, weighting=&quot;simple_avg&quot;, cutoff=0,
+                             min_num_clusts=1, max_num_clusts=1)
+  testthat::expect_true(is.list(res4))
+  testthat::expect_equal(length(res4$selected_clusts), 1)
+
+  res5 &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res, weighting=&quot;weighted_avg&quot;, cutoff=0,
+                             min_num_clusts=1, max_num_clusts=2)
+  testthat::expect_true(length(res5$selected_clusts) &lt;= 2)
+  
+  # Name features
+  colnames(x) &lt;- LETTERS[1:ncol(x)]
+  css_res3 &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_res3, weighting=&quot;sparse&quot;, cutoff=0.05,
+                             min_num_clusts=1, max_num_clusts=NA)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c(&quot;selected_clusts&quot;, &quot;selected_feats&quot;,
+                                           &quot;weights&quot;))
+  testthat::expect_true(length(res$selected_clusts) &lt;=
+                          length(res$selected_feats))
+
+  testthat::expect_true(is.numeric(res$selected_clusts))
+  testthat::expect_true(length(res$selected_clusts) &gt;= 1)
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                         length(unique(names(res$selected_clusts))))
+  testthat::expect_true(all(res$selected_clusts &gt;= 0))
+  testthat::expect_true(all(res$selected_clusts &lt;= 1))
+
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) &gt;= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats &gt;= 1))
+  testthat::expect_true(all(res$selected_feats &lt;= 5))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(res$selected_feats))
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Finally, tests for getCssSelections</p>
 <pre class="r"><code>testthat::test_that(&quot;getCssSelections works&quot;, {
+
   set.seed(26717)
   
-  x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  x &lt;- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
   y &lt;- stats::rnorm(10)
   
-  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+  good_clusters &lt;- list(&quot;apple&quot;=1:2, &quot;banana&quot;=3:4, &quot;cantaloupe&quot;=5)
   
+  css_res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  res &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c(&quot;selected_clusts&quot;, &quot;selected_feats&quot;))
+  testthat::expect_true(length(res$selected_clusts) &lt;=
+                          length(res$selected_feats))
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats &lt;- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i &lt;- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) &gt;= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:11))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats &lt;- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) &lt;= 11)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:11))
+  
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) &gt;= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats &gt;= 1))
+  testthat::expect_true(all(res$selected_feats &lt;= 7))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  # Test min_num_clusts (should be 5 clusters--3 named ones, plus last two get
+  # put in their own unnamed clusters automatically by css)
+  res2 &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res, weighting=&quot;weighted_avg&quot;, cutoff=1,
+                             min_num_clusts=5, max_num_clusts=NA)
+  testthat::expect_true(is.list(res2))
+  testthat::expect_equal(length(res2$selected_clusts), 5)
+
+  res3 &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res, weighting=&quot;sparse&quot;, cutoff=1,
+                             min_num_clusts=3, max_num_clusts=NA)
+  testthat::expect_true(length(res3$selected_clusts) &gt;= 3)
+
+  # Test max_num_clusts
+  # Ensure there is at least one relevant feature
+  x2 &lt;- x
+  x2[, 5] &lt;- y
+  css_res2 &lt;- <a href='create-cssr.html#css'>css</a>(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res4 &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res2, weighting=&quot;simple_avg&quot;, cutoff=0,
+                             min_num_clusts=1, max_num_clusts=1)
+  testthat::expect_true(is.list(res4))
+  testthat::expect_equal(length(res4$selected_clusts), 1)
+
+  res5 &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res, weighting=&quot;weighted_avg&quot;, cutoff=0,
+                             min_num_clusts=1, max_num_clusts=2)
+  testthat::expect_true(length(res5$selected_clusts) &lt;= 2)
+
+  # # Name features
+  # colnames(x) &lt;- LETTERS[1:ncol(x)]
+  # css_res3 &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  # res &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_res3, weighting=&quot;sparse&quot;, cutoff=0.05,
+  #                            min_num_clusts=1, max_num_clusts=NA)
+  # 
+  # testthat::expect_true(is.list(res))
+  # testthat::expect_equal(length(res), 3)
+  # testthat::expect_identical(names(res), c(&quot;selected_clusts&quot;, &quot;selected_feats&quot;,
+  #                                          &quot;weights&quot;))
+  # testthat::expect_true(length(res$selected_clusts) &lt;=
+  #                         length(res$selected_feats))
+  # 
+  # testthat::expect_true(is.numeric(res$selected_clusts))
+  # testthat::expect_true(length(res$selected_clusts) &gt;= 1)
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                        length(res$selected_clusts))
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                        length(unique(names(res$selected_clusts))))
+  # testthat::expect_true(all(res$selected_clusts &gt;= 0))
+  # testthat::expect_true(all(res$selected_clusts &lt;= 1))
+  # 
+  # testthat::expect_true(is.integer(res$selected_feats))
+  # testthat::expect_true(length(res$selected_feats) &gt;= 1)
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(unique(names(res$selected_feats))))
+  # testthat::expect_true(all(res$selected_feats &gt;= 1))
+  # testthat::expect_true(all(res$selected_feats &lt;= 5))
+  # testthat::expect_equal(length(res$selected_feats),
+  #                            length(unique(res$selected_feats)))
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(res$selected_feats))
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(unique(names(res$selected_feats))))
+})</code></pre>
+<pre><code>## Test passed 😸</code></pre>
+<p>getCssDesign</p>
+<pre class="r"><code>#&#39; Obtain a design matrix of cluster representatives
+#&#39;
+#&#39; Takes a matrix of observations from the original feature space and returns
+#&#39; a matrix of representatives from the selected clusters based on the results
+#&#39; of cluster stability selection.
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param newX A numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; the data that will be used to generate the design matrix of cluster
+#&#39; representatives. Must contain the same features (in the same
+#&#39; number of columns) as the X matrix provided to css, and if the columns of
+#&#39; newX are labeled, the names must match the variable names provided to css.
+#&#39; newX may be omitted if train_inds were provided to css to set aside
+#&#39; observations for model estimation. If this is the case, then when newX is
+#&#39; omitted getCssDesign will return a design matrix of cluster representatives
+#&#39; formed from the train_inds observations from the matrix X provided to css.
+#&#39; (If no train_inds were provided to css, newX must be provided to
+#&#39; getCssDesign.) Default is NA.
+#&#39; @param weighting Character; determines how to calculate the weights to
+#&#39; combine features from the selected clusters into weighted averages, called
+#&#39; cluster representatives. Must be one of &quot;sparse&quot;, &quot;weighted_avg&quot;, or
+#&#39; &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, the weight used for each cluster member is calculated in
+#&#39; proportion to the individual selection proportions of each feature. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, the cluster representative
+#&#39; is just a simple average of all the cluster members). See Faletto and Bien
+#&#39; (2022) for details. Default is &quot;weighted_avg&quot;.
+#&#39; @param cutoff Numeric; getCssDesign will only include those clusters with
+#&#39; selection proportions equal to at least cutoff. Must be between 0 and 1.
+#&#39; Default is 0 (in which case either all clusters are used, or max_num_clusts
+#&#39; are used, if max_num_clusts is specified).
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.) Default is 1.
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) Default is NA (in which case
+#&#39; max_num_clusts is ignored).
+#&#39; @return A design matrix with either nrow(newX) (or length(train_inds), if
+#&#39; train_inds was provided to css and newX was not provided to getCssDesign)
+#&#39; observations and number of columns equal to the number of selected clusters,
+#&#39; containing the cluster representatives for each cluster.
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @export
+<span id='getCssDesign'>getCssDesign</span> &lt;- function(css_results, newX=NA, weighting=&quot;weighted_avg&quot;,
+    cutoff=0, min_num_clusts=1, max_num_clusts=NA){
+    # Check inputs
+    stopifnot(class(css_results) == &quot;cssr&quot;)
+
+    newXProvided &lt;- <a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(newX, css_results)$newXProvided
+
+    # Take provided training design matrix and testX and turn them into
+    # matrices of cluster representatives using information from css_results
+    if(newXProvided){
+        newX_clusters &lt;- formCssDesign(css_results, weighting, cutoff,
+            min_num_clusts, max_num_clusts, newx=newX)
+    } else{
+        newX_clusters &lt;- formCssDesign(css_results, weighting, cutoff,
+            min_num_clusts, max_num_clusts)
+    }
+
+    return(newX_clusters)
+}</code></pre>
+<p>checkNewXProvided</p>
+<pre class="r"><code>#&#39; Helper function to confirm that the new X matrix provided to getCssDesign or
+#&#39; getCssPreds matches the characteristics of the X that was provided to css.
+#&#39;
+#&#39; @param trainX A numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix). Must contain
+#&#39; the same features (in the same number of columns) as the X matrix provided to
+#&#39; css, and if the columns of trainX are labeled, the names must match the
+#&#39; variable names provided to css. trainX may be omitted if train_inds were
+#&#39; provided to css to set aside observations.
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @return A named list with the following elements: \item{newX}{The provided
+#&#39; trainX matrix, coerced from a data.frame to a matrix if the provided trainX
+#&#39; was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
+#&#39; trainX input was provided.}
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkNewXProvided'>checkNewXProvided</span> &lt;- function(trainX, css_results){
+    newXProvided &lt;- FALSE
+
+    if(all(!is.na(trainX)) &amp; length(trainX) &gt; 1){
+        newXProvided &lt;- TRUE
+        res &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(trainX, css_results$X)
+        
+        trainX &lt;- res$newx
+        feat_names &lt;- res$feat_names
+        
+        rm(res)
+        
+        n_train &lt;- nrow(trainX)
+        stopifnot(n_train &gt; 1)
+    } else{
+        if(length(css_results$train_inds) == 0){
+            stop(&quot;css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix&quot;)
+        }
+        feat_names &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(trainX, css_results$X)$feat_names
+    } 
+    return(list(newX=trainX, newXProvided=newXProvided, feat_names=feat_names))
+}</code></pre>
+<p>checkXInputResults</p>
+<pre class="r"><code>#&#39; Helper function to confirm that inputs to several functions are as expected,
+#&#39; and modify inputs if needed
+#&#39;
+#&#39; @param newx A numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; the data that will be used to generate the design matrix of cluster
+#&#39; representatives. Must contain the same features (in the same
+#&#39; number of columns) as the X matrix provided to css, and if the columns of
+#&#39; newX are labeled, the names must match the variable names provided to css.
+#&#39; @param css_X The X matrix provided to css, as in the output of the css
+#&#39; function (after having been coerced from a data.frame to a matrix by css if
+#&#39; needed).
+#&#39; @return A named list with the following elements. \item{feat_names}{A 
+#&#39; character vector containing the column names of newx (if the provided newx
+#&#39; had column names). If the provided newx did not have column names, feat_names
+#&#39; will be NA.} \item{newx}{The provided newx matrix, coerced from a data.frame
+#&#39; to a matrix if the provided newx was a data.frame.}
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkXInputResults'>checkXInputResults</span> &lt;- function(newx, css_X){
+
+    feat_names &lt;- as.character(NA)
+    if(!is.null(colnames(newx))){
+        feat_names &lt;- colnames(newx)
+    }
+
+    # Check if x is a matrix; if it&#39;s a data.frame, convert to matrix.
+    if(is.data.frame(newx)){
+        newx &lt;- stats::model.matrix(~ ., newx)
+    }
+
+    stopifnot(is.matrix(newx))
+    stopifnot(all(!is.na(newx)))
+
+    n &lt;- nrow(newx)
+    p &lt;- ncol(newx)
+    stopifnot(p &gt;= 2)
+    if(length(feat_names) &gt; 1){
+        stopifnot(length(feat_names) == p)
+    } else{
+        stopifnot(is.na(feat_names))
+    }
+
+    colnames(newx) &lt;- character()
+
+    # Confirm that newx matches css_results$X
+    if(p != ncol(css_X)){
+        err &lt;- paste(&quot;Number of columns in newx must match number of columns from matrix provided to css. Number of columns in new provided X: &quot;,
+            p, &quot;. Number of columns in matrix provided to css: &quot;, ncol(css_X),
+            &quot;.&quot;, sep=&quot;&quot;)
+        stop(err)
+    }
+    if(length(feat_names) != 1 &amp; all(!is.na(feat_names))){
+        if(!identical(feat_names, colnames(css_X))){
+            stop(&quot;Provided feature names for newx do not match feature names provided to css&quot;)
+        }
+    }
+
+    return(list(feat_names=feat_names, newx=newx))
+}</code></pre>
+<p>Tests for checkXInputResults</p>
+<pre class="r"><code>testthat::test_that(&quot;checkXInputResults works&quot;, {
+  set.seed(26717)
+
+  x &lt;- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  y &lt;- stats::rnorm(10)
+
+  good_clusters &lt;- list(&quot;a&quot;=1:2, &quot;b&quot;=3:4, &quot;c&quot;=5)
+
   res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
     sampling_type = &quot;SS&quot;, B = 10, prop_feats_remove = 0, train_inds = integer(),
     num_cores = 1L)
-  
+
   sel_props &lt;- colMeans(res$feat_sel_mat)
 
   sel_clusts &lt;- list(&quot;a&quot;=1L:2L, &quot;b&quot;=3L:4L)
@@ -4295,24 +4697,25 @@ where it is called).</li>
   #                                            weighting=&quot;sparse&quot;,
   #                                            feat_sel_props=sel_props),
   #                            c(0, 0, 1))
-  # 
+  #
   # # weighted_avg
   # cluster=c(1L, 3L, 5L)
   # true_weights &lt;- sel_props[cluster]/sum(sel_props[cluster])
-  # 
+  #
   # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=cluster,
   #                                            weighting=&quot;weighted_avg&quot;,
   #                                            feat_sel_props=sel_props),
   #                            true_weights)
-  # 
+  #
   # # simple_avg
   # testthat::expect_identical(<a href='create-cssr.html#getClustWeights'>getClustWeights</a>(cluster_i=c(2L, 3L, 4L, 5L),
   #                                            weighting=&quot;simple_avg&quot;,
   #                                            feat_sel_props=sel_props),
   #                            rep(0.25, 4))
 })</code></pre>
-<pre><code>## ── Skip (???): getCssSelections works ──────────────────────────────────────────
+<pre><code>## ── Skip (???): checkXInputResults works ────────────────────────────────────────
 ## Reason: empty test</code></pre>
+<p>Tests for checkNewXProvided</p>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>
@@ -4349,10 +4752,12 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetSelectedClustersOutput&#39;)checkGetSelectedClustersOutput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMaxNumClusts&#39;)checkMaxNumClusts.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMinNumClusts&#39;)checkMinNumClusts.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkNewXProvided&#39;)checkNewXProvided.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkPropFeatsRemove&#39;)checkPropFeatsRemove.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSamplingType&#39;)checkSamplingType.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkSelectedClusters&#39;)checkSelectedClusters.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkWeighting&#39;)checkWeighting.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkXInputResults&#39;)checkXInputResults.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkY&#39;)checkY.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;corFunction&#39;)corFunction.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;createSubsamples&#39;)createSubsamples.Rd]8;;&#39;
@@ -4363,6 +4768,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getAllClustWeights&#39;)getAllClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClustWeights&#39;)getClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelMatrix&#39;)getClusterSelMatrix.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssDesign&#39;)getCssDesign.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssSelections&#39;)getCssSelections.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getPrototypes&#39;)getPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelMatrix&#39;)getSelMatrix.Rd]8;;&#39;

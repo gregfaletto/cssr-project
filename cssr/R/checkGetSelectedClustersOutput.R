@@ -24,6 +24,7 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     stopifnot(!is.null(names(selected_clusts)))
     stopifnot(all(!is.na(names(selected_clusts)) &
         names(selected_clusts) != ""))
+    stopifnot(length(names(selected_clusts)) == length(selected_clusts))
     stopifnot(is.integer(selected_feats))
     stopifnot(length(selected_feats) == length(unique(selected_feats)))
     stopifnot(all(selected_feats %in% 1:p))

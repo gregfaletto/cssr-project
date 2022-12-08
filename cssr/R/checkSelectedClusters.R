@@ -25,6 +25,8 @@ checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
         stop(err)
     }
 
+    stopifnot(n_sel_clusts >= 1)
+
     # It may be impossible to get at least min_num_clusts or at most
     # max_num_clusts; if so, give a warning
     if(n_sel_clusts < min_num_clusts){

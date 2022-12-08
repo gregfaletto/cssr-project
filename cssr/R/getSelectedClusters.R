@@ -49,18 +49,13 @@
 #' with nonzero weights from all of the selected clusters.} \item{weights}{A
 #' named list of the same length as the number of selected clusters. Each list
 #' element weights[[j]] is a numeric  vector of the weights to use for the jth
-#' selected cluster, and it has the same name as the  cluster it corresponds
+#' selected cluster, and it has the same name as the cluster it corresponds
 #' to.}
 #' @author Gregory Faletto, Jacob Bien
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input
-
-    stopifnot("clus_sel_mat" %in% names(css_results))
-    stopifnot("feat_sel_mat" %in% names(css_results))
-    stopifnot("clusters" %in% names(css_results))
-    stopifnot(all(colnames(css_results$clus_sel_mat) ==
-        names(css_results$clusters)))
+    stopifnot(class(css_results) == "cssr")
 
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
@@ -124,8 +119,8 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     # Check output (already checked weights wihin getAllClustWeights)
 
-    checkGetSelectedClustersOutput(selected_clusts, css_results,
-        selected_feats)
+    checkGetSelectedClustersOutput(selected_clusts, selected_feats,
+        n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
 
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
