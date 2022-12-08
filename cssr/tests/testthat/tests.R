@@ -1637,8 +1637,6 @@ testthat::test_that("getCssSelections works", {
 
   sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
 
-  sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
-
   # # sparse
   # testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
   #                                            weighting="sparse",
