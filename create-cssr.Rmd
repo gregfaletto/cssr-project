@@ -3994,7 +3994,6 @@ testthat::test_that("getSelectedClusters works", {
 
 Finally, tests for getCssSelections
 
-
 ```{r}
 testthat::test_that("getCssSelections works", {
   set.seed(26717)
@@ -4035,6 +4034,141 @@ testthat::test_that("getCssSelections works", {
 })
 ```
 
+getCssDesign
+
+```{r}
+#' Obtain a design matrix of cluster representatives
+#'
+#' Takes a matrix of observations from the original feature space and returns
+#' a matrix of representatives from the selected clusters based on the results
+#' of cluster stability selection.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param newX A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to generate the design matrix of cluster
+#' representatives. Must contain the same features (in the same
+#' number of columns) as the X matrix provided to css, and if the columns of
+#' newX are labeled, the names must match the variable names provided to css.
+#' newX may be omitted if train_inds were provided to css to set aside
+#' observations for model estimation. If this is the case, then when newX is
+#' omitted getCssDesign will return a design matrix of cluster representatives
+#' formed from the train_inds observations from the matrix X provided to css.
+#' (If no train_inds were provided to css, newX must be provided to
+#' getCssDesign.) Default is NA.
+#' @param weighting Character; determines how to calculate the weights to
+#' combine features from the selected clusters into weighted averages, called
+#' cluster representatives. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg'. For "sparse", all the weight is put on the most frequently
+#' selected individual cluster member (or divided equally among all the clusters
+#' that are tied for the top selection proportion if there is a tie). For
+#' "weighted_avg", the weight used for each cluster member is calculated in
+#' proportion to the individual selection proportions of each feature. For
+#' "simple_avg", each cluster member gets equal weight regardless of the
+#' individual feature selection proportions (that is, the cluster representative
+#' is just a simple average of all the cluster members). See Faletto and Bien
+#' (2022) for details. Default is "weighted_avg".
+#' @param cutoff Numeric; getCssDesign will only include those clusters with
+#' selection proportions equal to at least cutoff. Must be between 0 and 1.
+#' Default is 0 (in which case either all clusters are used, or max_num_clusts
+#' are used, if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) Default is 1.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @return A design matrix with either nrow(newX) (or length(train_inds), if
+#' train_inds was provided to css and newX was not provided to getCssDesign)
+#' observations and number of columns equal to the number of selected clusters,
+#' containing the cluster representatives for each cluster.
+#' @author Gregory Faletto, Jacob Bien
+#' @export
+getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
+    cutoff=0, min_num_clusts=1, max_num_clusts=NA){
+    # Check inputs
+    stopifnot(class(css_results) == "cssr")
+
+    check_results <- checkNewXProvided(newX, css_results)
+
+    newX <- check_results$newX
+    newXProvided <- check_results$newXProvided
+
+    rm(check_results)
+
+    n_train <- nrow(newX)
+
+    results <- checkXInputResults(newX, css_results$X)
+
+    newX <- results$newx
+    feat_names <- results$feat_names
+
+    rm(results)
+
+    n <- nrow(newX)
+    p <- ncol(newX)
+
+    checkCutoff(cutoff)
+    checkWeighting(weighting)
+    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
+
+    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        length(css_results$clusters))
+
+    # Take provided training design matrix and testX and turn them into
+    # matrices of cluster representatives using information from css_results
+    if(newXProvided){
+        newX_clusters <- formCssDesign(css_results, weighting, cutoff,
+            min_num_clusts, max_num_clusts, newx=newX)
+    } else{
+        newX_clusters <- formCssDesign(css_results, weighting, cutoff,
+            min_num_clusts, max_num_clusts)
+    }
+
+    return(newX_clusters)
+}
+```
+
+checkNewXProvided
+
+```{r}
+#' Helper function to confirm that the new X matrix provided to getCssDesign or
+#' getCssPreds matches the characteristics of the X that was provided to css.
+#'
+#' @param trainX A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix). Must contain
+#' the same features (in the same number of columns) as the X matrix provided to
+#' css, and if the columns of trainX are labeled, the names must match the
+#' variable names provided to css. trainX may be omitted if train_inds were
+#' provided to css to set aside observations.
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @return A named list with the following elements: \item{newX}{The provided
+#' trainX matrix, coerced from a data.frame to a matrix if the provided trainX
+#' was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
+#' trainX input was provided.}
+#' @author Gregory Faletto, Jacob Bien
+checkNewXProvided <- function(trainX, css_results){
+    newXProvided <- FALSE
+
+    if(all(!is.na(trainX)) & length(trainX) > 1){
+        newXProvided <- TRUE
+        trainX <- checkXInputResults(trainX, css_results$X)$newx
+        n_train <- nrow(trainX)
+        stopifnot(n_train > 1)
+    } else{
+        if(length(css_results$train_inds) == 0){
+            stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
+        }
+    } 
+    return(list(newX=trainX, newXProvided=newXProvided))
+}
+```
+
+Tests for checkNewXProvided
 
 ### Convenient Wrapper Functions
 
