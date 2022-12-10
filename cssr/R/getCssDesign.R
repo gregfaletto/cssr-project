@@ -55,7 +55,31 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     # Check inputs
     stopifnot(class(css_results) == "cssr")
 
-    newXProvided <- checkNewXProvided(newX, css_results)$newXProvided
+    check_results <- checkNewXProvided(newX, css_results)
+
+    newX <- check_results$newX
+    newXProvided <- check_results$newXProvided
+
+    rm(check_results)
+
+    n_train <- nrow(newX)
+
+    results <- checkXInputResults(newX, css_results$X)
+
+    newX <- results$newx
+    feat_names <- results$feat_names
+
+    rm(results)
+
+    n <- nrow(newX)
+    p <- ncol(newX)
+
+    checkCutoff(cutoff)
+    checkWeighting(weighting)
+    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
+
+    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        length(css_results$clusters))
 
     # Take provided training design matrix and testX and turn them into
     # matrices of cluster representatives using information from css_results

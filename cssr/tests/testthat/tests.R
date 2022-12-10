@@ -1779,7 +1779,7 @@ testthat::test_that("getCssSelections works", {
   testthat::expect_equal(length(already_used_feats),
                          length(unique(already_used_feats)))
   testthat::expect_true(all(already_used_feats %in% 1:11))
-  
+
   testthat::expect_true(is.integer(res$selected_feats))
   testthat::expect_true(length(res$selected_feats) >= 1)
   testthat::expect_equal(length(names(res$selected_feats)),
@@ -1814,40 +1814,40 @@ testthat::test_that("getCssSelections works", {
                              min_num_clusts=1, max_num_clusts=2)
   testthat::expect_true(length(res5$selected_clusts) <= 2)
 
-  # # Name features
-  # colnames(x) <- LETTERS[1:ncol(x)]
-  # css_res3 <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
-  # res <- getCssSelections(css_res3, weighting="sparse", cutoff=0.05,
-  #                            min_num_clusts=1, max_num_clusts=NA)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_equal(length(res), 3)
-  # testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
-  #                                          "weights"))
-  # testthat::expect_true(length(res$selected_clusts) <=
-  #                         length(res$selected_feats))
-  # 
-  # testthat::expect_true(is.numeric(res$selected_clusts))
-  # testthat::expect_true(length(res$selected_clusts) >= 1)
-  # testthat::expect_equal(length(names(res$selected_clusts)),
-  #                        length(res$selected_clusts))
-  # testthat::expect_equal(length(names(res$selected_clusts)),
-  #                        length(unique(names(res$selected_clusts))))
-  # testthat::expect_true(all(res$selected_clusts >= 0))
-  # testthat::expect_true(all(res$selected_clusts <= 1))
-  # 
-  # testthat::expect_true(is.integer(res$selected_feats))
-  # testthat::expect_true(length(res$selected_feats) >= 1)
-  # testthat::expect_equal(length(names(res$selected_feats)),
-  #                        length(unique(names(res$selected_feats))))
-  # testthat::expect_true(all(res$selected_feats >= 1))
-  # testthat::expect_true(all(res$selected_feats <= 5))
-  # testthat::expect_equal(length(res$selected_feats),
-  #                            length(unique(res$selected_feats)))
-  # testthat::expect_equal(length(names(res$selected_feats)),
-  #                        length(res$selected_feats))
-  # testthat::expect_equal(length(names(res$selected_feats)),
-  #                        length(unique(names(res$selected_feats))))
+  # Name features
+  colnames(x) <- LETTERS[1:ncol(x)]
+  css_res3 <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+  res <- getCssSelections(css_res3, weighting="sparse", cutoff=0.05,
+                             min_num_clusts=1, max_num_clusts=NA)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(res$selected_feats))
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+
+  # Bad inputs
+  # Error has quotation marks in it
+  testthat::expect_error(getCssSelections("css_results"))
+  testthat::expect_error(getCssSelections(css_res, weighting="spasre"),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, cutoff=-.5),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, max_num_clusts=50),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, max_num_clusts=4.5),
+                         "max_num_clusts == round(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
 })
 
 testthat::test_that("checkXInputResults works", {

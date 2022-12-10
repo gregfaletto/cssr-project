@@ -21,12 +21,7 @@ checkNewXProvided <- function(trainX, css_results){
 
     if(all(!is.na(trainX)) & length(trainX) > 1){
         newXProvided <- TRUE
-        res <- checkXInputResults(trainX, css_results$X)
-        
-        trainX <- res$newx
-        feat_names <- res$feat_names
-        
-        rm(res)
+        trainX <- checkXInputResults(trainX, css_results$X)$newx
         
         n_train <- nrow(trainX)
         stopifnot(n_train > 1)
@@ -34,7 +29,6 @@ checkNewXProvided <- function(trainX, css_results){
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
         }
-        feat_names <- checkXInputResults(trainX, css_results$X)$feat_names
     } 
-    return(list(newX=trainX, newXProvided=newXProvided, feat_names=feat_names))
+    return(list(newX=trainX, newXProvided=newXProvided))
 }
