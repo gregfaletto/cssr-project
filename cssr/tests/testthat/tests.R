@@ -1851,40 +1851,178 @@ testthat::test_that("getCssSelections works", {
 })
 
 testthat::test_that("checkXInputResults works", {
-  set.seed(26717)
+  set.seed(72617)
 
-  x <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
-  y <- stats::rnorm(10)
+  x_select <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  x_new <- matrix(stats::rnorm(8*5), nrow=8, ncol=5)
+  y_select <- stats::rnorm(10)
+  y_new <- stats::rnorm(8)
 
-  good_clusters <- list("a"=1:2, "b"=3:4, "c"=5)
+  good_clusters <- list("red"=1:2, "blue"=3:4, "green"=5)
 
-  res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
-    sampling_type = "SS", B = 10, prop_feats_remove = 0, train_inds = integer(),
-    num_cores = 1L)
+  css_res <- css(X=x_select, y=y_select, lambda=0.01, clusters=good_clusters,
+                 B = 10)
+  
+  res <- checkXInputResults(x_new, css_res$X)
 
-  sel_props <- colMeans(res$feat_sel_mat)
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("feat_names", "newx"))
+  
+  testthat::expect_true(is.character(res$feat_names))
+  testthat::expect_true(is.na(res$feat_names))
+  
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), 8)
+  testthat::expect_equal(ncol(res$newx), 5)
+  testthat::expect_null(colnames(res$newx))
+  
+  # Try naming variables
+  
+  colnames(x_select) <- LETTERS[1:5]
+  css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+  
+  # Named variables for css matrix but not new one--should gt a warning
+  testthat::expect_warning(checkXInputResults(x_new, css_res_named$X),
+                           "New X provided had no variable names (column names) even though the X provided to css did.",
+                           fixed=TRUE)
 
-  sel_clusts <- list("a"=1L:2L, "b"=3L:4L)
+  # Try mismatching variable names
+  colnames(x_new) <- LETTERS[2:6]
+  testthat::expect_error(checkXInputResults(x_new, css_res_named$X),
+                           "identical(feat_names, colnames(css_X)) is not TRUE",
+                           fixed=TRUE)
+  
+  colnames(x_new) <- LETTERS[1:5]
+  
+  res_named <- checkXInputResults(x_new, css_res_named$X)
+  
+  testthat::expect_true(is.list(res_named))
+  testthat::expect_identical(names(res_named), c("feat_names", "newx"))
+  
+  testthat::expect_true(is.character(res_named$feat_names))
+  testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
+  
+  # Try data.frame input to css and checkXInputResults
+  
+  X_df <- datasets::mtcars
+  
+  n <- nrow(X_df)
+  y <- stats::rnorm(n)
+  
+  selec_inds <- 1:round(n/2)
+  fit_inds <- setdiff(1:n, selec_inds)
+  
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkXInputResults(X_df[fit_inds, ], css_res_df$X)
+  
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("feat_names", "newx"))
+  
+  testthat::expect_true(is.character(res_df$feat_names))
+  testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
 
-  # # sparse
-  # testthat::expect_identical(getClustWeights(cluster_i=c(3L, 4L, 5L),
-  #                                            weighting="sparse",
-  #                                            feat_sel_props=sel_props),
-  #                            c(0, 0, 1))
-  #
-  # # weighted_avg
-  # cluster=c(1L, 3L, 5L)
-  # true_weights <- sel_props[cluster]/sum(sel_props[cluster])
-  #
-  # testthat::expect_identical(getClustWeights(cluster_i=cluster,
-  #                                            weighting="weighted_avg",
-  #                                            feat_sel_props=sel_props),
-  #                            true_weights)
-  #
-  # # simple_avg
-  # testthat::expect_identical(getClustWeights(cluster_i=c(2L, 3L, 4L, 5L),
-  #                                            weighting="simple_avg",
-  #                                            feat_sel_props=sel_props),
-  #                            rep(0.25, 4))
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+})
+
+testthat::test_that("checkNewXProvided works", {
+  set.seed(2673)
+
+  x_select <- matrix(stats::rnorm(10*5), nrow=10, ncol=5)
+  x_new <- matrix(stats::rnorm(8*5), nrow=8, ncol=5)
+  y_select <- stats::rnorm(10)
+  y_new <- stats::rnorm(8)
+
+  good_clusters <- list("red"=1:2, "blue"=3:4, "green"=5)
+
+  css_res <- css(X=x_select, y=y_select, lambda=0.01, clusters=good_clusters,
+                 B = 10)
+  
+  res <- checkNewXProvided(x_new, css_res)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  
+  testthat::expect_true(is.numeric(res$newX))
+  testthat::expect_true(is.matrix(res$newX))
+  testthat::expect_equal(nrow(res$newX), 8)
+  testthat::expect_equal(ncol(res$newX), 5)
+  testthat::expect_null(colnames(res$newX))
+  
+  testthat::expect_true(is.logical(res$newXProvided))
+  testthat::expect_equal(length(res$newXProvided), 1)
+  testthat::expect_true(!is.na(res$newXProvided))
+  testthat::expect_true(res$newXProvided)
+  
+  # Add training indices
+  css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10, train_inds=6:10)
+  
+  # Training indices should be ignored if new x is provided
+  
+  res <- checkNewXProvided(x_new, css_res_train)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  
+  testthat::expect_true(all(abs(x_new - res$newX) < 10^(-9)))
+  testthat::expect_true(res$newXProvided)
+  
+  # Things should still work if new x is not provided
+  
+  # # Try naming variables
+  # 
+  # colnames(x_select) <- LETTERS[1:5]
+  # css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+  #                      clusters=good_clusters, B = 10)
+  # 
+  # # Named variables for css matrix but not new one--should gt a warning
+  # testthat::expect_warning(checkXInputResults(x_new, css_res_named$X),
+  #                          "New X provided had no variable names (column names) even though the X provided to css did.",
+  #                          fixed=TRUE)
+  # 
+  # # Try mismatching variable names
+  # colnames(x_new) <- LETTERS[2:6]
+  # testthat::expect_error(checkXInputResults(x_new, css_res_named$X),
+  #                          "identical(feat_names, colnames(css_X)) is not TRUE",
+  #                          fixed=TRUE)
+  # 
+  # colnames(x_new) <- LETTERS[1:5]
+  # 
+  # res_named <- checkXInputResults(x_new, css_res_named$X)
+  # 
+  # testthat::expect_true(is.list(res_named))
+  # testthat::expect_identical(names(res_named), c("feat_names", "newx"))
+  # 
+  # testthat::expect_true(is.character(res_named$feat_names))
+  # testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
+  # 
+  # # Try data.frame input to css and checkXInputResults
+  # 
+  # X_df <- datasets::mtcars
+  # 
+  # n <- nrow(X_df)
+  # y <- stats::rnorm(n)
+  # 
+  # selec_inds <- 1:round(n/2)
+  # fit_inds <- setdiff(1:n, selec_inds)
+  # 
+  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  # res_df <- checkXInputResults(X_df[fit_inds, ], css_res_df$X)
+  # 
+  # testthat::expect_true(is.list(res_df))
+  # testthat::expect_identical(names(res_df), c("feat_names", "newx"))
+  # 
+  # testthat::expect_true(is.character(res_df$feat_names))
+  # testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+  # 
+  # testthat::expect_true(is.numeric(res_df$newx))
+  # testthat::expect_true(is.matrix(res_df$newx))
+  # testthat::expect_null(colnames(res_df$newx))
+  # testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
 })
 
