@@ -1883,7 +1883,7 @@ testthat::test_that("checkXInputResults works", {
   css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
                        clusters=good_clusters, B = 10)
   
-  # Named variables for css matrix but not new one--should gt a warning
+  # Named variables for css matrix but not new one--should get a warning
   testthat::expect_warning(checkXInputResults(x_new, css_res_named$X),
                            "New X provided had no variable names (column names) even though the X provided to css did.",
                            fixed=TRUE)
@@ -1920,6 +1920,29 @@ testthat::test_that("checkXInputResults works", {
   testthat::expect_true(is.list(res_df))
   testthat::expect_identical(names(res_df), c("feat_names", "newx"))
   
+  testthat::expect_true(is.character(res_df$feat_names))
+  testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+  
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkXInputResults(X_df[fit_inds, ], css_res_df$X)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("feat_names", "newx"))
+
   testthat::expect_true(is.character(res_df$feat_names))
   testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
 
@@ -1974,55 +1997,271 @@ testthat::test_that("checkNewXProvided works", {
   
   # Things should still work if new x is not provided
   
-  # # Try naming variables
-  # 
-  # colnames(x_select) <- LETTERS[1:5]
-  # css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B = 10)
-  # 
-  # # Named variables for css matrix but not new one--should gt a warning
-  # testthat::expect_warning(checkXInputResults(x_new, css_res_named$X),
-  #                          "New X provided had no variable names (column names) even though the X provided to css did.",
-  #                          fixed=TRUE)
-  # 
-  # # Try mismatching variable names
-  # colnames(x_new) <- LETTERS[2:6]
-  # testthat::expect_error(checkXInputResults(x_new, css_res_named$X),
-  #                          "identical(feat_names, colnames(css_X)) is not TRUE",
-  #                          fixed=TRUE)
-  # 
-  # colnames(x_new) <- LETTERS[1:5]
-  # 
-  # res_named <- checkXInputResults(x_new, css_res_named$X)
-  # 
-  # testthat::expect_true(is.list(res_named))
-  # testthat::expect_identical(names(res_named), c("feat_names", "newx"))
-  # 
-  # testthat::expect_true(is.character(res_named$feat_names))
-  # testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
-  # 
-  # # Try data.frame input to css and checkXInputResults
-  # 
-  # X_df <- datasets::mtcars
-  # 
-  # n <- nrow(X_df)
-  # y <- stats::rnorm(n)
-  # 
-  # selec_inds <- 1:round(n/2)
-  # fit_inds <- setdiff(1:n, selec_inds)
-  # 
-  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df <- checkXInputResults(X_df[fit_inds, ], css_res_df$X)
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c("feat_names", "newx"))
-  # 
-  # testthat::expect_true(is.character(res_df$feat_names))
-  # testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
-  # 
-  # testthat::expect_true(is.numeric(res_df$newx))
-  # testthat::expect_true(is.matrix(res_df$newx))
-  # testthat::expect_null(colnames(res_df$newx))
-  # testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  res <- checkNewXProvided(NA, css_res_train)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  
+  testthat::expect_true(is.na(res$newX))
+  testthat::expect_false(res$newXProvided)
+  
+  # Try not providing training indices and omitting newx--should get error
+  testthat::expect_error(checkNewXProvided(NA, css_res),
+                         "css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix", fixed=TRUE)
+  
+  # Try naming variables
+
+  colnames(x_select) <- LETTERS[1:5]
+  css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(checkNewXProvided(x_new, css_res_named),
+                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_new) <- LETTERS[2:6]
+  testthat::expect_error(checkNewXProvided(x_new, css_res_named),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_new) <- LETTERS[1:5]
+
+  res_named <- checkNewXProvided(x_new, css_res_named)
+
+  testthat::expect_true(is.list(res_named))
+  testthat::expect_identical(names(res_named), c("newX", "newXProvided"))
+  
+  testthat::expect_true(all(abs(x_new - res_named$newX) < 10^(-9)))
+  testthat::expect_true(res_named$newXProvided)
+
+  # Try data.frame input to css and checkNewXProvided
+
+  X_df <- datasets::mtcars
+
+  n <- nrow(X_df)
+  y <- stats::rnorm(n)
+
+  selec_inds <- 1:round(n/2)
+  fit_inds <- setdiff(1:n, selec_inds)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  
+  testthat::expect_true(is.numeric(res_df$newX))
+  testthat::expect_true(is.matrix(res_df$newX))
+  testthat::expect_equal(nrow(res_df$newX), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newX), ncol(css_res_df$X))
+  testthat::expect_null(colnames(res_df$newX))
+  
+  testthat::expect_true(is.logical(res_df$newXProvided))
+  testthat::expect_equal(length(res_df$newXProvided), 1)
+  testthat::expect_true(!is.na(res_df$newXProvided))
+  testthat::expect_true(res_df$newXProvided)
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  
+  testthat::expect_true(is.numeric(res_df$newX))
+  testthat::expect_true(is.matrix(res_df$newX))
+  testthat::expect_equal(nrow(res_df$newX), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newX), ncol(css_res_df$X))
+  testthat::expect_null(colnames(res_df$newX))
+  
+  testthat::expect_true(is.logical(res_df$newXProvided))
+  testthat::expect_equal(length(res_df$newXProvided), 1)
+  testthat::expect_true(!is.na(res_df$newXProvided))
+  testthat::expect_true(res_df$newXProvided)
+  
+})
+
+testthat::test_that("checkFormCssDesignInputs works", {
+  set.seed(72617)
+
+  x_select <- matrix(stats::rnorm(10*6), nrow=10, ncol=6)
+  x_new <- matrix(stats::rnorm(8*6), nrow=8, ncol=6)
+  y_select <- stats::rnorm(10)
+  y_new <- stats::rnorm(8)
+
+  good_clusters <- list("red"=1:2, "blue"=3:4, "green"=5)
+
+  css_res <- css(X=x_select, y=y_select, lambda=0.01, clusters=good_clusters,
+                 B = 10)
+  
+  res <- checkFormCssDesignInputs(css_results=css_res, weighting="sparse",
+                                  cutoff=0.5, min_num_clusts=1,
+                                  max_num_clusts=NA, newx=x_new)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newx", "max_num_clusts"))
+  
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), 8)
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_new - res$newX) < 10^(-9)))
+  
+  testthat::expect_equal(length(res$max_num_clusts), 1)
+  testthat::expect_true(is.na(res$max_num_clusts))
+  
+  # Add training indices
+  css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B=10, train_inds=6:10)
+  
+  # Training indices should be ignored if new x is provided
+  
+  res <- checkFormCssDesignInputs(css_results=css_res_train,
+                                  weighting="weighted_avg", cutoff=0,
+                                  min_num_clusts=2, max_num_clusts=NA,
+                                  newx=x_new)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newx", "max_num_clusts"))
+  
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), 8)
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_new - res$newX) < 10^(-9)))
+  
+  # Things should still work if new x is not provided
+
+  res <- checkFormCssDesignInputs(css_results=css_res_train, weighting="sparse",
+                                  cutoff=1, min_num_clusts=3,
+                                  max_num_clusts=NA, newx=NA)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("newx", "max_num_clusts"))
+
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), length(6:10))
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_select[1:5, ] - res$newX) < 10^(-9)))
+  
+  # Try not providing training indices and omitting newx--should get error
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="sparse",
+                                                  cutoff=0.5, min_num_clusts=1,
+                                                  max_num_clusts=5, newx=NA),
+                         "If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign", fixed=TRUE)
+  
+  # Try naming variables
+
+  colnames(x_select) <- LETTERS[1:6]
+  css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(checkFormCssDesignInputs(css_results=css_res_named,
+                                                    weighting="simple_avg",
+                                                    cutoff=0.9,
+                                                    min_num_clusts=1,
+                                                    max_num_clusts=3,
+                                                    newx=x_new),
+                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_new) <- LETTERS[2:7]
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res_named,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2, min_num_clusts=1,
+                                                  max_num_clusts=1,
+                                                  newx=x_new),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_new) <- LETTERS[1:6]
+
+  res_named <- checkFormCssDesignInputs(css_results=css_res_named,
+                                        weighting="sparse", cutoff=0.5,
+                                        min_num_clusts=2, max_num_clusts=NA,
+                                        newx=x_new)
+
+  testthat::expect_true(is.list(res_named))
+  testthat::expect_identical(names(res_named), c("newx", "max_num_clusts"))
+
+  testthat::expect_true(is.numeric(res_named$newx))
+  testthat::expect_true(is.matrix(res_named$newx))
+  testthat::expect_equal(nrow(res_named$newx), 8)
+  testthat::expect_equal(ncol(res_named$newx), 6)
+  testthat::expect_null(colnames(res_named$newx))
+  testthat::expect_identical(colnames(css_res_named$X), LETTERS[1:6])
+  testthat::expect_true(all(abs(x_new - res_named$newX) < 10^(-9)))
+
+  # Try data.frame input to css and checkFormCssDesignInputs
+
+  X_df <- datasets::mtcars
+
+  n <- nrow(X_df)
+  y <- stats::rnorm(n)
+
+  selec_inds <- 1:round(n/2)
+  fit_inds <- setdiff(1:n, selec_inds)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkFormCssDesignInputs(css_results=css_res_df,
+                                     weighting="simple_avg", cutoff=0.7,
+                                     min_num_clusts=3, max_num_clusts=NA,
+                                     newx=X_df[fit_inds, ])
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("newx", "max_num_clusts"))
+  
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkFormCssDesignInputs(css_results=css_res_df,
+                                     weighting="weighted_avg", cutoff=0.3,
+                                     min_num_clusts=1, max_num_clusts=4,
+                                     newx=X_df[fit_inds, ])
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("newx", "max_num_clusts"))
+  
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  
+  ##### Try bad inputs
+  
+  
+  
+  
+  
+  
 })
 

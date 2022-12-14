@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-12-13" />
+<meta name="date" content="2022-12-14" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">December 13, 2022</h4>
+<h4 class="date">December 14, 2022</h4>
 
 </div>
 
@@ -1693,7 +1693,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1852,7 +1852,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -4595,10 +4595,10 @@ where it is called).</li>
     # Take provided training design matrix and testX and turn them into
     # matrices of cluster representatives using information from css_results
     if(newXProvided){
-        newX_clusters &lt;- formCssDesign(css_results, weighting, cutoff,
+        newX_clusters &lt;- <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(css_results, weighting, cutoff,
             min_num_clusts, max_num_clusts, newx=newX)
     } else{
-        newX_clusters &lt;- formCssDesign(css_results, weighting, cutoff,
+        newX_clusters &lt;- <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(css_results, weighting, cutoff,
             min_num_clusts, max_num_clusts)
     }
 
@@ -4738,7 +4738,7 @@ where it is called).</li>
   css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
                        clusters=good_clusters, B = 10)
   
-  # Named variables for css matrix but not new one--should gt a warning
+  # Named variables for css matrix but not new one--should get a warning
   testthat::expect_warning(<a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(x_new, css_res_named$X),
                            &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;,
                            fixed=TRUE)
@@ -4782,8 +4782,31 @@ where it is called).</li>
   testthat::expect_true(is.matrix(res_df$newx))
   testthat::expect_null(colnames(res_df$newx))
   testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won&#39;t match number of columns
+  # of X_df)
+  X_df$cyl &lt;- as.factor(X_df$cyl)
+  X_df$vs &lt;- as.factor(X_df$vs)
+  X_df$am &lt;- as.factor(X_df$am)
+  X_df$gear &lt;- as.factor(X_df$gear)
+  X_df$carb &lt;- as.factor(X_df$carb)
+  
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(X_df[fit_inds, ], css_res_df$X)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c(&quot;feat_names&quot;, &quot;newx&quot;))
+
+  testthat::expect_true(is.character(res_df$feat_names))
+  testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkNewXProvided</p>
 <pre class="r"><code>testthat::test_that(&quot;checkNewXProvided works&quot;, {
   set.seed(2673)
@@ -4830,58 +4853,466 @@ where it is called).</li>
   
   # Things should still work if new x is not provided
   
-  # # Try naming variables
-  # 
-  # colnames(x_select) &lt;- LETTERS[1:5]
-  # css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B = 10)
-  # 
-  # # Named variables for css matrix but not new one--should gt a warning
-  # testthat::expect_warning(<a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(x_new, css_res_named$X),
-  #                          &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;,
-  #                          fixed=TRUE)
-  # 
-  # # Try mismatching variable names
-  # colnames(x_new) &lt;- LETTERS[2:6]
-  # testthat::expect_error(<a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(x_new, css_res_named$X),
-  #                          &quot;identical(feat_names, colnames(css_X)) is not TRUE&quot;,
-  #                          fixed=TRUE)
-  # 
-  # colnames(x_new) &lt;- LETTERS[1:5]
-  # 
-  # res_named &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(x_new, css_res_named$X)
-  # 
-  # testthat::expect_true(is.list(res_named))
-  # testthat::expect_identical(names(res_named), c(&quot;feat_names&quot;, &quot;newx&quot;))
-  # 
-  # testthat::expect_true(is.character(res_named$feat_names))
-  # testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
-  # 
-  # # Try data.frame input to css and checkXInputResults
-  # 
-  # X_df &lt;- datasets::mtcars
-  # 
-  # n &lt;- nrow(X_df)
-  # y &lt;- stats::rnorm(n)
-  # 
-  # selec_inds &lt;- 1:round(n/2)
-  # fit_inds &lt;- setdiff(1:n, selec_inds)
-  # 
-  # css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(X_df[fit_inds, ], css_res_df$X)
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c(&quot;feat_names&quot;, &quot;newx&quot;))
-  # 
-  # testthat::expect_true(is.character(res_df$feat_names))
-  # testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
-  # 
-  # testthat::expect_true(is.numeric(res_df$newx))
-  # testthat::expect_true(is.matrix(res_df$newx))
-  # testthat::expect_null(colnames(res_df$newx))
-  # testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  res &lt;- <a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(NA, css_res_train)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c(&quot;newX&quot;, &quot;newXProvided&quot;))
+  
+  testthat::expect_true(is.na(res$newX))
+  testthat::expect_false(res$newXProvided)
+  
+  # Try not providing training indices and omitting newx--should get error
+  testthat::expect_error(<a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(NA, css_res),
+                         &quot;css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix&quot;, fixed=TRUE)
+  
+  # Try naming variables
+
+  colnames(x_select) &lt;- LETTERS[1:5]
+  css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(<a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(x_new, css_res_named),
+                           &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;, fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_new) &lt;- LETTERS[2:6]
+  testthat::expect_error(<a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(x_new, css_res_named),
+                         &quot;identical(feat_names, colnames(css_X)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  colnames(x_new) &lt;- LETTERS[1:5]
+
+  res_named &lt;- <a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(x_new, css_res_named)
+
+  testthat::expect_true(is.list(res_named))
+  testthat::expect_identical(names(res_named), c(&quot;newX&quot;, &quot;newXProvided&quot;))
+  
+  testthat::expect_true(all(abs(x_new - res_named$newX) &lt; 10^(-9)))
+  testthat::expect_true(res_named$newXProvided)
+
+  # Try data.frame input to css and checkNewXProvided
+
+  X_df &lt;- datasets::mtcars
+
+  n &lt;- nrow(X_df)
+  y &lt;- stats::rnorm(n)
+
+  selec_inds &lt;- 1:round(n/2)
+  fit_inds &lt;- setdiff(1:n, selec_inds)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c(&quot;newX&quot;, &quot;newXProvided&quot;))
+  
+  testthat::expect_true(is.numeric(res_df$newX))
+  testthat::expect_true(is.matrix(res_df$newX))
+  testthat::expect_equal(nrow(res_df$newX), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newX), ncol(css_res_df$X))
+  testthat::expect_null(colnames(res_df$newX))
+  
+  testthat::expect_true(is.logical(res_df$newXProvided))
+  testthat::expect_equal(length(res_df$newXProvided), 1)
+  testthat::expect_true(!is.na(res_df$newXProvided))
+  testthat::expect_true(res_df$newXProvided)
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won&#39;t match number of columns
+  # of X_df)
+  X_df$cyl &lt;- as.factor(X_df$cyl)
+  X_df$vs &lt;- as.factor(X_df$vs)
+  X_df$am &lt;- as.factor(X_df$am)
+  X_df$gear &lt;- as.factor(X_df$gear)
+  X_df$carb &lt;- as.factor(X_df$carb)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#checkNewXProvided'>checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c(&quot;newX&quot;, &quot;newXProvided&quot;))
+  
+  testthat::expect_true(is.numeric(res_df$newX))
+  testthat::expect_true(is.matrix(res_df$newX))
+  testthat::expect_equal(nrow(res_df$newX), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newX), ncol(css_res_df$X))
+  testthat::expect_null(colnames(res_df$newX))
+  
+  testthat::expect_true(is.logical(res_df$newXProvided))
+  testthat::expect_equal(length(res_df$newXProvided), 1)
+  testthat::expect_true(!is.na(res_df$newXProvided))
+  testthat::expect_true(res_df$newXProvided)
+  
 })</code></pre>
 <pre><code>## Test passed 😀</code></pre>
+<p>formCssDesign:</p>
+<pre class="r"><code>#&#39; Create design matrix of cluster representatives from matrix of raw features
+#&#39; using results of css function
+#&#39;
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param weighting Character; determines how to calculate the weights to
+#&#39; combine features from the selected clusters into weighted averages, called
+#&#39; cluster representatives. Must be one of &quot;sparse&quot;, &quot;weighted_avg&quot;, or
+#&#39; &quot;simple_avg&#39;. For &quot;sparse&quot;, all the weight is put on the most frequently
+#&#39; selected individual cluster member (or divided equally among all the clusters
+#&#39; that are tied for the top selection proportion if there is a tie). For
+#&#39; &quot;weighted_avg&quot;, the weight used for each cluster member is calculated in
+#&#39; proportion to the individual selection proportions of each feature. For
+#&#39; &quot;simple_avg&quot;, each cluster member gets equal weight regardless of the
+#&#39; individual feature selection proportions (that is, the cluster representative
+#&#39; is just a simple average of all the cluster members). See Faletto and Bien
+#&#39; (2022) for details. Default is &quot;weighted_avg&quot;.
+#&#39; @param cutoff Numeric; css will return only those clusters with selection
+#&#39; proportions equal to at least cutoff. Must be between 0 and 1. Default is 0
+#&#39; (in which case all clusters are returned in decreasing order of selection
+#&#39; proportion).
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.) Default is 1.
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) Default is NA (in which case
+#&#39; max_num_clusts is ignored).
+#&#39; @param newx A numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; the data that will be used to generate the design matrix of cluster
+#&#39; representatives. Must contain the same features (in the same
+#&#39; number of columns) as the X matrix provided to css, and if the columns of
+#&#39; newx are labeled, the names must match the variable names provided to css.
+#&#39; newx may be omitted if train_inds were provided to css to set aside
+#&#39; observations for model estimation. If this is the case, then when newx is
+#&#39; omitted formCssDesign will return a design matrix of cluster representatives
+#&#39; formed from the train_inds observations from the matrix X provided to css.
+#&#39; (If no train_inds were provided to css, newX must be provided to
+#&#39; formCssDesign.) Default is NA.
+#&#39; @return A design matrix with the same number of rows as newx (or the 
+#&#39; train_inds provided to css) where the columns are the constructed cluster
+#&#39; representatives.
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Faletto, G., &amp; Bien, J. (2022). Cluster Stability Selection.
+#&#39; \emph{arXiv preprint arXiv:2201.00494}.
+#&#39; \url{https://arxiv.org/abs/2201.00494}.
+<span id='formCssDesign'>formCssDesign</span> &lt;- function(css_results, weighting=&quot;weighted_avg&quot;, cutoff=0,
+    min_num_clusts=1, max_num_clusts=NA, newx=NA){
+
+    # Check inputs
+    ret &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts, newx)
+
+    newx &lt;- ret$newx
+    max_num_clusts &lt;- ret$max_num_clusts
+
+    rm(ret)
+
+    n &lt;- nrow(newx)
+    p &lt;- ncol(newx)
+
+    # Get the names of the selected clusters and the weights for the features
+    # within each cluster, according to the provided weighting rule
+    clust_sel_results &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)
+
+    selected_clusts &lt;- clust_sel_results$selected_clusts
+    weights &lt;- clust_sel_results$weights
+
+    rm(clust_sel_results)
+
+    n_sel_clusts &lt;- length(selected_clusts)
+
+    # Form matrix of cluster representatives of selected clusters
+    X_clus_reps &lt;- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
+        ncol=n_sel_clusts)
+    colnames(X_clus_reps) &lt;- rep(as.character(NA), n_sel_clusts)
+
+    for(i in 1:n_sel_clusts){
+        clust_i_name &lt;- names(selected_clusts)[i]
+
+        stopifnot(length(clust_i_name) == 1)
+        stopifnot(clust_i_name %in% names(weights))
+
+        colnames(X_clus_reps)[i] &lt;- clust_i_name
+
+        clust_i &lt;- css_results$clusters[[clust_i_name]]
+
+        stopifnot(length(clust_i) &gt;= 1)
+        stopifnot(all(clust_i) %in% 1:p)
+
+        weights_i &lt;- weights[[clust_i_name]]
+
+        stopifnot(length(clust_i) == length(weights_i))
+
+        if(length(weights_i) &gt; 1){
+            X_clus_reps[, i] &lt;- newx[, clust_i] %*% weights_i
+        } else{
+            X_clus_reps[, i] &lt;- newx[, clust_i]*weights_i
+        }
+    }
+
+    # Check output
+    stopifnot(all(!is.na(X_clus_reps)))
+    stopifnot(ncol(X_clus_reps) == n_sel_clusts)
+    stopifnot(nrow(X_clus_reps) == n)
+
+    return(X_clus_reps)
+}</code></pre>
+<p>checkFormCssDesignInputs:</p>
+<pre class="r"><code>#&#39; Helper function to check that the inputs to formCssDesign are as expected
+#&#39;
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param weighting Character; determines how to calculate the weights to
+#&#39; combine features from the selected clusters into weighted averages, called
+#&#39; cluster representatives. Must be one of &quot;sparse&quot;, &quot;weighted_avg&quot;, or
+#&#39; &quot;simple_avg&#39;.
+#&#39; @param cutoff Numeric; css will return only those clusters with selection
+#&#39; proportions equal to at least cutoff. Must be between 0 and 1.
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.)
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.)
+#&#39; @param newx A numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; the data that will be used to generate the design matrix of cluster
+#&#39; representatives. Must contain the same features (in the same
+#&#39; number of columns) as the X matrix provided to css, and if the columns of
+#&#39; newx are labeled, the names must match the variable names provided to css.
+#&#39; newx may be omitted if train_inds were provided to css to set aside
+#&#39; observations for model estimation. If this is the case, then when newx is
+#&#39; omitted formCssDesign will return a design matrix of cluster representatives
+#&#39; formed from the train_inds observations from the matrix X provided to css.
+#&#39; (If no train_inds were provided to css, newX must be provided to
+#&#39; formCssDesign.)
+#&#39; @return A named list with the following elements: \item{newx}{If newx was
+#&#39; provided, the provided newx matrix, coerced from a data.frame to a matrix if
+#&#39; needed. If newx was not provided, a matrix formed by the train_inds set
+#&#39; aside in the original function call to css.} \item{max_num_clusts}{The
+#&#39; provided max_num_clusts, coerced to an integer if needed, and coerced to be
+#&#39; less than or equal to the total number of clusters.}
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='checkFormCssDesignInputs'>checkFormCssDesignInputs</span> &lt;- function(css_results, weighting, cutoff,
+    min_num_clusts, max_num_clusts, newx){    
+    stopifnot(class(css_results) == &quot;cssr&quot;)
+
+    if(length(newx) == 1){
+        if(is.na(newx)){
+            if(length(css_results$train_inds) == 0){
+                stop(&quot;If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign&quot;)
+            }
+            newx &lt;- css_results$X[css_results$train_inds, ]
+            # feat_names &lt;- colnames(newx)
+        } else{
+            results &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)
+
+            newx &lt;- results$newx
+            # feat_names &lt;- results$feat_names
+
+            rm(results)
+        }
+    } else{
+        results &lt;- <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)
+
+        newx &lt;- results$newx
+        # feat_names &lt;- results$feat_names
+
+        rm(results)
+    }
+
+    p &lt;- ncol(newx)
+
+    <a href='create-cssr.html#checkCutoff'>checkCutoff</a>(cutoff)
+    <a href='create-cssr.html#checkWeighting'>checkWeighting</a>(weighting)
+    <a href='create-cssr.html#checkMinNumClusts'>checkMinNumClusts</a>(min_num_clusts, p, length(css_results$clusters))
+    max_num_clusts &lt;- <a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,
+        length(css_results$clusters))
+
+    return(list(newx=newx, max_num_clusts=max_num_clusts))
+}</code></pre>
+<p>Tests for checkFormCssDesignInputs</p>
+<pre class="r"><code>testthat::test_that(&quot;checkFormCssDesignInputs works&quot;, {
+  set.seed(72617)
+
+  x_select &lt;- matrix(stats::rnorm(10*6), nrow=10, ncol=6)
+  x_new &lt;- matrix(stats::rnorm(8*6), nrow=8, ncol=6)
+  y_select &lt;- stats::rnorm(10)
+  y_new &lt;- stats::rnorm(8)
+
+  good_clusters &lt;- list(&quot;red&quot;=1:2, &quot;blue&quot;=3:4, &quot;green&quot;=5)
+
+  css_res &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01, clusters=good_clusters,
+                 B = 10)
+  
+  res &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res, weighting=&quot;sparse&quot;,
+                                  cutoff=0.5, min_num_clusts=1,
+                                  max_num_clusts=NA, newx=x_new)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+  
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), 8)
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_new - res$newX) &lt; 10^(-9)))
+  
+  testthat::expect_equal(length(res$max_num_clusts), 1)
+  testthat::expect_true(is.na(res$max_num_clusts))
+  
+  # Add training indices
+  css_res_train &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B=10, train_inds=6:10)
+  
+  # Training indices should be ignored if new x is provided
+  
+  res &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_train,
+                                  weighting=&quot;weighted_avg&quot;, cutoff=0,
+                                  min_num_clusts=2, max_num_clusts=NA,
+                                  newx=x_new)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+  
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), 8)
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_new - res$newX) &lt; 10^(-9)))
+  
+  # Things should still work if new x is not provided
+
+  res &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_train, weighting=&quot;sparse&quot;,
+                                  cutoff=1, min_num_clusts=3,
+                                  max_num_clusts=NA, newx=NA)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+
+  testthat::expect_true(is.numeric(res$newx))
+  testthat::expect_true(is.matrix(res$newx))
+  testthat::expect_equal(nrow(res$newx), length(6:10))
+  testthat::expect_equal(ncol(res$newx), 6)
+  testthat::expect_null(colnames(res$newx))
+  testthat::expect_true(all(abs(x_select[1:5, ] - res$newX) &lt; 10^(-9)))
+  
+  # Try not providing training indices and omitting newx--should get error
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;sparse&quot;,
+                                                  cutoff=0.5, min_num_clusts=1,
+                                                  max_num_clusts=5, newx=NA),
+                         &quot;If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign&quot;, fixed=TRUE)
+  
+  # Try naming variables
+
+  colnames(x_select) &lt;- LETTERS[1:6]
+  css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_named,
+                                                    weighting=&quot;simple_avg&quot;,
+                                                    cutoff=0.9,
+                                                    min_num_clusts=1,
+                                                    max_num_clusts=3,
+                                                    newx=x_new),
+                           &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;, fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_new) &lt;- LETTERS[2:7]
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_named,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2, min_num_clusts=1,
+                                                  max_num_clusts=1,
+                                                  newx=x_new),
+                         &quot;identical(feat_names, colnames(css_X)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  colnames(x_new) &lt;- LETTERS[1:6]
+
+  res_named &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_named,
+                                        weighting=&quot;sparse&quot;, cutoff=0.5,
+                                        min_num_clusts=2, max_num_clusts=NA,
+                                        newx=x_new)
+
+  testthat::expect_true(is.list(res_named))
+  testthat::expect_identical(names(res_named), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+
+  testthat::expect_true(is.numeric(res_named$newx))
+  testthat::expect_true(is.matrix(res_named$newx))
+  testthat::expect_equal(nrow(res_named$newx), 8)
+  testthat::expect_equal(ncol(res_named$newx), 6)
+  testthat::expect_null(colnames(res_named$newx))
+  testthat::expect_identical(colnames(css_res_named$X), LETTERS[1:6])
+  testthat::expect_true(all(abs(x_new - res_named$newX) &lt; 10^(-9)))
+
+  # Try data.frame input to css and checkFormCssDesignInputs
+
+  X_df &lt;- datasets::mtcars
+
+  n &lt;- nrow(X_df)
+  y &lt;- stats::rnorm(n)
+
+  selec_inds &lt;- 1:round(n/2)
+  fit_inds &lt;- setdiff(1:n, selec_inds)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_df,
+                                     weighting=&quot;simple_avg&quot;, cutoff=0.7,
+                                     min_num_clusts=3, max_num_clusts=NA,
+                                     newx=X_df[fit_inds, ])
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+  
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won&#39;t match number of columns
+  # of X_df)
+  X_df$cyl &lt;- as.factor(X_df$cyl)
+  X_df$vs &lt;- as.factor(X_df$vs)
+  X_df$am &lt;- as.factor(X_df$am)
+  X_df$gear &lt;- as.factor(X_df$gear)
+  X_df$carb &lt;- as.factor(X_df$carb)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res_df,
+                                     weighting=&quot;weighted_avg&quot;, cutoff=0.3,
+                                     min_num_clusts=1, max_num_clusts=4,
+                                     newx=X_df[fit_inds, ])
+
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c(&quot;newx&quot;, &quot;max_num_clusts&quot;))
+  
+  testthat::expect_true(is.numeric(res_df$newx))
+  testthat::expect_true(is.matrix(res_df$newx))
+  testthat::expect_null(colnames(res_df$newx))
+  testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
+  testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
+  
+  ##### Try bad inputs
+  
+  
+  
+  
+  
+  
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
+<p>Tests for formCssDesign</p>
+<p>Finally, tests for getCssDesign</p>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>
@@ -4913,6 +5344,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLassoInputs&#39;)checkCssLassoInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCssLoopOutput&#39;)checkCssLoopOutput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCutoff&#39;)checkCutoff.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormCssDesignInputs&#39;)checkFormCssDesignInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormatClustersInput&#39;)checkFormatClustersInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterSelMatrixInput&#39;)checkGetClusterSelMatrixInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetSelectedClustersOutput&#39;)checkGetSelectedClustersOutput.Rd]8;;&#39;
@@ -4930,6 +5362,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;css&#39;)css.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLasso&#39;)cssLasso.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssLoop&#39;)cssLoop.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formCssDesign&#39;)formCssDesign.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formatClusters&#39;)formatClusters.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getAllClustWeights&#39;)getAllClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClustWeights&#39;)getClustWeights.Rd]8;;&#39;
