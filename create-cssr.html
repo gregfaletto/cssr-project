@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-12-14" />
+<meta name="date" content="2022-12-16" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">December 14, 2022</h4>
+<h4 class="date">December 16, 2022</h4>
 
 </div>
 
@@ -1391,7 +1391,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1693,7 +1693,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1782,7 +1782,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1852,7 +1852,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -3692,7 +3692,7 @@ where it is called).</li>
 #&#39; \item{selected_feats}{A named integer vector; the indices of the features
 #&#39; with nonzero weights from all of the selected clusters.} \item{weights}{A
 #&#39; named list of the same length as the number of selected clusters. Each list
-#&#39; element weights[[j]] is a numeric  vector of the weights to use for the jth
+#&#39; element weights[[j]] is a numeric vector of the weights to use for the jth
 #&#39; selected cluster, and it has the same name as the cluster it corresponds
 #&#39; to.}
 #&#39; @author Gregory Faletto, Jacob Bien
@@ -3764,7 +3764,7 @@ where it is called).</li>
     # Check output (already checked weights wihin getAllClustWeights)
 
     <a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts, selected_feats,
-        n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
+        weights, n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
 
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
@@ -4138,13 +4138,17 @@ where it is called).</li>
 #&#39; the corresponding cluster.
 #&#39; @param selected_feats A named integer vector; the indices of the features
 #&#39; with nonzero weights from all of the selected clusters.
+#&#39; @param weights A named list of the same length as the number of selected
+#&#39; clusters. Each list element weights[[j]] is a numeric vector of the weights
+#&#39; to use for the jth selected cluster, and it has the same name as the cluster
+#&#39; it corresponds to.
 #&#39; @param n_clusters Integer; the number of clusters in the data (upper bound
 #&#39; for the length of selected_clusts)
 #&#39; @param p Integer; number of features in the data (all selected_feats should
 #&#39; be in 1:p)
 #&#39; @author Gregory Faletto, Jacob Bien
 <span id='checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</span> &lt;- function(selected_clusts, selected_feats,
-    n_clusters, p){
+    weights, n_clusters, p){
     stopifnot(is.numeric(selected_clusts))
     stopifnot(all(selected_clusts &gt;= 0))
     stopifnot(all(selected_clusts &lt;= 1))
@@ -4160,6 +4164,8 @@ where it is called).</li>
     stopifnot(length(selected_feats) == length(unique(selected_feats)))
     stopifnot(all(selected_feats %in% 1:p))
     stopifnot(length(selected_clusts) &lt;= length(selected_feats))
+    stopifnot(identical(names(weights), names(selected_clusts)))
+    stopifnot(length(weights) == length(selected_clusts)) 
 }</code></pre>
 <p>Tests for checkGetSelectedClustersOutput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkGetSelectedClustersOutput works&quot;, {
@@ -4167,39 +4173,53 @@ where it is called).</li>
   sel_clusts &lt;- 0.1*(1:9)
   names(sel_clusts) &lt;- letters[1:9]
   
+  weights &lt;- list()
+  
+  for(i in 1:8){
+    weights[[i]] &lt;- c(0.2, 0.3)
+  }
+  weights[[9]] &lt;- 0.4
+  names(weights) &lt;- letters[1:9]
+  
   sel_feats &lt;- 10:26
   names(sel_feats) &lt;- LETTERS[10:26]
   
   testthat::expect_null(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30))
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=letters[1:4],
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;is.numeric(selected_clusts) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=-sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;all(selected_clusts &gt;= 0) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=10*sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;all(selected_clusts &lt;= 1) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=numeric(),
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;length(selected_clusts) &gt;= 1 is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=sel_clusts,
                                selected_feats=sel_feats,
+                               weights=weights,
                                n_clusters=8, p=30),
                          &quot;length(selected_clusts) &lt;= n_clusters is not TRUE&quot;,
                          fixed=TRUE)
@@ -4209,12 +4229,14 @@ where it is called).</li>
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=bad_clusts,
                                selected_feats=sel_feats,
+                               weights=weights,
                                n_clusters=10, p=30),
                          &quot;length(names(selected_clusts)) == length(unique(names(selected_clusts))) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=unname(sel_clusts),
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;!is.null(names(selected_clusts)) is not TRUE&quot;,
                          fixed=TRUE)
@@ -4223,7 +4245,7 @@ where it is called).</li>
   names(bad_clusts)[1] &lt;- &quot;&quot;
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=bad_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=30),
                          &quot;all(!is.na(names(selected_clusts)) &amp; names(selected_clusts) !=  .... is not TRUE&quot;,
                          fixed=TRUE)
@@ -4231,13 +4253,14 @@ where it is called).</li>
   names(bad_clusts)[1] &lt;- as.character(NA)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=bad_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=30),
                          &quot;all(!is.na(names(selected_clusts)) &amp; names(selected_clusts) !=  .... is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=sel_clusts,
                                                        selected_feats=0.1,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;is.integer(selected_feats) is not TRUE&quot;,
                          fixed=TRUE)
@@ -4246,18 +4269,19 @@ where it is called).</li>
                                                        selected_feats=c(1L,
                                                                         rep(2L,
                                                                             2)),
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          &quot;length(selected_feats) == length(unique(selected_feats)) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=sel_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=25),
                          &quot;all(selected_feats %in% 1:p) is not TRUE&quot;,
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#checkGetSelectedClustersOutput'>checkGetSelectedClustersOutput</a>(selected_clusts=sel_clusts,
-                               selected_feats=sel_feats[1:8],
+                               selected_feats=sel_feats[1:8], weights=weights,
                                n_clusters=10, p=25),
                          &quot;length(selected_clusts) &lt;= length(selected_feats) is not TRUE&quot;,
                          fixed=TRUE)
@@ -5013,15 +5037,10 @@ where it is called).</li>
 
     # Get the names of the selected clusters and the weights for the features
     # within each cluster, according to the provided weighting rule
-    clust_sel_results &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts)
+    weights &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)$weights
 
-    selected_clusts &lt;- clust_sel_results$selected_clusts
-    weights &lt;- clust_sel_results$weights
-
-    rm(clust_sel_results)
-
-    n_sel_clusts &lt;- length(selected_clusts)
+    n_sel_clusts &lt;- length(weights)
 
     # Form matrix of cluster representatives of selected clusters
     X_clus_reps &lt;- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
@@ -5029,7 +5048,7 @@ where it is called).</li>
     colnames(X_clus_reps) &lt;- rep(as.character(NA), n_sel_clusts)
 
     for(i in 1:n_sel_clusts){
-        clust_i_name &lt;- names(selected_clusts)[i]
+        clust_i_name &lt;- names(weights)[i]
 
         stopifnot(length(clust_i_name) == 1)
         stopifnot(clust_i_name %in% names(weights))
@@ -5058,7 +5077,8 @@ where it is called).</li>
     stopifnot(nrow(X_clus_reps) == n)
 
     return(X_clus_reps)
-}</code></pre>
+}
+</code></pre>
 <p>checkFormCssDesignInputs:</p>
 <pre class="r"><code>#&#39; Helper function to check that the inputs to formCssDesign are as expected
 #&#39;
@@ -5302,12 +5322,128 @@ where it is called).</li>
   testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
   testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
   
-  ##### Try bad inputs
+  ##### Try other bad inputs
+  
+  colnames(x_new) &lt;- NULL
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=-0.3, min_num_clusts=1,
+                                                  max_num_clusts=4,
+                                                  newx=x_new),
+                         &quot;cutoff &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;sparse&quot;,
+                                                  cutoff=&quot;0.5&quot;,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA, newx=x_new),
+                        &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
+                        fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;sparse&quot;,
+                                                  cutoff=as.numeric(NA),
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                        &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=c(&quot;sparse&quot;,
+                                                              &quot;simple_avg&quot;),
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=1,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;Weighting must be a character&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;spasre&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=c(1, 2),
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=&quot;3&quot;,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=0,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=6,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
   
   
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=&quot;4&quot;,
+                                                  newx=x_new),
+                         &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
   
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=3.5,
+                                                  newx=x_new),
+                         &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
   
-  
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=2,
+                                                  max_num_clusts=1,
+                                                  newx=x_new),
+                         &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(css_results=css_res,
+                                                  weighting=&quot;weighted_avg&quot;,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=2,
+                                                  max_num_clusts=8,
+                                                  newx=x_new),
+                         &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
+
   
 })</code></pre>
 <pre><code>## Test passed 🥇</code></pre>

@@ -3374,7 +3374,7 @@ getSelectedClusters:
 #' \item{selected_feats}{A named integer vector; the indices of the features
 #' with nonzero weights from all of the selected clusters.} \item{weights}{A
 #' named list of the same length as the number of selected clusters. Each list
-#' element weights[[j]] is a numeric  vector of the weights to use for the jth
+#' element weights[[j]] is a numeric vector of the weights to use for the jth
 #' selected cluster, and it has the same name as the cluster it corresponds
 #' to.}
 #' @author Gregory Faletto, Jacob Bien
@@ -3446,7 +3446,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     # Check output (already checked weights wihin getAllClustWeights)
 
     checkGetSelectedClustersOutput(selected_clusts, selected_feats,
-        n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
+        weights, n_clusters=length(clusters), p=ncol(css_results$feat_sel_mat))
 
     return(list(selected_clusts=selected_clusts,
         selected_feats=selected_feats, weights=weights))
@@ -3847,13 +3847,17 @@ checkGetSelectedClustersOutput:
 #' the corresponding cluster.
 #' @param selected_feats A named integer vector; the indices of the features
 #' with nonzero weights from all of the selected clusters.
+#' @param weights A named list of the same length as the number of selected
+#' clusters. Each list element weights[[j]] is a numeric vector of the weights
+#' to use for the jth selected cluster, and it has the same name as the cluster
+#' it corresponds to.
 #' @param n_clusters Integer; the number of clusters in the data (upper bound
 #' for the length of selected_clusts)
 #' @param p Integer; number of features in the data (all selected_feats should
 #' be in 1:p)
 #' @author Gregory Faletto, Jacob Bien
 checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
-    n_clusters, p){
+    weights, n_clusters, p){
     stopifnot(is.numeric(selected_clusts))
     stopifnot(all(selected_clusts >= 0))
     stopifnot(all(selected_clusts <= 1))
@@ -3869,6 +3873,8 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     stopifnot(length(selected_feats) == length(unique(selected_feats)))
     stopifnot(all(selected_feats %in% 1:p))
     stopifnot(length(selected_clusts) <= length(selected_feats))
+    stopifnot(identical(names(weights), names(selected_clusts)))
+    stopifnot(length(weights) == length(selected_clusts)) 
 }
 ```
 
@@ -3880,39 +3886,53 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
   sel_clusts <- 0.1*(1:9)
   names(sel_clusts) <- letters[1:9]
   
+  weights <- list()
+  
+  for(i in 1:8){
+    weights[[i]] <- c(0.2, 0.3)
+  }
+  weights[[9]] <- 0.4
+  names(weights) <- letters[1:9]
+  
   sel_feats <- 10:26
   names(sel_feats) <- LETTERS[10:26]
   
   testthat::expect_null(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30))
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=letters[1:4],
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "is.numeric(selected_clusts) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=-sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "all(selected_clusts >= 0) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=10*sel_clusts,
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "all(selected_clusts <= 1) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=numeric(),
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "length(selected_clusts) >= 1 is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
                                selected_feats=sel_feats,
+                               weights=weights,
                                n_clusters=8, p=30),
                          "length(selected_clusts) <= n_clusters is not TRUE",
                          fixed=TRUE)
@@ -3922,12 +3942,14 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
                                selected_feats=sel_feats,
+                               weights=weights,
                                n_clusters=10, p=30),
                          "length(names(selected_clusts)) == length(unique(names(selected_clusts))) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=unname(sel_clusts),
                                                        selected_feats=sel_feats,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "!is.null(names(selected_clusts)) is not TRUE",
                          fixed=TRUE)
@@ -3936,7 +3958,7 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
   names(bad_clusts)[1] <- ""
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=30),
                          "all(!is.na(names(selected_clusts)) & names(selected_clusts) !=  .... is not TRUE",
                          fixed=TRUE)
@@ -3944,13 +3966,14 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
   names(bad_clusts)[1] <- as.character(NA)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=bad_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=30),
                          "all(!is.na(names(selected_clusts)) & names(selected_clusts) !=  .... is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
                                                        selected_feats=0.1,
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "is.integer(selected_feats) is not TRUE",
                          fixed=TRUE)
@@ -3959,18 +3982,19 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
                                                        selected_feats=c(1L,
                                                                         rep(2L,
                                                                             2)),
+                                                       weights=weights,
                                                        n_clusters=10, p=30),
                          "length(selected_feats) == length(unique(selected_feats)) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
-                               selected_feats=sel_feats,
+                               selected_feats=sel_feats, weights=weights,
                                n_clusters=10, p=25),
                          "all(selected_feats %in% 1:p) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
-                               selected_feats=sel_feats[1:8],
+                               selected_feats=sel_feats[1:8], weights=weights,
                                n_clusters=10, p=25),
                          "length(selected_clusts) <= length(selected_feats) is not TRUE",
                          fixed=TRUE)
@@ -4754,15 +4778,10 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     # Get the names of the selected clusters and the weights for the features
     # within each cluster, according to the provided weighting rule
-    clust_sel_results <- getSelectedClusters(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts)
+    weights <- getSelectedClusters(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)$weights
 
-    selected_clusts <- clust_sel_results$selected_clusts
-    weights <- clust_sel_results$weights
-
-    rm(clust_sel_results)
-
-    n_sel_clusts <- length(selected_clusts)
+    n_sel_clusts <- length(weights)
 
     # Form matrix of cluster representatives of selected clusters
     X_clus_reps <- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
@@ -4770,7 +4789,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     colnames(X_clus_reps) <- rep(as.character(NA), n_sel_clusts)
 
     for(i in 1:n_sel_clusts){
-        clust_i_name <- names(selected_clusts)[i]
+        clust_i_name <- names(weights)[i]
 
         stopifnot(length(clust_i_name) == 1)
         stopifnot(clust_i_name %in% names(weights))
@@ -4800,6 +4819,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     return(X_clus_reps)
 }
+
 ```
 
 checkFormCssDesignInputs:
@@ -5051,12 +5071,128 @@ testthat::test_that("checkFormCssDesignInputs works", {
   testthat::expect_equal(nrow(res_df$newx), length(fit_inds))
   testthat::expect_equal(ncol(res_df$newx), ncol(css_res_df$X))
   
-  ##### Try bad inputs
+  ##### Try other bad inputs
+  
+  colnames(x_new) <- NULL
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=-0.3, min_num_clusts=1,
+                                                  max_num_clusts=4,
+                                                  newx=x_new),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="sparse",
+                                                  cutoff="0.5",
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA, newx=x_new),
+                        "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
+                        fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="sparse",
+                                                  cutoff=as.numeric(NA),
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                        "!is.na(cutoff) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting=c("sparse",
+                                                              "simple_avg"),
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting=1,
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "Weighting must be a character", fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="spasre",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=c(1, 2),
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts="3",
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=0,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=6,
+                                                  max_num_clusts=NA,
+                                                  newx=x_new),
+                         "min_num_clusts <= n_clusters is not TRUE", fixed=TRUE)
   
   
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts="4",
+                                                  newx=x_new),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
   
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=1,
+                                                  max_num_clusts=3.5,
+                                                  newx=x_new),
+                         "max_num_clusts == round(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
   
-  
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=2,
+                                                  max_num_clusts=1,
+                                                  newx=x_new),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
+                                                  weighting="weighted_avg",
+                                                  cutoff=0.2,
+                                                  min_num_clusts=2,
+                                                  max_num_clusts=8,
+                                                  newx=x_new),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+
   
 })
 ```

@@ -66,15 +66,10 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     # Get the names of the selected clusters and the weights for the features
     # within each cluster, according to the provided weighting rule
-    clust_sel_results <- getSelectedClusters(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts)
+    weights <- getSelectedClusters(css_results, weighting, cutoff,
+        min_num_clusts, max_num_clusts)$weights
 
-    selected_clusts <- clust_sel_results$selected_clusts
-    weights <- clust_sel_results$weights
-
-    rm(clust_sel_results)
-
-    n_sel_clusts <- length(selected_clusts)
+    n_sel_clusts <- length(weights)
 
     # Form matrix of cluster representatives of selected clusters
     X_clus_reps <- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
@@ -82,7 +77,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     colnames(X_clus_reps) <- rep(as.character(NA), n_sel_clusts)
 
     for(i in 1:n_sel_clusts){
-        clust_i_name <- names(selected_clusts)[i]
+        clust_i_name <- names(weights)[i]
 
         stopifnot(length(clust_i_name) == 1)
         stopifnot(clust_i_name %in% names(weights))
@@ -112,3 +107,4 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     return(X_clus_reps)
 }
+
