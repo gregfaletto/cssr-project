@@ -2020,7 +2020,12 @@ testthat::test_that("checkNewXProvided works", {
   testthat::expect_true(is.list(res))
   testthat::expect_identical(names(res), c("newX", "newXProvided"))
   
-  testthat::expect_true(is.na(res$newX))
+  testthat::expect_true(is.numeric(res$newX))
+  testthat::expect_true(is.matrix(res$newX))
+  testthat::expect_equal(nrow(res$newX), 5)
+  testthat::expect_equal(ncol(res$newX), 5)
+  testthat::expect_null(colnames(res$newX))
+  
   testthat::expect_false(res$newXProvided)
   
   # Try not providing training indices and omitting newx--should get error
@@ -2434,9 +2439,9 @@ testthat::test_that("formCssDesign works", {
   testthat::expect_true(is.matrix(res))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(nrow(res), 8)
-  testthat::expect_equal(ncol(res), length(css_res$clusters))
-  testthat::expect_true(all(colnames(res) %in% names(css_res$clusters)))
-  testthat::expect_true(all(names(css_res$clusters) %in% colnames(res)))
+  testthat::expect_equal(ncol(res), length(css_res_train$clusters))
+  testthat::expect_true(all(colnames(res) %in% names(css_res_train$clusters)))
+  testthat::expect_true(all(names(css_res_train$clusters) %in% colnames(res)))
 
   # Things should still work if new x is not provided
 
@@ -2599,6 +2604,208 @@ testthat::test_that("formCssDesign works", {
   testthat::expect_error(formCssDesign(css_results=css_res, max_num_clusts=8,
                                        newx=x_new),
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
+
+  
+})
+
+testthat::test_that("getCssDesign works", {
+  set.seed(23170)
+
+  x_select <- matrix(stats::rnorm(10*6), nrow=10, ncol=6)
+  x_new <- matrix(stats::rnorm(8*6), nrow=8, ncol=6)
+  y_select <- stats::rnorm(10)
+  y_new <- stats::rnorm(8)
+
+  good_clusters <- list("red"=1:2, "blue"=3:4, "green"=5)
+
+  css_res <- css(X=x_select, y=y_select, lambda=0.01, clusters=good_clusters,
+                 B = 10)
+
+  res <- getCssDesign(css_res, newX=x_new)
+
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(nrow(res), 8)
+  testthat::expect_equal(ncol(res), length(css_res$clusters))
+  testthat::expect_true(all(colnames(res) %in% names(css_res$clusters)))
+  testthat::expect_true(all(names(css_res$clusters) %in% colnames(res)))
+  
+  # Add training indices
+  css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B=10, train_inds=6:10)
+
+  # Training indices should be ignored if new x is provided
+
+  res <- getCssDesign(css_results=css_res_train, weighting="weighted_avg",
+                      min_num_clusts=2, newX=x_new)
+
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(nrow(res), 8)
+  testthat::expect_equal(ncol(res), length(css_res_train$clusters))
+  testthat::expect_true(all(colnames(res) %in% names(css_res_train$clusters)))
+  testthat::expect_true(all(names(css_res_train$clusters) %in% colnames(res)))
+
+  # Things should still work if new x is not provided
+
+  res <- getCssDesign(css_results=css_res_train, min_num_clusts=2)
+  # 
+  # testthat::expect_true(is.matrix(res))
+  # testthat::expect_true(is.numeric(res))
+  # testthat::expect_equal(nrow(res), 5)
+  # testthat::expect_equal(ncol(res), length(css_res_train$clusters))
+  # testthat::expect_true(all(colnames(res) %in% names(css_res_train$clusters)))
+  # testthat::expect_true(all(names(css_res_train$clusters) %in% colnames(res)))
+
+  # # Try not providing training indices and omitting newX--should get error
+  # testthat::expect_error(getCssDesign(css_results=css_res, weighting="sparse",
+  #                                      cutoff=0.5, min_num_clusts=1,
+  #                                      max_num_clusts=5, newX=NA),
+  #                        "If css was not provided with indices to set aside for model training, then newx must be provided to getCssDesign", fixed=TRUE)
+  # 
+  # # Try naming variables
+  # 
+  # colnames(x_select) <- LETTERS[1:6]
+  # css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+  #                      clusters=good_clusters, B = 10)
+  # 
+  # # Named variables for css matrix but not new one--should get a warning
+  # testthat::expect_warning(getCssDesign(css_results=css_res_named,
+  #                                        weighting="simple_avg", cutoff=0.9,
+  #                                        min_num_clusts=1, max_num_clusts=3,
+  #                                        newX=x_new),
+  #                          "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+  # 
+  # # Try mismatching variable names
+  # colnames(x_new) <- LETTERS[2:7]
+  # testthat::expect_error(getCssDesign(css_results=css_res_named,
+  #                                      weighting="weighted_avg", cutoff=0.2,
+  #                                      min_num_clusts=1, max_num_clusts=1,
+  #                                      newX=x_new),
+  #                        "identical(feat_names, colnames(css_X)) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # colnames(x_new) <- LETTERS[1:6]
+  # 
+  # res_named <- getCssDesign(css_results=css_res_named,
+  #                                       weighting="sparse", cutoff=0.5,
+  #                                       min_num_clusts=2, max_num_clusts=NA,
+  #                                       newX=x_new)
+  # 
+  # testthat::expect_true(is.matrix(res_named))
+  # testthat::expect_true(is.numeric(res_named))
+  # testthat::expect_equal(nrow(res_named), 8)
+  # testthat::expect_true(ncol(res_named) <= length(css_res_named$clusters))
+  # testthat::expect_true(all(colnames(res_named) %in% names(css_res_named$clusters)))
+  # 
+  # # Try data.frame input to css and getCssDesign
+  # 
+  # X_df <- datasets::mtcars
+  # 
+  # n <- nrow(X_df)
+  # y <- stats::rnorm(n)
+  # 
+  # selec_inds <- 1:round(n/2)
+  # fit_inds <- setdiff(1:n, selec_inds)
+  # 
+  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  # res_df <- getCssDesign(css_results=css_res_df, weighting="simple_avg",
+  #                         cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
+  #                         newX=X_df[fit_inds, ])
+  # 
+  # testthat::expect_true(is.matrix(res_df))
+  # testthat::expect_true(is.numeric(res_df))
+  # testthat::expect_equal(nrow(res_df), length(fit_inds))
+  # testthat::expect_true(ncol(res_df) <= length(css_res_df$clusters))
+  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
+  # 
+  # # Try again with X as a dataframe with factors (number of columns of final
+  # # design matrix after one-hot encoding factors won't match number of columns
+  # # of X_df)
+  # X_df$cyl <- as.factor(X_df$cyl)
+  # X_df$vs <- as.factor(X_df$vs)
+  # X_df$am <- as.factor(X_df$am)
+  # X_df$gear <- as.factor(X_df$gear)
+  # X_df$carb <- as.factor(X_df$carb)
+  # 
+  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  # res_df <- getCssDesign(css_results=css_res_df, weighting="weighted_avg",
+  #                         cutoff=0.3, min_num_clusts=1, max_num_clusts=4,
+  #                         newX=X_df[fit_inds, ])
+  # 
+  # testthat::expect_true(is.matrix(res_df))
+  # testthat::expect_true(is.numeric(res_df))
+  # testthat::expect_equal(nrow(res_df), length(fit_inds))
+  # testthat::expect_true(ncol(res_df) <= length(css_res_df$clusters))
+  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
+  # 
+  # ##### Try other bad inputs
+  # 
+  # colnames(x_new) <- NULL
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, cutoff=-0.3,
+  #                                      newX=x_new), "cutoff >= 0 is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, cutoff="0.5",
+  #                                      newX=x_new),
+  #                        "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
+  #                       fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res,
+  #                                      cutoff=as.numeric(NA), newX=x_new),
+  #                       "!is.na(cutoff) is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res,
+  #                                      weighting=c("sparse", "simple_avg"),
+  #                                      newX=x_new),
+  #                        "length(weighting) == 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, weighting=1,
+  #                                      newX=x_new),
+  #                        "Weighting must be a character", fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, weighting="spasre",
+  #                                      newX=x_new),
+  #                        "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res,
+  #                                      min_num_clusts=c(1, 2), newX=x_new),
+  #                        "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts="3",
+  #                                      newX=x_new),
+  #                        "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=0,
+  #                                      newX=x_new),
+  #                        "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=6,
+  #                                      newX=x_new),
+  #                        "min_num_clusts <= n_clusters is not TRUE", fixed=TRUE)
+  # 
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, max_num_clusts="4",
+  #                                      newX=x_new),
+  #                        "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, max_num_clusts=3.5,
+  #                                      newX=x_new),
+  #                        "max_num_clusts == round(max_num_clusts) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=2,
+  #                                      max_num_clusts=1, newX=x_new),
+  #                        "max_num_clusts >= min_num_clusts is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(getCssDesign(css_results=css_res, max_num_clusts=8,
+  #                                      newX=x_new),
+  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
   
 })
