@@ -19,9 +19,11 @@ provided to css to set aside observations.}
 css).}
 }
 \value{
-A named list with the following elements: \item{newX}{The provided
-trainX matrix, coerced from a data.frame to a matrix if the provided trainX
-was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
+A named list with the following elements: \item{newX}{If trainX was
+provided, this is the provided trainX matrix, coerced from a data.frame to a
+matrix if the provided trainX was a data.frame. If trainX was not provided,
+this is a matrix made up of the training indices provided to css in the
+train_inds argument.} \item{newXProvided}{Logical; indicates whether a valid
 trainX input was provided.}
 }
 \description{

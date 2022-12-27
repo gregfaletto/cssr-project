@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2022-12-22" />
+<meta name="date" content="2022-12-27" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">December 22, 2022</h4>
+<h4 class="date">December 27, 2022</h4>
 
 </div>
 
@@ -1391,7 +1391,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1693,7 +1693,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1782,7 +1782,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1852,7 +1852,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -4640,9 +4640,11 @@ where it is called).</li>
 #&#39; provided to css to set aside observations.
 #&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
 #&#39; css).
-#&#39; @return A named list with the following elements: \item{newX}{The provided
-#&#39; trainX matrix, coerced from a data.frame to a matrix if the provided trainX
-#&#39; was a data.frame.} \item{newXProvided}{Logical; indicates whether a valid
+#&#39; @return A named list with the following elements: \item{newX}{If trainX was
+#&#39; provided, this is the provided trainX matrix, coerced from a data.frame to a
+#&#39; matrix if the provided trainX was a data.frame. If trainX was not provided,
+#&#39; this is a matrix made up of the training indices provided to css in the
+#&#39; train_inds argument.} \item{newXProvided}{Logical; indicates whether a valid
 #&#39; trainX input was provided.}
 #&#39; @author Gregory Faletto, Jacob Bien
 <span id='checkNewXProvided'>checkNewXProvided</span> &lt;- function(trainX, css_results){
@@ -5705,167 +5707,222 @@ where it is called).</li>
   # Things should still work if new x is not provided
 
   res &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_train, min_num_clusts=2)
-  # 
-  # testthat::expect_true(is.matrix(res))
-  # testthat::expect_true(is.numeric(res))
-  # testthat::expect_equal(nrow(res), 5)
-  # testthat::expect_equal(ncol(res), length(css_res_train$clusters))
-  # testthat::expect_true(all(colnames(res) %in% names(css_res_train$clusters)))
-  # testthat::expect_true(all(names(css_res_train$clusters) %in% colnames(res)))
 
-  # # Try not providing training indices and omitting newX--should get error
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=&quot;sparse&quot;,
-  #                                      cutoff=0.5, min_num_clusts=1,
-  #                                      max_num_clusts=5, newX=NA),
-  #                        &quot;If css was not provided with indices to set aside for model training, then newx must be provided to getCssDesign&quot;, fixed=TRUE)
-  # 
-  # # Try naming variables
-  # 
-  # colnames(x_select) &lt;- LETTERS[1:6]
-  # css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B = 10)
-  # 
-  # # Named variables for css matrix but not new one--should get a warning
-  # testthat::expect_warning(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named,
-  #                                        weighting=&quot;simple_avg&quot;, cutoff=0.9,
-  #                                        min_num_clusts=1, max_num_clusts=3,
-  #                                        newX=x_new),
-  #                          &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;, fixed=TRUE)
-  # 
-  # # Try mismatching variable names
-  # colnames(x_new) &lt;- LETTERS[2:7]
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named,
-  #                                      weighting=&quot;weighted_avg&quot;, cutoff=0.2,
-  #                                      min_num_clusts=1, max_num_clusts=1,
-  #                                      newX=x_new),
-  #                        &quot;identical(feat_names, colnames(css_X)) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # colnames(x_new) &lt;- LETTERS[1:6]
-  # 
-  # res_named &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named,
-  #                                       weighting=&quot;sparse&quot;, cutoff=0.5,
-  #                                       min_num_clusts=2, max_num_clusts=NA,
-  #                                       newX=x_new)
-  # 
-  # testthat::expect_true(is.matrix(res_named))
-  # testthat::expect_true(is.numeric(res_named))
-  # testthat::expect_equal(nrow(res_named), 8)
-  # testthat::expect_true(ncol(res_named) &lt;= length(css_res_named$clusters))
-  # testthat::expect_true(all(colnames(res_named) %in% names(css_res_named$clusters)))
-  # 
-  # # Try data.frame input to css and getCssDesign
-  # 
-  # X_df &lt;- datasets::mtcars
-  # 
-  # n &lt;- nrow(X_df)
-  # y &lt;- stats::rnorm(n)
-  # 
-  # selec_inds &lt;- 1:round(n/2)
-  # fit_inds &lt;- setdiff(1:n, selec_inds)
-  # 
-  # css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_df, weighting=&quot;simple_avg&quot;,
-  #                         cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
-  #                         newX=X_df[fit_inds, ])
-  # 
-  # testthat::expect_true(is.matrix(res_df))
-  # testthat::expect_true(is.numeric(res_df))
-  # testthat::expect_equal(nrow(res_df), length(fit_inds))
-  # testthat::expect_true(ncol(res_df) &lt;= length(css_res_df$clusters))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
-  # 
-  # # Try again with X as a dataframe with factors (number of columns of final
-  # # design matrix after one-hot encoding factors won&#39;t match number of columns
-  # # of X_df)
-  # X_df$cyl &lt;- as.factor(X_df$cyl)
-  # X_df$vs &lt;- as.factor(X_df$vs)
-  # X_df$am &lt;- as.factor(X_df$am)
-  # X_df$gear &lt;- as.factor(X_df$gear)
-  # X_df$carb &lt;- as.factor(X_df$carb)
-  # 
-  # css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_df, weighting=&quot;weighted_avg&quot;,
-  #                         cutoff=0.3, min_num_clusts=1, max_num_clusts=4,
-  #                         newX=X_df[fit_inds, ])
-  # 
-  # testthat::expect_true(is.matrix(res_df))
-  # testthat::expect_true(is.numeric(res_df))
-  # testthat::expect_equal(nrow(res_df), length(fit_inds))
-  # testthat::expect_true(ncol(res_df) &lt;= length(css_res_df$clusters))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
-  # 
-  # ##### Try other bad inputs
-  # 
-  # colnames(x_new) &lt;- NULL
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, cutoff=-0.3,
-  #                                      newX=x_new), &quot;cutoff &gt;= 0 is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, cutoff=&quot;0.5&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
-  #                       fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
-  #                                      cutoff=as.numeric(NA), newX=x_new),
-  #                       &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
-  #                                      weighting=c(&quot;sparse&quot;, &quot;simple_avg&quot;),
-  #                                      newX=x_new),
-  #                        &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=1,
-  #                                      newX=x_new),
-  #                        &quot;Weighting must be a character&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=&quot;spasre&quot;,
-  #                                      newX=x_new),
-  #                        &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
-  #                                      min_num_clusts=c(1, 2), newX=x_new),
-  #                        &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=&quot;3&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=0,
-  #                                      newX=x_new),
-  #                        &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=6,
-  #                                      newX=x_new),
-  #                        &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
-  # 
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=&quot;4&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=3.5,
-  #                                      newX=x_new),
-  #                        &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=2,
-  #                                      max_num_clusts=1, newX=x_new),
-  #                        &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=8,
-  #                                      newX=x_new),
-  #                        &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(nrow(res), 5)
+  testthat::expect_equal(ncol(res), length(css_res_train$clusters))
+  testthat::expect_true(all(colnames(res) %in% names(css_res_train$clusters)))
+  testthat::expect_true(all(names(css_res_train$clusters) %in% colnames(res)))
+
+  # Try not providing training indices and omitting newX--should get error
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=&quot;sparse&quot;,
+                                       cutoff=0.5, min_num_clusts=1,
+                                       max_num_clusts=5, newX=NA),
+                         &quot;css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix&quot;, fixed=TRUE)
+
+  # Try naming variables
+
+  colnames(x_select) &lt;- LETTERS[1:6]
+  css_res_named &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named,
+                                         weighting=&quot;simple_avg&quot;, cutoff=0.9,
+                                         min_num_clusts=1, max_num_clusts=3,
+                                         newX=x_new),
+                           &quot;New X provided had no variable names (column names) even though the X provided to css did.&quot;, fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_new) &lt;- LETTERS[2:7]
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named,
+                                      weighting=&quot;weighted_avg&quot;, cutoff=0.2,
+                                      min_num_clusts=1, max_num_clusts=1,
+                                      newX=x_new),
+                         &quot;identical(feat_names, colnames(css_X)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  colnames(x_new) &lt;- LETTERS[1:6]
+
+  res_named &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_named, weighting=&quot;sparse&quot;,
+                            cutoff=0.5, min_num_clusts=2, max_num_clusts=NA,
+                            newX=x_new)
+
+  testthat::expect_true(is.matrix(res_named))
+  testthat::expect_true(is.numeric(res_named))
+  testthat::expect_equal(nrow(res_named), 8)
+  testthat::expect_true(ncol(res_named) &lt;= length(css_res_named$clusters))
+  testthat::expect_true(all(colnames(res_named) %in% names(css_res_named$clusters)))
+
+  # Try data.frame input to css and getCssDesign
+
+  X_df &lt;- datasets::mtcars
+
+  n &lt;- nrow(X_df)
+  y &lt;- stats::rnorm(n)
+
+  selec_inds &lt;- 1:round(n/2)
+  fit_inds &lt;- setdiff(1:n, selec_inds)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_df, weighting=&quot;simple_avg&quot;,
+                          cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
+                          newX=X_df[fit_inds, ])
+
+  testthat::expect_true(is.matrix(res_df))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(nrow(res_df), length(fit_inds))
+  testthat::expect_true(ncol(res_df) &lt;= length(css_res_df$clusters))
+  testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
+
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won&#39;t match number of columns
+  # of X_df)
+  X_df$cyl &lt;- as.factor(X_df$cyl)
+  X_df$vs &lt;- as.factor(X_df$vs)
+  X_df$am &lt;- as.factor(X_df$am)
+  X_df$gear &lt;- as.factor(X_df$gear)
+  X_df$carb &lt;- as.factor(X_df$carb)
+
+  css_res_df &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df &lt;- <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res_df, weighting=&quot;weighted_avg&quot;,
+                         cutoff=0.3, min_num_clusts=1, max_num_clusts=4,
+                         newX=X_df[fit_inds, ])
+
+  testthat::expect_true(is.matrix(res_df))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(nrow(res_df), length(fit_inds))
+  testthat::expect_true(ncol(res_df) &lt;= length(css_res_df$clusters))
+  testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
+
+  ##### Try other bad inputs
+
+  colnames(x_new) &lt;- NULL
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, cutoff=-0.3,
+                                       newX=x_new), &quot;cutoff &gt;= 0 is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, cutoff=&quot;0.5&quot;,
+                                       newX=x_new),
+                         &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
+                        fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
+                                       cutoff=as.numeric(NA), newX=x_new),
+                        &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
+                                       weighting=c(&quot;sparse&quot;, &quot;simple_avg&quot;),
+                                       newX=x_new),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=1,
+                                       newX=x_new),
+                         &quot;Weighting must be a character&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, weighting=&quot;spasre&quot;,
+                                       newX=x_new),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res,
+                                       min_num_clusts=c(1, 2), newX=x_new),
+                         &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=&quot;3&quot;,
+                                       newX=x_new),
+                         &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=0,
+                                       newX=x_new),
+                         &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=6,
+                                       newX=x_new),
+                         &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
+
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=&quot;4&quot;,
+                                       newX=x_new),
+                         &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=3.5,
+                                       newX=x_new),
+                         &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, min_num_clusts=2,
+                                       max_num_clusts=1, newX=x_new),
+                         &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getCssDesign'>getCssDesign</a>(css_results=css_res, max_num_clusts=8,
+                                       newX=x_new),
+                         &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
 
   
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## ── Warning (&#39;&lt;text&gt;:63&#39;): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. testthat::expect_warning(...)
+##  7. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  8. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newX, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:63&#39;): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##   1. testthat::expect_warning(...)
+##   7. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##   8. litr (local) <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(...)
+##   9. litr (local) <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(...)
+##  10. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:80&#39;): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newX, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:80&#39;): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(...)
+##  3. litr (local) <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(...)
+##  4. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:101&#39;): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newX, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:101&#39;): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(...)
+##  3. litr (local) <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(...)
+##  4. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:121&#39;): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newX, css_results$X)
+## 
+## ── Warning (&#39;&lt;text&gt;:121&#39;): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getCssDesign'>getCssDesign</a>(...)
+##  2. litr (local) <a href='create-cssr.html#formCssDesign'>formCssDesign</a>(...)
+##  3. litr (local) <a href='create-cssr.html#checkFormCssDesignInputs'>checkFormCssDesignInputs</a>(...)
+##  4. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(newx, css_results$X)</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>
