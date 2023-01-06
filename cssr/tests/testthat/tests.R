@@ -3022,31 +3022,73 @@ testthat::test_that("checkGetCssPredsInputs works", {
   testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
                                               "testX","feat_names",
                                               "max_num_clusts"))
+  
+  testthat::expect_true(all(!is.na(res_df$trainX)))
+  testthat::expect_true(is.matrix(res_df$trainX))
+  testthat::expect_true(is.numeric(res_df$trainX))
+  testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
+  # testthat::expect_true(all(colnames(res_df$trainX) %in% names(css_res_df$clusters)))
+  
+  stopifnot(nrow(css_res_df$X) >= max(train_inds))
+  train_mat <- css_res_df$X[train_inds, ]
 
-  # testthat::expect_true(is.matrix(res_df))
-  # testthat::expect_true(is.numeric(res_df))
-  # testthat::expect_equal(nrow(res_df), length(fit_inds))
-  # testthat::expect_true(ncol(res_df) <= length(css_res_df$clusters))
+  testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
+  testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
+
+  testthat::expect_true(all(!is.na(res_df$testX)))
+  testthat::expect_true(is.matrix(res_df$testX))
+  testthat::expect_true(is.numeric(res_df$testX))
+  testthat::expect_equal(nrow(res_df$testX), length(test_inds))
   # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
-  # 
-  # # Try again with X as a dataframe with factors (number of columns of final
-  # # design matrix after one-hot encoding factors won't match number of columns
-  # # of X_df)
-  # X_df$cyl <- as.factor(X_df$cyl)
-  # X_df$vs <- as.factor(X_df$vs)
-  # X_df$am <- as.factor(X_df$am)
-  # X_df$gear <- as.factor(X_df$gear)
-  # X_df$carb <- as.factor(X_df$carb)
-  # 
-  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df <- checkGetCssPredsInputs(css_results=css_res_df, weighting="weighted_avg",
-  #                        cutoff=0.3, min_num_clusts=1, max_num_clusts=4,
-  #                        newX=X_df[fit_inds, ])
-  # 
-  # testthat::expect_true(is.matrix(res_df))
-  # testthat::expect_true(is.numeric(res_df))
-  # testthat::expect_equal(nrow(res_df), length(fit_inds))
-  # testthat::expect_true(ncol(res_df) <= length(css_res_df$clusters))
+  
+  test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
+  test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
+  
+  testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
+  testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
+
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- checkGetCssPredsInputs(css_res_df, testX=X_df[test_inds, ],
+                                   weighting="simple_avg", cutoff=0.3,
+                                   min_num_clusts=1, max_num_clusts=4,
+                                   trainX=X_df[train_inds, ],
+                                   trainY=y[train_inds])
+  
+  testthat::expect_true(is.list(res_df))
+  testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
+                                              "testX","feat_names",
+                                              "max_num_clusts"))
+  
+  testthat::expect_true(all(!is.na(res_df$trainX)))
+  testthat::expect_true(is.matrix(res_df$trainX))
+  testthat::expect_true(is.numeric(res_df$trainX))
+  testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
+  
+  train_mat <- stats::model.matrix(~ ., X_df[train_inds, ])
+  train_mat <- train_mat[, colnames(train_mat) != "(Intercept)"]
+
+  testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
+  testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
+
+  testthat::expect_true(all(!is.na(res_df$testX)))
+  testthat::expect_true(is.matrix(res_df$testX))
+  testthat::expect_true(is.numeric(res_df$testX))
+  testthat::expect_equal(nrow(res_df$testX), length(test_inds))
+  
+  test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
+  test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
+  
+  testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
+  testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
   # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
   # 
   # ##### Try other bad inputs

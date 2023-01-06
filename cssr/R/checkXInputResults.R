@@ -23,6 +23,7 @@ checkXInputResults <- function(newx, css_X){
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     if(is.data.frame(newx)){
         newx <- stats::model.matrix(~ ., newx)
+        newx <- newx[, colnames(newx) != "(Intercept)"]
     }
 
     feat_names <- as.character(NA)
