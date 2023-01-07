@@ -6074,16 +6074,22 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                                 trainX=x_train, trainY=y_train),
                          "max_num_clusts == round(max_num_clusts) is not TRUE",
                          fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts=2,
-  #                                      max_num_clusts=1, newX=x_new),
-  #                        "max_num_clusts >= min_num_clusts is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, max_num_clusts=8,
-  #                                      newX=x_new),
-  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
-  
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse",
+                                                cutoff=0.1, min_num_clusts=3,
+                                                max_num_clusts=2,
+                                                trainX=x_train, trainY=y_train),
+                         "max_num_clusts >= min_num_clusts is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse",
+                                                cutoff=0.1, min_num_clusts=1,
+                                                max_num_clusts=10,
+                                                trainX=x_train, trainY=y_train),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+
   # Add training indices
   css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
                        clusters=good_clusters, B=10, train_inds=6:10)
