@@ -46,6 +46,7 @@ checkXInputResults <- function(newx, css_X){
     stopifnot(p >= 2)
     if(length(feat_names) > 1){
         stopifnot(length(feat_names) == p)
+        stopifnot(!("(Intercept)" %in% feat_names))
     } else{
         stopifnot(is.na(feat_names))
     }

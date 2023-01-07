@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1694,7 +1694,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1853,7 +1853,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -4717,6 +4717,7 @@ where it is called).</li>
     stopifnot(p &gt;= 2)
     if(length(feat_names) &gt; 1){
         stopifnot(length(feat_names) == p)
+        stopifnot(!(&quot;(Intercept)&quot; %in% feat_names))
     } else{
         stopifnot(is.na(feat_names))
     }
@@ -4811,6 +4812,7 @@ where it is called).</li>
   
   testthat::expect_true(is.character(res_df$feat_names))
   testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+  testthat::expect_identical(res_df$feat_names, colnames(X_df))
 
   testthat::expect_true(is.numeric(res_df$newx))
   testthat::expect_true(is.matrix(res_df$newx))
@@ -4834,6 +4836,11 @@ where it is called).</li>
 
   testthat::expect_true(is.character(res_df$feat_names))
   testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+  
+  mat &lt;- model.matrix( ~., X_df)
+  mat &lt;- mat[, colnames(mat) != &quot;(Intercept)&quot;]
+  
+  testthat::expect_identical(res_df$feat_names, colnames(mat))
 
   testthat::expect_true(is.numeric(res_df$newx))
   testthat::expect_true(is.matrix(res_df$newx))
@@ -6175,6 +6182,12 @@ where it is called).</li>
 
     testX &lt;- results$newx
     feat_names &lt;- results$feat_names
+    
+    if(all(!is.na(feat_names))){
+        stopifnot(length(feat_names) == ncol(testX))
+        stopifnot(!(&quot;(Intercept)&quot; %in% feat_names))
+        colnames(testX) &lt;- feat_names
+    }
 
     rm(results)
 
@@ -6251,6 +6264,110 @@ where it is called).</li>
   
   testthat::expect_true(is.na(res$max_num_clusts))
   testthat::expect_true(length(res$max_num_clusts) == 1)
+  
+  ##### Try other bad inputs
+  
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;weighted_avg&quot;,
+                                                cutoff=-0.5, min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;cutoff &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;sparse&quot;,
+                                                cutoff=&quot;0.3&quot;, min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
+                        fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;sparse&quot;,
+                                                cutoff=as.numeric(NA),
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                        &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=c(&quot;sparse&quot;,
+                                                            &quot;simple_avg&quot;),
+                                                cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=2, cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;Weighting must be a character&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;spasre&quot;, cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;sparse&quot;, cutoff=0.1,
+                                                min_num_clusts=c(1, 2),
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;weighted_avg&quot;,
+                                                cutoff=0.1, min_num_clusts=&quot;2&quot;,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;simple_avg&quot;,
+                                                cutoff=0.1, min_num_clusts=0,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;weighted_avg&quot;,
+                                                cutoff=0.1, min_num_clusts=10,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;min_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
+
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;simple_avg&quot;,
+                                                cutoff=0.1, min_num_clusts=1,
+                                                max_num_clusts=&quot;5&quot;,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_res, testX=x_pred,
+                                                weighting=&quot;sparse&quot;,
+                                                cutoff=0.1, min_num_clusts=1,
+                                                max_num_clusts=4.5,
+                                                trainX=x_train, trainY=y_train),
+                         &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
+                         fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, min_num_clusts=2,
+  #                                      max_num_clusts=1, newX=x_new),
+  #                        &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, max_num_clusts=8,
+  #                                      newX=x_new),
+  #                        &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
   
   # Add training indices
   css_res_train &lt;- <a href='create-cssr.html#css'>css</a>(X=x_select, y=y_select, lambda=0.01,
@@ -6409,9 +6526,6 @@ where it is called).</li>
                                    weighting=&quot;sparse&quot;, cutoff=0,
                                    min_num_clusts=1, max_num_clusts=NA,
                                    trainX=NA, trainY=NA)
-  # TODO Known issue: the above code yields the error &quot;Column names were
-  # provided for trainX but not for testX (are you sure they both contain
-  # identical features in the same order?)&quot;
   
   testthat::expect_true(is.list(res_df))
   testthat::expect_identical(names(res_df), c(&quot;trainXProvided&quot;, &quot;trainX&quot;,
@@ -6422,25 +6536,26 @@ where it is called).</li>
   testthat::expect_true(is.matrix(res_df$trainX))
   testthat::expect_true(is.numeric(res_df$trainX))
   testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # testthat::expect_true(all(colnames(res_df$trainX) %in% names(css_res_df$clusters)))
   
   stopifnot(nrow(css_res_df$X) &gt;= max(train_inds))
   train_mat &lt;- css_res_df$X[train_inds, ]
 
   testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
   testthat::expect_true(all(abs(train_mat - res_df$trainX) &lt; 10^(-9)))
+  testthat::expect_identical(colnames(res_df$trainX), colnames(train_mat))
 
   testthat::expect_true(all(!is.na(res_df$testX)))
   testthat::expect_true(is.matrix(res_df$testX))
   testthat::expect_true(is.numeric(res_df$testX))
   testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
   
   test_mat &lt;- stats::model.matrix(~ ., X_df[test_inds, ])
   test_mat &lt;- test_mat[, colnames(test_mat) != &quot;(Intercept)&quot;]
   
   testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
   testthat::expect_true(all(abs(test_mat - res_df$testX) &lt; 10^(-9)))
+  testthat::expect_identical(colnames(res_df$testX), colnames(test_mat))
+  testthat::expect_identical(colnames(res_df$testX), colnames(res_df$trainX))
 
   # Try again with X as a dataframe with factors (number of columns of final
   # design matrix after one-hot encoding factors won&#39;t match number of columns
@@ -6484,87 +6599,23 @@ where it is called).</li>
   
   testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
   testthat::expect_true(all(abs(test_mat - res_df$testX) &lt; 10^(-9)))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
-  # 
-  # ##### Try other bad inputs
-  # 
-  # colnames(x_new) &lt;- NULL
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, cutoff=-0.3,
-  #                                      newX=x_new), &quot;cutoff &gt;= 0 is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, cutoff=&quot;0.5&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(cutoff) | is.integer(cutoff) is not TRUE&quot;,
-  #                       fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res,
-  #                                      cutoff=as.numeric(NA), newX=x_new),
-  #                       &quot;!is.na(cutoff) is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res,
-  #                                      weighting=c(&quot;sparse&quot;, &quot;simple_avg&quot;),
-  #                                      newX=x_new),
-  #                        &quot;length(weighting) == 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, weighting=1,
-  #                                      newX=x_new),
-  #                        &quot;Weighting must be a character&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, weighting=&quot;spasre&quot;,
-  #                                      newX=x_new),
-  #                        &quot;Weighting must be a character and one of sparse, simple_avg, or weighted_avg&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res,
-  #                                      min_num_clusts=c(1, 2), newX=x_new),
-  #                        &quot;length(min_num_clusts) == 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, min_num_clusts=&quot;3&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, min_num_clusts=0,
-  #                                      newX=x_new),
-  #                        &quot;min_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, min_num_clusts=6,
-  #                                      newX=x_new),
-  #                        &quot;min_num_clusts &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
-  # 
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, max_num_clusts=&quot;4&quot;,
-  #                                      newX=x_new),
-  #                        &quot;is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, max_num_clusts=3.5,
-  #                                      newX=x_new),
-  #                        &quot;max_num_clusts == round(max_num_clusts) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, min_num_clusts=2,
-  #                                      max_num_clusts=1, newX=x_new),
-  #                        &quot;max_num_clusts &gt;= min_num_clusts is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(css_results=css_res, max_num_clusts=8,
-  #                                      newX=x_new),
-  #                        &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
 
   
 })</code></pre>
-<pre><code>## ── Warning (&#39;&lt;text&gt;:141&#39;): checkGetCssPredsInputs works ────────────────────────
+<pre><code>## ── Warning (&#39;&lt;text&gt;:245&#39;): checkGetCssPredsInputs works ────────────────────────
 ## New X provided had no variable names (column names) even though the X provided to css did.
 ## Backtrace:
 ##  1. testthat::expect_warning(...)
 ##  7. litr (local) <a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(...)
 ##  8. litr (local) <a href='create-cssr.html#checkXInputResults'>checkXInputResults</a>(testX, css_results$X)
 ## 
-## ── Warning (&#39;&lt;text&gt;:202&#39;): checkGetCssPredsInputs works ────────────────────────
-## Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)
+## ── Warning (&#39;&lt;text&gt;:272&#39;): checkGetCssPredsInputs works ────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:351&#39;): checkGetCssPredsInputs works ────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#checkGetCssPredsInputs'>checkGetCssPredsInputs</a>(...)</code></pre>
 <p>Finally, tests for getCssPreds</p>

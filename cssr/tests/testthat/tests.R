@@ -1940,6 +1940,7 @@ testthat::test_that("checkXInputResults works", {
   
   testthat::expect_true(is.character(res_df$feat_names))
   testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+  testthat::expect_identical(res_df$feat_names, colnames(X_df))
 
   testthat::expect_true(is.numeric(res_df$newx))
   testthat::expect_true(is.matrix(res_df$newx))
@@ -1963,6 +1964,11 @@ testthat::test_that("checkXInputResults works", {
 
   testthat::expect_true(is.character(res_df$feat_names))
   testthat::expect_identical(res_df$feat_names, colnames(css_res_df$X))
+  
+  mat <- model.matrix( ~., X_df)
+  mat <- mat[, colnames(mat) != "(Intercept)"]
+  
+  testthat::expect_identical(res_df$feat_names, colnames(mat))
 
   testthat::expect_true(is.numeric(res_df$newx))
   testthat::expect_true(is.matrix(res_df$newx))
@@ -2857,6 +2863,110 @@ testthat::test_that("checkGetCssPredsInputs works", {
   testthat::expect_true(is.na(res$max_num_clusts))
   testthat::expect_true(length(res$max_num_clusts) == 1)
   
+  ##### Try other bad inputs
+  
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="weighted_avg",
+                                                cutoff=-0.5, min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse",
+                                                cutoff="0.3", min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
+                        fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse",
+                                                cutoff=as.numeric(NA),
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                        "!is.na(cutoff) is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting=c("sparse",
+                                                            "simple_avg"),
+                                                cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "length(weighting) == 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting=2, cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "Weighting must be a character", fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="spasre", cutoff=0.1,
+                                                min_num_clusts=1,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse", cutoff=0.1,
+                                                min_num_clusts=c(1, 2),
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="weighted_avg",
+                                                cutoff=0.1, min_num_clusts="2",
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="simple_avg",
+                                                cutoff=0.1, min_num_clusts=0,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="weighted_avg",
+                                                cutoff=0.1, min_num_clusts=10,
+                                                max_num_clusts=NA,
+                                                trainX=x_train, trainY=y_train),
+                         "min_num_clusts <= p is not TRUE", fixed=TRUE)
+
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="simple_avg",
+                                                cutoff=0.1, min_num_clusts=1,
+                                                max_num_clusts="5",
+                                                trainX=x_train, trainY=y_train),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
+                                                weighting="sparse",
+                                                cutoff=0.1, min_num_clusts=1,
+                                                max_num_clusts=4.5,
+                                                trainX=x_train, trainY=y_train),
+                         "max_num_clusts == round(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts=2,
+  #                                      max_num_clusts=1, newX=x_new),
+  #                        "max_num_clusts >= min_num_clusts is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, max_num_clusts=8,
+  #                                      newX=x_new),
+  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
+  
   # Add training indices
   css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
                        clusters=good_clusters, B=10, train_inds=6:10)
@@ -3014,9 +3124,6 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                    weighting="sparse", cutoff=0,
                                    min_num_clusts=1, max_num_clusts=NA,
                                    trainX=NA, trainY=NA)
-  # TODO Known issue: the above code yields the error "Column names were
-  # provided for trainX but not for testX (are you sure they both contain
-  # identical features in the same order?)"
   
   testthat::expect_true(is.list(res_df))
   testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
@@ -3027,25 +3134,26 @@ testthat::test_that("checkGetCssPredsInputs works", {
   testthat::expect_true(is.matrix(res_df$trainX))
   testthat::expect_true(is.numeric(res_df$trainX))
   testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # testthat::expect_true(all(colnames(res_df$trainX) %in% names(css_res_df$clusters)))
   
   stopifnot(nrow(css_res_df$X) >= max(train_inds))
   train_mat <- css_res_df$X[train_inds, ]
 
   testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
   testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
+  testthat::expect_identical(colnames(res_df$trainX), colnames(train_mat))
 
   testthat::expect_true(all(!is.na(res_df$testX)))
   testthat::expect_true(is.matrix(res_df$testX))
   testthat::expect_true(is.numeric(res_df$testX))
   testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
   
   test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
   test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
   
   testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
   testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
+  testthat::expect_identical(colnames(res_df$testX), colnames(test_mat))
+  testthat::expect_identical(colnames(res_df$testX), colnames(res_df$trainX))
 
   # Try again with X as a dataframe with factors (number of columns of final
   # design matrix after one-hot encoding factors won't match number of columns
@@ -3089,75 +3197,6 @@ testthat::test_that("checkGetCssPredsInputs works", {
   
   testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
   testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
-  # testthat::expect_true(all(colnames(res_df) %in% names(css_res_df$clusters)))
-  # 
-  # ##### Try other bad inputs
-  # 
-  # colnames(x_new) <- NULL
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, cutoff=-0.3,
-  #                                      newX=x_new), "cutoff >= 0 is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, cutoff="0.5",
-  #                                      newX=x_new),
-  #                        "is.numeric(cutoff) | is.integer(cutoff) is not TRUE",
-  #                       fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res,
-  #                                      cutoff=as.numeric(NA), newX=x_new),
-  #                       "!is.na(cutoff) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res,
-  #                                      weighting=c("sparse", "simple_avg"),
-  #                                      newX=x_new),
-  #                        "length(weighting) == 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, weighting=1,
-  #                                      newX=x_new),
-  #                        "Weighting must be a character", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, weighting="spasre",
-  #                                      newX=x_new),
-  #                        "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res,
-  #                                      min_num_clusts=c(1, 2), newX=x_new),
-  #                        "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts="3",
-  #                                      newX=x_new),
-  #                        "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts=0,
-  #                                      newX=x_new),
-  #                        "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts=6,
-  #                                      newX=x_new),
-  #                        "min_num_clusts <= n_clusters is not TRUE", fixed=TRUE)
-  # 
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, max_num_clusts="4",
-  #                                      newX=x_new),
-  #                        "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, max_num_clusts=3.5,
-  #                                      newX=x_new),
-  #                        "max_num_clusts == round(max_num_clusts) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, min_num_clusts=2,
-  #                                      max_num_clusts=1, newX=x_new),
-  #                        "max_num_clusts >= min_num_clusts is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetCssPredsInputs(css_results=css_res, max_num_clusts=8,
-  #                                      newX=x_new),
-  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
   
 })
