@@ -77,8 +77,7 @@ in the css function call. Default is NA (in which case getCssPreds uses the
 observations from the train_inds that were provided to css).}
 }
 \value{
-\item{predictions}{A vector of predictions corresponding to the
-observations from testX.}
+A vector of predictions corresponding to the observations from testX.
 }
 \description{
 Generate predictions on test data using cluster stability-selected model.
