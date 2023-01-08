@@ -3296,237 +3296,110 @@ testthat::test_that("getCssPreds works", {
                                      trainX=x_train, trainY=y_train),
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
-  # # Add training indices
-  # css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B=10, train_inds=6:10)
-  # 
-  # # Training indices should be ignored if new x is provided
-  # 
-  # res <- getCssPreds(css_res_train, testX=x_pred,
-  #                               weighting="weighted_avg",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=x_train,
-  #                               trainY=y_train)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(!is.na(res$trainXProvided))
-  # testthat::expect_equal(length(res$trainXProvided), 1)
-  # testthat::expect_true(is.logical(res$trainXProvided))
-  # testthat::expect_true(res$trainXProvided)
-  # 
-  # testthat::expect_true(all(!is.na(res$trainX)))
-  # testthat::expect_true(is.matrix(res$trainX))
-  # testthat::expect_true(is.numeric(res$trainX))
-  # testthat::expect_equal(nrow(res$trainX), 8)
-  # testthat::expect_equal(ncol(res$trainX), 6)
-  # testthat::expect_true(all(abs(x_train - res$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res$testX)))
-  # testthat::expect_true(is.matrix(res$testX))
-  # testthat::expect_true(is.numeric(res$testX))
-  # testthat::expect_equal(nrow(res$testX), 7)
-  # testthat::expect_equal(ncol(res$testX), 6)
-  # testthat::expect_true(all(abs(x_pred - res$testX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res$feat_names))
-  # testthat::expect_true(is.na(res$feat_names))
-  # 
-  # testthat::expect_true(is.na(res$max_num_clusts))
-  # testthat::expect_true(length(res$max_num_clusts) == 1)
-  # 
-  # # Things should still work if new x is not provided
-  # 
-  # res <- getCssPreds(css_res_train, testX=x_pred,
-  #                               weighting="weighted_avg",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=NA, trainY=NA)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(!is.na(res$trainXProvided))
-  # testthat::expect_equal(length(res$trainXProvided), 1)
-  # testthat::expect_true(is.logical(res$trainXProvided))
-  # testthat::expect_true(!res$trainXProvided)
-  # 
-  # testthat::expect_true(all(!is.na(res$trainX)))
-  # testthat::expect_true(is.matrix(res$trainX))
-  # testthat::expect_true(is.numeric(res$trainX))
-  # testthat::expect_equal(nrow(res$trainX), 5)
-  # testthat::expect_equal(ncol(res$trainX), 6)
-  # testthat::expect_true(all(abs(x_select[6:10, ] - res$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res$testX)))
-  # testthat::expect_true(is.matrix(res$testX))
-  # testthat::expect_true(is.numeric(res$testX))
-  # testthat::expect_equal(nrow(res$testX), 7)
-  # testthat::expect_equal(ncol(res$testX), 6)
-  # testthat::expect_true(all(abs(x_pred - res$testX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res$feat_names))
-  # testthat::expect_true(is.na(res$feat_names))
-  # 
-  # testthat::expect_true(is.na(res$max_num_clusts))
-  # testthat::expect_true(length(res$max_num_clusts) == 1)
-  # 
-  # 
-  # # Try not providing training indices and omitting newX--should get error
-  # testthat::expect_error(getCssPreds(css_res, testX=x_pred,
-  #                               weighting="sparse",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=NA, trainY=NA),
-  #                        "css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix", fixed=TRUE)
-  # 
-  # # Try naming variables
-  # 
-  # colnames(x_select) <- LETTERS[1:6]
-  # css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B = 10)
-  # 
-  # # Named variables for css matrix but not new one--should get a warning
-  # testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="simple_avg", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                          "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
-  # 
-  # # Try mismatching variable names
-  # colnames(x_train) <- LETTERS[2:7]
-  # colnames(x_pred) <- LETTERS[1:6]
-  # testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="weighted_avg", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                        "identical(feat_names, colnames(css_X)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # colnames(x_train) <- LETTERS[1:6]
-  # colnames(x_pred) <- LETTERS[2:7]
-  # testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="sparse", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                        "identical(feat_names, colnames(css_X)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # colnames(x_pred) <- LETTERS[1:6]
-  # 
-  # res_named <- getCssPreds(css_res_named, testX=x_pred,
-  #                                     weighting="simple_avg", cutoff=0,
-  #                                     min_num_clusts=1, max_num_clusts=NA,
-  #                                     trainX=x_train, trainY=y_train)
-  # 
-  # testthat::expect_true(is.list(res_named))
-  # testthat::expect_identical(names(res_named), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_named$trainX)))
-  # testthat::expect_true(is.matrix(res_named$trainX))
-  # testthat::expect_true(is.numeric(res_named$trainX))
-  # testthat::expect_equal(nrow(res_named$trainX), 8)
-  # testthat::expect_equal(ncol(res_named$trainX), 6)
-  # testthat::expect_true(all(abs(x_train - res_named$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res_named$feat_names))
-  # testthat::expect_identical(res_named$feat_names, LETTERS[1:6])
-  # 
-  # # Try data.frame input to css and getCssPreds
-  # 
-  # X_df <- datasets::mtcars
-  # 
-  # n <- nrow(X_df)
-  # y <- stats::rnorm(n)
-  # 
-  # selec_inds <- 1:round(n/3)
-  # train_inds <- (max(selec_inds) + 1):(2*round(n/3))
-  # test_inds <- setdiff(1:n, c(selec_inds, train_inds))
-  # 
-  # css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
-  #                   y=y[c(selec_inds, train_inds)], lambda=0.01, B = 10,
-  #                   train_inds=train_inds)
-  # 
-  # res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
-  #                                  weighting="sparse", cutoff=0,
-  #                                  min_num_clusts=1, max_num_clusts=NA,
-  #                                  trainX=NA, trainY=NA)
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
-  #                                             "testX","feat_names",
-  #                                             "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$trainX)))
-  # testthat::expect_true(is.matrix(res_df$trainX))
-  # testthat::expect_true(is.numeric(res_df$trainX))
-  # testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # 
-  # stopifnot(nrow(css_res_df$X) >= max(train_inds))
-  # train_mat <- css_res_df$X[train_inds, ]
-  # 
-  # testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
-  # testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
-  # testthat::expect_identical(colnames(res_df$trainX), colnames(train_mat))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$testX)))
-  # testthat::expect_true(is.matrix(res_df$testX))
-  # testthat::expect_true(is.numeric(res_df$testX))
-  # testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # 
-  # test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
-  # test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
-  # testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
-  # testthat::expect_identical(colnames(res_df$testX), colnames(test_mat))
-  # testthat::expect_identical(colnames(res_df$testX), colnames(res_df$trainX))
-  # 
-  # # Try again with X as a dataframe with factors (number of columns of final
-  # # design matrix after one-hot encoding factors won't match number of columns
-  # # of X_df)
-  # X_df$cyl <- as.factor(X_df$cyl)
-  # X_df$vs <- as.factor(X_df$vs)
-  # X_df$am <- as.factor(X_df$am)
-  # X_df$gear <- as.factor(X_df$gear)
-  # X_df$carb <- as.factor(X_df$carb)
-  # 
-  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
-  #                                  weighting="simple_avg", cutoff=0.3,
-  #                                  min_num_clusts=1, max_num_clusts=4,
-  #                                  trainX=X_df[train_inds, ],
-  #                                  trainY=y[train_inds])
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
-  #                                             "testX","feat_names",
-  #                                             "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$trainX)))
-  # testthat::expect_true(is.matrix(res_df$trainX))
-  # testthat::expect_true(is.numeric(res_df$trainX))
-  # testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # 
-  # train_mat <- stats::model.matrix(~ ., X_df[train_inds, ])
-  # train_mat <- train_mat[, colnames(train_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
-  # testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$testX)))
-  # testthat::expect_true(is.matrix(res_df$testX))
-  # testthat::expect_true(is.numeric(res_df$testX))
-  # testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # 
-  # test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
-  # test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
-  # testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
+  # Add training indices
+  css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B=10, train_inds=6:10)
 
+  # Training indices should be ignored if new x is provided
+
+  res <- getCssPreds(css_res_train, testX=x_pred, trainX=x_train,
+                     trainY=y_train)
+
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
   
+  # Things should still work if new x is not provided
+
+  res <- getCssPreds(css_res_train, testX=x_pred)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
+
+  # Try not providing training indices and omitting newX--should get error
+  testthat::expect_error(getCssPreds(css_res, testX=x_pred),
+                         "css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix", fixed=TRUE)
+
+  # Try naming variables
+
+  colnames(x_select) <- LETTERS[1:6]
+  css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
+                                       trainX=x_train, trainY=y_train),
+                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_train) <- LETTERS[2:7]
+  colnames(x_pred) <- LETTERS[1:6]
+  testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
+                                     trainX=x_train, trainY=y_train),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_train) <- LETTERS[1:6]
+  colnames(x_pred) <- LETTERS[2:7]
+  testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
+                                     trainX=x_train, trainY=y_train),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_pred) <- LETTERS[1:6]
+
+  res_named <- getCssPreds(css_res_named, testX=x_pred, trainX=x_train,
+                           trainY=y_train)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
+
+  # Try data.frame input to css and getCssPreds
+
+  X_df <- datasets::mtcars
+
+  n <- nrow(X_df)
+  y <- stats::rnorm(n)
+
+  selec_inds <- 1:round(n/3)
+  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 17)
+  test_inds <- setdiff(1:n, c(selec_inds, train_inds))
+
+  css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
+                    y=y[c(selec_inds, train_inds)], lambda=0.01, B = 10,
+                    train_inds=train_inds)
+
+  res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ])
+
+  testthat::expect_true(all(!is.na(res_df)))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(length(res_df), length(test_inds))
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
+                        trainX=X_df[train_inds, ], trainY=y[train_inds])
+  
+  # TODO(gregfaletto): known issue--the above code produces the following
+  # undesired warnings:
+  # 1: In checkGetCssPredsInputs(css_results, testX, weighting, cutoff,  :
+  # Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+  # 2: In checkXInputResults(newx, css_results$X) :
+  # New X provided had no variable names (column names) even though the X provided to css did.
+
+  testthat::expect_true(all(!is.na(res_df)))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(length(res_df), length(test_inds))
+
 })
 

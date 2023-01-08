@@ -6416,250 +6416,1081 @@ testthat::test_that("getCssPreds works", {
                                      trainX=x_train, trainY=y_train),
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
-  # # Add training indices
-  # css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B=10, train_inds=6:10)
-  # 
-  # # Training indices should be ignored if new x is provided
-  # 
-  # res <- getCssPreds(css_res_train, testX=x_pred,
-  #                               weighting="weighted_avg",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=x_train,
-  #                               trainY=y_train)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(!is.na(res$trainXProvided))
-  # testthat::expect_equal(length(res$trainXProvided), 1)
-  # testthat::expect_true(is.logical(res$trainXProvided))
-  # testthat::expect_true(res$trainXProvided)
-  # 
-  # testthat::expect_true(all(!is.na(res$trainX)))
-  # testthat::expect_true(is.matrix(res$trainX))
-  # testthat::expect_true(is.numeric(res$trainX))
-  # testthat::expect_equal(nrow(res$trainX), 8)
-  # testthat::expect_equal(ncol(res$trainX), 6)
-  # testthat::expect_true(all(abs(x_train - res$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res$testX)))
-  # testthat::expect_true(is.matrix(res$testX))
-  # testthat::expect_true(is.numeric(res$testX))
-  # testthat::expect_equal(nrow(res$testX), 7)
-  # testthat::expect_equal(ncol(res$testX), 6)
-  # testthat::expect_true(all(abs(x_pred - res$testX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res$feat_names))
-  # testthat::expect_true(is.na(res$feat_names))
-  # 
-  # testthat::expect_true(is.na(res$max_num_clusts))
-  # testthat::expect_true(length(res$max_num_clusts) == 1)
-  # 
-  # # Things should still work if new x is not provided
-  # 
-  # res <- getCssPreds(css_res_train, testX=x_pred,
-  #                               weighting="weighted_avg",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=NA, trainY=NA)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(!is.na(res$trainXProvided))
-  # testthat::expect_equal(length(res$trainXProvided), 1)
-  # testthat::expect_true(is.logical(res$trainXProvided))
-  # testthat::expect_true(!res$trainXProvided)
-  # 
-  # testthat::expect_true(all(!is.na(res$trainX)))
-  # testthat::expect_true(is.matrix(res$trainX))
-  # testthat::expect_true(is.numeric(res$trainX))
-  # testthat::expect_equal(nrow(res$trainX), 5)
-  # testthat::expect_equal(ncol(res$trainX), 6)
-  # testthat::expect_true(all(abs(x_select[6:10, ] - res$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res$testX)))
-  # testthat::expect_true(is.matrix(res$testX))
-  # testthat::expect_true(is.numeric(res$testX))
-  # testthat::expect_equal(nrow(res$testX), 7)
-  # testthat::expect_equal(ncol(res$testX), 6)
-  # testthat::expect_true(all(abs(x_pred - res$testX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res$feat_names))
-  # testthat::expect_true(is.na(res$feat_names))
-  # 
-  # testthat::expect_true(is.na(res$max_num_clusts))
-  # testthat::expect_true(length(res$max_num_clusts) == 1)
-  # 
-  # 
-  # # Try not providing training indices and omitting newX--should get error
-  # testthat::expect_error(getCssPreds(css_res, testX=x_pred,
-  #                               weighting="sparse",
-  #                               cutoff=0, min_num_clusts=1,
-  #                               max_num_clusts=NA, trainX=NA, trainY=NA),
-  #                        "css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix", fixed=TRUE)
-  # 
-  # # Try naming variables
-  # 
-  # colnames(x_select) <- LETTERS[1:6]
-  # css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
-  #                      clusters=good_clusters, B = 10)
-  # 
-  # # Named variables for css matrix but not new one--should get a warning
-  # testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="simple_avg", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                          "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
-  # 
-  # # Try mismatching variable names
-  # colnames(x_train) <- LETTERS[2:7]
-  # colnames(x_pred) <- LETTERS[1:6]
-  # testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="weighted_avg", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                        "identical(feat_names, colnames(css_X)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # colnames(x_train) <- LETTERS[1:6]
-  # colnames(x_pred) <- LETTERS[2:7]
-  # testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
-  #                               weighting="sparse", cutoff=0,
-  #                               min_num_clusts=1, max_num_clusts=NA,
-  #                               trainX=x_train, trainY=y_train),
-  #                        "identical(feat_names, colnames(css_X)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # colnames(x_pred) <- LETTERS[1:6]
-  # 
-  # res_named <- getCssPreds(css_res_named, testX=x_pred,
-  #                                     weighting="simple_avg", cutoff=0,
-  #                                     min_num_clusts=1, max_num_clusts=NA,
-  #                                     trainX=x_train, trainY=y_train)
-  # 
-  # testthat::expect_true(is.list(res_named))
-  # testthat::expect_identical(names(res_named), c("trainXProvided", "trainX", "testX",
-  #                                          "feat_names", "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_named$trainX)))
-  # testthat::expect_true(is.matrix(res_named$trainX))
-  # testthat::expect_true(is.numeric(res_named$trainX))
-  # testthat::expect_equal(nrow(res_named$trainX), 8)
-  # testthat::expect_equal(ncol(res_named$trainX), 6)
-  # testthat::expect_true(all(abs(x_train - res_named$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(is.character(res_named$feat_names))
-  # testthat::expect_identical(res_named$feat_names, LETTERS[1:6])
-  # 
-  # # Try data.frame input to css and getCssPreds
-  # 
-  # X_df <- datasets::mtcars
-  # 
-  # n <- nrow(X_df)
-  # y <- stats::rnorm(n)
-  # 
-  # selec_inds <- 1:round(n/3)
-  # train_inds <- (max(selec_inds) + 1):(2*round(n/3))
-  # test_inds <- setdiff(1:n, c(selec_inds, train_inds))
-  # 
-  # css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
-  #                   y=y[c(selec_inds, train_inds)], lambda=0.01, B = 10,
-  #                   train_inds=train_inds)
-  # 
-  # res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
-  #                                  weighting="sparse", cutoff=0,
-  #                                  min_num_clusts=1, max_num_clusts=NA,
-  #                                  trainX=NA, trainY=NA)
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
-  #                                             "testX","feat_names",
-  #                                             "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$trainX)))
-  # testthat::expect_true(is.matrix(res_df$trainX))
-  # testthat::expect_true(is.numeric(res_df$trainX))
-  # testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # 
-  # stopifnot(nrow(css_res_df$X) >= max(train_inds))
-  # train_mat <- css_res_df$X[train_inds, ]
-  # 
-  # testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
-  # testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
-  # testthat::expect_identical(colnames(res_df$trainX), colnames(train_mat))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$testX)))
-  # testthat::expect_true(is.matrix(res_df$testX))
-  # testthat::expect_true(is.numeric(res_df$testX))
-  # testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # 
-  # test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
-  # test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
-  # testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
-  # testthat::expect_identical(colnames(res_df$testX), colnames(test_mat))
-  # testthat::expect_identical(colnames(res_df$testX), colnames(res_df$trainX))
-  # 
-  # # Try again with X as a dataframe with factors (number of columns of final
-  # # design matrix after one-hot encoding factors won't match number of columns
-  # # of X_df)
-  # X_df$cyl <- as.factor(X_df$cyl)
-  # X_df$vs <- as.factor(X_df$vs)
-  # X_df$am <- as.factor(X_df$am)
-  # X_df$gear <- as.factor(X_df$gear)
-  # X_df$carb <- as.factor(X_df$carb)
-  # 
-  # css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  # res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
-  #                                  weighting="simple_avg", cutoff=0.3,
-  #                                  min_num_clusts=1, max_num_clusts=4,
-  #                                  trainX=X_df[train_inds, ],
-  #                                  trainY=y[train_inds])
-  # 
-  # testthat::expect_true(is.list(res_df))
-  # testthat::expect_identical(names(res_df), c("trainXProvided", "trainX",
-  #                                             "testX","feat_names",
-  #                                             "max_num_clusts"))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$trainX)))
-  # testthat::expect_true(is.matrix(res_df$trainX))
-  # testthat::expect_true(is.numeric(res_df$trainX))
-  # testthat::expect_equal(nrow(res_df$trainX), length(train_inds))
-  # 
-  # train_mat <- stats::model.matrix(~ ., X_df[train_inds, ])
-  # train_mat <- train_mat[, colnames(train_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$trainX), ncol(train_mat))
-  # testthat::expect_true(all(abs(train_mat - res_df$trainX) < 10^(-9)))
-  # 
-  # testthat::expect_true(all(!is.na(res_df$testX)))
-  # testthat::expect_true(is.matrix(res_df$testX))
-  # testthat::expect_true(is.numeric(res_df$testX))
-  # testthat::expect_equal(nrow(res_df$testX), length(test_inds))
-  # 
-  # test_mat <- stats::model.matrix(~ ., X_df[test_inds, ])
-  # test_mat <- test_mat[, colnames(test_mat) != "(Intercept)"]
-  # 
-  # testthat::expect_equal(ncol(res_df$testX), ncol(test_mat))
-  # testthat::expect_true(all(abs(test_mat - res_df$testX) < 10^(-9)))
+  # Add training indices
+  css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B=10, train_inds=6:10)
 
+  # Training indices should be ignored if new x is provided
+
+  res <- getCssPreds(css_res_train, testX=x_pred, trainX=x_train,
+                     trainY=y_train)
+
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
   
+  # Things should still work if new x is not provided
+
+  res <- getCssPreds(css_res_train, testX=x_pred)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
+
+  # Try not providing training indices and omitting newX--should get error
+  testthat::expect_error(getCssPreds(css_res, testX=x_pred),
+                         "css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix", fixed=TRUE)
+
+  # Try naming variables
+
+  colnames(x_select) <- LETTERS[1:6]
+  css_res_named <- css(X=x_select, y=y_select, lambda=0.01,
+                       clusters=good_clusters, B = 10)
+
+  # Named variables for css matrix but not new one--should get a warning
+  testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
+                                       trainX=x_train, trainY=y_train),
+                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+
+  # Try mismatching variable names
+  colnames(x_train) <- LETTERS[2:7]
+  colnames(x_pred) <- LETTERS[1:6]
+  testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
+                                     trainX=x_train, trainY=y_train),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_train) <- LETTERS[1:6]
+  colnames(x_pred) <- LETTERS[2:7]
+  testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
+                                     trainX=x_train, trainY=y_train),
+                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         fixed=TRUE)
+
+  colnames(x_pred) <- LETTERS[1:6]
+
+  res_named <- getCssPreds(css_res_named, testX=x_pred, trainX=x_train,
+                           trainY=y_train)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 7)
+
+  # Try data.frame input to css and getCssPreds
+
+  X_df <- datasets::mtcars
+
+  n <- nrow(X_df)
+  y <- stats::rnorm(n)
+
+  selec_inds <- 1:round(n/3)
+  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 17)
+  test_inds <- setdiff(1:n, c(selec_inds, train_inds))
+
+  css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
+                    y=y[c(selec_inds, train_inds)], lambda=0.01, B = 10,
+                    train_inds=train_inds)
+
+  res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ])
+
+  testthat::expect_true(all(!is.na(res_df)))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(length(res_df), length(test_inds))
+  
+  # Try again with X as a dataframe with factors (number of columns of final
+  # design matrix after one-hot encoding factors won't match number of columns
+  # of X_df)
+  X_df$cyl <- as.factor(X_df$cyl)
+  X_df$vs <- as.factor(X_df$vs)
+  X_df$am <- as.factor(X_df$am)
+  X_df$gear <- as.factor(X_df$gear)
+  X_df$carb <- as.factor(X_df$carb)
+
+  css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
+  res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
+                        trainX=X_df[train_inds, ], trainY=y[train_inds])
+  
+  # TODO(gregfaletto): known issue--the above code produces the following
+  # undesired warnings:
+  # 1: In checkGetCssPredsInputs(css_results, testX, weighting, cutoff,  :
+  # Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+  # 2: In checkXInputResults(newx, css_results$X) :
+  # New X provided had no variable names (column names) even though the X provided to css did.
+
+  testthat::expect_true(all(!is.na(res_df)))
+  testthat::expect_true(is.numeric(res_df))
+  testthat::expect_equal(length(res_df), length(test_inds))
+
 })
 ```
 
 ### Other useful functions
 
-genLatentData, getLassoLambda, print.cssr, getModelSize
+The following are some other functions that are useful for specific tasks.
+
+* genLatentData generates jointly Gaussian data sets that include clusters of features that are correlated with a latent feature (the latent features themselves are also provided).
+* getLassoLambda uses a data set to choose a good value of lambda for subsamples of size n/2 (as in cluster stability selection) by cross-validation.
+* getModelSize estimates the best size for a lasso model on a provided data set.
+* print.cssr is the print function for objects of class cssr.
+
+* genLatentData
+  - checkGenLatentDataInputs checks that the inputs to genLatentData are as expected.
+  - makeCovarianceMatrix generates a covariance matrix for a jointly Gaussian random variable with distribution matching the provided inputs.
+  - makeCoefficients generates a coefficient vector for the response according to the provided inputs.
+  - Finally, genMuXZSd draws a random Z (matrix of latent variables), X (observed matrix, containing, in general, features correlated with latent features, directly observed features that are associated with y, and noise features), conditional means mu, and observed responses y.
+* getLassoLambda
+* getModelSize
+* print.cssr
+
+genLatentData
+
+```{r}
+# TODO @gfaletto change cluster_size into a vector of sizes (maybe also
+# deprecate n_clusters as an input, since this would be inferred by the length
+# of cluster_sizes?)
+
+#' Generate randomly sampled data including noisy observations of latent
+#' variables
+#'
+#' Generate a data set including latent features Z, observed features X (which
+#' may include noisy or noiseless observations of the latent features in Z),
+#' an observed response y which is a linear model of features from Z and X as
+#' well as independent mean zero noise, and mu (the responses from y without
+#' the added noise). Data is generated in the same way as in the simulations
+#' from Faletto and Bien (2022).
+#' @param n Integer or numeric; the number of observations to generate. (The
+#' generated X and Z will have n rows, and the generated y and mu will have
+#' length n.)
+#' @param p Integer or numeric; the number of features to generate. The
+#' generated X will have p columns.
+#' @param k_unclustered Integer or numeric; the number of features in X that
+#' will have nonzero coefficients in the true model for y among those features 
+#' not generated from the n_clusters latent variables (called "weak signal" 
+#' features in the simulations from Faletto and Bien 2022). The coefficients on
+#' these features will be determined by beta_unclustered.
+#' @param cluster_size Integer or numeric; for each of the n_clusters latent
+#' variables, X will contain cluster_size noisy proxies that are correlated with
+#' the latent variable.
+#' @param n_clusters Integer or numeric; the number of latent variables to
+#' generate, each of which will be associated with an observed cluster in X.
+#' Must be at least 1. Default is 1.
+#' @param sig_clusters Integer or numeric; the number of generated latent
+#' features that will have nonzero coefficients in the true model for y (all of
+#' them will have coefficient beta_latent). Must be less than or equal to
+#' n_clusters. Default is 1.
+#' @param rho Integer or numeric; the covariance of the proxies in each cluster
+#' with the latent variable (and each other). Note that the correlation between
+#' the features in the cluster will be rho/var. Can't equal 0. Default is 0.9.
+#' @param var Integer or numeric; the variance of all of the observed features
+#' in X (both the proxies for the latent variables and the k_unclustered other
+#' features). Can't equal 0. Default is 1.
+#' @param beta_latent Integer or numeric; the coefficient used for all
+#' sig_clusters latent variables that have nonzero coefficients in the true
+#' model for y. Can't equal 0. Default is 1.5.
+#' @param beta_unclustered Integer or numeric; the maximum coefficient in the
+#' model for y among the k_unclustered features in X not generated from the
+#' latent variables. The coefficients of the features will be
+#' beta_unclustered/sqrt(1:k_unclustered). Can't equal 0. Default is 1.
+#' @param snr Integer or numeric; the signal-to-noise ratio of the response
+#' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
+#' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
+#' snr and sigma_eps_sq must be specified. Default is NA.
+#' @param sigma_eps_sq Integer or numeric; the variance on the noise added
+#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' @return A list of the following elements. \item{X}{An n x p numeric matrix of
+#' n observations from a p-dimensional multivariate normal distribution
+#' generated using the specified parameters. The first n_clusters times
+#' cluster_size features will be the clusters of features correlated with the
+#' n_clusters latent variables. The next k_unclustered features will be the
+#' "weak signal" features, and the remaining p - n_clusters*cluster_size -
+#' k_unclustered features will be the unclustered noise features.} \item{y}{A
+#' length n numeric vector; the response generated from X, the latent features
+#' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
+#' latent features; either a numeric vector (if n_clusters > 1) or a numeric
+#' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
+#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' the true coefficient vector (equal to y minus the added noise).}
+#' @author Gregory Faletto, Jacob Bien
+#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+#' @export
+genLatentData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
+    sig_clusters=1, rho=0.9, var=1, beta_latent=1.5, beta_unclustered=1,
+    snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
+
+    # Check inputs
+    checkGenLatentDataInputs(p, k_unclustered, cluster_size, n_clusters,
+        sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
+        sigma_eps_sq)
+
+    # Generate covariance matrix (latent features are mixed in matrix, so each
+    # cluster will be of size cluster_size + 1)
+    Sigma <- makeCovarianceMatrix(p + n_clusters, n_clusters, cluster_size +
+        1, rho, var)
+
+    # Generate coefficients
+    # Note that beta has length p + sig_clusters
+    coefs <- makeCoefficients(p + n_clusters, k_unclustered, beta_unclustered,
+        beta_latent, n_clusters, sig_clusters, cluster_size + 1)
+
+    # Generate mu, X, z, sd, y
+    gen_mu_x_z_sd_res <- genMuXZSd(n, p, coefs$beta, Sigma,
+        coefs$blocked_dgp_vars, coefs$latent_vars, n_clusters,
+        cluster_size, snr, sigma_eps_sq)
+
+    mu <- gen_mu_x_z_sd_res$mu
+    sd <- gen_mu_x_z_sd_res$sd
+
+    y <- mu + sd * stats::rnorm(n)
+
+    return(list(X=gen_mu_x_z_sd_res$X, y=y, Z=gen_mu_x_z_sd_res$z, mu=mu))
+}
+```
+
+checkGenLatentDataInputs
+
+```{r}
+checkGenLatentDataInputs <- function(p, k_unclustered, cluster_size,
+    n_clusters, sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
+    sigma_eps_sq){
+
+    stopifnot(sig_clusters <= n_clusters)
+    stopifnot(sig_clusters >= 0)
+    stopifnot(sig_clusters == round(sig_clusters))
+    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
+
+    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
+    stopifnot(n_clusters == round(n_clusters))
+    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
+    stopifnot(abs(rho) <= abs(var))
+    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
+    # at least 1 (so that it's possible to generate data with no latent 
+    # features)? If so, should only check that cluster_size >= 1 if n_clusters
+    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
+    # rather than 2.
+    stopifnot(n_clusters >= 1)
+    stopifnot(cluster_size >= 1)
+    stopifnot(rho != 0)
+    stopifnot(var > 0)
+
+    stopifnot(beta_latent != 0)
+    stopifnot(beta_unclustered != 0)
+
+    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
+    stopifnot(k_unclustered >= 0)
+    stopifnot(k_unclustered == round(k_unclustered))
+
+    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
+    # of weak signal features is beta_unclustered/sqrt(i) in order to have
+    # a definitive ranking of weak signal features.
+    if(is.na(snr) & is.na(sigma_eps_sq)){
+        stop("Must specify one of snr or sigma_eps_sq")
+    }
+}
+```
+
+Tests for checkGenLatentDataInputs
+
+makeCovarianceMatrix
+
+```{r}
+#' Generate covariance matrix for simulated clustered data
+#'
+#' @param p Integer or numeric; the total number of features in the covariance
+#' matrix to be created, including latent features, the associated noisy proxies
+#' with each latent feature, and other (weak signal and noise) features.
+#' @param n_blocks Integer or numeric; the number of latent variables in the
+#' data, each of which is associated with an observed cluster in X. Must be at
+#' least 1.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, the covariance matrix will include the original latent feature
+#' plus block_size - 1 noisy proxies that are correlated with the latent
+#' variable.
+#' @param rho Integer or numeric; the covariance of the proxies in each cluster
+#' with the latent variable (and each other). Note that the correlation between
+#' the features in the cluster will be rho/var. rho cannot equal 0.
+#' @param var Integer or numeric; the variance of all of the observed features
+#' in X (both the proxies for the latent variables and the k_unclustered other
+#' features). var cannot equal 0.
+#' @return A `p` x `p` numeric matrix representing the covariance matrix for
+#' the latent features, the associated proxies, and the remaining features. All
+#' features not in a block will be independent from each other and the blocks
+#' and have variance var.
+#' @author Gregory Faletto, Jacob Bien
+makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
+    # Check inputs
+
+    stopifnot(p >= nblocks*block_size)
+    stopifnot(abs(rho) <= abs(var))
+    stopifnot(nblocks >= 1)
+    stopifnot(rho != 0)
+    stopifnot(var != 0)
+    stopifnot(block_size >= 2)
+
+    # start with p x p identity matrix
+    Sigma <- var*diag(p)
+
+    # create matrix with nblocks rows, each containing a vector of
+    # indices of highly correlated features
+    block_feats <- matrix(seq(nblocks*block_size), nrow=nblocks, byrow=TRUE)
+
+    stopifnot(length(unique(block_feats)) == length(block_feats))
+
+    # add covariances of highly correlated features to sigma
+    for(i in 1:nblocks){
+        for(j in 1:(block_size - 1)){
+            for(k in (j+1):block_size){
+                feat_1 <- block_feats[i, j]
+                feat_2 <- block_feats[i, k]
+                Sigma[feat_1, feat_2] <- rho
+                Sigma[feat_2, feat_1] <- rho
+            }
+        }
+    }
+    stopifnot(is.numeric(Sigma))
+    stopifnot(nrow(Sigma) == p & ncol(Sigma) == p)
+    stopifnot(all(Sigma == t(Sigma)))
+
+    return(Sigma)
+}
+```
+
+ 
+Tests for makeCovarianceMatrix
+
+makeCoefficients
+
+```{r}
+#' Generated coefficients for y in latent variable model
+#'
+#' @param p Integer or numeric; the number of features that will be observed in
+#' x plus the number of latent variables (each corresponding to a cluster).
+#' @param k_unblocked Integer or numeric; the number of features in X that
+#' will have nonzero coefficients in the true model for y among those features 
+#' not generated from the n_clusters latent variables (called "weak signal" 
+#' features in the simulations from Faletto and Bien 2022). The coefficients on
+#' these features will be determined by beta_low.
+#' @param beta_low Integer or numeric; the maximum coefficient in the
+#' model for y among the k_unblocked features in X not generated from the
+#' latent variables. The coefficients of the features will be
+#' beta_low/sqrt(1:k_unblocked).
+#' @param beta_high Integer or numeric; the coefficient used for all
+#' sig_blocks latent variables that have nonzero coefficients in the true
+#' model for y.
+#' @param nblocks Integer or numeric; the number of latent variables that were
+#' generated, each of which will be associated with an observed cluster in X.
+#' @param sig_blocks Integer or numeric; the number of generated latent
+#' features that will have nonzero coefficients in the true model for y (all of
+#' them will have coefficient beta_latent). In particular, the first sig_blocks
+#' latent variables will have coefficient beta_latent, and the remaining nblocks
+#' - sig_blocks features will have coefficient 0. Must be less than or equal to
+#' n_clusters.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, the covariance matrix will include the original latent feature
+#' plus block_size - 1 noisy proxies that are correlated with the latent
+#' variable.
+#' @return A named list with the following elements: \item{beta}{A vector of
+#' length `p` containing the coefficients for the true model for y. All entries
+#' will equal 0 except for the sig_blocks latent variables that will have
+#' coefficient beta_high and the k_unblocked independent features with
+#' coefficient determined by beta_low.} \item{blocked_dgp_vars}{An integer
+#' vector of length sig_blocks containing the indices of the features
+#' corresponding to the latent features that will have nonzero coefficient
+#' beta_high in the true model for y.} \item{sig_unblocked_vars}{An integer
+#' vector of length k_unblocked containing the indices of the observed features
+#' that are independent of the blocked features and have coefficient beta_low in
+#' the true model for y. If k_unblocked = 0, this will just be NA.}
+#' \item{insig_blocked_vars}{An integer vector containing the indices of the
+#' features corresponding to the latent features that will have coefficient 0 in
+#' the true model for y. If nblocks=0, this will just be NA.}
+#' \item{latent_vars}{An integer vector of length nblocks containing the indices
+#' of all of the latent features.}
+#' @author Gregory Faletto, Jacob Bien
+#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
+    sig_blocks, block_size){
+
+    # Check inputs
+    stopifnot(k_unblocked >= 0)
+    stopifnot(p >= nblocks*block_size + k_unblocked)
+    stopifnot(sig_blocks <= nblocks)
+    stopifnot(sig_blocks >= 0)
+
+    # Initialize beta
+    beta <- numeric(p)
+
+    # identify indices of first coefficient in each significant block (these
+    # features will have coefficient beta_high)
+    latent_vars <- NA
+    if(nblocks >= 1){
+        latent_vars <- as.integer(((0:(nblocks - 1))*block_size + 1))
+
+        stopifnot(all(latent_vars) %in% 1:p)
+        stopifnot(all(latent_vars) %in% 1:(block_size*nblocks))
+        stopifnot(length(unique(latent_vars)) == nblocks)
+        stopifnot(length(latent_vars) == nblocks)
+    }
+
+    blocked_dgp_vars <- latent_vars[1:sig_blocks]
+    
+    beta[blocked_dgp_vars] <- beta_high
+
+    # identify remaining coefficients in blocks (which ought to be set to 0)
+    insig_blocked_vars <- NA
+
+    if(nblocks >= 1){
+        insig_blocked_vars <- setdiff(1:(block_size*nblocks), blocked_dgp_vars)
+        stopifnot(all(beta[insig_blocked_vars] == 0))
+    }
+    # find significant unblocked variables (if applicable) and fill in
+    # coefficients
+    sig_unblocked_vars <- NA
+
+    if(k_unblocked > 0){
+        # Range of weak signal coefficients
+        beta_lows <- beta_low/sqrt(1:k_unblocked)
+        sig_unblocked_vars <- (nblocks*block_size + 1):
+            (nblocks*block_size + k_unblocked)
+        sig_unblocked_vars <- as.integer(sig_unblocked_vars)
+
+        stopifnot(length(sig_unblocked_vars) == k_unblocked)
+        stopifnot(length(unique(sig_unblocked_vars)) == k_unblocked)
+        stopifnot(all(sig_unblocked_vars) %in% 1:p)
+
+        beta[sig_unblocked_vars] <- beta_lows
+    }
+
+    stopifnot(length(intersect(blocked_dgp_vars, sig_unblocked_vars)) == 0)
+    stopifnot(length(intersect(sig_unblocked_vars, insig_blocked_vars)) == 0)
+    stopifnot(length(intersect(blocked_dgp_vars, insig_blocked_vars)) == 0)
+
+    stopifnot(length(insig_blocked_vars) + length(blocked_dgp_vars) ==
+        nblocks*block_size)
+
+    stopifnot(nblocks*block_size + length(insig_blocked_vars) <= p)
+
+    stopifnot(sum(beta != 0) == sig_blocks + k_unblocked)
+    stopifnot(is.numeric(beta) | is.integer(beta))
+
+    return(list(beta=beta, blocked_dgp_vars=blocked_dgp_vars,
+        sig_unblocked_vars=sig_unblocked_vars,
+        insig_blocked_vars=insig_blocked_vars, latent_vars=latent_vars))
+}
+```
+
+Tests for makeCoefficients
+
+genMuXZSd
+
+```{r}
+#' Generate observed and latent variables along with conditional mean
+#'
+#' @param n Integer or numeric; the number of observations to generate. (The
+#' generated X and Z will have n rows, and the generated y and mu will have
+#' length n.)
+#' @param p Integer or numeric; the number of observed features (the generated X
+#' will have p columns).
+#' @param beta A numeric or integer vector of length `p` + sig_blocks containing
+#' the coefficients for the true model for y.
+#' @param Sigma A (`p` + n_blocks) x (`p` + n_blocks) numeric matrix
+#' representing the covariance matrix for the latent features, the associated
+#' proxies, and the remaining features.
+#' @param blocked_dgp_vars An integer vector of length sig_blocks containing the
+#' indices of the features corresponding to the latent features that have
+#' nonzero coefficient beta_high in the true model for y.
+#' @param latent_vars An integer vector of length n_blocks containing the
+#' indices of all of the latent features.
+#' @param n_blocks Integer or numeric; the number of latent variables to
+#' generate, each of which will be associated with an observed cluster in X.
+#' Must be at least 1. Default is 1.
+#' @param block_size Integer or numeric; for each of the n_blocks latent
+#' variables, X will contain block_size noisy proxies that are correlated with
+#' the latent variable.
+#' @param snr Integer or numeric; the signal-to-noise ratio of the response
+#' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
+#' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
+#' snr and sigma_eps_sq must be specified. Default is NA.
+#' @param sigma_eps_sq Integer or numeric; the variance on the noise added
+#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' @return A named list with the following elements: \item{X}{An `n` x `p`
+#' numeric matrix containing the observed proxies for the latent variables as
+#' well as the observed unblocked (iid) variables.} \item{mu}{A length `n`
+#' numeric vector; the expected response given X, Z, and the true
+#' coefficient vector (equal to y minus the added noise).} \item{z}{An `n` x
+#' n_blocks numeric matrix containing the n_blocks latent variables. Note that
+#' (X, z) is multivariate Gaussian.} \item{sd}{Numeric; the standard deviation
+#' of the noise added to mu to get y (calculated either from snr or
+#' sigma_eps_sq).}
+#' @author Gregory Faletto, Jacob Bien
+genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
+    latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA){
+    # Check inputs
+
+    stopifnot(nrow(Sigma) == p + n_blocks)
+    stopifnot(ncol(Sigma) == p + n_blocks)
+    stopifnot(length(blocked_dgp_vars) <= n_blocks)
+    if(any(!is.na(sigma_eps_sq))){
+        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
+        stopifnot(length(sigma_eps_sq) == 1)
+        stopifnot(sigma_eps_sq >= 0)
+    } else{
+        if(any(is.na(snr))){
+            stop("Must provide one of snr or sigma_eps_sq")
+        }
+        stopifnot(is.numeric(snr) | is.integer(snr))
+        stopifnot(length(snr) == 1)
+        stopifnot(snr > 0)
+    }
+
+    stopifnot(length(beta) == p + n_blocks)
+    stopifnot(all(beta[blocked_dgp_vars] != 0))
+
+    stopifnot(length(latent_vars) == n_blocks)
+
+    x <- MASS::mvrnorm(n=n, mu=rep(0, p + n_blocks), Sigma=Sigma)
+
+    stopifnot(length(beta) == ncol(x))
+
+    mu <- as.numeric(x %*% beta)
+
+    # Remove true blocked signal feature from each block from x now that I've
+    # generated mu
+    z <- NA
+    if(length(latent_vars) > 0){
+        z <- x[, latent_vars]
+    }
+    
+    x <- x[, setdiff(1:(p + n_blocks), latent_vars)]
+
+    # If SNR is null, use sigma_eps_sq
+    if(!is.na(sigma_eps_sq)){
+        sd <- sqrt(sigma_eps_sq)
+    }else{
+        sd <- sqrt(sum(mu^2) / (n * snr)) # taking snr = ||mu||^2 /(n * sigma^2)
+    }
+
+    # Check output
+
+    stopifnot(length(mu) == n)
+
+    stopifnot(nrow(x) == n)
+    stopifnot(ncol(x) == p)
+
+    if(any(!is.na(z))){
+        if(n_blocks > 1){
+            stopifnot(nrow(z) == n)
+            stopifnot(ncol(z) == n_blocks)
+        } else{
+            stopifnot(length(z) == n)
+        }
+    }
+
+    stopifnot(is.numeric(sd) | is.integer(sd))
+    stopifnot(length(sd) == 1)
+    stopifnot(!is.na(sd))
+    stopifnot(sd >= 0)
+
+    return(list(X=x, mu=mu, z=z, sd=sd))
+}
+```
+
+Tests for genMuXZSd
+
+Finally, tests for genLatentData
+
+getLassoLambda:
+
+```{r}
+#' Get lambda value for lasso
+#'
+#' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
+#' cluster stability selection) by cross-validation.
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors that will be used by cluster stability
+#' selection.
+#' @param y The response; an n-dimensional numeric or integer vector. (Unlike
+#' in the more general css setup, this response must be real-valued since
+#' lambda will be determined using the lasso with cross-validation.)
+#' @param lambda_choice Character; either "min" or "1se". If "min", chooses
+#' the lambda that minimizes the cross-validated error; if "1se", chooses the
+#' largest lambda within one standard error of the minimum error lambda
+#' (resulting in a smaller selected set, which may be desirable because the
+#' model size corresponding to the minimum error lambda tends to be larger
+#' than optimal. See, for example, Bühlmann and Meinshausen 2006, Prop. 1 and
+#' Bühlmann and van de Geer 2011, Section 2.5.1.). Default is "1se".
+#' @param nfolds Numeric or integer; the number of folds for cross-validation.
+#' Must be at least 4 (as specified by cv.glmnet). Default is 10.
+#' @return A numeric; the selected value of lambda.
+#' @author Gregory Faletto, Jacob Bien
+#' @references Bühlmann, P., & Meinshausen, N. (2006). High-Dimensional Graphs
+#' and Variable Selection With the Lasso. \emph{The Annals of Statistics},
+#' 34(3), 1436–1462. \url{https://doi.org/10.1214/009053606000000281}.
+#' \cr Peter Bühlmann and Sara van de Geer. Statistics for High-Dimensional
+#' Data. \emph{Springer Series in Statistics}. Springer, Heidelberg, 2011. ISBN
+#' 978-3-642-20191-2. \url{http://dx.doi.org/10.1007/978-3-642-20192-9}. \cr
+#' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization
+#' Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of
+#' Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @export
+getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
+    stopifnot(is.character(lambda_choice))
+    stopifnot(length(lambda_choice) == 1)
+    stopifnot(!is.na(lambda_choice))
+    stopifnot(lambda_choice %in% c("min", "1se"))
+
+    n <- nrow(X)
+    stopifnot(n == length(y))
+
+    stopifnot(is.numeric(nfolds) | is.integer(nfolds))
+    stopifnot(nfolds == round(nfolds))
+    stopifnot(nfolds > 3)
+
+    # Since we are using the lasso, we require y to be a real-valued response
+    # (unlike for the general cluster stability selection procedure, where y
+    # can have a more general format as long as a suitable feature selection
+    # function is provided by the user)
+    stopifnot(is.numeric(y) | is.integer(y))
+
+    # Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),
+    # so that each individual lasso fit is of size floor(n/2)
+
+    n_sample <- min(round(n/2*nfolds/(nfolds - 1)), n)
+    nfolds <- min(nfolds, n_sample)
+
+    inds_size <- sample(1:n, n_sample)
+    size_results <- glmnet::cv.glmnet(x=X[inds_size, ], y=y[inds_size],
+        family="gaussian", nfolds=nfolds)
+
+    lambda_ret <- size_results[[paste("lambda.", lambda_choice, sep="")]]
+
+    # Check output
+    stopifnot(length(lambda_ret) == 1)
+    stopifnot(is.numeric(lambda_ret) | is.integer(lambda_ret))
+    stopifnot(lambda_ret >= 0)
+
+    return(lambda_ret)
+}
+```
+
+Tests for getLassoLambda:
+
+getModelSize:
+
+```{r}
+#' Automated estimation of model size
+#'
+#' This function is used internally by the functions cssSelect and cssPredict
+#' if no selection proportion threshold (cutoff) or maximum number of clusters
+#' (max_num_clusts) is provided as an input by the user and auto_select_size is
+#' TRUE. getModelSize uses the lasso with cross-validation to estimate the
+#' model size, which is then provided as max_num_clusts to cssSelect or
+#' cssPredict. Before using the lasso, in each cluster all features will be
+#' dropped from X except the one feature with the highest marginal correlation
+#' with y, as in the protolasso (Reid and Tibshirani 2016).
+#' 
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors.
+#' @param y A length-n numeric vector containing the responses; `y[i]` is the
+#' response corresponding to observation `X[i, ]`. (Note that for the css
+#' function, y does not have to be a numeric response, but for this function,
+#' the underlying selection procedure is the lasso, so y must be a real-valued
+#' response.)
+#' @param clusters A named list where each entry is an integer vector of indices
+#' of features that are in a common cluster, as in the output of css.
+#' (The length of list clusters is equal to the number of clusters.) All
+#' identified clusters must be non-overlapping, and all features must appear in
+#' exactly one cluster (any unclustered features should be in their own
+#' "cluster" of size 1).
+#' @return An integer; the estimated size of the model. The minimum returned
+#' value is 1, even if the lasso with cross-validation chose no features.
+#' @author Gregory Faletto, Jacob Bien
+#' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
+#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @export
+getModelSize <- function(X, y, clusters){
+    n <- nrow(X)
+
+    # Since the model size will be determined by cross-validation, the provided
+    # y must be real-valued (this should be checked internally in other
+    # functions before getModelSize is called, but this check is here just in
+    # case).
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.")
+    }
+
+    # Make sure X is a matrix
+
+    stopifnot(is.matrix(X) | is.data.frame(X))
+
+    # Check if x is a matrix; if it's a data.frame, convert to matrix.
+    if(is.data.frame(X)){
+        X <- stats::model.matrix(~ ., X)
+        X <- X[, colnames(X) != "(Intercept)"]
+    }
+
+    stopifnot(is.matrix(X))
+    stopifnot(all(!is.na(X)))
+
+    X_size <- X
+
+    if(length(clusters) > 0){
+        # Create modified design matrix by dropping all but one feature from
+        # each cluster
+        feats_to_drop <- integer()
+        for(i in 1:length(clusters)){
+            cluster_i <- clusters[[i]]
+            if(length(cluster_i) > 1){
+                feat_to_keep <- identifyPrototype(cluster_i, X, y)
+                feats_to_drop <- c(feats_to_drop, setdiff(cluster_i,
+                    feat_to_keep))
+            }
+        }
+        if(length(feats_to_drop) > 0){
+            X_size <- X_size[, -1*feats_to_drop]
+        }
+    }
+
+    size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian")
+    coefs <- as.numeric(glmnet::coef.glmnet(size_results, s="lambda.1se"))
+
+    # Number of nonzero coefficients (subtract one in order to ignore intercept)
+    size <- length(coefs[coefs != 0]) - 1
+
+    # Check output
+    stopifnot(is.numeric(size) | is.integer(size))
+    stopifnot(!is.na(size))
+    stopifnot(length(size) == 1)
+    stopifnot(size == round(size))
+
+    return(as.integer(max(size, 1)))
+}
+```
+
+Tests for getModelSize:
+
+print.cssr:
+
+```{r}
+#' Print cluster stabilty selection output
+#'
+#' Print a summary of the information from the css function.
+#' @param x An object of class "cssr" (the output of the function
+#' css).
+#' @param cutoff Numeric; print.cssr will display only those
+#' clusters with selection proportions equal to at least cutoff. Must be between
+#' 0 and 1. Default is 0 (in which case either all clusters are displayed, or
+#' max_num_clusts are, if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) Default is 1.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param ... Additional arguments (not used)
+#' @return A data.frame; each row contains a cluster, arranged in decreasing
+#' order of cluster selection proportion from top to bottom. The columns are
+#' ClustName (the name of the cluster that was either provided to css or made by
+#' css if no name was provided), ClustProtoName (only returned if the features
+#' have names), the name of the prototype from the cluster, which is the feature
+#' with the greatest individual selection proportion among all the cluster
+#' members (if there is a tie, it is broken by choosing the feature with the
+#' highest correlation with the response), ClustProtoNum (the column number of
+#' the prototype in the X matrix provided to css), and ClustSize (the size of
+#' the cluster).
+#' @author Gregory Faletto, Jacob Bien
+#' @export
+print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
+    # Check inputs
+    css_results <- x
+    stopifnot(class(css_results) == "cssr")
+    checkCutoff(cutoff)
+
+    p <- ncol(css_results$feat_sel_mat)
+
+    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
+
+    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
+        length(css_results$clusters))
+
+    sel_results <- getCssSelections(css_results, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+
+    sel_clusts <- sel_results$selected_clusts
+
+    n_sel_clusts <- length(sel_clusts)
+
+    # Get prototypes (feature from each cluster with highest selection
+    # proportion, breaking ties by using marginal correlations of features with
+    # y from data provided to css)
+    prototypes <- getSelectionPrototypes(css_results, sel_clusts)
+
+    # Cluster selection proportions
+    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[, names(sel_clusts)])
+
+    # Data.frame: name of cluster, cluster prototype, selection proportion,
+    # cluster size
+
+    if(!is.null(names(prototypes))){
+        print_df <- data.frame(ClustName=names(sel_clusts),
+            ClustProtoName=names(prototypes),
+            ClustProtoNum=unname(prototypes),
+            ClustSelProp=sel_clust_sel_props,
+            ClustSize=lengths(sel_clusts))
+    } else{
+        print_df <- data.frame(ClustName=names(sel_clusts),
+            ClustProtoNum=unname(prototypes),
+            ClustSelProp=sel_clust_sel_props,
+            ClustSize=lengths(sel_clusts))
+    }
+
+    print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
+
+    rownames(print_df) <- NULL
+
+    return(print_df)
+}
+```
+
+Tests for print.cssr:
 
 ### Convenient Wrapper Functions
 
 Finally, 
 
 cssSelect, cssPredict
+
+cssSelect:
+
+```{r}
+#' Obtain a selected set of clusters and features using cluster stability
+#' selection
+#'
+#' Takes in data X and y and returns a set of clusters (and a set of features)
+#' that are useful for predicting y from the data in X. This is a wrapper
+#' function for css and getCssSelections. Using cssSelect is simpler, but it
+#' has fewer options, and it executes the full (computationally expensive)
+#' subsampling procedured every time it is called. In contrast, css can be
+#' called just once, and then getCssSelections can quickly return results using
+#' different values of cutoff, max_num_clusts, etc. from the calculations done
+#' in one call to css.
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors.
+#' @param y A length-n numeric vector containing the responses; `y[i]` is the
+#' response corresponding to observation `X[i, ]`. (Note that for the css
+#' function, y does not have to be a numeric response, but for this function,
+#' the underlying selection procedure is the lasso, so y must be a real-valued
+#' response.)
+#' @param clusters Optional; either an integer vector of a list of integer
+#' vectors; each vector should contain the indices of a cluster of features (a
+#' subset of 1:p). (If there is only one cluster, clusters can either be a list
+#' of length 1 or an integer vector.) All of the provided clusters must be
+#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' to be unclustered (that is, they  will be treated as if they are in a
+#' "cluster" containing only themselves). If clusters is a list of length 0 (or
+#' a list only containing clusters of length 1), then css() returns the same
+#' results as stability selection (so feat_sel_mat will be identical to
+#' clus_sel_mat). Names for the clusters will be needed later; any clusters that
+#' are not given names in the list clusters will be given names automatically by
+#' css. Default is list() (so no clusters are specified, and every feature is
+#' assumed to be in a "cluster" containng only itself).
+#' @param lambda Optional; the tuning parameter to be used by the lasso for
+#' feature selection in each subsample. If lambda is not provided, cssSelect
+#' will choose one automatically by cross-validation. Default is NA.
+#' @param cutoff Numeric; cssSelect will only select those clusters with
+#' selection proportions equal to at least cutoff. Must be between 0 and 1.
+#' Default is NA (in which case max_num_clusts are used).
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' either cutoff is used to choose the number of clusters, or if cutoff was also
+#' unspecified, cssSelect chooses max_num_clusts by cross-validation).
+#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
+#' automatically estimated using the lasso with cross-validation. Default is
+#' TRUE, though his argument is ignored if either cutoff or max_num_clusts is
+#' provided. (If desired output is to return all clusters, you should set
+#' auto_select_size to FALSE and do not provide cutoff or max_num_clusts.)
+#' @return A named list with two items. \item{selected_clusts}{A list of
+#' integer vectors; each vector contains the indices of one of the selected
+#' clusters.} \item{selected_feats}{An integer vector; the indices of the
+#' all of the selected features within all of the selected clusters (typically
+#' only one feature is selected from each cluster).}
+#' @author Gregory Faletto, Jacob Bien
+#' @export
+cssSelect <- function(X, y, clusters = list()
+    , lambda=NA
+    , cutoff=NA
+    , max_num_clusts=NA
+    , auto_select_size=TRUE
+    ){
+
+    # Check inputs (most inputs will be checked by called functions)
+
+    stopifnot(!is.na(auto_select_size))
+    stopifnot(length(auto_select_size) == 1)
+    stopifnot(is.logical(auto_select_size))
+
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("The provided y must be real-valued. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")
+    }
+
+    if(is.na(lambda)){
+        lambda <- getLassoLambda(X, y)
+    }
+
+    css_results <- css(X, y, lambda, clusters)
+
+    # If no indication of how to select model size was provided, choose model
+    # size by cross-validation
+    if(is.na(cutoff) & is.na(max_num_clusts)){
+        if(auto_select_size){
+            max_num_clusts <- getModelSize(X, y, css_results$clusters)
+        }
+    }
+
+    if(is.na(cutoff)){
+        cutoff <- 0
+    }
+
+    # Get selected features
+    getCssSelections(css_results, weighting="sparse", cutoff=cutoff,
+        min_num_clusts=1, max_num_clusts=max_num_clusts)
+}
+```
+
+Tests for cssSelect:
+
+cssPredict:
+
+```{r}
+#' Wrapper function to generate predictions from cluster stability selected
+#' model in one step
+#'
+#' Select clusters using cluster stability selection, form cluster
+#' representatives, fit a linear model, and generate predictions from a matrix
+#' of unlabeled data. This is a wrapper function for css and getCssPreds. Using
+#' cssPredict is simpler, but it has fewer options, and it executes the full
+#' (computationally expensive) subsampling procedured every time it is called.
+#' In contrast, css can be called just once, and then cssPredict can quickly
+#' return results for different matrices of new data or using different values
+#' of cutoff, max_num_clusts, etc. by using the calculations done in one call to
+#' css.
+#'
+#' @param X_train An n x p numeric matrix (preferably) or a data.frame (which
+#' will be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors. The data from X_train and y_train will be
+#' split into two parts; half of the data will be used for feature selection by
+#' cluster stability selection, and half will be used for estimating a linear
+#' model on the selected cluster representatives.
+#' @param y_train A length-n numeric vector containing the responses; `y[i]` is
+#' the response corresponding to observation `X[i, ]`. Unlke the more general
+#' setup of css, y_train must be real-valued because predictions will be
+#' generated by ordinary least squares.
+#' @param X_predict A numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the data that will be used to generate predictions. Must contain the same
+#' features (in the same number of columns) as X_train, and if the columns of
+#' X_predict are named, they must match the names of X_train.
+#' @param clusters Optional; either an integer vector of a list of integer
+#' vectors; each vector should contain the indices of a cluster of features (a
+#' subset of 1:p). (If there is only one cluster, clusters can either be a list
+#' of length 1 or an integer vector.) All of the provided clusters must be
+#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' to be unclustered (that is, they  will be treated as if they are in a
+#' "cluster" containing only themselves). If clusters is a list of length 0 (or
+#' a list only containing clusters of length 1), then css() returns the same
+#' results as stability selection (so feat_sel_mat will be identical to
+#' clus_sel_mat). Names for the clusters will be needed later; any clusters that
+#' are not given names in the list clusters will be given names automatically by
+#' css. Default is list() (so no clusters are specified, and every feature is
+#' assumed to be in a "cluster" containng only itself).
+#' @param lambda Optional; the tuning parameter to be used by the lasso for
+#' feature selection in each subsample. If lambda is not provided, cssPredict
+#' will choose one automatically by cross-validation. Default is NA.
+#' @param cutoff Numeric; getCssPreds will make use only of those clusters with
+#' selection proportions equal to at least cutoff. Must be between 0 and 1.
+#' Default is 0 (in which case either all clusters are used, or max_num_clusts
+#' are used, if max_num_clusts is specified).
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param train_inds Optional; an integer or numeric vector containing the
+#' indices of observations in X and y to set aside for model training after
+#' feature selection. If train_inds is not provided, half of the data will be
+#' used for feature selection and half for model estimation (chosen at random).
+#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
+#' automatically estimated using the lasso with cross-validation. Default is
+#' TRUE, though his argument is ignored if either cutoff or max_num_clusts is
+#' provided. (If desired output is to generate predictions using all clusters,
+#' you should set auto_select_size to FALSE and do not provide cutoff or
+#' max_num_clusts.)
+#' @return A numeric vector of length nrow(X_predict) of predictions
+#' corresponding to the observations from X_predict.
+#' @author Gregory Faletto, Jacob Bien
+#' @export
+cssPredict <- function(X_train, y_train, X_predict, clusters = list()
+    , lambda=NA
+    , cutoff=NA
+    , max_num_clusts=NA
+    , train_inds=NA
+    , auto_select_size=TRUE
+    ){
+
+    # Check inputs (most inputs will be checked by called functions)
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("The provided y must be real-valued, because predictions will be generated by ordinary least squares regression.")
+    }
+
+    stopifnot(!is.na(auto_select_size))
+    stopifnot(length(auto_select_size) == 1)
+    stopifnot(is.logical(auto_select_size))
+
+    n <- nrow(X_train)
+
+    if(any(is.na(train_inds))){
+        train_inds <- sample(n, size=round(n/2))
+    }
+
+    if(any(is.na(lambda))){
+        lambda <- getLassoLambda(X_train[setdiff(1:n, train_inds), ],
+            y_train[setdiff(1:n, train_inds)]) 
+    }
+
+    css_results <- css(X_train, y_train, lambda, clusters,
+        train_inds=train_inds)
+
+    # If no indication of how to select model size was provided, choose model
+    # size by cross-validation
+    if(is.na(cutoff) & is.na(max_num_clusts)){
+        if(auto_select_size){
+            max_num_clusts <- getModelSize(X_train[train_inds, ],
+                y_train[train_inds], css_results$clusters)
+        }
+    }
+
+    if(is.na(cutoff)){
+        cutoff <- 0
+    }
+
+    # Get predictions
+    getCssPreds(css_results, testX = X_predict, weighting="weighted_avg",
+        cutoff=cutoff, max_num_clusts=max_num_clusts)
+}
+```
+
+Tests for cssPredict:
 
 ## Documenting the package and building
 
