@@ -2,12 +2,8 @@
 
 #' Automated estimation of model size
 #'
-#' This function is used internally by the functions cssSelect and cssPredict
-#' if no selection proportion threshold (cutoff) or maximum number of clusters
-#' (max_num_clusts) is provided as an input by the user and auto_select_size is
-#' TRUE. getModelSize uses the lasso with cross-validation to estimate the
-#' model size, which is then provided as max_num_clusts to cssSelect or
-#' cssPredict. Before using the lasso, in each cluster all features will be
+#' This function is uses the lasso with cross-validation to estimate the
+#' model size. Before using the lasso, in each cluster all features will be
 #' dropped from X except the one feature with the highest marginal correlation
 #' with y, as in the protolasso (Reid and Tibshirani 2016).
 #' 
@@ -33,18 +29,6 @@
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
 #' @export
 getModelSize <- function(X, y, clusters){
-    n <- nrow(X)
-
-    # Since the model size will be determined by cross-validation, the provided
-    # y must be real-valued (this should be checked internally in other
-    # functions before getModelSize is called, but this check is here just in
-    # case).
-    if(!is.numeric(y) & !is.integer(y)){
-        stop("getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.")
-    }
-
-    # Make sure X is a matrix
-
     stopifnot(is.matrix(X) | is.data.frame(X))
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
@@ -55,6 +39,31 @@ getModelSize <- function(X, y, clusters){
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
+    stopifnot(is.numeric(X) | is.integer(X))
+    n <- nrow(X)
+
+    # Since the model size will be determined by cross-validation, the provided
+    # y must be real-valued (this should be checked internally in other
+    # functions before getModelSize is called, but this check is here just in
+    # case).
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.")
+    }
+    stopifnot(length(y) == n)
+
+    # Check clusters argument
+    clusters <- checkCssClustersInput(clusters)
+
+    ### Format clusters into a list where all features are in exactly one
+    # cluster (any unclustered features are put in their own "cluster" of size
+    # 1).
+    clust_names <- as.character(NA)
+    if(!is.null(names(clusters))){
+        clust_names <- names(clusters)
+    }
+
+    clusters <- formatClusters(clusters, p=ncol(X),
+        clust_names=clust_names)$clusters
 
     X_size <- X
 

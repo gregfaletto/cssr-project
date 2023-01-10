@@ -11,8 +11,8 @@ genMuXZSd(
   Sigma,
   blocked_dgp_vars,
   latent_vars,
-  n_blocks = 1,
   block_size,
+  n_blocks = 1,
   snr = NA,
   sigma_eps_sq = NA
 )
@@ -39,13 +39,13 @@ nonzero coefficient beta_high in the true model for y.}
 \item{latent_vars}{An integer vector of length n_blocks containing the
 indices of all of the latent features.}
 
-\item{n_blocks}{Integer or numeric; the number of latent variables to
-generate, each of which will be associated with an observed cluster in X.
-Must be at least 1. Default is 1.}
-
 \item{block_size}{Integer or numeric; for each of the n_blocks latent
 variables, X will contain block_size noisy proxies that are correlated with
 the latent variable.}
+
+\item{n_blocks}{Integer or numeric; the number of latent variables to
+generate, each of which will be associated with an observed cluster in X.
+Must be at least 1. Default is 1.}
 
 \item{snr}{Integer or numeric; the signal-to-noise ratio of the response
 y. If sigma_eps_sq is not specified, the variance of the noise in y will be

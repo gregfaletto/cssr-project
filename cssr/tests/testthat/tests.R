@@ -3693,12 +3693,13 @@ testthat::test_that("makeCoefficients works", {
 testthat::test_that("genMuXZSd works", {
   set.seed(61232)
   
-  Sigma <- makeCovarianceMatrix(p=9+2, nblocks=2, block_size=3, rho=0.8, var=2)
+  Sigma <- makeCovarianceMatrix(p=9+2, nblocks=2, block_size=3+1, rho=0.2499,
+                                var=.25)
 
   coefs <- makeCoefficients(p=9+2, k_unblocked=2, beta_low=.9, beta_high=-2,
-                            nblocks=2, sig_blocks=1, block_size=3)
+                            nblocks=2, sig_blocks=1, block_size=3+1)
 
-  ret <- genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+  ret <- genMuXZSd(n=25, p=9, beta=coefs$beta, Sigma=Sigma,
                    blocked_dgp_vars=coefs$blocked_dgp_vars,
                    latent_vars=coefs$latent_vars, n_blocks=2, block_size=3,
                    snr=NA, sigma_eps_sq=1.2)
@@ -3708,15 +3709,31 @@ testthat::test_that("genMuXZSd works", {
   
   testthat::expect_true(is.numeric(ret$X))
   testthat::expect_true(is.matrix(ret$X))
-  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(nrow(ret$X), 25)
   testthat::expect_equal(ncol(ret$X), 9)
+  # X is Gaussian with mean 0 and variance 1/4; expect all observations to lie
+  # within 5 standard deviations of mean
+  testthat::expect_true(all(abs(ret$X) < 5*sqrt(0.25)))
+  
+  # Test that clusters are correlated--within-cluster correlation should be
+  # high, correlation with other features should be low
+  testthat::expect_true(min(cor(ret$X[, 1:3])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 1:3], ret$X[, 4:9]))) < .6)
+
+  testthat::expect_true(min(cor(ret$X[, 4:6])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 4:6],
+                                    ret$X[, c(1:3, 7:9)]))) < .6)
+
+  cor_indeps <- cor(ret$X[, 7:9])
+  testthat::expect_true(max(abs(cor_indeps[lower.tri(cor_indeps)])) < .6)
+
 
   testthat::expect_true(is.numeric(ret$mu))
-  testthat::expect_equal(length(ret$mu), 5)
+  testthat::expect_equal(length(ret$mu), 25)
 
   testthat::expect_true(is.numeric(ret$z))
   testthat::expect_true(is.matrix(ret$z))
-  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(nrow(ret$z), 25)
   testthat::expect_equal(ncol(ret$z), 2)
 
   testthat::expect_true(is.numeric(ret$sd))
@@ -3851,6 +3868,353 @@ testthat::test_that("genMuXZSd works", {
                                    block_size=3, snr=1, sigma_eps_sq=NA),
                          "length(latent_vars) == n_blocks is not TRUE",
                          fixed=TRUE)
+
+})
+
+testthat::test_that("genLatentData works", {
+  set.seed(23478)
+
+  ret <- genLatentData(n=25, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+                sig_clusters=2, rho=3.99, var=4, beta_latent=1.5,
+                beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(ncol(ret$X), 19)
+  testthat::expect_equal(nrow(ret$X), 25)
+  # X is Gaussian with mean 0 and variance 4; expect all observations to lie
+  # within 5 standard deviations of mean
+  testthat::expect_true(all(abs(ret$X) < 5*2))
+  # Test that clusters are correlated--within-cluster correlation should be
+  # high, correlation with other features should be low
+  testthat::expect_true(min(cor(ret$X[, 1:5])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 1:5], ret$X[, 6:19]))) < .6)
+  
+  testthat::expect_true(min(cor(ret$X[, 6:10])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 6:10],
+                                    ret$X[, c(1:5, 11:19)]))) < .6)
+  
+  testthat::expect_true(min(cor(ret$X[, 11:15])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 11:15],
+                                    ret$X[, c(1:10, 16:19)]))) < .6)
+
+  cor_indeps <- cor(ret$X[, 16:19])
+  testthat::expect_true(max(abs(cor_indeps[lower.tri(cor_indeps)])) < .6)
+
+  testthat::expect_true(is.numeric(ret$y))
+  testthat::expect_equal(length(ret$y), 25)
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 25)
+  testthat::expect_equal(ncol(ret$Z), 3)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 25)
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.5))
+
+  # Specify SNR instead of sigma_eps_sq
+  ret <- genLatentData(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+                       sig_clusters=2, rho=.8, var=1.1, beta_latent=1.5,
+                       beta_unclustered=-2, snr=1, sigma_eps_sq=NA)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  
+  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
+  # implies a very large noise variance to test this)
+  ret <- genLatentData(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+                sig_clusters=2, rho=.8, var=4, beta_latent=1.5,
+                beta_unclustered=-2, snr=.01, sigma_eps_sq=.25)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.25))
+  
+  # Try a single latent variable (z should be a one-column matrix)
+  ret <- genLatentData(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=1,
+                sig_clusters=1, rho=.8, var=4, beta_latent=1.5,
+                beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 5)
+  testthat::expect_equal(ncol(ret$Z), 1)
+  
+  # Bad inputs
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                       cluster_size=5, n_clusters=3,
+                                       sig_clusters="2", rho=.8, var=1.1,
+                                       beta_latent=1.5, beta_unclustered=-2,
+                                       snr=1, sigma_eps_sq=NA),
+                         "is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=4, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "sig_clusters <= n_clusters is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=-1, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "sig_clusters >= 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=.6, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "sig_clusters == round(sig_clusters) is not TRUE",
+                         fixed=TRUE)
+
+
+  # n_clusters
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5,
+                                                  n_clusters="3",
+                                                  sig_clusters=2, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3.2,
+                                                  sig_clusters=2, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "n_clusters == round(n_clusters) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=0,
+                                                  sig_clusters=0, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "n_clusters >= 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=.3, n_clusters=3,
+                                                  sig_clusters=2, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "cluster_size >= 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(p=16, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "p >= n_clusters * cluster_size + k_unclustered is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "abs(rho) <= abs(var) is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "rho != 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=-1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "var > 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=0,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "beta_latent != 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=0, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "beta_unclustered != 0 is not TRUE", fixed=TRUE)
+
+  # k_unclustered
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered="2",
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=-2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "k_unclustered >= 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=.2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=1,
+                                                  sigma_eps_sq=NA),
+                         "k_unclustered == round(k_unclustered) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=NA,
+                                                  sigma_eps_sq=NA),
+                         "Must specify one of snr or sigma_eps_sq", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=-.2,
+                                                  sigma_eps_sq=NA),
+                         "snr > 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genLatentData(n=5, p=19, k_unclustered=2,
+                                                  cluster_size=5, n_clusters=3,
+                                                  sig_clusters=2, rho=0.8,
+                                                  var=1.1, beta_latent=1.5,
+                                                  beta_unclustered=-2, snr=NA,
+                                                  sigma_eps_sq=-.3),
+                         "sigma_eps_sq > 0 is not TRUE", fixed=TRUE)
+
+})
+
+testthat::test_that("getLassoLambda works", {
+  set.seed(7252)
+  
+  x <- matrix(stats::rnorm(10*6), nrow=10, ncol=6)
+  y <- stats::rnorm(10)
+
+  ret <- getLassoLambda(X=x, y=y, lambda_choice="1se", nfolds=4)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_true(ret >= 0)
+  
+  ret <- getLassoLambda(X=x, y=y, lambda_choice="min", nfolds=5)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_true(ret >= 0)
+  
+  # Bad inputs
+  testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x[1:9, ], y=y),
+                         "n == length(y) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=TRUE),
+                         "is.numeric(y) | is.integer(y) is not TRUE",
+                         fixed=TRUE)
+
+  # Error has quotation marks in it
+  testthat::expect_error(getLassoLambda(X=x, y=y, lambda_choice="mni"))
+
+  testthat::expect_error(getLassoLambda(X=x, y=y,
+                                        lambda_choice=c("min", "1se")),
+                         "length(lambda_choice) == 1 is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(getLassoLambda(X=x, y=y, lambda_choice=1),
+                         "is.character(lambda_choice) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds="5"),
+                         "is.numeric(nfolds) | is.integer(nfolds) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=1:4),
+                         "length(nfolds) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=3.2),
+                         "nfolds == round(nfolds) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=3),
+                         "nfolds > 3 is not TRUE", fixed=TRUE)
+
+})
+
+testthat::test_that("getModelSize works", {
+  set.seed(1723)
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=as.integer(1:5),
+                        green_cluster=as.integer(6:8))
+  
+  ret <- getModelSize(X=x, y=y, clusters=good_clusters)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_equal(ret, round(ret))
+  testthat::expect_true(ret >= 1)
+  # 11 features, but 5 in one cluster and 3 in another, so maximum size should
+  # be 11 - 4 - 2 = 5
+  testthat::expect_true(ret <= 5)
+
+  # Bad inputs
+  # testthat::expect_error(getModelSize(X=x, y=y, lambda=c("foo",
+  #                                                          as.character(NA),
+  #                                                          "bar"), clusters=1:3,
+  #                                       fitfun = testFitfun,
+  #                                       sampling_type = "MB", B = 13,
+  #                                       prop_feats_remove = 0,
+  #                                       train_inds = integer(), num_cores = 1L),
+  #                        "sampling_type MB is not yet supported (and isn't recommended anyway)",
+  #                        fixed=TRUE)
 
 })
 

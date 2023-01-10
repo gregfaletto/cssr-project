@@ -38,10 +38,12 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
     stopifnot(!is.na(lambda_choice))
     stopifnot(lambda_choice %in% c("min", "1se"))
 
+    stopifnot(is.matrix(X))
+    stopifnot(is.numeric(X) | is.integer(X))
     n <- nrow(X)
-    stopifnot(n == length(y))
 
     stopifnot(is.numeric(nfolds) | is.integer(nfolds))
+    stopifnot(length(nfolds) == 1)
     stopifnot(nfolds == round(nfolds))
     stopifnot(nfolds > 3)
 
@@ -50,6 +52,7 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
     # can have a more general format as long as a suitable feature selection
     # function is provided by the user)
     stopifnot(is.numeric(y) | is.integer(y))
+    stopifnot(n == length(y))
 
     # Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),
     # so that each individual lasso fit is of size floor(n/2)

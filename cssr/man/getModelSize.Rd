@@ -29,12 +29,8 @@ An integer; the estimated size of the model. The minimum returned
 value is 1, even if the lasso with cross-validation chose no features.
 }
 \description{
-This function is used internally by the functions cssSelect and cssPredict
-if no selection proportion threshold (cutoff) or maximum number of clusters
-(max_num_clusts) is provided as an input by the user and auto_select_size is
-TRUE. getModelSize uses the lasso with cross-validation to estimate the
-model size, which is then provided as max_num_clusts to cssSelect or
-cssPredict. Before using the lasso, in each cluster all features will be
+This function is uses the lasso with cross-validation to estimate the
+model size. Before using the lasso, in each cluster all features will be
 dropped from X except the one feature with the highest marginal correlation
 with y, as in the protolasso (Reid and Tibshirani 2016).
 }

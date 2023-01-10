@@ -17,12 +17,12 @@
 #' nonzero coefficient beta_high in the true model for y.
 #' @param latent_vars An integer vector of length n_blocks containing the
 #' indices of all of the latent features.
-#' @param n_blocks Integer or numeric; the number of latent variables to
-#' generate, each of which will be associated with an observed cluster in X.
-#' Must be at least 1. Default is 1.
 #' @param block_size Integer or numeric; for each of the n_blocks latent
 #' variables, X will contain block_size noisy proxies that are correlated with
 #' the latent variable.
+#' @param n_blocks Integer or numeric; the number of latent variables to
+#' generate, each of which will be associated with an observed cluster in X.
+#' Must be at least 1. Default is 1.
 #' @param snr Integer or numeric; the signal-to-noise ratio of the response
 #' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
 #' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
@@ -40,7 +40,7 @@
 #' sigma_eps_sq).}
 #' @author Gregory Faletto, Jacob Bien
 genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
-    latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA){
+    latent_vars, block_size, n_blocks=1, snr=NA, sigma_eps_sq=NA){
     # Check inputs
 
     stopifnot(length(blocked_dgp_vars) <= n_blocks)
