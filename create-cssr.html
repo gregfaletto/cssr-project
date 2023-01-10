@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1694,7 +1694,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1783,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1853,7 +1853,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -7360,7 +7360,6 @@ y.</li>
                          fixed=TRUE)
 })</code></pre>
 <pre><code>## Test passed 😀</code></pre>
-<p>makeCoefficients</p>
 <pre class="r"><code>#&#39; Generated coefficients for y in latent variable model
 #&#39;
 #&#39; @param p Integer or numeric; the number of features that will be observed in
@@ -7578,9 +7577,10 @@ y.</li>
     latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA){
     # Check inputs
 
+    stopifnot(length(blocked_dgp_vars) &lt;= n_blocks)
     stopifnot(nrow(Sigma) == p + n_blocks)
     stopifnot(ncol(Sigma) == p + n_blocks)
-    stopifnot(length(blocked_dgp_vars) &lt;= n_blocks)
+    
     if(any(!is.na(sigma_eps_sq))){
         stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
         stopifnot(length(sigma_eps_sq) == 1)
@@ -7607,9 +7607,18 @@ y.</li>
 
     # Remove true blocked signal feature from each block from x now that I&#39;ve
     # generated mu
-    z &lt;- NA
+    if(n_blocks &gt; 0){
+        z &lt;- matrix(as.numeric(NA), nrow=n, ncol=n_blocks)
+        stopifnot(length(latent_vars) &gt; 0)
+    } else{
+        z &lt;- NA
+        stopifnot(length(latent_vars) == 0)
+    }
+    
     if(length(latent_vars) &gt; 0){
-        z &lt;- x[, latent_vars]
+        if(length(latent_vars) &gt; 0){
+        z[, 1:n_blocks] &lt;- x[, latent_vars]
+    }
     }
     
     x &lt;- x[, setdiff(1:(p + n_blocks), latent_vars)]
@@ -7629,12 +7638,8 @@ y.</li>
     stopifnot(ncol(x) == p)
 
     if(any(!is.na(z))){
-        if(n_blocks &gt; 1){
-            stopifnot(nrow(z) == n)
-            stopifnot(ncol(z) == n_blocks)
-        } else{
-            stopifnot(length(z) == n)
-        }
+        stopifnot(nrow(z) == n)
+        stopifnot(ncol(z) == n_blocks)
     }
 
     stopifnot(is.numeric(sd) | is.integer(sd))
@@ -7645,6 +7650,170 @@ y.</li>
     return(list(X=x, mu=mu, z=z, sd=sd))
 }</code></pre>
 <p>Tests for genMuXZSd</p>
+<pre class="r"><code>testthat::test_that(&quot;genMuXZSd works&quot;, {
+  set.seed(61232)
+  
+  Sigma &lt;- <a href='create-cssr.html#makeCovarianceMatrix'>makeCovarianceMatrix</a>(p=9+2, nblocks=2, block_size=3, rho=0.8, var=2)
+
+  coefs &lt;- <a href='create-cssr.html#makeCoefficients'>makeCoefficients</a>(p=9+2, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=2, sig_blocks=1, block_size=3)
+
+  ret &lt;- <a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=2, block_size=3,
+                   snr=NA, sigma_eps_sq=1.2)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c(&quot;X&quot;, &quot;mu&quot;, &quot;z&quot;, &quot;sd&quot;))
+  
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(ncol(ret$X), 9)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 5)
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 2)
+
+  testthat::expect_true(is.numeric(ret$sd))
+  testthat::expect_equal(ret$sd, sqrt(1.2))
+  
+  # Specify SNR instead of sd
+  
+  ret &lt;- <a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=2, block_size=3,
+                   snr=1, sigma_eps_sq=NA)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c(&quot;X&quot;, &quot;mu&quot;, &quot;z&quot;, &quot;sd&quot;))
+  
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(ncol(ret$X), 9)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 5)
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 2)
+
+  testthat::expect_true(is.numeric(ret$sd))
+  testthat::expect_true(ret$sd &gt; 0)
+
+  # Try a single latent variable (z should be a one-column matrix)
+
+  Sigma &lt;- <a href='create-cssr.html#makeCovarianceMatrix'>makeCovarianceMatrix</a>(p=9+1, nblocks=1, block_size=3, rho=0.8, var=2)
+
+  coefs &lt;- <a href='create-cssr.html#makeCoefficients'>makeCoefficients</a>(p=9+1, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=1, sig_blocks=1, block_size=3)
+
+  ret &lt;- <a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=1, block_size=3,
+                   snr=NA, sigma_eps_sq=1.2)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c(&quot;X&quot;, &quot;mu&quot;, &quot;z&quot;, &quot;sd&quot;))
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 1)
+  
+  # Bad inputs
+  Sigma &lt;- <a href='create-cssr.html#makeCovarianceMatrix'>makeCovarianceMatrix</a>(p=9+2, nblocks=2, block_size=3, rho=0.8, var=2)
+
+  coefs &lt;- <a href='create-cssr.html#makeCoefficients'>makeCoefficients</a>(p=9+2, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=2, sig_blocks=1, block_size=3)
+
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=0,
+                                   block_size=3, snr=NA, sigma_eps_sq=1.2),
+                         &quot;length(blocked_dgp_vars) &lt;= n_blocks is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=1,
+                                   block_size=3, snr=NA, sigma_eps_sq=1.2),
+                         &quot;nrow(Sigma) == p + n_blocks is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=&quot;1.2&quot;),
+                         &quot;is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=1:2),
+                         &quot;length(sigma_eps_sq) == 1 is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=-1),
+                         &quot;sigma_eps_sq &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=NA),
+                         &quot;Must provide one of snr or sigma_eps_sq&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=&quot;1&quot;, sigma_eps_sq=NA),
+                         &quot;is.numeric(snr) | is.integer(snr) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1:2, sigma_eps_sq=NA),
+                         &quot;length(snr) == 1 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=-1, sigma_eps_sq=NA),
+                         &quot;snr &gt; 0 is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=1:9, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         &quot;length(beta) == p + n_blocks is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=rep(0, 9 + 2), Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         &quot;all(beta[blocked_dgp_vars] != 0) is not TRUE&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#genMuXZSd'>genMuXZSd</a>(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=1:3, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         &quot;length(latent_vars) == n_blocks is not TRUE&quot;,
+                         fixed=TRUE)
+
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>Finally, tests for genLatentData</p>
 <p>getLassoLambda:</p>
 <pre class="r"><code>#&#39; Get lambda value for lasso

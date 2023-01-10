@@ -7007,7 +7007,7 @@ testthat::test_that("makeCovarianceMatrix works", {
 })
 ```
 
-makeCoefficients
+ 
 
 ```{r}
 #' Generated coefficients for y in latent variable model
@@ -7234,9 +7234,10 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
     latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA){
     # Check inputs
 
+    stopifnot(length(blocked_dgp_vars) <= n_blocks)
     stopifnot(nrow(Sigma) == p + n_blocks)
     stopifnot(ncol(Sigma) == p + n_blocks)
-    stopifnot(length(blocked_dgp_vars) <= n_blocks)
+    
     if(any(!is.na(sigma_eps_sq))){
         stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
         stopifnot(length(sigma_eps_sq) == 1)
@@ -7263,9 +7264,18 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
 
     # Remove true blocked signal feature from each block from x now that I've
     # generated mu
-    z <- NA
+    if(n_blocks > 0){
+        z <- matrix(as.numeric(NA), nrow=n, ncol=n_blocks)
+        stopifnot(length(latent_vars) > 0)
+    } else{
+        z <- NA
+        stopifnot(length(latent_vars) == 0)
+    }
+    
     if(length(latent_vars) > 0){
-        z <- x[, latent_vars]
+        if(length(latent_vars) > 0){
+        z[, 1:n_blocks] <- x[, latent_vars]
+    }
     }
     
     x <- x[, setdiff(1:(p + n_blocks), latent_vars)]
@@ -7285,12 +7295,8 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
     stopifnot(ncol(x) == p)
 
     if(any(!is.na(z))){
-        if(n_blocks > 1){
-            stopifnot(nrow(z) == n)
-            stopifnot(ncol(z) == n_blocks)
-        } else{
-            stopifnot(length(z) == n)
-        }
+        stopifnot(nrow(z) == n)
+        stopifnot(ncol(z) == n_blocks)
     }
 
     stopifnot(is.numeric(sd) | is.integer(sd))
@@ -7307,18 +7313,165 @@ Tests for genMuXZSd
 ```{r}
 testthat::test_that("genMuXZSd works", {
   set.seed(61232)
-
-  # ret <- genMuXZSd(n, p, beta, Sigma, blocked_dgp_vars,
-  #   latent_vars, n_blocks=1, block_size, snr=NA, sigma_eps_sq=NA)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("X", "mu", "z", "sd"))
   
-  # # Bad inputs
-  # testthat::expect_error(genMuXZSd(p=9+2, k_unblocked=-2, beta_low=.9,
-  #                                         beta_high=-2, nblocks=2, sig_blocks=1,
-  #                                         block_size=3),
-  #                        "k_unblocked >= 0 is not TRUE", fixed=TRUE)
+  Sigma <- makeCovarianceMatrix(p=9+2, nblocks=2, block_size=3, rho=0.8, var=2)
+
+  coefs <- makeCoefficients(p=9+2, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=2, sig_blocks=1, block_size=3)
+
+  ret <- genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=2, block_size=3,
+                   snr=NA, sigma_eps_sq=1.2)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "mu", "z", "sd"))
+  
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(ncol(ret$X), 9)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 5)
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 2)
+
+  testthat::expect_true(is.numeric(ret$sd))
+  testthat::expect_equal(ret$sd, sqrt(1.2))
+  
+  # Specify SNR instead of sd
+  
+  ret <- genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=2, block_size=3,
+                   snr=1, sigma_eps_sq=NA)
+  
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "mu", "z", "sd"))
+  
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(ncol(ret$X), 9)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 5)
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 2)
+
+  testthat::expect_true(is.numeric(ret$sd))
+  testthat::expect_true(ret$sd > 0)
+
+  # Try a single latent variable (z should be a one-column matrix)
+
+  Sigma <- makeCovarianceMatrix(p=9+1, nblocks=1, block_size=3, rho=0.8, var=2)
+
+  coefs <- makeCoefficients(p=9+1, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=1, sig_blocks=1, block_size=3)
+
+  ret <- genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                   latent_vars=coefs$latent_vars, n_blocks=1, block_size=3,
+                   snr=NA, sigma_eps_sq=1.2)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "mu", "z", "sd"))
+
+  testthat::expect_true(is.numeric(ret$z))
+  testthat::expect_true(is.matrix(ret$z))
+  testthat::expect_equal(nrow(ret$z), 5)
+  testthat::expect_equal(ncol(ret$z), 1)
+  
+  # Bad inputs
+  Sigma <- makeCovarianceMatrix(p=9+2, nblocks=2, block_size=3, rho=0.8, var=2)
+
+  coefs <- makeCoefficients(p=9+2, k_unblocked=2, beta_low=.9, beta_high=-2,
+                            nblocks=2, sig_blocks=1, block_size=3)
+
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=0,
+                                   block_size=3, snr=NA, sigma_eps_sq=1.2),
+                         "length(blocked_dgp_vars) <= n_blocks is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=1,
+                                   block_size=3, snr=NA, sigma_eps_sq=1.2),
+                         "nrow(Sigma) == p + n_blocks is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq="1.2"),
+                         "is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=1:2),
+                         "length(sigma_eps_sq) == 1 is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=-1),
+                         "sigma_eps_sq >= 0 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=NA, sigma_eps_sq=NA),
+                         "Must provide one of snr or sigma_eps_sq", fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr="1", sigma_eps_sq=NA),
+                         "is.numeric(snr) | is.integer(snr) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1:2, sigma_eps_sq=NA),
+                         "length(snr) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=-1, sigma_eps_sq=NA),
+                         "snr > 0 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=1:9, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         "length(beta) == p + n_blocks is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=rep(0, 9 + 2), Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=coefs$latent_vars, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         "all(beta[blocked_dgp_vars] != 0) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(genMuXZSd(n=5, p=9, beta=coefs$beta, Sigma=Sigma,
+                                   blocked_dgp_vars=coefs$blocked_dgp_vars,
+                                   latent_vars=1:3, n_blocks=2,
+                                   block_size=3, snr=1, sigma_eps_sq=NA),
+                         "length(latent_vars) == n_blocks is not TRUE",
+                         fixed=TRUE)
 
 })
 ```
