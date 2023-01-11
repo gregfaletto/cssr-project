@@ -1392,7 +1392,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1694,7 +1694,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1783,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1853,7 +1853,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -8336,13 +8336,14 @@ y.</li>
 <pre class="r"><code>testthat::test_that(&quot;getModelSize works&quot;, {
   set.seed(1723)
   
-  x &lt;- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
-  y &lt;- stats::rnorm(15)
+  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+                        n_clusters=2, sigma_eps_sq=10^(-6))
   
-  # Intentionally don&#39;t provide clusters for all feature, mix up formatting,
-  # etc.
-  good_clusters &lt;- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8))
+  x &lt;- data$X
+  y &lt;- data$y
+  
+  good_clusters &lt;- list(red_cluster=as.integer(1:3),
+                        green_cluster=as.integer(4:6))
   
   ret &lt;- <a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=good_clusters)
   
@@ -8351,23 +8352,117 @@ y.</li>
   testthat::expect_equal(length(ret), 1)
   testthat::expect_equal(ret, round(ret))
   testthat::expect_true(ret &gt;= 1)
-  # 11 features, but 5 in one cluster and 3 in another, so maximum size should
-  # be 11 - 4 - 2 = 5
-  testthat::expect_true(ret &lt;= 5)
+  # 11 features, but two clusters of size 3, so maximum size should
+  # be 11 - 2 - 2 = 7
+  testthat::expect_true(ret &lt;= 7)
+  
+  ## Trying other inputs
 
-  # Bad inputs
-  # testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, lambda=c(&quot;foo&quot;,
-  #                                                          as.character(NA),
-  #                                                          &quot;bar&quot;), clusters=1:3,
-  #                                       fitfun = testFitfun,
-  #                                       sampling_type = &quot;MB&quot;, B = 13,
-  #                                       prop_feats_remove = 0,
-  #                                       train_inds = integer(), num_cores = 1L),
-  #                        &quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;,
-  #                        fixed=TRUE)
+  unnamed_clusters &lt;- list(as.integer(1:3), as.integer(5:8))
+  
+  ret &lt;- <a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=unnamed_clusters)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_equal(ret, round(ret))
+  testthat::expect_true(ret &gt;= 1)
+  # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # be 11 - 2 - 3 = 6
+  testthat::expect_true(ret &lt;= 6)
+  
+  # Single cluster
+  ret &lt;- <a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=2:5)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_equal(ret, round(ret))
+  testthat::expect_true(ret &gt;= 1)
+  # 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8
+  testthat::expect_true(ret &lt;= 8)
+  
+  
+  # Intentionally don&#39;t provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters &lt;- list(red_cluster=1:3, 5:8)
+  
+  ret &lt;- <a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=good_clusters)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_equal(ret, round(ret))
+  testthat::expect_true(ret &gt;= 1)
+  # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # be 11 - 2 - 3 = 6
+  testthat::expect_true(ret &lt;= 6)
+  
+  ## Trying bad inputs
+  
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=&quot;x&quot;, y=y, clusters=good_clusters),
+                         &quot;is.matrix(X) | is.data.frame(X) is not TRUE&quot;, fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x[1:5, ], y=y, clusters=good_clusters),
+                         &quot;length(y) == n is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=FALSE, clusters=good_clusters),
+                         &quot;getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=list(3:7, 7:10)),
+                         &quot;Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.&quot;,
+                         fixed=TRUE)
+  
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=list(5:8, 5:8)),
+                         &quot;length(clusters) == length(unique(clusters)) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=6:50),
+                         &quot;length(all_clustered_feats) == p is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y,
+                                      clusters=list(2:3, as.integer(NA))),
+                         &quot;!is.na(clusters) are not all TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=list(2:3, c(4, 4, 5))),
+                         &quot;length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE&quot;,
+                         fixed=TRUE)
+
+   testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=list(1:4, -1)),
+                         &quot;all(clusters[[i]] &gt;= 1) is not TRUE&quot;,
+                         fixed=TRUE)
+
+   testthat::expect_error(<a href='create-cssr.html#getModelSize'>getModelSize</a>(X=x, y=y, clusters=list(1:4,
+                                                               c(2.3, 1.2))),
+                         &quot;all(clusters[[i]] == round(clusters[[i]])) is not TRUE&quot;,
+                         fixed=TRUE)
 
 })</code></pre>
-<pre><code>## ── Warning (&#39;&lt;text&gt;:12&#39;): getModelSize works ───────────────────────────────────
+<pre><code>## ── Warning (&#39;&lt;text&gt;:13&#39;): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X = x, y = y, clusters = good_clusters)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:28&#39;): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X = x, y = y, clusters = unnamed_clusters)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:40&#39;): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X = x, y = y, clusters = 2:5)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:55&#39;): getModelSize works ───────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X = x, y = y, clusters = good_clusters)
