@@ -7,8 +7,7 @@
 \method{print}{cssr}(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA, ...)
 }
 \arguments{
-\item{x}{An object of class "cssr" (the output of the function
-css).}
+\item{x}{An object of class "cssr" (the output of the function css).}
 
 \item{cutoff}{Numeric; print.cssr will display only those
 clusters with selection proportions equal to at least cutoff. Must be between
@@ -32,13 +31,13 @@ max_num_clusts is ignored).}
 A data.frame; each row contains a cluster, arranged in decreasing
 order of cluster selection proportion from top to bottom. The columns are
 ClustName (the name of the cluster that was either provided to css or made by
-css if no name was provided), ClustProtoName (only returned if the features
-have names), the name of the prototype from the cluster, which is the feature
-with the greatest individual selection proportion among all the cluster
-members (if there is a tie, it is broken by choosing the feature with the
-highest correlation with the response), ClustProtoNum (the column number of
-the prototype in the X matrix provided to css), and ClustSize (the size of
-the cluster).
+css if no name was provided); ClustProtoName (the name of the selection
+prototype from the cluster, which is the feature with the greatest individual
+selection proportion among all the cluster members, with ties broken by
+choosing the feature with the highest correlation with the response if the
+response is real-valued; only returned if the features are named),
+ClustProtoNum (the column number of the prototype in the X matrix provided to
+css), and ClustSize (the size of the cluster).
 }
 \description{
 Print a summary of the information from the css function.

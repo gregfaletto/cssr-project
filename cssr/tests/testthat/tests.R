@@ -3,8 +3,7 @@ testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:4),
-                        green_cluster=as.integer(5:8))
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
   
   res <- checkCssClustersInput(good_clusters)
   
@@ -24,7 +23,7 @@ testthat::test_that("checkCssClustersInput works", {
 
   ## Trying other inputs
   
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
   
   res <- checkCssClustersInput(unnamed_clusters)
   
@@ -71,7 +70,7 @@ testthat::test_that("checkCssClustersInput works", {
 
 testthat::test_that("checkY works", {
   testthat::expect_null(checkY(as.numeric(1:20)*.1, 20))
-  testthat::expect_null(checkY(as.integer(1:15), 15))
+  testthat::expect_null(checkY(1L:15L, 15))
   testthat::expect_error(checkY(1:7, 8), "n == length(y) is not TRUE",
                          fixed=TRUE)
   testthat::expect_error(checkY(1:7, -7), "n > 0 is not TRUE", fixed=TRUE)
@@ -88,8 +87,7 @@ testthat::test_that("checkFormatClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:4),
-                        green_cluster=as.integer(5:8))
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
   
   res <- checkFormatClustersInput(good_clusters, p=10,
                                   clust_names=c("red_cluster", "green_cluster"),
@@ -106,7 +104,7 @@ testthat::test_that("checkFormatClustersInput works", {
 
   ## Trying other inputs
   
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
 
   res <- checkFormatClustersInput(unnamed_clusters, p=10, clust_names=NA,
                                   get_prototypes=FALSE, x=NA, y=NA, R=NA)
@@ -173,32 +171,28 @@ testthat::test_that("checkFormatClustersInput works", {
 })
 
 testthat::test_that("checkClusters works", {
-  good_clusters <- list(c1=as.integer(1:5), c2=as.integer(6:8), c3=9L)
+  good_clusters <- list(c1=1L:5L, c2=6L:8L, c3=9L)
   
   testthat::expect_null(checkClusters(good_clusters, 9))
   testthat::expect_error(checkClusters(good_clusters, 10),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(as.integer(1:10), 10),
+  testthat::expect_error(checkClusters(1L:10L, 10),
                          "is.list(clusters) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
                                             c4=integer()), 9),
                          "all(lengths(clusters) >= 1) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
                                             c4=as.integer(NA)), 9),
                          "all(!is.na(clusters)) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
-                                            c2=as.integer(6:8)), 9),
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
+                                            c2=6L:8L), 9),
                          "n_clusters == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=10L), 9),
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=10L), 9),
                          "all(all_clustered_feats <= p) is not TRUE",
                          fixed=TRUE)
 })
@@ -265,12 +259,11 @@ testthat::test_that("getPrototypes works", {
 
   testthat::expect_identical(getPrototypes(list(1L, 2L, 3L, 4L, 5L), X, y), 1:5)
 
-  testthat::expect_identical(getPrototypes(list(as.integer(1:5)), X, y), 5L)
+  testthat::expect_identical(getPrototypes(list(1L:5L), X, y), 5L)
 
-  testthat::expect_identical(getPrototypes(list(1L, as.integer(2:5)), X, y),
-                             c(1L, 5L))
+  testthat::expect_identical(getPrototypes(list(1L, 2L:5L), X, y), c(1L, 5L))
 
-  testthat::expect_identical(getPrototypes(list(as.integer(3:5)), X, y), 5L)
+  testthat::expect_identical(getPrototypes(list(3L:5L), X, y), 5L)
 
   y2 <- rnorm(n)
 
@@ -488,8 +481,8 @@ testthat::test_that("checkCssInputs works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8)
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L
                         # , c4=as.numeric(10:11)
                         )
   
@@ -731,7 +724,7 @@ testthat::test_that("cssLoop works", {
   x <- matrix(stats::rnorm(9*8), nrow=9, ncol=8)
   y <- stats::rnorm(9)
 
-  output <- cssLoop(input=as.integer(1:4), x=x, y=y, lambda=0.05,
+  output <- cssLoop(input=1L:4L, x=x, y=y, lambda=0.05,
                     fitfun=cssLasso)
 
   testthat::expect_true(is.integer(output))
@@ -744,22 +737,22 @@ testthat::test_that("cssLoop works", {
 
   testthat::expect_true(all(output <= 8))
 
-  testthat::expect_error(cssLoop(input=as.integer(1:6), x=x, y=y, lambda=0.05,
+  testthat::expect_error(cssLoop(input=1L:6L, x=x, y=y, lambda=0.05,
                                  fitfun=cssLasso),
                          "floor(n/2) == length(subsample) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y[1:8],
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y[1:8],
                                  lambda=0.05, fitfun=cssLasso),
                          "length(y) == n is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=logical(9),
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=logical(9),
                                  lambda=0.05, fitfun=cssLasso),
                          "For method cssLasso, y must be a numeric vector.",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y,
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y,
                                  lambda=x, fitfun=cssLasso),
                          "For method cssLasso, lambda must be a numeric of length 1.",
                          fixed=TRUE)
@@ -799,10 +792,10 @@ testthat::test_that("cssLoop works", {
     return(selected)
   }
 
-  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x, y=y,
+  testthat::expect_true(is.integer(cssLoop(input=1L:4L, x=x, y=y,
                                            lambda=TRUE, fitfun=testFitfun)))
 
-  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x,
+  testthat::expect_true(is.integer(cssLoop(input=1L:4L, x=x,
                                            y=character(9), lambda=.05,
                                            fitfun=testFitfun)))
 
@@ -810,13 +803,13 @@ testthat::test_that("cssLoop works", {
 
 testthat::test_that("checkGetClusterSelMatrixInput works", {
   
-  good_clusters <- list(happy=as.integer(1:8), sad=as.integer(9:10), med=11L)
+  good_clusters <- list(happy=1L:8L, sad=9L:10L, med=11L)
   
   res <- matrix(sample(c(0, 1), size=6*11, replace=TRUE), nrow=6, ncol=11)
   
   testthat::expect_null(checkGetClusterSelMatrixInput(good_clusters, res))
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(happy=as.integer(1:8),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(happy=1L:8L,
                                                             med=11L), res),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
@@ -832,30 +825,30 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(as.integer(1:10), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(1L:10L, res),
                          "is.list(clusters) is not TRUE", fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                                            c2=as.integer(6:8),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                                            c2=6L:8L,
                                                             c3=9L,
                                                             c4=integer()), res),
                          "all(lengths(clusters) >= 1) is not TRUE",
                          fixed=TRUE)
                          
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=9L,
                                             c4=as.integer(NA)), res),
                          "all(!is.na(clusters)) is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
-                                            c2=as.integer(6:8)), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=9L,
+                                            c2=6L:8L), res),
                          "n_clusters == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=14L), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=14L), res),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
   
@@ -1015,8 +1008,8 @@ testthat::test_that("cssLasso works", {
 })
 
 testthat::test_that("getClusterSelMatrix works", {
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8), blue_clust=9L)
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L, blue_clust=9L)
   
   B <- 14
   p <- 9
@@ -1049,8 +1042,7 @@ testthat::test_that("getClusterSelMatrix works", {
   }
 
   # Not all features in a cluster
-  bad_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:7), blue_clust=9L)
+  bad_clusters <- list(red_cluster=1L:5L, green_cluster=6L:7L, blue_clust=9L)
 
   testthat::expect_error(getClusterSelMatrix(bad_clusters, good_res),
                          "length(all_clustered_feats) == p is not TRUE",
@@ -1061,8 +1053,7 @@ testthat::test_that("getClusterSelMatrix works", {
   bad_res <- matrix(bad_res_entries, nrow=2*B, ncol=p)
 
   testthat::expect_error(getClusterSelMatrix(good_clusters, bad_res),
-                         "all(res %in% c(0, 1)) is not TRUE",
-                         fixed=TRUE)
+                         "all(res %in% c(0, 1)) is not TRUE", fixed=TRUE)
 })
 
 testthat::test_that("css works", {
@@ -1073,8 +1064,8 @@ testthat::test_that("css works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8),
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L,
                         c4=as.numeric(10:11))
   
   res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
@@ -4192,8 +4183,7 @@ testthat::test_that("getModelSize works", {
   x <- data$X
   y <- data$y
   
-  good_clusters <- list(red_cluster=as.integer(1:3),
-                        green_cluster=as.integer(4:6))
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
   
   ret <- getModelSize(X=x, y=y, clusters=good_clusters)
   
@@ -4208,7 +4198,7 @@ testthat::test_that("getModelSize works", {
   
   ## Trying other inputs
 
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
   
   ret <- getModelSize(X=x, y=y, clusters=unnamed_clusters)
   
@@ -4289,6 +4279,91 @@ testthat::test_that("getModelSize works", {
                                                                c(2.3, 1.2))),
                          "all(clusters[[i]] == round(clusters[[i]])) is not TRUE",
                          fixed=TRUE)
+
+})
+
+testthat::test_that("print.cssr works", {
+  set.seed(67234)
+  
+  data <- genLatentData(n=15, p=11, k_unclustered=1, cluster_size=3,
+                        n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
+  
+  x <- data$X
+  y <- data$y
+  
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
+  
+  css_results <- css(X=x, y=y, lambda=0.01, clusters=good_clusters)
+  
+  # ret <- print.cssr(css_results)
+  
+  # testthat::expect_true(is.data.frame(ret))
+  # testhat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+  #                                            "ClustSelProp", "ClustSize"))
+  
+  # testthat::expect_true(is.character(ret$ClustName))
+  # testthat::expect_true(is.integer(ret$ClustProtoNum))
+  # testthat::expect_true(is.numeric(ret$ClustSelProp))
+  # testthat::expect_true(is.integer(ret$ClustSize))
+  # testthat::expect_equal(ret[ret$ClustName=="red_cluster", "ClustSize"], 3)
+  # testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but two clusters of size 3, so maximum size should
+  # # be 11 - 2 - 2 = 7
+  # testthat::expect_true(ret <= 7)
+  # 
+  # ## Trying other inputs
+  # 
+  # unnamed_clusters <- list(1L:3L, 5L:8L)
+  # 
+  # ret <- print.cssr(X=x, y=y, clusters=unnamed_clusters)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # # be 11 - 2 - 3 = 6
+  # testthat::expect_true(ret <= 6)
+  # 
+  # # Single cluster
+  # ret <- print.cssr(X=x, y=y, clusters=2:5)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8
+  # testthat::expect_true(ret <= 8)
+  # 
+  # 
+  # # Intentionally don't provide clusters for all feature, mix up formatting,
+  # # etc.
+  # good_clusters <- list(red_cluster=1:3, 5:8)
+  # 
+  # ret <- print.cssr(X=x, y=y, clusters=good_clusters)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # # be 11 - 2 - 3 = 6
+  # testthat::expect_true(ret <= 6)
+  # 
+  # ## Trying bad inputs
+  # 
+  # testthat::expect_error(print.cssr(X="x", y=y, clusters=good_clusters),
+  #                        "is.matrix(X) | is.data.frame(X) is not TRUE", fixed=TRUE)
+  # 
 
 })
 

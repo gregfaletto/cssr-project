@@ -898,8 +898,7 @@ testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:4),
-                        green_cluster=as.integer(5:8))
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
   
   res <- checkCssClustersInput(good_clusters)
   
@@ -919,7 +918,7 @@ testthat::test_that("checkCssClustersInput works", {
 
   ## Trying other inputs
   
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
   
   res <- checkCssClustersInput(unnamed_clusters)
   
@@ -1269,7 +1268,7 @@ Tests for checkY:
 ```{r}
 testthat::test_that("checkY works", {
   testthat::expect_null(checkY(as.numeric(1:20)*.1, 20))
-  testthat::expect_null(checkY(as.integer(1:15), 15))
+  testthat::expect_null(checkY(1L:15L, 15))
   testthat::expect_error(checkY(1:7, 8), "n == length(y) is not TRUE",
                          fixed=TRUE)
   testthat::expect_error(checkY(1:7, -7), "n > 0 is not TRUE", fixed=TRUE)
@@ -1290,8 +1289,7 @@ testthat::test_that("checkFormatClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:4),
-                        green_cluster=as.integer(5:8))
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
   
   res <- checkFormatClustersInput(good_clusters, p=10,
                                   clust_names=c("red_cluster", "green_cluster"),
@@ -1308,7 +1306,7 @@ testthat::test_that("checkFormatClustersInput works", {
 
   ## Trying other inputs
   
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
 
   res <- checkFormatClustersInput(unnamed_clusters, p=10, clust_names=NA,
                                   get_prototypes=FALSE, x=NA, y=NA, R=NA)
@@ -1422,32 +1420,28 @@ Tests for checkClusters
 
 ```{r}
 testthat::test_that("checkClusters works", {
-  good_clusters <- list(c1=as.integer(1:5), c2=as.integer(6:8), c3=9L)
+  good_clusters <- list(c1=1L:5L, c2=6L:8L, c3=9L)
   
   testthat::expect_null(checkClusters(good_clusters, 9))
   testthat::expect_error(checkClusters(good_clusters, 10),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(as.integer(1:10), 10),
+  testthat::expect_error(checkClusters(1L:10L, 10),
                          "is.list(clusters) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
                                             c4=integer()), 9),
                          "all(lengths(clusters) >= 1) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
                                             c4=as.integer(NA)), 9),
                          "all(!is.na(clusters)) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
-                                            c2=as.integer(6:8)), 9),
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=9L,
+                                            c2=6L:8L), 9),
                          "n_clusters == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkClusters(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=10L), 9),
+  testthat::expect_error(checkClusters(list(c1=1L:5L, c2=6L:8L, c3=10L), 9),
                          "all(all_clustered_feats <= p) is not TRUE",
                          fixed=TRUE)
 })
@@ -1682,12 +1676,11 @@ testthat::test_that("getPrototypes works", {
 
   testthat::expect_identical(getPrototypes(list(1L, 2L, 3L, 4L, 5L), X, y), 1:5)
 
-  testthat::expect_identical(getPrototypes(list(as.integer(1:5)), X, y), 5L)
+  testthat::expect_identical(getPrototypes(list(1L:5L), X, y), 5L)
 
-  testthat::expect_identical(getPrototypes(list(1L, as.integer(2:5)), X, y),
-                             c(1L, 5L))
+  testthat::expect_identical(getPrototypes(list(1L, 2L:5L), X, y), c(1L, 5L))
 
-  testthat::expect_identical(getPrototypes(list(as.integer(3:5)), X, y), 5L)
+  testthat::expect_identical(getPrototypes(list(3L:5L), X, y), 5L)
 
   y2 <- rnorm(n)
 
@@ -1995,8 +1988,8 @@ testthat::test_that("checkCssInputs works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8)
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L
                         # , c4=as.numeric(10:11)
                         )
   
@@ -2422,7 +2415,7 @@ testthat::test_that("cssLoop works", {
   x <- matrix(stats::rnorm(9*8), nrow=9, ncol=8)
   y <- stats::rnorm(9)
 
-  output <- cssLoop(input=as.integer(1:4), x=x, y=y, lambda=0.05,
+  output <- cssLoop(input=1L:4L, x=x, y=y, lambda=0.05,
                     fitfun=cssLasso)
 
   testthat::expect_true(is.integer(output))
@@ -2435,22 +2428,22 @@ testthat::test_that("cssLoop works", {
 
   testthat::expect_true(all(output <= 8))
 
-  testthat::expect_error(cssLoop(input=as.integer(1:6), x=x, y=y, lambda=0.05,
+  testthat::expect_error(cssLoop(input=1L:6L, x=x, y=y, lambda=0.05,
                                  fitfun=cssLasso),
                          "floor(n/2) == length(subsample) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y[1:8],
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y[1:8],
                                  lambda=0.05, fitfun=cssLasso),
                          "length(y) == n is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=logical(9),
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=logical(9),
                                  lambda=0.05, fitfun=cssLasso),
                          "For method cssLasso, y must be a numeric vector.",
                          fixed=TRUE)
 
-  testthat::expect_error(cssLoop(input=as.integer(1:4), x=x, y=y,
+  testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y,
                                  lambda=x, fitfun=cssLasso),
                          "For method cssLasso, lambda must be a numeric of length 1.",
                          fixed=TRUE)
@@ -2490,10 +2483,10 @@ testthat::test_that("cssLoop works", {
     return(selected)
   }
 
-  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x, y=y,
+  testthat::expect_true(is.integer(cssLoop(input=1L:4L, x=x, y=y,
                                            lambda=TRUE, fitfun=testFitfun)))
 
-  testthat::expect_true(is.integer(cssLoop(input=as.integer(1:4), x=x,
+  testthat::expect_true(is.integer(cssLoop(input=1L:4L, x=x,
                                            y=character(9), lambda=.05,
                                            fitfun=testFitfun)))
 
@@ -2533,13 +2526,13 @@ Tests for checkGetClusterSelMatrixInput
 ```{r}
 testthat::test_that("checkGetClusterSelMatrixInput works", {
   
-  good_clusters <- list(happy=as.integer(1:8), sad=as.integer(9:10), med=11L)
+  good_clusters <- list(happy=1L:8L, sad=9L:10L, med=11L)
   
   res <- matrix(sample(c(0, 1), size=6*11, replace=TRUE), nrow=6, ncol=11)
   
   testthat::expect_null(checkGetClusterSelMatrixInput(good_clusters, res))
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(happy=as.integer(1:8),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(happy=1L:8L,
                                                             med=11L), res),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
@@ -2555,30 +2548,30 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(as.integer(1:10), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(1L:10L, res),
                          "is.list(clusters) is not TRUE", fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                                            c2=as.integer(6:8),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                                            c2=6L:8L,
                                                             c3=9L,
                                                             c4=integer()), res),
                          "all(lengths(clusters) >= 1) is not TRUE",
                          fixed=TRUE)
                          
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=9L,
                                             c4=as.integer(NA)), res),
                          "all(!is.na(clusters)) is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=9L,
-                                            c2=as.integer(6:8)), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=9L,
+                                            c2=6L:8L), res),
                          "n_clusters == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
   
-  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=as.integer(1:5),
-                                            c2=as.integer(6:8), c3=14L), res),
+  testthat::expect_error(checkGetClusterSelMatrixInput(list(c1=1L:5L,
+                                            c2=6L:8L, c3=14L), res),
                          "length(all_clustered_feats) == p is not TRUE",
                          fixed=TRUE)
   
@@ -2760,8 +2753,8 @@ Tests for getClusterSelMatrix:
 
 ```{r}
 testthat::test_that("getClusterSelMatrix works", {
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8), blue_clust=9L)
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L, blue_clust=9L)
   
   B <- 14
   p <- 9
@@ -2794,8 +2787,7 @@ testthat::test_that("getClusterSelMatrix works", {
   }
 
   # Not all features in a cluster
-  bad_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:7), blue_clust=9L)
+  bad_clusters <- list(red_cluster=1L:5L, green_cluster=6L:7L, blue_clust=9L)
 
   testthat::expect_error(getClusterSelMatrix(bad_clusters, good_res),
                          "length(all_clustered_feats) == p is not TRUE",
@@ -2806,8 +2798,7 @@ testthat::test_that("getClusterSelMatrix works", {
   bad_res <- matrix(bad_res_entries, nrow=2*B, ncol=p)
 
   testthat::expect_error(getClusterSelMatrix(good_clusters, bad_res),
-                         "all(res %in% c(0, 1)) is not TRUE",
-                         fixed=TRUE)
+                         "all(res %in% c(0, 1)) is not TRUE", fixed=TRUE)
 })
 ```
 
@@ -2822,8 +2813,8 @@ testthat::test_that("css works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
-  good_clusters <- list(red_cluster=as.integer(1:5),
-                        green_cluster=as.integer(6:8),
+  good_clusters <- list(red_cluster=1L:5L,
+                        green_cluster=6L:8L,
                         c4=as.numeric(10:11))
   
   res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
@@ -6541,6 +6532,7 @@ The following are some other functions that are useful for specific tasks.
 * getLassoLambda
 * getModelSize
 * print.cssr
+  - getSelectionPrototypes identifies the prototypes from selected clusters (the feature in each cluster that is most correlated with the response)
 
 genLatentData
 
@@ -8008,8 +8000,7 @@ testthat::test_that("getModelSize works", {
   x <- data$X
   y <- data$y
   
-  good_clusters <- list(red_cluster=as.integer(1:3),
-                        green_cluster=as.integer(4:6))
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
   
   ret <- getModelSize(X=x, y=y, clusters=good_clusters)
   
@@ -8024,7 +8015,7 @@ testthat::test_that("getModelSize works", {
   
   ## Trying other inputs
 
-  unnamed_clusters <- list(as.integer(1:3), as.integer(5:8))
+  unnamed_clusters <- list(1L:3L, 5L:8L)
   
   ret <- getModelSize(X=x, y=y, clusters=unnamed_clusters)
   
@@ -8115,8 +8106,7 @@ print.cssr:
 #' Print cluster stabilty selection output
 #'
 #' Print a summary of the information from the css function.
-#' @param x An object of class "cssr" (the output of the function
-#' css).
+#' @param x An object of class "cssr" (the output of the function css).
 #' @param cutoff Numeric; print.cssr will display only those
 #' clusters with selection proportions equal to at least cutoff. Must be between
 #' 0 and 1. Default is 0 (in which case either all clusters are displayed, or
@@ -8134,13 +8124,13 @@ print.cssr:
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
 #' order of cluster selection proportion from top to bottom. The columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
-#' css if no name was provided), ClustProtoName (only returned if the features
-#' have names), the name of the prototype from the cluster, which is the feature
-#' with the greatest individual selection proportion among all the cluster
-#' members (if there is a tie, it is broken by choosing the feature with the
-#' highest correlation with the response), ClustProtoNum (the column number of
-#' the prototype in the X matrix provided to css), and ClustSize (the size of
-#' the cluster).
+#' css if no name was provided); ClustProtoName (the name of the selection
+#' prototype from the cluster, which is the feature with the greatest individual
+#' selection proportion among all the cluster members, with ties broken by
+#' choosing the feature with the highest correlation with the response if the
+#' response is real-valued; only returned if the features are named),
+#' ClustProtoNum (the column number of the prototype in the X matrix provided to
+#' css), and ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
@@ -8165,11 +8155,12 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with
-    # y from data provided to css)
+    # y from data provided to css if y is real-valued)
     prototypes <- getSelectionPrototypes(css_results, sel_clusts)
-
+    
     # Cluster selection proportions
-    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[, names(sel_clusts)])
+    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
+        names(sel_clusts)])
 
     # Data.frame: name of cluster, cluster prototype, selection proportion,
     # cluster size
@@ -8191,11 +8182,161 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 
     rownames(print_df) <- NULL
 
+    # print.data.frame(print_df)
+
     return(print_df)
 }
 ```
 
+getSelectionPrototypes
+
+```{r}
+#' Identify selection prototypes from selected clusters
+#'
+#' Takes in list of selected clusters and returns an integer vector of the
+#' indices of the features that were most frequently selected from each cluster
+#'
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param selected_clusts A list of integer vectors; each vector must contain
+#' the indices of features in a cluster.
+#' @return An integer vector (of length equal to the number of clusters) of the
+#' indices of the feature prototypes (the features from each cluster that were
+#' selected the most often individually by the base method in cluster stability
+#' selection). In the case of a tie, the tie is broken by choosing the feature
+#' most correlated with the response in the full data set provided to css.
+#' @author Gregory Faletto, Jacob Bien
+getSelectionPrototypes <- function(css_results, selected_clusts){
+    
+    # Check inputs
+    stopifnot(class(css_results) == "cssr")
+
+    stopifnot(all(lengths(selected_clusts) >= 1))
+    stopifnot(is.list(selected_clusts))
+
+    n_selected_clusts <- length(selected_clusts)
+
+    prototypes <- rep(as.integer(NA), n_selected_clusts)
+    for(i in 1:n_selected_clusts){
+        clust_i <- selected_clusts[[i]]
+        sel_props_i <- colMeans(css_results$feat_sel_mat)[clust_i]
+        proto_i <- clust_i[sel_props_i == max(sel_props_i)]
+        stopifnot(length(proto_i) >= 1)
+        if(length(proto_i) > 1){
+            if(is.numeric(css_results$y) | is.integer(css_results$y)){
+                # Break tie by looking at marginal correlations
+                corrs_i <- stats::cor(css_results$X[, proto_i], css_results$y)[, 1]
+                corrs_i <- abs(corrs_i)
+                proto_i <- proto_i[corrs_i == max(corrs_i)]
+            }
+        }
+        # If there is still a tie, break by choosing the first feature of those
+        # remaining
+        prototypes[i] <- proto_i[1]
+        names(prototypes)[i] <- colnames(css_results$X)[proto_i]
+    }
+
+    # Check output
+
+    stopifnot(is.integer(prototypes))
+    stopifnot(all(!is.na(prototypes)))
+    stopifnot(length(prototypes) == length(unique(prototypes)))
+
+    return(prototypes)
+}
+```
+
+Tests for getSelectionPrototypes:
+
 Tests for print.cssr:
+
+```{r}
+testthat::test_that("print.cssr works", {
+  set.seed(67234)
+  
+  data <- genLatentData(n=15, p=11, k_unclustered=1, cluster_size=3,
+                        n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
+  
+  x <- data$X
+  y <- data$y
+  
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
+  
+  css_results <- css(X=x, y=y, lambda=0.01, clusters=good_clusters)
+  
+  # ret <- print.cssr(css_results)
+  
+  # testthat::expect_true(is.data.frame(ret))
+  # testhat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+  #                                            "ClustSelProp", "ClustSize"))
+  
+  # testthat::expect_true(is.character(ret$ClustName))
+  # testthat::expect_true(is.integer(ret$ClustProtoNum))
+  # testthat::expect_true(is.numeric(ret$ClustSelProp))
+  # testthat::expect_true(is.integer(ret$ClustSize))
+  # testthat::expect_equal(ret[ret$ClustName=="red_cluster", "ClustSize"], 3)
+  # testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but two clusters of size 3, so maximum size should
+  # # be 11 - 2 - 2 = 7
+  # testthat::expect_true(ret <= 7)
+  # 
+  # ## Trying other inputs
+  # 
+  # unnamed_clusters <- list(1L:3L, 5L:8L)
+  # 
+  # ret <- print.cssr(X=x, y=y, clusters=unnamed_clusters)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # # be 11 - 2 - 3 = 6
+  # testthat::expect_true(ret <= 6)
+  # 
+  # # Single cluster
+  # ret <- print.cssr(X=x, y=y, clusters=2:5)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8
+  # testthat::expect_true(ret <= 8)
+  # 
+  # 
+  # # Intentionally don't provide clusters for all feature, mix up formatting,
+  # # etc.
+  # good_clusters <- list(red_cluster=1:3, 5:8)
+  # 
+  # ret <- print.cssr(X=x, y=y, clusters=good_clusters)
+  # 
+  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  # testthat::expect_true(!is.na(ret))
+  # testthat::expect_equal(length(ret), 1)
+  # testthat::expect_equal(ret, round(ret))
+  # testthat::expect_true(ret >= 1)
+  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
+  # # be 11 - 2 - 3 = 6
+  # testthat::expect_true(ret <= 6)
+  # 
+  # ## Trying bad inputs
+  # 
+  # testthat::expect_error(print.cssr(X="x", y=y, clusters=good_clusters),
+  #                        "is.matrix(X) | is.data.frame(X) is not TRUE", fixed=TRUE)
+  # 
+
+})
+```
+
 
 ### Convenient Wrapper Functions
 

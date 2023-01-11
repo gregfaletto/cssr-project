@@ -3,8 +3,7 @@
 #' Print cluster stabilty selection output
 #'
 #' Print a summary of the information from the css function.
-#' @param x An object of class "cssr" (the output of the function
-#' css).
+#' @param x An object of class "cssr" (the output of the function css).
 #' @param cutoff Numeric; print.cssr will display only those
 #' clusters with selection proportions equal to at least cutoff. Must be between
 #' 0 and 1. Default is 0 (in which case either all clusters are displayed, or
@@ -22,13 +21,13 @@
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
 #' order of cluster selection proportion from top to bottom. The columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
-#' css if no name was provided), ClustProtoName (only returned if the features
-#' have names), the name of the prototype from the cluster, which is the feature
-#' with the greatest individual selection proportion among all the cluster
-#' members (if there is a tie, it is broken by choosing the feature with the
-#' highest correlation with the response), ClustProtoNum (the column number of
-#' the prototype in the X matrix provided to css), and ClustSize (the size of
-#' the cluster).
+#' css if no name was provided); ClustProtoName (the name of the selection
+#' prototype from the cluster, which is the feature with the greatest individual
+#' selection proportion among all the cluster members, with ties broken by
+#' choosing the feature with the highest correlation with the response if the
+#' response is real-valued; only returned if the features are named),
+#' ClustProtoNum (the column number of the prototype in the X matrix provided to
+#' css), and ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
@@ -53,11 +52,12 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with
-    # y from data provided to css)
+    # y from data provided to css if y is real-valued)
     prototypes <- getSelectionPrototypes(css_results, sel_clusts)
-
+    
     # Cluster selection proportions
-    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[, names(sel_clusts)])
+    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
+        names(sel_clusts)])
 
     # Data.frame: name of cluster, cluster prototype, selection proportion,
     # cluster size
@@ -78,6 +78,8 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
 
     rownames(print_df) <- NULL
+
+    # print.data.frame(print_df)
 
     return(print_df)
 }
