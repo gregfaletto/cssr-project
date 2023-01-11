@@ -1,6 +1,6 @@
 # Generated from create-cssr.Rmd: do not edit by hand
 
-#' Print cluster stabilty selection output
+#' Print cluster stability selection output
 #'
 #' Print a summary of the information from the css function.
 #' @param x An object of class "cssr" (the output of the function css).
@@ -43,12 +43,12 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
         length(css_results$clusters))
 
-    sel_results <- getCssSelections(css_results, cutoff=cutoff,
-        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    sel_clusts <- getCssSelections(css_results, cutoff=cutoff,
+        min_num_clusts=min_num_clusts,
+        max_num_clusts=max_num_clusts)$selected_clusts
 
-    sel_clusts <- sel_results$selected_clusts
-
-    n_sel_clusts <- length(sel_clusts)
+    # sel_clusts is guaranteed to have length at least 1 by
+    # getCssSelections 
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with

@@ -63,7 +63,7 @@
 #' @export
 getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, trainX=NA, trainY=NA){
-    # TODO(gfaletto) Consider adding an argument for a user-provided prediction
+    # TODO(gregfaletto) Consider adding an argument for a user-provided prediction
     # function in order to allow for more general kinds of predictions than
     # OLS.
 

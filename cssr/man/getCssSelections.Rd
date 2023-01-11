@@ -47,7 +47,7 @@ max_num_clusts clusters are selected.) Default is NA (in which case
 max_num_clusts is ignored).}
 }
 \value{
-A named list with two items. \item{selected_clusts}{A list of
+A named list with two items. \item{selected_clusts}{A named list of
 integer vectors; each vector contains the indices of the features in one of
 the selected clusters.} \item{selected_feats}{A named integer vector; the
 indices of the features with nonzero weights from all of the selected

@@ -23,7 +23,7 @@
 cssLasso <- function(X, y, lambda){
     # Check inputs
 
-    # TODO @gfaletto allow cssLasso to accept a vector of lambda values rather
+    # TODO(gregfaletto) allow cssLasso to accept a vector of lambda values rather
     # than just a single one.
     checkCssLassoInputs(X, y, lambda)
 

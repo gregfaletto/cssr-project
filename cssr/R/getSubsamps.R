@@ -29,7 +29,7 @@ getSubsamps <- function(n, B, sampling_type){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }
     stopifnot(length(subsamples) == B)
-    # TODO @gfaletto: add support for sampling_type="MS"
+    # TODO(gregfaletto): add support for sampling_type="MS"
     if(sampling_type=="SS"){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the

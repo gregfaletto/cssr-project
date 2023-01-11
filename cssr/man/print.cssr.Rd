@@ -2,7 +2,7 @@
 % Please edit documentation in create-cssr.Rmd.
 \name{print.cssr}
 \alias{print.cssr}
-\title{Print cluster stabilty selection output}
+\title{Print cluster stability selection output}
 \usage{
 \method{print}{cssr}(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA, ...)
 }

@@ -749,7 +749,7 @@ to generate a list of subsamples.</p>
         subsamples[[i]] &lt;- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }
     stopifnot(length(subsamples) == B)
-    # TODO @gfaletto: add support for sampling_type=&quot;MS&quot;
+    # TODO(gregfaletto): add support for sampling_type=&quot;MS&quot;
     if(sampling_type==&quot;SS&quot;){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the
@@ -921,7 +921,7 @@ here.</p>
 <span id='cssLasso'>cssLasso</span> &lt;- function(X, y, lambda){
     # Check inputs
 
-    # TODO @gfaletto allow cssLasso to accept a vector of lambda values rather
+    # TODO(gregfaletto) allow cssLasso to accept a vector of lambda values rather
     # than just a single one.
     <a href='create-cssr.html#checkCssLassoInputs'>checkCssLassoInputs</a>(X, y, lambda)
 
@@ -1391,7 +1391,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1693,7 +1693,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1781,7 +1781,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -3392,7 +3392,7 @@ where it is called).</li>
 #&#39; max_num_clusts clusters, the cutoff will be decreased until at most
 #&#39; max_num_clusts clusters are selected.) Default is NA (in which case
 #&#39; max_num_clusts is ignored).
-#&#39; @return A named list with two items. \item{selected_clusts}{A list of
+#&#39; @return A named list with two items. \item{selected_clusts}{A named list of
 #&#39; integer vectors; each vector contains the indices of the features in one of
 #&#39; the selected clusters.} \item{selected_feats}{A named integer vector; the
 #&#39; indices of the features with nonzero weights from all of the selected
@@ -3419,6 +3419,8 @@ where it is called).</li>
     sel_results &lt;- <a href='create-cssr.html#getSelectedClusters'>getSelectedClusters</a>(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)
 
+    # sel_results$selected_clusts is guaranteed to have length at least 1 by
+    # getSelectedClusters
     sel_clust_names &lt;- names(sel_results$selected_clusts)
 
     stopifnot(length(sel_clust_names) &gt;= 1)
@@ -3430,6 +3432,11 @@ where it is called).</li>
         names(sel_clusts)[i] &lt;- sel_clust_names[i]
     }
 
+    stopifnot(is.list(sel_clusts))
+    stopifnot(length(sel_clusts) == length(sel_clust_names))
+
+    # sel_results$selected_feats is guaranteed to have length at least as long
+    # as sel_results$selected_clusts by getSelectedClusters
     return(list(selected_clusts=sel_clusts,
         selected_feats=sel_results$selected_feats))
 }</code></pre>
@@ -3722,6 +3729,8 @@ where it is called).</li>
             }
         }
     }
+    
+    stopifnot(length(selected_clusts) &gt;= 1)
 
     clust_names &lt;- names(selected_clusts)
 
@@ -5987,7 +5996,7 @@ where it is called).</li>
 #&#39; @export
 <span id='getCssPreds'>getCssPreds</span> &lt;- function(css_results, testX, weighting=&quot;weighted_avg&quot;, cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, trainX=NA, trainY=NA){
-    # TODO(gfaletto) Consider adding an argument for a user-provided prediction
+    # TODO(gregfaletto) Consider adding an argument for a user-provided prediction
     # function in order to allow for more general kinds of predictions than
     # OLS.
 
@@ -6910,7 +6919,7 @@ response)</li>
 </ul></li>
 </ul>
 <p>genLatentData</p>
-<pre class="r"><code># TODO @gfaletto change cluster_size into a vector of sizes (maybe also
+<pre class="r"><code># TODO(gregfaletto) change cluster_size into a vector of sizes (maybe also
 # deprecate n_clusters as an input, since this would be inferred by the length
 # of cluster_sizes?)
 
@@ -8464,7 +8473,7 @@ response)</li>
 ##  2. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
 ##  3. glmnet:::cv.glmnet.raw(...)</code></pre>
 <p>print.cssr:</p>
-<pre class="r"><code>#&#39; Print cluster stabilty selection output
+<pre class="r"><code>#&#39; Print cluster stability selection output
 #&#39;
 #&#39; Print a summary of the information from the css function.
 #&#39; @param x An object of class &quot;cssr&quot; (the output of the function css).
@@ -8507,12 +8516,12 @@ response)</li>
     max_num_clusts &lt;- <a href='create-cssr.html#checkMaxNumClusts'>checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,
         length(css_results$clusters))
 
-    sel_results &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_results, cutoff=cutoff,
-        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    sel_clusts &lt;- <a href='create-cssr.html#getCssSelections'>getCssSelections</a>(css_results, cutoff=cutoff,
+        min_num_clusts=min_num_clusts,
+        max_num_clusts=max_num_clusts)$selected_clusts
 
-    sel_clusts &lt;- sel_results$selected_clusts
-
-    n_sel_clusts &lt;- length(sel_clusts)
+    # sel_clusts is guaranteed to have length at least 1 by
+    # getCssSelections 
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with
@@ -8568,10 +8577,10 @@ response)</li>
     # Check inputs
     stopifnot(class(css_results) == &quot;cssr&quot;)
 
-    stopifnot(all(lengths(selected_clusts) &gt;= 1))
     stopifnot(is.list(selected_clusts))
-
     n_selected_clusts &lt;- length(selected_clusts)
+    stopifnot(n_selected_clusts &gt;= 1)
+    stopifnot(all(lengths(selected_clusts) &gt;= 1))
 
     prototypes &lt;- rep(as.integer(NA), n_selected_clusts)
     for(i in 1:n_selected_clusts){
@@ -8601,7 +8610,70 @@ response)</li>
 
     return(prototypes)
 }</code></pre>
-<p>Tests for getSelectionPrototypes</p>
+<p>Tests for getSelectionPrototypes:</p>
+<pre class="r"><code>testthat::test_that(&quot;getSelectionPrototypes works&quot;, {
+  set.seed(67234)
+  
+  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+                        n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
+  
+  x &lt;- data$X
+  y &lt;- data$y
+  
+  good_clusters &lt;- list(red_cluster=1L:3L, green_cluster=4L:6L)
+  
+  css_results &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters)
+  
+  ret &lt;- <a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(css_results, selected_clusts=good_clusters)
+  
+  testthat::expect_true(is.integer(ret))
+  testthat::expect_true(all(!is.na(ret)))
+  testthat::expect_equal(length(ret), length(good_clusters))
+  testthat::expect_equal(length(ret), length(unique(ret)))
+  for(i in 1:length(ret)){
+    testthat::expect_true(ret[i] %in% good_clusters[[i]])
+    # Find the largest selection proportion of any feature in cluster i
+    max_prop &lt;- max(colMeans(css_results$feat_sel_mat[, good_clusters[[i]]]))
+    # Find the selection proportion of the identified prototype
+    proto_prop &lt;- colMeans(css_results$feat_sel_mat)[ret[i]]
+    testthat::expect_equal(max_prop, proto_prop)
+  }
+  
+  # Try with only one selected cluster (still should be in a list)
+
+  ret &lt;- <a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(css_results,
+                                selected_clusts=list(red_cluster=1L:3L))
+
+  testthat::expect_true(is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_true(ret %in% 1L:3L)
+  # Find the largest selection proportion of any feature in the cluster
+  max_prop &lt;- max(colMeans(css_results$feat_sel_mat[, 1L:3L]))
+  # Find the selection proportion of the identified prototype
+  proto_prop &lt;- colMeans(css_results$feat_sel_mat)[ret]
+  testthat::expect_equal(max_prop, proto_prop)
+
+  ## Trying bad inputs
+
+  # Error contains quotation marks
+  testthat::expect_error(<a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(x, good_clusters))
+
+  testthat::expect_error(<a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(css_results, 1L:3L),
+                         &quot;is.list(selected_clusts) is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(css_results, list()),
+                         &quot;n_selected_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#getSelectionPrototypes'>getSelectionPrototypes</a>(css_results,
+                                                list(red_cluster=1L:3L,
+                                                     green_cluster=4L:6L,
+                                                     bad_cluster=integer())),
+                         &quot;all(lengths(selected_clusts) &gt;= 1) is not TRUE&quot;,
+                         fixed=TRUE)
+
+})</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>Tests for print.cssr:</p>
 <pre class="r"><code>testthat::test_that(&quot;print.cssr works&quot;, {
   set.seed(67234)
@@ -8616,18 +8688,87 @@ response)</li>
   
   css_results &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters)
   
-  # ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(css_results)
+  ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(css_results)
   
-  # testthat::expect_true(is.data.frame(ret))
-  # testhat::expect_identical(colnames(ret), c(&quot;ClustName&quot;, &quot;ClustProtoNum&quot;,
-  #                                            &quot;ClustSelProp&quot;, &quot;ClustSize&quot;))
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c(&quot;ClustName&quot;, &quot;ClustProtoNum&quot;,
+                                              &quot;ClustSelProp&quot;, &quot;ClustSize&quot;))
   
-  # testthat::expect_true(is.character(ret$ClustName))
-  # testthat::expect_true(is.integer(ret$ClustProtoNum))
-  # testthat::expect_true(is.numeric(ret$ClustSelProp))
-  # testthat::expect_true(is.integer(ret$ClustSize))
-  # testthat::expect_equal(ret[ret$ClustName==&quot;red_cluster&quot;, &quot;ClustSize&quot;], 3)
-  # testthat::expect_equal(ret[ret$ClustName==&quot;green_cluster&quot;, &quot;ClustSize&quot;], 3)
+  # Total number of clusters is 11 - (3 - 1) - (3 - 1) = 7
+  testthat::expect_equal(nrow(ret), 7)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_true(all(names(good_clusters) %in% ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+  
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  testthat::expect_true(ret[ret$ClustName==&quot;red_cluster&quot;,
+                            &quot;ClustProtoNum&quot;] %in% 1L:3L)
+  testthat::expect_true(ret[ret$ClustName==&quot;green_cluster&quot;,
+                            &quot;ClustProtoNum&quot;] %in% 4L:6L)
+  other_rows &lt;- !(ret$ClustName %in% c(&quot;red_cluster&quot;, &quot;green_cluster&quot;))
+  testthat::expect_true(all(ret[other_rows, &quot;ClustProtoNum&quot;] %in% 7L:11L))
+  testthat::expect_true(length(ret[other_rows, &quot;ClustProtoNum&quot;]) ==
+                          length(unique(ret[other_rows, &quot;ClustProtoNum&quot;])))
+  
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+  
+  testthat::expect_true(is.integer(ret$ClustSize))
+  testthat::expect_equal(ret[ret$ClustName==&quot;red_cluster&quot;, &quot;ClustSize&quot;], 3)
+  testthat::expect_equal(ret[ret$ClustName==&quot;green_cluster&quot;, &quot;ClustSize&quot;], 3)
+  testthat::expect_true(all(ret[other_rows, &quot;ClustSize&quot;] == 1))
+  
+  # Try again naming features
+  
+  x_named &lt;- x
+  colnames(x_named) &lt;- LETTERS[1:11]
+  
+  css_results &lt;- <a href='create-cssr.html#css'>css</a>(X=x_named, y=y, lambda=0.01, clusters=good_clusters)
+  
+  ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(css_results)
+  
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c(&quot;ClustName&quot;, &quot;ClustProtoName&quot;,
+                                              &quot;ClustProtoNum&quot;, &quot;ClustSelProp&quot;,
+                                              &quot;ClustSize&quot;))
+  
+  # Total number of clusters is 11 - (3 - 1) - (3 - 1) = 7
+  testthat::expect_equal(nrow(ret), 7)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_true(all(names(good_clusters) %in% ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+  
+  testthat::expect_true(is.character(ret$ClustProtoName))
+  testthat::expect_true(ret[ret$ClustName==&quot;red_cluster&quot;,
+                            &quot;ClustProtoName&quot;] %in% LETTERS[1:3])
+  testthat::expect_true(ret[ret$ClustName==&quot;green_cluster&quot;,
+                            &quot;ClustProtoName&quot;] %in% LETTERS[4:6])
+  other_rows &lt;- !(ret$ClustName %in% c(&quot;red_cluster&quot;, &quot;green_cluster&quot;))
+  testthat::expect_true(all(ret[other_rows, &quot;ClustProtoName&quot;] %in% LETTERS[7:11]))
+  testthat::expect_true(length(ret[other_rows, &quot;ClustProtoName&quot;]) ==
+                          length(unique(ret[other_rows, &quot;ClustProtoName&quot;])))
+  
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  testthat::expect_true(ret[ret$ClustName==&quot;red_cluster&quot;,
+                            &quot;ClustProtoNum&quot;] %in% 1L:3L)
+  testthat::expect_true(ret[ret$ClustName==&quot;green_cluster&quot;,
+                            &quot;ClustProtoNum&quot;] %in% 4L:6L)
+  testthat::expect_true(all(ret[other_rows, &quot;ClustProtoNum&quot;] %in% 7L:11L))
+  testthat::expect_true(length(ret[other_rows, &quot;ClustProtoNum&quot;]) ==
+                          length(unique(ret[other_rows, &quot;ClustProtoNum&quot;])))
+  
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+  
+  testthat::expect_true(is.integer(ret$ClustSize))
+  testthat::expect_equal(ret[ret$ClustName==&quot;red_cluster&quot;, &quot;ClustSize&quot;], 3)
+  testthat::expect_equal(ret[ret$ClustName==&quot;green_cluster&quot;, &quot;ClustSize&quot;], 3)
+  testthat::expect_true(all(ret[other_rows, &quot;ClustSize&quot;] == 1))
+  
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8687,8 +8828,7 @@ response)</li>
   # 
 
 })</code></pre>
-<pre><code>## ── Skip (???): print.cssr works ────────────────────────────────────────────────
-## Reason: empty test</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>

@@ -20,10 +20,10 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
     # Check inputs
     stopifnot(class(css_results) == "cssr")
 
-    stopifnot(all(lengths(selected_clusts) >= 1))
     stopifnot(is.list(selected_clusts))
-
     n_selected_clusts <- length(selected_clusts)
+    stopifnot(n_selected_clusts >= 1)
+    stopifnot(all(lengths(selected_clusts) >= 1))
 
     prototypes <- rep(as.integer(NA), n_selected_clusts)
     for(i in 1:n_selected_clusts){

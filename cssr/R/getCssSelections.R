@@ -32,7 +32,7 @@
 #' max_num_clusts clusters, the cutoff will be decreased until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
-#' @return A named list with two items. \item{selected_clusts}{A list of
+#' @return A named list with two items. \item{selected_clusts}{A named list of
 #' integer vectors; each vector contains the indices of the features in one of
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
 #' indices of the features with nonzero weights from all of the selected
@@ -59,6 +59,8 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     sel_results <- getSelectedClusters(css_results, weighting, cutoff,
         min_num_clusts, max_num_clusts)
 
+    # sel_results$selected_clusts is guaranteed to have length at least 1 by
+    # getSelectedClusters
     sel_clust_names <- names(sel_results$selected_clusts)
 
     stopifnot(length(sel_clust_names) >= 1)
@@ -70,6 +72,11 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
         names(sel_clusts)[i] <- sel_clust_names[i]
     }
 
+    stopifnot(is.list(sel_clusts))
+    stopifnot(length(sel_clusts) == length(sel_clust_names))
+
+    # sel_results$selected_feats is guaranteed to have length at least as long
+    # as sel_results$selected_clusts by getSelectedClusters
     return(list(selected_clusts=sel_clusts,
         selected_feats=sel_results$selected_feats))
 }
