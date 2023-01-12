@@ -1393,7 +1393,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1695,7 +1695,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1783,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1849,7 +1849,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -2341,7 +2341,7 @@ have been defined.)</p>
   # etc.
   good_clusters &lt;- list(red_cluster=1L:5L,
                         green_cluster=6L:8L
-                        # , c4=as.numeric(10:11)
+                        # , c4=10:11
                         )
   
   res &lt;- <a href='create-cssr.html#checkCssInputs'>checkCssInputs</a>(X=x, y=y, lambda=0.01, clusters=good_clusters,
@@ -3115,7 +3115,7 @@ defined)</h1>
   # etc.
   good_clusters &lt;- list(red_cluster=1L:5L,
                         green_cluster=6L:8L,
-                        c4=as.numeric(10:11))
+                        c4=10:11)
   
   res &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, fitfun = cssLasso,
     sampling_type = &quot;SS&quot;, B = 13,
@@ -9038,8 +9038,7 @@ response)</li>
 #&#39; @author Gregory Faletto, Jacob Bien
 #&#39; @export
 <span id='cssSelect'>cssSelect</span> &lt;- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
-    max_num_clusts=NA, auto_select_size=TRUE
-    ){
+    max_num_clusts=NA, auto_select_size=TRUE){
 
     # Check inputs (most inputs will be checked by called functions)
 
@@ -9087,6 +9086,174 @@ response)</li>
         min_num_clusts=1, max_num_clusts=max_num_clusts)
 }</code></pre>
 <p>Tests for cssSelect:</p>
+<pre class="r"><code>testthat::test_that(&quot;cssSelect works&quot;, {
+  set.seed(73212)
+  
+  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+                        n_clusters=2, sig_clusters=1, sigma_eps_sq=1)
+  
+  x &lt;- data$X
+  y &lt;- data$y
+  
+  # Intentionally don&#39;t provide clusters for all feature, mix up formatting,
+  # etc.
+  good_clusters &lt;- list(red_cluster=1L:3L, 4:6)
+  
+  res &lt;- <a href='create-cssr.html#cssSelect'>cssSelect</a>(X=x, y=y, clusters=good_clusters)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c(&quot;selected_clusts&quot;, &quot;selected_feats&quot;))
+  testthat::expect_true(length(res$selected_clusts) &lt;=
+                          length(res$selected_feats))
+
+  # testthat::expect_true(is.list(res$selected_clusts))
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                          length(res$selected_clusts))
+  # testthat::expect_equal(length(names(res$selected_clusts)),
+  #                          length(unique(names(res$selected_clusts))))
+  # already_used_feats &lt;- integer()
+  # for(i in 1:length(res$selected_clusts)){
+  #   sels_i &lt;- res$selected_clusts[[i]]
+  #   testthat::expect_true(length(sels_i) &gt;= 1)
+  #   testthat::expect_true(is.integer(sels_i))
+  #   testthat::expect_true(all(sels_i %in% 1:11))
+  #   testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+  #   testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+  #   already_used_feats &lt;- c(already_used_feats, sels_i)
+  # }
+  # testthat::expect_true(length(already_used_feats) &lt;= 11)
+  # testthat::expect_equal(length(already_used_feats),
+  #                        length(unique(already_used_feats)))
+  # testthat::expect_true(all(already_used_feats %in% 1:11))
+  # 
+  # testthat::expect_true(is.integer(res$selected_feats))
+  # testthat::expect_true(length(res$selected_feats) &gt;= 1)
+  # testthat::expect_equal(length(names(res$selected_feats)),
+  #                        length(unique(names(res$selected_feats))))
+  # testthat::expect_true(all(res$selected_feats &gt;= 1))
+  # testthat::expect_true(all(res$selected_feats &lt;= 7))
+  # testthat::expect_equal(length(res$selected_feats),
+  #                            length(unique(res$selected_feats)))
+
+  # ## Trying other inputs
+  # 
+  # # X as a data.frame
+  # X_df &lt;- datasets::mtcars
+  # res_fitfun &lt;- <a href='create-cssr.html#css'>css</a>(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  # testthat::expect_identical(class(res_fitfun), &quot;cssr&quot;)
+  # 
+  # # X as a dataframe with factors (number of columns of final design matrix
+  # # after one-hot encoding factors won&#39;t match number of columns of df2)
+  # df2 &lt;- X_df
+  # df2$cyl &lt;- as.factor(df2$cyl)
+  # df2$vs &lt;- as.factor(df2$vs)
+  # df2$am &lt;- as.factor(df2$am)
+  # df2$gear &lt;- as.factor(df2$gear)
+  # df2$carb &lt;- as.factor(df2$carb)
+  # 
+  # res_fitfun &lt;- <a href='create-cssr.html#css'>css</a>(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  # testthat::expect_identical(class(res_fitfun), &quot;cssr&quot;)
+  # 
+  # # X as a matrix with column names
+  # x2 &lt;- x
+  # colnames(x2) &lt;- LETTERS[1:11]
+  # res_names &lt;- <a href='create-cssr.html#css'>css</a>(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
+  # testthat::expect_identical(class(res_names), &quot;cssr&quot;)
+  # testthat::expect_identical(colnames(x2), colnames(res_names$X))
+  # testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
+  # 
+  # # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
+  # # shouldn&#39;t throw any error, because the acceptable input for lambda should be
+  # # enforced only by fitfun)
+  # 
+  # <span id='testFitfun'>testFitfun</span> &lt;- function(X, y, lambda){
+  #   p &lt;- ncol(X)
+  #   stopifnot(p &gt;= 2)
+  #   # Choose p/2 features randomly
+  #   selected &lt;- sample.int(p, size=floor(p/2))
+  #   return(selected)
+  # }
+  # 
+  # res_fitfun &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=c(&quot;foo&quot;, as.character(NA), &quot;bar&quot;),
+  #                   clusters=1:3, B = 10, fitfun=testFitfun)
+  # testthat::expect_identical(class(res_fitfun), &quot;cssr&quot;)
+  # 
+  # # Bad lambda
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=-0.01, B = 10),
+  #                        &quot;For method cssLasso, lambda must be nonnegative.&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=&quot;foo&quot;, B = 10),
+  #                        &quot;For method cssLasso, lambda must be a numeric.&quot;,
+  #                        fixed=TRUE)
+  # 
+  # # Single cluster
+  # res_sing_clust &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=1:3, B = 10)
+  # testthat::expect_identical(class(res_sing_clust), &quot;cssr&quot;)
+  # testthat::expect_equal(length(res_sing_clust$clusters), 11 - 3 + 1)
+  # testthat::expect_true(length(unique(names(res_sing_clust$clusters))) == 11 -
+  #                         3 + 1)
+  # testthat::expect_true(all(!is.na(names(res_sing_clust$clusters))))
+  # testthat::expect_true(all(!is.null(names(res_sing_clust$clusters))))
+  # 
+  # # No cluster
+  # testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, B = 10)), &quot;cssr&quot;)
+  # 
+  # # All clusters named
+  # testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, clusters=list(&quot;a&quot;=1:5,
+  #                                                              &quot;b&quot;=6:10,
+  #                                                              &quot;c&quot;=11),
+  #                                      lambda=0.01, B=10)), &quot;cssr&quot;)
+  # 
+  # # Other sampling types
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, sampling_type=&quot;MB&quot;),
+  #                        &quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;,
+  #                        fixed=TRUE)
+  # 
+  # # Error has quotation marks in it
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, sampling_type=&quot;S&quot;))
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, sampling_type=1),
+  #                        &quot;is.character(sampling_type) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # # B
+  # testthat::expect_warning(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, B=5),
+  #                          &quot;Small values of B may lead to poor results.&quot;,
+  #                          fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=1, B=list(10)),
+  #                          &quot;is.numeric(B) | is.integer(B) is not TRUE&quot;,
+  #                          fixed=TRUE)
+  # 
+  # # prop_feats_remove
+  # testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, B = 10,
+  #                                      prop_feats_remove=0.3)), &quot;cssr&quot;)
+  # # Weirdly high, but still valid, value of prop_feats_remove
+  # testthat::expect_identical(class(<a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, B = 10,
+  #                                      prop_feats_remove=0.9999999999)), &quot;cssr&quot;)
+  # 
+  # # Use train_inds argument
+  # res_train &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
+  # testthat::expect_equal(res_train$train_inds, 11:15)
+
+})</code></pre>
+<pre><code>## ── Warning (&#39;&lt;text&gt;:14&#39;): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssSelect'>cssSelect</a>(X = x, y = y, clusters = good_clusters)
+##  2. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:14&#39;): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssSelect'>cssSelect</a>(X = x, y = y, clusters = good_clusters)
+##  2. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X, y, css_results$clusters)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  4. glmnet:::cv.glmnet.raw(...)</code></pre>
 <p>cssPredict:</p>
 <pre class="r"><code>#&#39; Wrapper function to generate predictions from cluster stability selected
 #&#39; model in one step
