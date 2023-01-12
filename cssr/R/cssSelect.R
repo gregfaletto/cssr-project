@@ -56,11 +56,8 @@
 #' only one feature is selected from each cluster).}
 #' @author Gregory Faletto, Jacob Bien
 #' @export
-cssSelect <- function(X, y, clusters = list()
-    , lambda=NA
-    , cutoff=NA
-    , max_num_clusts=NA
-    , auto_select_size=TRUE
+cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
+    max_num_clusts=NA, auto_select_size=TRUE
     ){
 
     # Check inputs (most inputs will be checked by called functions)
@@ -69,10 +66,23 @@ cssSelect <- function(X, y, clusters = list()
     stopifnot(length(auto_select_size) == 1)
     stopifnot(is.logical(auto_select_size))
 
-    if(!is.numeric(y) & !is.integer(y)){
-        stop("The provided y must be real-valued. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")
+    stopifnot(is.matrix(X) | is.data.frame(X))
+    stopifnot(all(!is.na(X)))
+
+    # Check if x is a matrix; if it's a data.frame, convert to matrix.
+    if(is.data.frame(X)){
+        X <- stats::model.matrix(~ ., X)
+        X <- X[, colnames(X) != "(Intercept)"]
     }
 
+    stopifnot(is.matrix(X))
+    stopifnot(all(!is.na(X)))
+
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")
+    }
+
+    stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
         lambda <- getLassoLambda(X, y)
     }

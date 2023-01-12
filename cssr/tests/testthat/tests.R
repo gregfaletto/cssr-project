@@ -4395,9 +4395,10 @@ testthat::test_that("printCssDf works", {
   x_named <- x
   colnames(x_named) <- LETTERS[1:11]
   
-  css_results <- css(X=x_named, y=y, lambda=0.01, clusters=good_clusters, B=10)
+  css_results_name_feats <- css(X=x_named, y=y, lambda=0.01,
+                                clusters=good_clusters, B=10)
   
-  ret <- printCssDf(css_results)
+  ret <- printCssDf(css_results_name_feats)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoName",
@@ -4439,65 +4440,161 @@ testthat::test_that("printCssDf works", {
   testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
   testthat::expect_true(all(ret[other_rows, "ClustSize"] == 1))
   
+  # Unnamed clusters
+  
+  unnamed_clusters <- list(1:3, 4:6)
+  
+  css_results_unnamed <- css(X=x, y=y, lambda=0.01, clusters=unnamed_clusters,
+                             B=10)
+  
+  ret <- printCssDf(css_results_unnamed)
+  
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+                                              "ClustSelProp", "ClustSize"))
+  
+  # Total number of clusters is 11 - (3 - 1) - (3 - 1) = 7
+  testthat::expect_equal(nrow(ret), 7)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+  
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+  
+  testthat::expect_true(is.integer(ret$ClustSize))
+  
   # Try other settings for cutoff, min_num_clusts, max_num_clusts, etc.
   
-  # 
-  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
-  # testthat::expect_true(!is.na(ret))
-  # testthat::expect_equal(length(ret), 1)
-  # testthat::expect_equal(ret, round(ret))
-  # testthat::expect_true(ret >= 1)
-  # # 11 features, but two clusters of size 3, so maximum size should
-  # # be 11 - 2 - 2 = 7
-  # testthat::expect_true(ret <= 7)
-  # 
-  # ## Trying other inputs
-  # 
-  # unnamed_clusters <- list(1L:3L, 5L:8L)
-  # 
-  # ret <- printCssDf(X=x, y=y, clusters=unnamed_clusters)
-  # 
-  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
-  # testthat::expect_true(!is.na(ret))
-  # testthat::expect_equal(length(ret), 1)
-  # testthat::expect_equal(ret, round(ret))
-  # testthat::expect_true(ret >= 1)
-  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
-  # # be 11 - 2 - 3 = 6
-  # testthat::expect_true(ret <= 6)
-  # 
-  # # Single cluster
-  # ret <- printCssDf(X=x, y=y, clusters=2:5)
-  # 
-  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
-  # testthat::expect_true(!is.na(ret))
-  # testthat::expect_equal(length(ret), 1)
-  # testthat::expect_equal(ret, round(ret))
-  # testthat::expect_true(ret >= 1)
-  # # 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8
-  # testthat::expect_true(ret <= 8)
-  # 
-  # 
-  # # Intentionally don't provide clusters for all feature, mix up formatting,
-  # # etc.
-  # good_clusters <- list(red_cluster=1:3, 5:8)
-  # 
-  # ret <- printCssDf(X=x, y=y, clusters=good_clusters)
-  # 
-  # testthat::expect_true(is.numeric(ret) | is.integer(ret))
-  # testthat::expect_true(!is.na(ret))
-  # testthat::expect_equal(length(ret), 1)
-  # testthat::expect_equal(ret, round(ret))
-  # testthat::expect_true(ret >= 1)
-  # # 11 features, but 3 in one cluster and 4 in another, so maximum size should
-  # # be 11 - 2 - 3 = 6
-  # testthat::expect_true(ret <= 6)
-  # 
-  # ## Trying bad inputs
-  # 
-  # testthat::expect_error(printCssDf(X="x", y=y, clusters=good_clusters),
-  #                        "is.matrix(X) | is.data.frame(X) is not TRUE", fixed=TRUE)
-  # 
+  ret <- printCssDf(css_results, max_num_clusts=3)
+  
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+                                              "ClustSelProp", "ClustSize"))
 
+  testthat::expect_true(nrow(ret) <= 3)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+  
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  other_rows <- !(ret$ClustName %in% c("red_cluster", "green_cluster"))
+  testthat::expect_true(all(ret[other_rows, "ClustProtoNum"] %in% 7L:11L))
+  testthat::expect_true(length(ret[other_rows, "ClustProtoNum"]) ==
+                          length(unique(ret[other_rows, "ClustProtoNum"])))
+  
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+  
+  testthat::expect_true(is.integer(ret$ClustSize))
+  testthat::expect_true(all(ret[other_rows, "ClustSize"] == 1))
+  
+  if("red_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="red_cluster",
+                              "ClustProtoNum"] %in% 1L:3L)
+    testthat::expect_equal(ret[ret$ClustName=="red_cluster", "ClustSize"], 3)
+  }
+  
+  if("green_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="green_cluster",
+                              "ClustProtoNum"] %in% 4L:6L)
+    testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
+  }
+  
+  ret <- printCssDf(css_results, min_num_clusts=2, cutoff=1)
+  
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+                                              "ClustSelProp", "ClustSize"))
+  
+  # Total number of clusters is 11 - (3 - 1) - (3 - 1) = 7
+  testthat::expect_true(nrow(ret) >= 2)
+  testthat::expect_true(nrow(ret) <= 7)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+  
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  other_rows <- !(ret$ClustName %in% c("red_cluster", "green_cluster"))
+  testthat::expect_true(all(ret[other_rows, "ClustProtoNum"] %in% 7L:11L))
+  testthat::expect_true(length(ret[other_rows, "ClustProtoNum"]) ==
+                          length(unique(ret[other_rows, "ClustProtoNum"])))
+  
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+  
+  testthat::expect_true(is.integer(ret$ClustSize))
+  testthat::expect_true(all(ret[other_rows, "ClustSize"] == 1))
+  
+  if("red_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="red_cluster",
+                              "ClustProtoNum"] %in% 1L:3L)
+    testthat::expect_equal(ret[ret$ClustName=="red_cluster", "ClustSize"], 3)
+  }
+  
+  if("green_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="green_cluster",
+                              "ClustProtoNum"] %in% 4L:6L)
+    testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
+  }
+  
+  #
+  ret <- printCssDf(css_results, cutoff=1)
+
+  testthat::expect_true(is.data.frame(ret))
+  testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
+                                              "ClustSelProp", "ClustSize"))
+
+  testthat::expect_true(nrow(ret) >= 1)
+  testthat::expect_true(nrow(ret) <= 7)
+
+  testthat::expect_true(is.character(ret$ClustName))
+  testthat::expect_equal(length(ret$ClustName), length(unique(ret$ClustName)))
+
+  testthat::expect_true(is.integer(ret$ClustProtoNum))
+  other_rows <- !(ret$ClustName %in% c("red_cluster", "green_cluster"))
+  testthat::expect_true(all(ret[other_rows, "ClustProtoNum"] %in% 7L:11L))
+  testthat::expect_true(length(ret[other_rows, "ClustProtoNum"]) ==
+                          length(unique(ret[other_rows, "ClustProtoNum"])))
+
+  testthat::expect_true(is.numeric(ret$ClustSelProp))
+  testthat::expect_identical(ret$ClustSelProp, sort(ret$ClustSelProp,
+                                                    decreasing=TRUE))
+
+  testthat::expect_true(is.integer(ret$ClustSize))
+  testthat::expect_true(all(ret[other_rows, "ClustSize"] == 1))
+
+  if("red_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="red_cluster",
+                              "ClustProtoNum"] %in% 1L:3L)
+    testthat::expect_equal(ret[ret$ClustName=="red_cluster", "ClustSize"], 3)
+  }
+
+  if("green_cluster" %in% ret$ClustName){
+    testthat::expect_true(ret[ret$ClustName=="green_cluster",
+                              "ClustProtoNum"] %in% 4L:6L)
+    testthat::expect_equal(ret[ret$ClustName=="green_cluster", "ClustSize"], 3)
+  }
+
+  ## Trying bad inputs
+
+  # Error has quotation marks in it
+  testthat::expect_error(printCssDf("css_results"))
+  
+  testthat::expect_error(printCssDf(css_results, cutoff=-.1),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(printCssDf(css_results, min_num_clusts=3.2),
+                         "min_num_clusts == round(min_num_clusts) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(printCssDf(css_results, max_num_clusts="5"),
+                         "is.numeric(max_num_clusts) | is.integer(max_num_clusts) is not TRUE",
+                         fixed=TRUE)
 })
 

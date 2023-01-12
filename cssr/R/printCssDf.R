@@ -56,8 +56,13 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
     prototypes <- getSelectionPrototypes(css_results, sel_clusts)
     
     # Cluster selection proportions
-    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
-        names(sel_clusts)])
+    if(length(sel_clusts) > 1){
+        sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
+            names(sel_clusts)])
+    } else{
+        sel_clust_sel_props <- mean(css_results$clus_sel_mat[,
+            names(sel_clusts)])
+    }
 
     # Data.frame: name of cluster, cluster prototype, selection proportion,
     # cluster size

@@ -73,19 +73,16 @@
 #' @return A named list with the following elements: \item{feat_names}{A 
 #' character vector containing the column names of X (if the provided X
 #' had column names). If the provided X did not have column names, feat_names
-#' will be NA.}\item{clusters}{A list of integer vectors; each vector will
-#' contain the indices of a cluster of features. Any duplicated clusters
+#' will be NA.} \item{X}{The provided X, converted to a matrix if it was
+#' originally provided as a data.frame, and with feature names removed if they
+#' had been provided.}\item{clusters}{A list of integer vectors; each vector
+#' will contain the indices of a cluster of features. Any duplicated clusters
 #' provided in the input will be removed.}
 #' @author Gregory Faletto, Jacob Bien
 checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     prop_feats_remove, train_inds, num_cores){
 
     stopifnot(is.matrix(X) | is.data.frame(X))
-  
-    feat_names <- as.character(NA)
-    if(!is.null(colnames(X))){
-        feat_names <- colnames(X)
-    }
 
     clust_names <- as.character(NA)
     if(!is.null(names(clusters))){
@@ -100,6 +97,11 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
+
+    feat_names <- as.character(NA)
+    if(!is.null(colnames(X))){
+        feat_names <- colnames(X)
+    }
 
     n <- nrow(X)
     p <- ncol(X)

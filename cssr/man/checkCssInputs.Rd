@@ -100,8 +100,10 @@ internally as the mc.cores argument of parallel::mclapply).}
 A named list with the following elements: \item{feat_names}{A
 character vector containing the column names of X (if the provided X
 had column names). If the provided X did not have column names, feat_names
-will be NA.}\item{clusters}{A list of integer vectors; each vector will
-contain the indices of a cluster of features. Any duplicated clusters
+will be NA.} \item{X}{The provided X, converted to a matrix if it was
+originally provided as a data.frame, and with feature names removed if they
+had been provided.}\item{clusters}{A list of integer vectors; each vector
+will contain the indices of a cluster of features. Any duplicated clusters
 provided in the input will be removed.}
 }
 \description{
