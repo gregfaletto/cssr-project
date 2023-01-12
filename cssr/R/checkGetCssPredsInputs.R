@@ -104,7 +104,7 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     testX <- results$newx
     feat_names <- results$feat_names
-    
+
     if(all(!is.na(feat_names))){
         stopifnot(length(feat_names) == ncol(testX))
         stopifnot(!("(Intercept)" %in% feat_names))

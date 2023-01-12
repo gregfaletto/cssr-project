@@ -86,7 +86,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
             }
         }
     }
-    
+
     stopifnot(length(selected_clusts) >= 1)
 
     clust_names <- names(selected_clusts)

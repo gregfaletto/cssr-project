@@ -1215,6 +1215,11 @@ testthat::test_that("css works", {
   testthat::expect_error(css(X=x, y=y, lambda=1, B=list(10)),
                            "is.numeric(B) | is.integer(B) is not TRUE",
                            fixed=TRUE)
+  
+  # Clusters
+  testthat::expect_error(css(X=x, y=y, lambda=1, clusters="red"),
+                           "is.numeric(clusters) | is.integer(clusters) is not TRUE",
+                           fixed=TRUE)
 
   # prop_feats_remove
   testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
@@ -4607,7 +4612,7 @@ testthat::test_that("cssSelect works", {
   x <- data$X
   y <- data$y
   
-  # Intentionally don't provide clusters for all feature, mix up formatting,
+  # Intentionally don't provide clusters for all features, mix up formatting,
   # etc.
   good_clusters <- list(red_cluster=1L:3L, 4:6)
   
@@ -4616,44 +4621,341 @@ testthat::test_that("cssSelect works", {
   testthat::expect_true(is.list(res))
   testthat::expect_equal(length(res), 2)
   testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  testthat::expect_true(!is.null(names(res$selected_clusts)))
+  testthat::expect_true(is.character(names(res$selected_clusts)))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+  # Total of 11 - 2*(3 - 1) = 7 clusters
+  testthat::expect_true(length(res$selected_clusts) <= 7)
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:11))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= 11)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:11))
+  
+  testthat::expect_true(length(res$selected_feats) <= 11)
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 11))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+  
+  # No provided clusters
+  
+  res <- cssSelect(X=x, y=y)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  testthat::expect_true(!is.null(names(res$selected_clusts)))
+  testthat::expect_true(is.character(names(res$selected_clusts)))
   testthat::expect_true(length(res$selected_clusts) <=
                           length(res$selected_feats))
 
-  # testthat::expect_true(is.list(res$selected_clusts))
-  # testthat::expect_equal(length(names(res$selected_clusts)),
-  #                          length(res$selected_clusts))
-  # testthat::expect_equal(length(names(res$selected_clusts)),
-  #                          length(unique(names(res$selected_clusts))))
-  # already_used_feats <- integer()
-  # for(i in 1:length(res$selected_clusts)){
-  #   sels_i <- res$selected_clusts[[i]]
-  #   testthat::expect_true(length(sels_i) >= 1)
-  #   testthat::expect_true(is.integer(sels_i))
-  #   testthat::expect_true(all(sels_i %in% 1:11))
-  #   testthat::expect_equal(length(sels_i), length(unique(sels_i)))
-  #   testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
-  #   already_used_feats <- c(already_used_feats, sels_i)
-  # }
-  # testthat::expect_true(length(already_used_feats) <= 11)
-  # testthat::expect_equal(length(already_used_feats),
-  #                        length(unique(already_used_feats)))
-  # testthat::expect_true(all(already_used_feats %in% 1:11))
-  # 
-  # testthat::expect_true(is.integer(res$selected_feats))
-  # testthat::expect_true(length(res$selected_feats) >= 1)
-  # testthat::expect_equal(length(names(res$selected_feats)),
-  #                        length(unique(names(res$selected_feats))))
-  # testthat::expect_true(all(res$selected_feats >= 1))
-  # testthat::expect_true(all(res$selected_feats <= 7))
-  # testthat::expect_equal(length(res$selected_feats),
-  #                            length(unique(res$selected_feats)))
+  testthat::expect_true(length(res$selected_clusts) <= 11)
+  testthat::expect_true(length(res$selected_clusts) >= 1)
 
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:11))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= 11)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:11))
+  
+  testthat::expect_true(length(res$selected_feats) <= 11)
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 11))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  ## Trying other inputs
+
+  # X as a data.frame
+  X_df <- datasets::mtcars
+  
+  res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  testthat::expect_true(!is.null(names(res$selected_clusts)))
+  testthat::expect_true(is.character(names(res$selected_clusts)))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+  # Total of ncol(X_df) - (3 - 1) clusters
+  testthat::expect_true(length(res$selected_clusts) <= ncol(X_df) - 2)
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:ncol(X_df)))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= ncol(X_df))
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:ncol(X_df)))
+
+  testthat::expect_true(length(res$selected_feats) <= ncol(X_df))
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= ncol(X_df)))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+  
+  res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  
+  X_df_mat <- stats::model.matrix(~ ., X_df)
+  X_df_mat <- X_df_mat[, colnames(X_df_mat) != "(Intercept)"]
+  p <- ncol(X_df_mat)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  testthat::expect_true(!is.null(names(res$selected_clusts)))
+  testthat::expect_true(is.character(names(res$selected_clusts)))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+  # Total of p - (3 - 1) clusters
+  testthat::expect_true(length(res$selected_clusts) <= p - 2)
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:p))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= p)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:p))
+
+  testthat::expect_true(length(res$selected_feats) <= p)
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= p))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+
+
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+  
+  res <- cssSelect(X=x2, y=y, clusters=good_clusters)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  testthat::expect_true(!is.null(names(res$selected_clusts)))
+  testthat::expect_true(is.character(names(res$selected_clusts)))
+  testthat::expect_true(length(res$selected_clusts) <=
+                          length(res$selected_feats))
+  # Total of 11 - 2*(3 - 1) = 7 clusters
+  testthat::expect_true(length(res$selected_clusts) <= 7)
+  testthat::expect_true(length(res$selected_clusts) >= 1)
+
+  testthat::expect_true(is.list(res$selected_clusts))
+  testthat::expect_equal(length(names(res$selected_clusts)),
+                           length(unique(names(res$selected_clusts))))
+  already_used_feats <- integer()
+  for(i in 1:length(res$selected_clusts)){
+    sels_i <- res$selected_clusts[[i]]
+    testthat::expect_true(length(sels_i) >= 1)
+    testthat::expect_true(is.integer(sels_i))
+    testthat::expect_true(all(sels_i %in% 1:11))
+    testthat::expect_equal(length(sels_i), length(unique(sels_i)))
+    testthat::expect_equal(length(intersect(already_used_feats, sels_i)), 0)
+    already_used_feats <- c(already_used_feats, sels_i)
+  }
+  testthat::expect_true(length(already_used_feats) <= 11)
+  testthat::expect_equal(length(already_used_feats),
+                         length(unique(already_used_feats)))
+  testthat::expect_true(all(already_used_feats %in% 1:11))
+  
+  testthat::expect_true(length(res$selected_feats) <= 11)
+  testthat::expect_true(is.integer(res$selected_feats))
+  testthat::expect_true(length(res$selected_feats) >= 1)
+  testthat::expect_equal(length(names(res$selected_feats)),
+                         length(unique(names(res$selected_feats))))
+  testthat::expect_true(all(res$selected_feats >= 1))
+  testthat::expect_true(all(res$selected_feats <= 11))
+  testthat::expect_equal(length(res$selected_feats),
+                             length(unique(res$selected_feats)))
+  
+  # Vary inputs
+  res <- cssSelect(X=x, y=y, clusters=good_clusters, lambda=0.01)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  res <- cssSelect(X=x, y=y, clusters=good_clusters, cutoff=0.6)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  
+  res <- cssSelect(X=x, y=y, clusters=good_clusters, max_num_clusts=6)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_true(length(res$selected_clusts) <= 6)
+  
+  res <- cssSelect(X=x, y=y, clusters=good_clusters, auto_select_size=FALSE)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_equal(length(res), 2)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  # Total of 11 - 2*(3 - 1) = 7 clusters
+  testthat::expect_equal(length(res$selected_clusts), 7)
+  
+  # Bad inputs
+  testthat::expect_error(cssSelect(X=x[1:10, ], y=y),
+                         "n == length(y) is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=character(5), y=y),
+                         "is.matrix(X) | is.data.frame(X) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=matrix(1:15, 5, 3)),
+                         "number of observations in y (5) not equal to the number of rows of x (15)",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=matrix(1:15, 5, 3)),
+                         "number of observations in y (5) not equal to the number of rows of x (15)",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=factor(rbinom(15, size=1, prob=.5))),
+                         "The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=y, clusters="clusters"),
+                         "is.numeric(clusters) | is.integer(clusters) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=y, lambda=-.1),
+                         "For method cssLasso, lambda must be nonnegative.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=y, cutoff=1.1),
+                         "cutoff <= 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=y, max_num_clusts=1000),
+                         "max_num_clusts <= p is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(cssSelect(X=x, y=y, auto_select_size=1),
+                         "is.logical(auto_select_size) is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("cssPredict works", {
+  set.seed(84231)
+  
+  train_data <- genLatentData(n=30, p=11, k_unclustered=1, cluster_size=3,
+                              n_clusters=2, sig_clusters=1, sigma_eps_sq=1)
+  
+  x <- train_data$X
+  y <- train_data$y
+  
+  test_x <- genLatentData(n=5, p=11, k_unclustered=1, cluster_size=3,
+                          n_clusters=2, sig_clusters=1, sigma_eps_sq=1)$X
+  
+  # Intentionally don't provide clusters for all features, mix up formatting,
+  # etc.
+  good_clusters <- list(red_cluster=1L:3L, 4:6)
+  
+  # res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+  #                   clusters=good_clusters)
+  
+  # testthat::expect_true(all(!is.na(res)))
+  # testthat::expect_true(is.numeric(res))
+  # testthat::expect_equal(length(res), 5)
+  
+  
+  
+  # # No provided clusters
+  # 
+  # res <- cssPredict(X=x, y=y)
+  # 
+  # 
+  # 
   # ## Trying other inputs
   # 
   # # X as a data.frame
   # X_df <- datasets::mtcars
-  # res_fitfun <- css(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
-  # testthat::expect_identical(class(res_fitfun), "cssr")
+  # 
+  # res <- cssPredict(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  # 
+  # 
   # 
   # # X as a dataframe with factors (number of columns of final design matrix
   # # after one-hot encoding factors won't match number of columns of df2)
@@ -4664,91 +4966,74 @@ testthat::test_that("cssSelect works", {
   # df2$gear <- as.factor(df2$gear)
   # df2$carb <- as.factor(df2$carb)
   # 
-  # res_fitfun <- css(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
-  # testthat::expect_identical(class(res_fitfun), "cssr")
+  # res <- cssPredict(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  # 
+  # X_df_mat <- stats::model.matrix(~ ., X_df)
+  # X_df_mat <- X_df_mat[, colnames(X_df_mat) != "(Intercept)"]
+  # p <- ncol(X_df_mat)
+  # 
+  # 
+  # 
   # 
   # # X as a matrix with column names
   # x2 <- x
   # colnames(x2) <- LETTERS[1:11]
-  # res_names <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
-  # testthat::expect_identical(class(res_names), "cssr")
-  # testthat::expect_identical(colnames(x2), colnames(res_names$X))
-  # testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
   # 
-  # # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
-  # # shouldn't throw any error, because the acceptable input for lambda should be
-  # # enforced only by fitfun)
+  # res <- cssPredict(X=x2, y=y, clusters=good_clusters)
   # 
-  # testFitfun <- function(X, y, lambda){
-  #   p <- ncol(X)
-  #   stopifnot(p >= 2)
-  #   # Choose p/2 features randomly
-  #   selected <- sample.int(p, size=floor(p/2))
-  #   return(selected)
-  # }
   # 
-  # res_fitfun <- css(X=x, y=y, lambda=c("foo", as.character(NA), "bar"),
-  #                   clusters=1:3, B = 10, fitfun=testFitfun)
-  # testthat::expect_identical(class(res_fitfun), "cssr")
   # 
-  # # Bad lambda
-  # testthat::expect_error(css(X=x, y=y, lambda=-0.01, B = 10),
+  # # Vary inputs
+  # res <- cssPredict(X=x, y=y, clusters=good_clusters, lambda=0.01)
+  # 
+  # 
+  # res <- cssPredict(X=x, y=y, clusters=good_clusters, cutoff=0.6)
+  # 
+  # 
+  # 
+  # res <- cssPredict(X=x, y=y, clusters=good_clusters, max_num_clusts=6)
+  # 
+  # 
+  # 
+  # res <- cssPredict(X=x, y=y, clusters=good_clusters, auto_select_size=FALSE)
+  # 
+  # 
+  # 
+  # # Bad inputs
+  # testthat::expect_error(cssPredict(X=x[1:10, ], y=y),
+  #                        "n == length(y) is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(cssPredict(X=character(5), y=y),
+  #                        "is.matrix(X) | is.data.frame(X) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(cssPredict(X=x, y=matrix(1:15, 5, 3)),
+  #                        "number of observations in y (5) not equal to the number of rows of x (15)",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(cssPredict(X=x, y=matrix(1:15, 5, 3)),
+  #                        "number of observations in y (5) not equal to the number of rows of x (15)",
+  #                        fixed=TRUE)
+  # 
+  # # testthat::expect_error(cssPredict(X=x, y=factor(rbinom(15, size=1, prob=.5))),
+  # #                        "The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)",
+  # #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(cssPredict(X=x, y=y, clusters="clusters"),
+  #                        "is.numeric(clusters) | is.integer(clusters) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(cssPredict(X=x, y=y, lambda=-.1),
   #                        "For method cssLasso, lambda must be nonnegative.",
   #                        fixed=TRUE)
   # 
-  # testthat::expect_error(css(X=x, y=y, lambda="foo", B = 10),
-  #                        "For method cssLasso, lambda must be a numeric.",
-  #                        fixed=TRUE)
+  # testthat::expect_error(cssPredict(X=x, y=y, cutoff=1.1),
+  #                        "cutoff <= 1 is not TRUE", fixed=TRUE)
   # 
-  # # Single cluster
-  # res_sing_clust <- css(X=x, y=y, lambda=0.01, clusters=1:3, B = 10)
-  # testthat::expect_identical(class(res_sing_clust), "cssr")
-  # testthat::expect_equal(length(res_sing_clust$clusters), 11 - 3 + 1)
-  # testthat::expect_true(length(unique(names(res_sing_clust$clusters))) == 11 -
-  #                         3 + 1)
-  # testthat::expect_true(all(!is.na(names(res_sing_clust$clusters))))
-  # testthat::expect_true(all(!is.null(names(res_sing_clust$clusters))))
+  # testthat::expect_error(cssPredict(X=x, y=y, max_num_clusts=1000),
+  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
   # 
-  # # No cluster
-  # testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10)), "cssr")
-  # 
-  # # All clusters named
-  # testthat::expect_identical(class(css(X=x, y=y, clusters=list("a"=1:5,
-  #                                                              "b"=6:10,
-  #                                                              "c"=11),
-  #                                      lambda=0.01, B=10)), "cssr")
-  # 
-  # # Other sampling types
-  # testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="MB"),
-  #                        "sampling_type MB is not yet supported (and isn't recommended anyway)",
-  #                        fixed=TRUE)
-  # 
-  # # Error has quotation marks in it
-  # testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type="S"))
-  # 
-  # testthat::expect_error(css(X=x, y=y, lambda=1, sampling_type=1),
-  #                        "is.character(sampling_type) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # # B
-  # testthat::expect_warning(css(X=x, y=y, lambda=1, B=5),
-  #                          "Small values of B may lead to poor results.",
-  #                          fixed=TRUE)
-  # 
-  # testthat::expect_error(css(X=x, y=y, lambda=1, B=list(10)),
-  #                          "is.numeric(B) | is.integer(B) is not TRUE",
-  #                          fixed=TRUE)
-  # 
-  # # prop_feats_remove
-  # testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
-  #                                      prop_feats_remove=0.3)), "cssr")
-  # # Weirdly high, but still valid, value of prop_feats_remove
-  # testthat::expect_identical(class(css(X=x, y=y, lambda=0.01, B = 10,
-  #                                      prop_feats_remove=0.9999999999)), "cssr")
-  # 
-  # # Use train_inds argument
-  # res_train <- css(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
-  # testthat::expect_equal(res_train$train_inds, 11:15)
-
+  # testthat::expect_error(cssPredict(X=x, y=y, auto_select_size=1),
+  #                        "is.logical(auto_select_size) is not TRUE", fixed=TRUE)
 })
 
