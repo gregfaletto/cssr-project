@@ -1391,7 +1391,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🥇</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1693,7 +1693,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1781,7 +1781,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1847,7 +1847,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -6892,6 +6892,10 @@ for subsamples of size n/2 (as in cluster stability selection) by
 cross-validation.</p></li>
 <li><p>getModelSize estimates the best size for a lasso model on a
 provided data set.</p></li>
+<li><p>printCssDf converts the output of the css function (an object of
+class cssr) to a data.frame that is ready to be printed. We provide
+end-user access to printCssDf because this data.frame itself may be
+useful as an object that summarizes the output from css.</p></li>
 <li><p>print.cssr is the print function for objects of class
 cssr.</p></li>
 <li><p>genLatentData</p>
@@ -6911,12 +6915,13 @@ y.</li>
 </ul></li>
 <li><p>getLassoLambda</p></li>
 <li><p>getModelSize</p></li>
-<li><p>print.cssr</p>
+<li><p>printCssDf</p>
 <ul>
 <li>getSelectionPrototypes identifies the prototypes from selected
 clusters (the feature in each cluster that is most correlated with the
 response)</li>
 </ul></li>
+<li><p>print.cssr</p></li>
 </ul>
 <p>genLatentData</p>
 <pre class="r"><code># TODO(gregfaletto) change cluster_size into a vector of sizes (maybe also
@@ -8472,12 +8477,13 @@ response)</li>
 ##  1. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(X = x, y = y, clusters = good_clusters)
 ##  2. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
 ##  3. glmnet:::cv.glmnet.raw(...)</code></pre>
-<p>print.cssr:</p>
-<pre class="r"><code>#&#39; Print cluster stability selection output
+<p>printCssDf:</p>
+<pre class="r"><code>#&#39; Prepares a data.frame summarazing cluster stability selection output to print
 #&#39;
 #&#39; Print a summary of the information from the css function.
-#&#39; @param x An object of class &quot;cssr&quot; (the output of the function css).
-#&#39; @param cutoff Numeric; print.cssr will display only those
+#&#39; @param css_results An object of class &quot;cssr&quot; (the output of the function
+#&#39; css).
+#&#39; @param cutoff Numeric; the outputted data.frame will display only those
 #&#39; clusters with selection proportions equal to at least cutoff. Must be between
 #&#39; 0 and 1. Default is 0 (in which case either all clusters are displayed, or
 #&#39; max_num_clusts are, if max_num_clusts is specified).
@@ -8490,7 +8496,6 @@ response)</li>
 #&#39; max_num_clusts clusters, the cutoff will be decreased until at most
 #&#39; max_num_clusts clusters are selected.) Default is NA (in which case
 #&#39; max_num_clusts is ignored).
-#&#39; @param ... Additional arguments (not used)
 #&#39; @return A data.frame; each row contains a cluster, arranged in decreasing
 #&#39; order of cluster selection proportion from top to bottom. The columns are
 #&#39; ClustName (the name of the cluster that was either provided to css or made by
@@ -8503,9 +8508,9 @@ response)</li>
 #&#39; css), and ClustSize (the size of the cluster).
 #&#39; @author Gregory Faletto, Jacob Bien
 #&#39; @export
-<span id='print.cssr'>print.cssr</span> &lt;- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
+<span id='printCssDf'>printCssDf</span> &lt;- function(css_results, cutoff=0, min_num_clusts=1,
+    max_num_clusts=NA){
     # Check inputs
-    css_results &lt;- x
     stopifnot(class(css_results) == &quot;cssr&quot;)
     <a href='create-cssr.html#checkCutoff'>checkCutoff</a>(cutoff)
 
@@ -8537,22 +8542,20 @@ response)</li>
 
     if(!is.null(names(prototypes))){
         print_df &lt;- data.frame(ClustName=names(sel_clusts),
-            ClustProtoName=names(prototypes),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
-            ClustSize=lengths(sel_clusts))
+            ClustProtoName=names(prototypes), ClustProtoNum=unname(prototypes),
+            ClustSelProp=sel_clust_sel_props, ClustSize=lengths(sel_clusts))
     } else{
         print_df &lt;- data.frame(ClustName=names(sel_clusts),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
+            ClustProtoNum=unname(prototypes), ClustSelProp=sel_clust_sel_props,
             ClustSize=lengths(sel_clusts))
     }
 
     print_df &lt;- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
 
     rownames(print_df) &lt;- NULL
-
-    # print.data.frame(print_df)
+    
+    stopifnot(is.data.frame(print_df))
+    stopifnot(nrow(print_df) &gt;= 1)
 
     return(print_df)
 }</code></pre>
@@ -8674,8 +8677,8 @@ response)</li>
 
 })</code></pre>
 <pre><code>## Test passed 😸</code></pre>
-<p>Tests for print.cssr:</p>
-<pre class="r"><code>testthat::test_that(&quot;print.cssr works&quot;, {
+<p>Tests for printCssDf:</p>
+<pre class="r"><code>testthat::test_that(&quot;printCssDf works&quot;, {
   set.seed(67234)
   
   data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
@@ -8688,7 +8691,7 @@ response)</li>
   
   css_results &lt;- <a href='create-cssr.html#css'>css</a>(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(css_results)
+  ret &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c(&quot;ClustName&quot;, &quot;ClustProtoNum&quot;,
@@ -8727,7 +8730,7 @@ response)</li>
   
   css_results &lt;- <a href='create-cssr.html#css'>css</a>(X=x_named, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(css_results)
+  ret &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c(&quot;ClustName&quot;, &quot;ClustProtoName&quot;,
@@ -8785,7 +8788,7 @@ response)</li>
   # 
   # unnamed_clusters &lt;- list(1L:3L, 5L:8L)
   # 
-  # ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(X=x, y=y, clusters=unnamed_clusters)
+  # ret &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(X=x, y=y, clusters=unnamed_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8797,7 +8800,7 @@ response)</li>
   # testthat::expect_true(ret &lt;= 6)
   # 
   # # Single cluster
-  # ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(X=x, y=y, clusters=2:5)
+  # ret &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(X=x, y=y, clusters=2:5)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8812,7 +8815,7 @@ response)</li>
   # # etc.
   # good_clusters &lt;- list(red_cluster=1:3, 5:8)
   # 
-  # ret &lt;- <a href='create-cssr.html#print.cssr'>print.cssr</a>(X=x, y=y, clusters=good_clusters)
+  # ret &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(X=x, y=y, clusters=good_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8825,12 +8828,49 @@ response)</li>
   # 
   # ## Trying bad inputs
   # 
-  # testthat::expect_error(<a href='create-cssr.html#print.cssr'>print.cssr</a>(X=&quot;x&quot;, y=y, clusters=good_clusters),
+  # testthat::expect_error(<a href='create-cssr.html#printCssDf'>printCssDf</a>(X=&quot;x&quot;, y=y, clusters=good_clusters),
   #                        &quot;is.matrix(X) | is.data.frame(X) is not TRUE&quot;, fixed=TRUE)
   # 
 
 })</code></pre>
 <pre><code>## Test passed 🥇</code></pre>
+<p>print.cssr</p>
+<pre class="r"><code>#&#39; Print cluster stability selection output
+#&#39;
+#&#39; Print a summary of the information from the css function (using output from
+#&#39; printCssDf function).
+#&#39; @param x An object of class &quot;cssr&quot; (the output of the function css).
+#&#39; @param cutoff Numeric; print.cssr will display only those
+#&#39; clusters with selection proportions equal to at least cutoff. Must be between
+#&#39; 0 and 1. Default is 0 (in which case either all clusters are displayed, or
+#&#39; max_num_clusts are, if max_num_clusts is specified).
+#&#39; @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#&#39; min_num_clusts clusters, the cutoff will be increased until at least
+#&#39; min_num_clusts clusters are selected.) Default is 1.
+#&#39; @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#&#39; use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#&#39; max_num_clusts clusters, the cutoff will be decreased until at most
+#&#39; max_num_clusts clusters are selected.) Default is NA (in which case
+#&#39; max_num_clusts is ignored).
+#&#39; @param ... Additional arguments to generic print.data.frame function
+#&#39; @return A data.frame; each row contains a cluster, arranged in decreasing
+#&#39; order of cluster selection proportion from top to bottom. The columns are
+#&#39; ClustName (the name of the cluster that was either provided to css or made by
+#&#39; css if no name was provided); ClustProtoName (the name of the selection
+#&#39; prototype from the cluster, which is the feature with the greatest individual
+#&#39; selection proportion among all the cluster members, with ties broken by
+#&#39; choosing the feature with the highest correlation with the response if the
+#&#39; response is real-valued; only returned if the features are named),
+#&#39; ClustProtoNum (the column number of the prototype in the X matrix provided to
+#&#39; css), and ClustSize (the size of the cluster).
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @export
+<span id='print.cssr'>print.cssr</span> &lt;- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
+    df &lt;- <a href='create-cssr.html#printCssDf'>printCssDf</a>(css_results=x, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    print.data.frame(df, ...)
+}</code></pre>
 </div>
 <div id="convenient-wrapper-functions" class="section level3">
 <h3>Convenient Wrapper Functions</h3>
@@ -9111,7 +9151,8 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;identifyPrototype&#39;)identifyPrototype.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;makeCoefficients&#39;)makeCoefficients.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;makeCovarianceMatrix&#39;)makeCovarianceMatrix.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;print.cssr&#39;)print.cssr.Rd]8;;&#39;</code></pre>
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;print.cssr&#39;)print.cssr.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;printCssDf&#39;)printCssDf.Rd]8;;&#39;</code></pre>
 </div>
 <div id="add-readme" class="section level2">
 <h2>Add README</h2>

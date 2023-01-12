@@ -2,7 +2,8 @@
 
 #' Print cluster stability selection output
 #'
-#' Print a summary of the information from the css function.
+#' Print a summary of the information from the css function (using output from
+#' printCssDf function).
 #' @param x An object of class "cssr" (the output of the function css).
 #' @param cutoff Numeric; print.cssr will display only those
 #' clusters with selection proportions equal to at least cutoff. Must be between
@@ -17,7 +18,7 @@
 #' max_num_clusts clusters, the cutoff will be decreased until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
-#' @param ... Additional arguments (not used)
+#' @param ... Additional arguments to generic print.data.frame function
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
 #' order of cluster selection proportion from top to bottom. The columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
@@ -31,55 +32,7 @@
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
-    # Check inputs
-    css_results <- x
-    stopifnot(class(css_results) == "cssr")
-    checkCutoff(cutoff)
-
-    p <- ncol(css_results$feat_sel_mat)
-
-    checkMinNumClusts(min_num_clusts, p, length(css_results$clusters))
-
-    max_num_clusts <- checkMaxNumClusts(max_num_clusts, min_num_clusts, p,
-        length(css_results$clusters))
-
-    sel_clusts <- getCssSelections(css_results, cutoff=cutoff,
-        min_num_clusts=min_num_clusts,
-        max_num_clusts=max_num_clusts)$selected_clusts
-
-    # sel_clusts is guaranteed to have length at least 1 by
-    # getCssSelections 
-
-    # Get prototypes (feature from each cluster with highest selection
-    # proportion, breaking ties by using marginal correlations of features with
-    # y from data provided to css if y is real-valued)
-    prototypes <- getSelectionPrototypes(css_results, sel_clusts)
-    
-    # Cluster selection proportions
-    sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
-        names(sel_clusts)])
-
-    # Data.frame: name of cluster, cluster prototype, selection proportion,
-    # cluster size
-
-    if(!is.null(names(prototypes))){
-        print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoName=names(prototypes),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
-            ClustSize=lengths(sel_clusts))
-    } else{
-        print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
-            ClustSize=lengths(sel_clusts))
-    }
-
-    print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
-
-    rownames(print_df) <- NULL
-
-    # print.data.frame(print_df)
-
-    return(print_df)
+    df <- printCssDf(css_results=x, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    print.data.frame(df, ...)
 }

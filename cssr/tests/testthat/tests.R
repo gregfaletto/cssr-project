@@ -4345,7 +4345,7 @@ testthat::test_that("getSelectionPrototypes works", {
 
 })
 
-testthat::test_that("print.cssr works", {
+testthat::test_that("printCssDf works", {
   set.seed(67234)
   
   data <- genLatentData(n=15, p=11, k_unclustered=1, cluster_size=3,
@@ -4358,7 +4358,7 @@ testthat::test_that("print.cssr works", {
   
   css_results <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret <- print.cssr(css_results)
+  ret <- printCssDf(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
@@ -4397,7 +4397,7 @@ testthat::test_that("print.cssr works", {
   
   css_results <- css(X=x_named, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret <- print.cssr(css_results)
+  ret <- printCssDf(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoName",
@@ -4455,7 +4455,7 @@ testthat::test_that("print.cssr works", {
   # 
   # unnamed_clusters <- list(1L:3L, 5L:8L)
   # 
-  # ret <- print.cssr(X=x, y=y, clusters=unnamed_clusters)
+  # ret <- printCssDf(X=x, y=y, clusters=unnamed_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -4467,7 +4467,7 @@ testthat::test_that("print.cssr works", {
   # testthat::expect_true(ret <= 6)
   # 
   # # Single cluster
-  # ret <- print.cssr(X=x, y=y, clusters=2:5)
+  # ret <- printCssDf(X=x, y=y, clusters=2:5)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -4482,7 +4482,7 @@ testthat::test_that("print.cssr works", {
   # # etc.
   # good_clusters <- list(red_cluster=1:3, 5:8)
   # 
-  # ret <- print.cssr(X=x, y=y, clusters=good_clusters)
+  # ret <- printCssDf(X=x, y=y, clusters=good_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -4495,7 +4495,7 @@ testthat::test_that("print.cssr works", {
   # 
   # ## Trying bad inputs
   # 
-  # testthat::expect_error(print.cssr(X="x", y=y, clusters=good_clusters),
+  # testthat::expect_error(printCssDf(X="x", y=y, clusters=good_clusters),
   #                        "is.matrix(X) | is.data.frame(X) is not TRUE", fixed=TRUE)
   # 
 

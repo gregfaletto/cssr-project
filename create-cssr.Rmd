@@ -6531,6 +6531,7 @@ The following are some other functions that are useful for specific tasks.
 * genLatentData generates jointly Gaussian data sets that include clusters of features that are correlated with a latent feature (the latent features themselves are also provided).
 * getLassoLambda uses a data set to choose a good value of lambda for subsamples of size n/2 (as in cluster stability selection) by cross-validation.
 * getModelSize estimates the best size for a lasso model on a provided data set.
+* printCssDf converts the output of the css function (an object of class cssr) to a data.frame that is ready to be printed. We provide end-user access to printCssDf because this data.frame itself may be useful as an object that summarizes the output from css.
 * print.cssr is the print function for objects of class cssr.
 
 * genLatentData
@@ -6540,8 +6541,9 @@ The following are some other functions that are useful for specific tasks.
   - Finally, genMuXZSd draws a random Z (matrix of latent variables), X (observed matrix, containing, in general, features correlated with latent features, directly observed features that are associated with y, and noise features), conditional means mu, and observed responses y.
 * getLassoLambda
 * getModelSize
-* print.cssr
+* printCssDf
   - getSelectionPrototypes identifies the prototypes from selected clusters (the feature in each cluster that is most correlated with the response)
+* print.cssr
 
 genLatentData
 
@@ -8109,14 +8111,15 @@ testthat::test_that("getModelSize works", {
 })
 ```
 
-print.cssr:
+printCssDf:
 
 ```{r}
-#' Print cluster stability selection output
+#' Prepares a data.frame summarazing cluster stability selection output to print
 #'
 #' Print a summary of the information from the css function.
-#' @param x An object of class "cssr" (the output of the function css).
-#' @param cutoff Numeric; print.cssr will display only those
+#' @param css_results An object of class "cssr" (the output of the function
+#' css).
+#' @param cutoff Numeric; the outputted data.frame will display only those
 #' clusters with selection proportions equal to at least cutoff. Must be between
 #' 0 and 1. Default is 0 (in which case either all clusters are displayed, or
 #' max_num_clusts are, if max_num_clusts is specified).
@@ -8129,7 +8132,6 @@ print.cssr:
 #' max_num_clusts clusters, the cutoff will be decreased until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
-#' @param ... Additional arguments (not used)
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
 #' order of cluster selection proportion from top to bottom. The columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
@@ -8142,9 +8144,9 @@ print.cssr:
 #' css), and ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
-print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
+printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
+    max_num_clusts=NA){
     # Check inputs
-    css_results <- x
     stopifnot(class(css_results) == "cssr")
     checkCutoff(cutoff)
 
@@ -8176,22 +8178,20 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 
     if(!is.null(names(prototypes))){
         print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoName=names(prototypes),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
-            ClustSize=lengths(sel_clusts))
+            ClustProtoName=names(prototypes), ClustProtoNum=unname(prototypes),
+            ClustSelProp=sel_clust_sel_props, ClustSize=lengths(sel_clusts))
     } else{
         print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props,
+            ClustProtoNum=unname(prototypes), ClustSelProp=sel_clust_sel_props,
             ClustSize=lengths(sel_clusts))
     }
 
     print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
 
     rownames(print_df) <- NULL
-
-    # print.data.frame(print_df)
+    
+    stopifnot(is.data.frame(print_df))
+    stopifnot(nrow(print_df) >= 1)
 
     return(print_df)
 }
@@ -8322,10 +8322,10 @@ testthat::test_that("getSelectionPrototypes works", {
 })
 ```
 
-Tests for print.cssr:
+Tests for printCssDf:
 
 ```{r}
-testthat::test_that("print.cssr works", {
+testthat::test_that("printCssDf works", {
   set.seed(67234)
   
   data <- genLatentData(n=15, p=11, k_unclustered=1, cluster_size=3,
@@ -8338,7 +8338,7 @@ testthat::test_that("print.cssr works", {
   
   css_results <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret <- print.cssr(css_results)
+  ret <- printCssDf(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoNum",
@@ -8377,7 +8377,7 @@ testthat::test_that("print.cssr works", {
   
   css_results <- css(X=x_named, y=y, lambda=0.01, clusters=good_clusters, B=10)
   
-  ret <- print.cssr(css_results)
+  ret <- printCssDf(css_results)
   
   testthat::expect_true(is.data.frame(ret))
   testthat::expect_identical(colnames(ret), c("ClustName", "ClustProtoName",
@@ -8435,7 +8435,7 @@ testthat::test_that("print.cssr works", {
   # 
   # unnamed_clusters <- list(1L:3L, 5L:8L)
   # 
-  # ret <- print.cssr(X=x, y=y, clusters=unnamed_clusters)
+  # ret <- printCssDf(X=x, y=y, clusters=unnamed_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8447,7 +8447,7 @@ testthat::test_that("print.cssr works", {
   # testthat::expect_true(ret <= 6)
   # 
   # # Single cluster
-  # ret <- print.cssr(X=x, y=y, clusters=2:5)
+  # ret <- printCssDf(X=x, y=y, clusters=2:5)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8462,7 +8462,7 @@ testthat::test_that("print.cssr works", {
   # # etc.
   # good_clusters <- list(red_cluster=1:3, 5:8)
   # 
-  # ret <- print.cssr(X=x, y=y, clusters=good_clusters)
+  # ret <- printCssDf(X=x, y=y, clusters=good_clusters)
   # 
   # testthat::expect_true(is.numeric(ret) | is.integer(ret))
   # testthat::expect_true(!is.na(ret))
@@ -8475,11 +8475,53 @@ testthat::test_that("print.cssr works", {
   # 
   # ## Trying bad inputs
   # 
-  # testthat::expect_error(print.cssr(X="x", y=y, clusters=good_clusters),
+  # testthat::expect_error(printCssDf(X="x", y=y, clusters=good_clusters),
   #                        "is.matrix(X) | is.data.frame(X) is not TRUE", fixed=TRUE)
   # 
 
 })
+```
+
+
+print.cssr
+
+```{r}
+#' Print cluster stability selection output
+#'
+#' Print a summary of the information from the css function (using output from
+#' printCssDf function).
+#' @param x An object of class "cssr" (the output of the function css).
+#' @param cutoff Numeric; print.cssr will display only those
+#' clusters with selection proportions equal to at least cutoff. Must be between
+#' 0 and 1. Default is 0 (in which case either all clusters are displayed, or
+#' max_num_clusts are, if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters are selected.) Default is 1.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param ... Additional arguments to generic print.data.frame function
+#' @return A data.frame; each row contains a cluster, arranged in decreasing
+#' order of cluster selection proportion from top to bottom. The columns are
+#' ClustName (the name of the cluster that was either provided to css or made by
+#' css if no name was provided); ClustProtoName (the name of the selection
+#' prototype from the cluster, which is the feature with the greatest individual
+#' selection proportion among all the cluster members, with ties broken by
+#' choosing the feature with the highest correlation with the response if the
+#' response is real-valued; only returned if the features are named),
+#' ClustProtoNum (the column number of the prototype in the X matrix provided to
+#' css), and ClustSize (the size of the cluster).
+#' @author Gregory Faletto, Jacob Bien
+#' @export
+print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
+    df <- printCssDf(css_results=x, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    print.data.frame(df, ...)
+}
 ```
 
 
