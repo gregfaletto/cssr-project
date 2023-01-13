@@ -4758,9 +4758,9 @@ testthat::test_that("cssSelect works", {
   df2$gear <- as.factor(df2$gear)
   df2$carb <- as.factor(df2$carb)
   
-  res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  res <- cssSelect(X=df2, y=stats::rnorm(nrow(X_df)), clusters=1:3)
   
-  X_df_mat <- stats::model.matrix(~ ., X_df)
+  X_df_mat <- stats::model.matrix(~ ., df2)
   X_df_mat <- X_df_mat[, colnames(X_df_mat) != "(Intercept)"]
   p <- ncol(X_df_mat)
   
@@ -4933,56 +4933,72 @@ testthat::test_that("cssPredict works", {
   # etc.
   good_clusters <- list(red_cluster=1L:3L, 4:6)
   
-  # res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
-  #                   clusters=good_clusters)
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    clusters=good_clusters)
   
-  # testthat::expect_true(all(!is.na(res)))
-  # testthat::expect_true(is.numeric(res))
-  # testthat::expect_equal(length(res), 5)
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
   
+  # No provided clusters
+
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x)
+
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  ## Trying other inputs
+
+  # X as a data.frame
+  X_df <- datasets::mtcars
   
+  n <- nrow(X_df)
+  test_inds <- 1:round(n/3)
+  n_test <- length(test_inds)
+  selec_train_inds <- setdiff(1:n, test_inds)
+  n_selec_train <- length(selec_train_inds)
+
+  res <- cssPredict(X_train_selec=X_df[selec_train_inds, ],
+                    y_train_selec=stats::rnorm(n_selec_train),
+                    X_test=X_df[test_inds, ])
   
-  # # No provided clusters
-  # 
-  # res <- cssPredict(X=x, y=y)
-  # 
-  # 
-  # 
-  # ## Trying other inputs
-  # 
-  # # X as a data.frame
-  # X_df <- datasets::mtcars
-  # 
-  # res <- cssPredict(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
-  # 
-  # 
-  # 
-  # # X as a dataframe with factors (number of columns of final design matrix
-  # # after one-hot encoding factors won't match number of columns of df2)
-  # df2 <- X_df
-  # df2$cyl <- as.factor(df2$cyl)
-  # df2$vs <- as.factor(df2$vs)
-  # df2$am <- as.factor(df2$am)
-  # df2$gear <- as.factor(df2$gear)
-  # df2$carb <- as.factor(df2$carb)
-  # 
-  # res <- cssPredict(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
-  # 
-  # X_df_mat <- stats::model.matrix(~ ., X_df)
-  # X_df_mat <- X_df_mat[, colnames(X_df_mat) != "(Intercept)"]
-  # p <- ncol(X_df_mat)
-  # 
-  # 
-  # 
-  # 
-  # # X as a matrix with column names
-  # x2 <- x
-  # colnames(x2) <- LETTERS[1:11]
-  # 
-  # res <- cssPredict(X=x2, y=y, clusters=good_clusters)
-  # 
-  # 
-  # 
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), n_test)
+
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+  
+  res <- cssPredict(X_train_selec=df2[selec_train_inds, ],
+                    y_train_selec=stats::rnorm(n_selec_train),
+                    X_test=df2[test_inds, ])
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), n_test)
+
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+  test_x2 <- test_x
+  colnames(test_x2) <- LETTERS[1:11]
+
+  res <- cssPredict(X_train_selec=x2, y_train_selec=y, X_test=test_x2,
+                    clusters=good_clusters)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+
+
   # # Vary inputs
   # res <- cssPredict(X=x, y=y, clusters=good_clusters, lambda=0.01)
   # 
