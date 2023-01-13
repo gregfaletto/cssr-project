@@ -19,6 +19,9 @@ checkCssLassoInputs <- function(X, y, lambda){
     if(!is.numeric(y)){
         stop("For method cssLasso, y must be a numeric vector.")
     }
+    if(is.matrix(y)){
+        stop("For method cssLasso, y must be a numeric vector (inputted y was a matrix).")
+    }
     if(n != length(y)){
         stop("For method cssLasso, y must be a vector of length equal to nrow(X).")
     }

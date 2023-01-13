@@ -4888,12 +4888,7 @@ testthat::test_that("cssSelect works", {
                          fixed=TRUE)
   
   testthat::expect_error(cssSelect(X=x, y=matrix(1:15, 5, 3)),
-                         "number of observations in y (5) not equal to the number of rows of x (15)",
-                         fixed=TRUE)
-  
-  testthat::expect_error(cssSelect(X=x, y=matrix(1:15, 5, 3)),
-                         "number of observations in y (5) not equal to the number of rows of x (15)",
-                         fixed=TRUE)
+                         "!is.matrix(y) is not TRUE", fixed=TRUE)
   
   testthat::expect_error(cssSelect(X=x, y=factor(rbinom(15, size=1, prob=.5))),
                          "The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)",
@@ -4947,6 +4942,15 @@ testthat::test_that("cssPredict works", {
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 5)
+  
+  # Provide training indices
+  
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    train_inds=13:28)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
   ## Trying other inputs
 
@@ -4997,59 +5001,78 @@ testthat::test_that("cssPredict works", {
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 5)
 
+  # Vary inputs
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    lambda=0.01)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x, cutoff=0.6)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
-  # # Vary inputs
-  # res <- cssPredict(X=x, y=y, clusters=good_clusters, lambda=0.01)
-  # 
-  # 
-  # res <- cssPredict(X=x, y=y, clusters=good_clusters, cutoff=0.6)
-  # 
-  # 
-  # 
-  # res <- cssPredict(X=x, y=y, clusters=good_clusters, max_num_clusts=6)
-  # 
-  # 
-  # 
-  # res <- cssPredict(X=x, y=y, clusters=good_clusters, auto_select_size=FALSE)
-  # 
-  # 
-  # 
-  # # Bad inputs
-  # testthat::expect_error(cssPredict(X=x[1:10, ], y=y),
-  #                        "n == length(y) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=character(5), y=y),
-  #                        "is.matrix(X) | is.data.frame(X) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=matrix(1:15, 5, 3)),
-  #                        "number of observations in y (5) not equal to the number of rows of x (15)",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=matrix(1:15, 5, 3)),
-  #                        "number of observations in y (5) not equal to the number of rows of x (15)",
-  #                        fixed=TRUE)
-  # 
-  # # testthat::expect_error(cssPredict(X=x, y=factor(rbinom(15, size=1, prob=.5))),
-  # #                        "The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)",
-  # #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=y, clusters="clusters"),
-  #                        "is.numeric(clusters) | is.integer(clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=y, lambda=-.1),
-  #                        "For method cssLasso, lambda must be nonnegative.",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=y, cutoff=1.1),
-  #                        "cutoff <= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=y, max_num_clusts=1000),
-  #                        "max_num_clusts <= p is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(cssPredict(X=x, y=y, auto_select_size=1),
-  #                        "is.logical(auto_select_size) is not TRUE", fixed=TRUE)
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    max_num_clusts=6)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    auto_select_size=FALSE)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  # Bad inputs
+  testthat::expect_error(cssPredict(X_train_selec=x[1:10, ], y_train_selec=y,
+                                    X_test=test_x),
+                         "length(y) == n is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=character(30),
+                                    y_train_selec=y, X_test=test_x),
+                         "is.matrix(X_train_selec) | is.data.frame(X_train_selec) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x,
+                                    y_train_selec=matrix(1:30, 10, 3),
+                                    X_test=test_x), "!is.matrix(y) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x,
+                                    y_train_selec=factor(rbinom(30, size=1,
+                                                                prob=.5)),
+                                    X_test=test_x),
+                         "The provided y_train_selec must be real-valued, because predictions will be generated by ordinary least squares regression.",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, clusters="clusters"),
+                         "is.numeric(clusters) | is.integer(clusters) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, lambda="lambda"),
+                         "For method cssLasso, lambda must be a numeric.",
+                         fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, cutoff=-.1),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, max_num_clusts=0),
+                         "max_num_clusts >= 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, auto_select_size=c(TRUE,
+                                                                      FALSE)),
+                         "length(auto_select_size) == 1 is not TRUE",
+                         fixed=TRUE)
 })
 

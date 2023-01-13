@@ -591,6 +591,8 @@ full details below.)</p>
 
     ### Get matrix of selected feature sets from subsamples
 
+    stopifnot(!is.matrix(y))
+
     feat_sel_mat &lt;- <a href='create-cssr.html#getSelMatrix'>getSelMatrix</a>(X[sel_inds, ], y[sel_inds], lambda, B,
         sampling_type, subsamps_object, num_cores, fitfun)
 
@@ -826,6 +828,7 @@ to generate a list of subsamples.</p>
     p &lt;- ncol(x)
 
     stopifnot(length(y) == n)
+    stopifnot(!is.matrix(y))
     # Intentionally don&#39;t check y or lambda further to allow for flexibility--these
     # inputs should be checked within fitfun.
 
@@ -1393,7 +1396,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎉</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1695,7 +1698,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🌈</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1783,7 +1786,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1849,7 +1852,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -2522,6 +2525,7 @@ have been defined.)</p>
     p &lt;- ncol(x)
 
     stopifnot(length(y) == n)
+    stopifnot(!is.matrix(y))
     # Intentionally don&#39;t check y or lambda further to allow for flexibility--these
     # inputs should be checked within fitfun.
 
@@ -2666,6 +2670,9 @@ have been defined.)</p>
 
     if(!is.numeric(y)){
         stop(&quot;For method cssLasso, y must be a numeric vector.&quot;)
+    }
+    if(is.matrix(y)){
+        stop(&quot;For method cssLasso, y must be a numeric vector (inputted y was a matrix).&quot;)
     }
     if(n != length(y)){
         stop(&quot;For method cssLasso, y must be a vector of length equal to nrow(X).&quot;)
@@ -9401,12 +9408,7 @@ already-defined functions.</p>
                          fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#cssSelect'>cssSelect</a>(X=x, y=matrix(1:15, 5, 3)),
-                         &quot;number of observations in y (5) not equal to the number of rows of x (15)&quot;,
-                         fixed=TRUE)
-  
-  testthat::expect_error(<a href='create-cssr.html#cssSelect'>cssSelect</a>(X=x, y=matrix(1:15, 5, 3)),
-                         &quot;number of observations in y (5) not equal to the number of rows of x (15)&quot;,
-                         fixed=TRUE)
+                         &quot;!is.matrix(y) is not TRUE&quot;, fixed=TRUE)
   
   testthat::expect_error(<a href='create-cssr.html#cssSelect'>cssSelect</a>(X=x, y=factor(rbinom(15, size=1, prob=.5))),
                          &quot;The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)&quot;,
@@ -9542,16 +9544,7 @@ already-defined functions.</p>
 ##   9. glmnet::cv.glmnet(...)
 ##  10. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:289&#39;): cssSelect works ─────────────────────────────────────
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##   1. testthat::expect_error(...)
-##   7. litr (local) <a href='create-cssr.html#cssSelect'>cssSelect</a>(X = x, y = matrix(1:15, 5, 3))
-##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(X, y)
-##   9. glmnet::cv.glmnet(...)
-##  10. glmnet:::cv.glmnet.raw(...)
-## 
-## ── Warning (&#39;&lt;text&gt;:297&#39;): cssSelect works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:292&#39;): cssSelect works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##   1. testthat::expect_error(...)
@@ -9560,7 +9553,7 @@ already-defined functions.</p>
 ##   9. glmnet::cv.glmnet(...)
 ##  10. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:305&#39;): cssSelect works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:300&#39;): cssSelect works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##   1. testthat::expect_error(...)
@@ -9569,7 +9562,7 @@ already-defined functions.</p>
 ##   9. glmnet::cv.glmnet(...)
 ##  10. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:308&#39;): cssSelect works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:303&#39;): cssSelect works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##   1. testthat::expect_error(...)
@@ -9734,6 +9727,15 @@ already-defined functions.</p>
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 5)
+  
+  # Provide training indices
+  
+  res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    train_inds=13:28)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
   ## Trying other inputs
 
@@ -9784,60 +9786,79 @@ already-defined functions.</p>
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 5)
 
+  # Vary inputs
+  res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    lambda=0.01)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
+  res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y, X_test=test_x, cutoff=0.6)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
 
-  # # Vary inputs
-  # res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, clusters=good_clusters, lambda=0.01)
-  # 
-  # 
-  # res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, clusters=good_clusters, cutoff=0.6)
-  # 
-  # 
-  # 
-  # res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, clusters=good_clusters, max_num_clusts=6)
-  # 
-  # 
-  # 
-  # res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, clusters=good_clusters, auto_select_size=FALSE)
-  # 
-  # 
-  # 
-  # # Bad inputs
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x[1:10, ], y=y),
-  #                        &quot;n == length(y) is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=character(5), y=y),
-  #                        &quot;is.matrix(X) | is.data.frame(X) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=matrix(1:15, 5, 3)),
-  #                        &quot;number of observations in y (5) not equal to the number of rows of x (15)&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=matrix(1:15, 5, 3)),
-  #                        &quot;number of observations in y (5) not equal to the number of rows of x (15)&quot;,
-  #                        fixed=TRUE)
-  # 
-  # # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=factor(rbinom(15, size=1, prob=.5))),
-  # #                        &quot;The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)&quot;,
-  # #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, clusters=&quot;clusters&quot;),
-  #                        &quot;is.numeric(clusters) | is.integer(clusters) is not TRUE&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, lambda=-.1),
-  #                        &quot;For method cssLasso, lambda must be nonnegative.&quot;,
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, cutoff=1.1),
-  #                        &quot;cutoff &lt;= 1 is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, max_num_clusts=1000),
-  #                        &quot;max_num_clusts &lt;= p is not TRUE&quot;, fixed=TRUE)
-  # 
-  # testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X=x, y=y, auto_select_size=1),
-  #                        &quot;is.logical(auto_select_size) is not TRUE&quot;, fixed=TRUE)
+  res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    max_num_clusts=6)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  res &lt;- <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    auto_select_size=FALSE)
+  
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  # Bad inputs
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x[1:10, ], y_train_selec=y,
+                                    X_test=test_x),
+                         &quot;length(y) == n is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=character(30),
+                                    y_train_selec=y, X_test=test_x),
+                         &quot;is.matrix(X_train_selec) | is.data.frame(X_train_selec) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x,
+                                    y_train_selec=matrix(1:30, 10, 3),
+                                    X_test=test_x), &quot;!is.matrix(y) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x,
+                                    y_train_selec=factor(rbinom(30, size=1,
+                                                                prob=.5)),
+                                    X_test=test_x),
+                         &quot;The provided y_train_selec must be real-valued, because predictions will be generated by ordinary least squares regression.&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, clusters=&quot;clusters&quot;),
+                         &quot;is.numeric(clusters) | is.integer(clusters) is not TRUE&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, lambda=&quot;lambda&quot;),
+                         &quot;For method cssLasso, lambda must be a numeric.&quot;,
+                         fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, cutoff=-.1),
+                         &quot;cutoff &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, max_num_clusts=0),
+                         &quot;max_num_clusts &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+
+  testthat::expect_error(<a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, auto_select_size=c(TRUE,
+                                                                      FALSE)),
+                         &quot;length(auto_select_size) == 1 is not TRUE&quot;,
+                         fixed=TRUE)
 })</code></pre>
 <pre><code>## ── Warning (&#39;&lt;text&gt;:17&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
@@ -9871,7 +9892,7 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:43&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:34&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
@@ -9879,7 +9900,7 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(...)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:43&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:34&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
@@ -9887,7 +9908,7 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:60&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:52&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
@@ -9895,7 +9916,7 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(...)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:60&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:52&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
@@ -9903,7 +9924,7 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:74&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:69&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
@@ -9911,13 +9932,106 @@ already-defined functions.</p>
 ##  3. glmnet::cv.glmnet(...)
 ##  4. glmnet:::cv.glmnet.raw(...)
 ## 
-## ── Warning (&#39;&lt;text&gt;:74&#39;): cssPredict works ─────────────────────────────────────
+## ── Warning (&#39;&lt;text&gt;:69&#39;): cssPredict works ─────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
 ##  2. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(...)
 ##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
-##  4. glmnet:::cv.glmnet.raw(...)</code></pre>
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:83&#39;): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:83&#39;): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:91&#39;): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getModelSize'>getModelSize</a>(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = &quot;gaussian&quot;)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:98&#39;): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:104&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:111&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##  2. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:119&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(X_train_selec = x[1:10, ], y_train_selec = y, X_test = test_x)
+##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:128&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:140&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:150&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:154&#39;): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) <a href='create-cssr.html#cssPredict'>cssPredict</a>(...)
+##   8. litr (local) <a href='create-cssr.html#getLassoLambda'>getLassoLambda</a>(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)</code></pre>
 </div>
 <div id="documenting-the-package-and-building" class="section level2">
 <h2>Documenting the package and building</h2>

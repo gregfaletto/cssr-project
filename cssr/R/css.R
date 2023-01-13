@@ -141,6 +141,8 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 
     ### Get matrix of selected feature sets from subsamples
 
+    stopifnot(!is.matrix(y))
+
     feat_sel_mat <- getSelMatrix(X[sel_inds, ], y[sel_inds], lambda, B,
         sampling_type, subsamps_object, num_cores, fitfun)
 

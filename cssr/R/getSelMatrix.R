@@ -49,6 +49,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     p <- ncol(x)
 
     stopifnot(length(y) == n)
+    stopifnot(!is.matrix(y))
     # Intentionally don't check y or lambda further to allow for flexibility--these
     # inputs should be checked within fitfun.
 
