@@ -85,7 +85,7 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     stopifnot(is.matrix(X) | is.data.frame(X))
 
     clust_names <- as.character(NA)
-    if(!is.null(names(clusters))){
+    if(!is.null(names(clusters)) & is.list(clusters)){
         clust_names <- names(clusters)
     }
 

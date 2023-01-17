@@ -58,7 +58,7 @@ getModelSize <- function(X, y, clusters){
     # cluster (any unclustered features are put in their own "cluster" of size
     # 1).
     clust_names <- as.character(NA)
-    if(!is.null(names(clusters))){
+    if(!is.null(names(clusters)) & is.list(clusters)){
         clust_names <- names(clusters)
     }
 
