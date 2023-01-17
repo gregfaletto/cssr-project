@@ -37,7 +37,7 @@ clus_output <- cssSelect(X, y, clusters=list("Z_cluster"=1:10))
 clus_output$selected_feats
 ```
 
-Note that in our generated data, features 11 through 20 are also associated with y. Cluster stability selection returns both a set of selected clusters (below) and all of the features contained within those clusters (as in the above).
+(Note that in our generated data, features 11 through 20 are also associated with y.) Cluster stability selection returns both a set of selected clusters (below) and all of the features contained within those clusters (as in the above).
 
 ```{r}
 clus_output$selected_clusts
