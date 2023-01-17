@@ -8,8 +8,8 @@
 
 ## Getting started
 
-You can install the cssr package using the following command:
+Put instructions here for how to install your package:
 
 ``` r
-remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
+remotes::install_github("jacobbien/cssr-project", subdir = "cssr")
 ```

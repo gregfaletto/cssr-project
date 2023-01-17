@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2023-01-13" />
+<meta name="date" content="2023-01-17" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">January 13, 2023</h4>
+<h4 class="date">January 17, 2023</h4>
 
 </div>
 
@@ -368,7 +368,7 @@ of the R package.</p>
   path = &quot;.&quot;,
   fields = list(
     Package = params$package_name,
-    Version = &quot;0.0.0.9000&quot;,
+    Version = &quot;0.1.1&quot;,
     Title = &quot;Cluster Stability Selection&quot;,
     Description = &quot;Implementation of Cluster Stability Selection (Faletto and Bien 2022).&quot;,
     `Authors@R` = c(person(
@@ -1396,7 +1396,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 😀</code></pre>
+<pre><code>## Test passed 😸</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1698,7 +1698,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1786,7 +1786,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -6898,9 +6898,9 @@ where it is called).</li>
 <p>The following are some other functions that are useful for specific
 tasks.</p>
 <ul>
-<li><p>genLatentData generates jointly Gaussian data sets that include
-clusters of features that are correlated with a latent feature (the
-latent features themselves are also provided).</p></li>
+<li><p>genClusteredData generates jointly Gaussian data sets that
+include clusters of features that are correlated with a latent feature
+(the latent features themselves are also provided).</p></li>
 <li><p>getLassoLambda uses a data set to choose a good value of lambda
 for subsamples of size n/2 (as in cluster stability selection) by
 cross-validation.</p></li>
@@ -6912,10 +6912,10 @@ end-user access to printCssDf because this data.frame itself may be
 useful as an object that summarizes the output from css.</p></li>
 <li><p>print.cssr is the print function for objects of class
 cssr.</p></li>
-<li><p>genLatentData</p>
+<li><p>genClusteredData</p>
 <ul>
-<li>checkGenLatentDataInputs checks that the inputs to genLatentData are
-as expected.</li>
+<li>checkGenClusteredDataInputs checks that the inputs to
+genClusteredData are as expected.</li>
 <li>makeCovarianceMatrix generates a covariance matrix for a jointly
 Gaussian random variable with distribution matching the provided
 inputs.</li>
@@ -6937,7 +6937,7 @@ response)</li>
 </ul></li>
 <li><p>print.cssr</p></li>
 </ul>
-<p>genLatentData</p>
+<p>genClusteredData</p>
 <pre class="r"><code>#&#39; Generate randomly sampled data including noisy observations of latent
 #&#39; variables
 #&#39;
@@ -7007,12 +7007,12 @@ response)</li>
 #&#39; \emph{arXiv preprint arXiv:2201.00494}.
 #&#39; \url{https://arxiv.org/abs/2201.00494}.
 #&#39; @export
-<span id='genLatentData'>genLatentData</span> &lt;- function(n, p, k_unclustered, cluster_size, n_clusters=1,
+<span id='genClusteredData'>genClusteredData</span> &lt;- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     sig_clusters=1, rho=0.9, var=1, beta_latent=1.5, beta_unclustered=1,
     snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
 
     # Check inputs
-    <a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p, k_unclustered, cluster_size, n_clusters,
+    <a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p, k_unclustered, cluster_size, n_clusters,
         sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
         sigma_eps_sq)
 
@@ -7040,9 +7040,10 @@ response)</li>
 
     return(list(X=gen_mu_x_z_sd_res$X, y=y, Z=gen_mu_x_z_sd_res$z, mu=mu))
 }</code></pre>
-<p>checkGenLatentDataInputs ## NEED TO START WITH ROXYGEN FORMATTING</p>
+<p>checkGenClusteredDataInputs ## NEED TO START WITH ROXYGEN
+FORMATTING</p>
 <pre class="r"><code>#&#39; TODO(gregfaletto) fix this description!!!
-#&#39; Check inputs to genLatentData
+#&#39; Check inputs to genClusteredData
 #&#39;
 #&#39; Generate a data set including latent features Z, observed features X (which
 #&#39; may include noisy or noiseless observations of the latent features in Z),
@@ -7100,7 +7101,7 @@ response)</li>
 #&#39; item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #&#39; the true coefficient vector (equal to y minus the added noise).}
 #&#39; @author Gregory Faletto, Jacob Bien
-<span id='checkGenLatentDataInputs'>checkGenLatentDataInputs</span> &lt;- function(p, k_unclustered, cluster_size,
+<span id='checkGenClusteredDataInputs'>checkGenClusteredDataInputs</span> &lt;- function(p, k_unclustered, cluster_size,
     n_clusters, sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
     sigma_eps_sq){
 
@@ -7147,21 +7148,21 @@ response)</li>
         stopifnot(sigma_eps_sq &gt; 0)
     }
 }</code></pre>
-<p>Tests for checkGenLatentDataInputs</p>
-<pre class="r"><code>testthat::test_that(&quot;checkGenLatentDataInputs works&quot;, {
+<p>Tests for checkGenClusteredDataInputs</p>
+<pre class="r"><code>testthat::test_that(&quot;checkGenClusteredDataInputs works&quot;, {
   set.seed(7612)
 
   # Should get no error
-  <a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+  <a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
                            sig_clusters=2, rho=.8, var=1.1, beta_latent=1.5,
                            beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
   
-  <a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+  <a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
                            sig_clusters=2, rho=.8, var=1.1, beta_latent=1.5,
                            beta_unclustered=-2, snr=1, sigma_eps_sq=NA)
   
   # sig_clusters
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=&quot;2&quot;, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7170,7 +7171,7 @@ response)</li>
                          &quot;is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=4, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7178,7 +7179,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;sig_clusters &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=-1, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7186,7 +7187,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;sig_clusters &gt;= 0 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=.6, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7197,7 +7198,7 @@ response)</li>
   
   
   # n_clusters
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5,
                                                   n_clusters=&quot;3&quot;,
                                                   sig_clusters=2, rho=.8,
@@ -7207,7 +7208,7 @@ response)</li>
                          &quot;is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3.2,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7216,7 +7217,7 @@ response)</li>
                          &quot;n_clusters == round(n_clusters) is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=0,
                                                   sig_clusters=0, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7224,7 +7225,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;n_clusters &gt;= 1 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=.3, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7232,7 +7233,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;cluster_size &gt;= 1 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=16, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=16, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7241,7 +7242,7 @@ response)</li>
                          &quot;p &gt;= n_clusters * cluster_size + k_unclustered is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=8,
                                                   var=1.1, beta_latent=1.5,
@@ -7249,7 +7250,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;abs(rho) &lt;= abs(var) is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0,
                                                   var=1.1, beta_latent=1.5,
@@ -7257,7 +7258,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;rho != 0 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=-1.1, beta_latent=1.5,
@@ -7265,7 +7266,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;var &gt; 0 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=0,
@@ -7273,7 +7274,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;beta_latent != 0 is not TRUE&quot;, fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7282,7 +7283,7 @@ response)</li>
                          &quot;beta_unclustered != 0 is not TRUE&quot;, fixed=TRUE)
   
   # k_unclustered
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=&quot;2&quot;,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=&quot;2&quot;,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7291,7 +7292,7 @@ response)</li>
                          &quot;is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=-2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=-2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7299,7 +7300,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;k_unclustered &gt;= 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=.2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=.2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7308,7 +7309,7 @@ response)</li>
                          &quot;k_unclustered == round(k_unclustered) is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7316,7 +7317,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;Must specify one of snr or sigma_eps_sq&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7324,7 +7325,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;snr &gt; 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#checkGenLatentDataInputs'>checkGenLatentDataInputs</a>(p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#checkGenClusteredDataInputs'>checkGenClusteredDataInputs</a>(p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -7915,11 +7916,11 @@ response)</li>
 
 })</code></pre>
 <pre><code>## Test passed 🥇</code></pre>
-<p>Finally, tests for genLatentData</p>
-<pre class="r"><code>testthat::test_that(&quot;genLatentData works&quot;, {
+<p>Finally, tests for genClusteredData</p>
+<pre class="r"><code>testthat::test_that(&quot;genClusteredData works&quot;, {
   set.seed(23478)
 
-  ret &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=25, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+  ret &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=25, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
                 sig_clusters=2, rho=3.99, var=4, beta_latent=1.5,
                 beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
   
@@ -7964,7 +7965,7 @@ response)</li>
   testthat::expect_true(all(abs(ret$y - ret$mu) &lt; 5*.5))
 
   # Specify SNR instead of sigma_eps_sq
-  ret &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+  ret &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
                        sig_clusters=2, rho=.8, var=1.1, beta_latent=1.5,
                        beta_unclustered=-2, snr=1, sigma_eps_sq=NA)
   
@@ -7973,7 +7974,7 @@ response)</li>
   
   # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
   # implies a very large noise variance to test this)
-  ret &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+  ret &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
                 sig_clusters=2, rho=.8, var=4, beta_latent=1.5,
                 beta_unclustered=-2, snr=.01, sigma_eps_sq=.25)
   
@@ -7985,7 +7986,7 @@ response)</li>
   testthat::expect_true(all(abs(ret$y - ret$mu) &lt; 5*.25))
   
   # Try a single latent variable (z should be a one-column matrix)
-  ret &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=1,
+  ret &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=1,
                 sig_clusters=1, rho=.8, var=4, beta_latent=1.5,
                 beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
   
@@ -7998,7 +7999,7 @@ response)</li>
   testthat::expect_equal(ncol(ret$Z), 1)
   
   # Bad inputs
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                        cluster_size=5, n_clusters=3,
                                        sig_clusters=&quot;2&quot;, rho=.8, var=1.1,
                                        beta_latent=1.5, beta_unclustered=-2,
@@ -8006,7 +8007,7 @@ response)</li>
                          &quot;is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE&quot;,
                          fixed=TRUE)
   
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=4, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8014,7 +8015,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;sig_clusters &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=-1, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8022,7 +8023,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;sig_clusters &gt;= 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=.6, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8033,7 +8034,7 @@ response)</li>
 
 
   # n_clusters
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5,
                                                   n_clusters=&quot;3&quot;,
                                                   sig_clusters=2, rho=.8,
@@ -8043,7 +8044,7 @@ response)</li>
                          &quot;is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3.2,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8052,7 +8053,7 @@ response)</li>
                          &quot;n_clusters == round(n_clusters) is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=0,
                                                   sig_clusters=0, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8060,7 +8061,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;n_clusters &gt;= 1 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=.3, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8068,7 +8069,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;cluster_size &gt;= 1 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(p=16, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(p=16, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8077,7 +8078,7 @@ response)</li>
                          &quot;p &gt;= n_clusters * cluster_size + k_unclustered is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=8,
                                                   var=1.1, beta_latent=1.5,
@@ -8085,7 +8086,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;abs(rho) &lt;= abs(var) is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0,
                                                   var=1.1, beta_latent=1.5,
@@ -8093,7 +8094,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;rho != 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=-1.1, beta_latent=1.5,
@@ -8101,7 +8102,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;var &gt; 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=0,
@@ -8109,7 +8110,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;beta_latent != 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8118,7 +8119,7 @@ response)</li>
                          &quot;beta_unclustered != 0 is not TRUE&quot;, fixed=TRUE)
 
   # k_unclustered
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=&quot;2&quot;,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=&quot;2&quot;,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8127,7 +8128,7 @@ response)</li>
                          &quot;is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=-2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=-2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8135,7 +8136,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;k_unclustered &gt;= 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=.2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=.2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8144,7 +8145,7 @@ response)</li>
                          &quot;k_unclustered == round(k_unclustered) is not TRUE&quot;,
                          fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8152,7 +8153,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;Must specify one of snr or sigma_eps_sq&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8160,7 +8161,7 @@ response)</li>
                                                   sigma_eps_sq=NA),
                          &quot;snr &gt; 0 is not TRUE&quot;, fixed=TRUE)
 
-  testthat::expect_error(<a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=19, k_unclustered=2,
+  testthat::expect_error(<a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=19, k_unclustered=2,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   var=1.1, beta_latent=1.5,
@@ -8418,7 +8419,7 @@ response)</li>
 <pre class="r"><code>testthat::test_that(&quot;getModelSize works&quot;, {
   set.seed(1723)
   
-  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+  data &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
                         n_clusters=2, sigma_eps_sq=10^(-6))
   
   x &lt;- data$X
@@ -8694,7 +8695,7 @@ response)</li>
 <pre class="r"><code>testthat::test_that(&quot;getSelectionPrototypes works&quot;, {
   set.seed(67234)
   
-  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+  data &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
                         n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
   
   x &lt;- data$X
@@ -8758,7 +8759,7 @@ response)</li>
 <pre class="r"><code>testthat::test_that(&quot;printCssDf works&quot;, {
   set.seed(67234)
   
-  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+  data &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
                         n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
   
   x &lt;- data$X
@@ -9184,7 +9185,7 @@ already-defined functions.</p>
 <pre class="r"><code>testthat::test_that(&quot;cssSelect works&quot;, {
   set.seed(73212)
   
-  data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
+  data &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=15, p=11, k_unclustered=1, cluster_size=3,
                         n_clusters=2, sig_clusters=1, sigma_eps_sq=1)
   
   x &lt;- data$X
@@ -9758,13 +9759,13 @@ already-defined functions.</p>
 <pre class="r"><code>testthat::test_that(&quot;cssPredict works&quot;, {
   set.seed(84231)
   
-  train_data &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=30, p=11, k_unclustered=1, cluster_size=3,
+  train_data &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=30, p=11, k_unclustered=1, cluster_size=3,
                               n_clusters=2, sig_clusters=1, sigma_eps_sq=1)
   
   x &lt;- train_data$X
   y &lt;- train_data$y
   
-  test_x &lt;- <a href='create-cssr.html#genLatentData'>genLatentData</a>(n=5, p=11, k_unclustered=1, cluster_size=3,
+  test_x &lt;- <a href='create-cssr.html#genClusteredData'>genClusteredData</a>(n=5, p=11, k_unclustered=1, cluster_size=3,
                           n_clusters=2, sig_clusters=1, sigma_eps_sq=1)$X
   
   # Intentionally don&#39;t provide clusters for all features, mix up formatting,
@@ -10113,7 +10114,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkCutoff&#39;)checkCutoff.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormCssDesignInputs&#39;)checkFormCssDesignInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkFormatClustersInput&#39;)checkFormatClustersInput.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGenLatentDataInputs&#39;)checkGenLatentDataInputs.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGenClusteredDataInputs&#39;)checkGenClusteredDataInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterSelMatrixInput&#39;)checkGetClusterSelMatrixInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetCssPredsInputs&#39;)checkGetCssPredsInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetSelectedClustersOutput&#39;)checkGetSelectedClustersOutput.Rd]8;;&#39;
@@ -10135,7 +10136,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;cssSelect&#39;)cssSelect.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formCssDesign&#39;)formCssDesign.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;formatClusters&#39;)formatClusters.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;genLatentData&#39;)genLatentData.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;genClusteredData&#39;)genClusteredData.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;genMuXZSd&#39;)genMuXZSd.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getAllClustWeights&#39;)getAllClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClustWeights&#39;)getClustWeights.Rd]8;;&#39;

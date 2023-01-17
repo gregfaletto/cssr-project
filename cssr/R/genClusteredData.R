@@ -1,14 +1,20 @@
 # Generated from create-cssr.Rmd: do not edit by hand
 
-#' TODO(gregfaletto) fix this description!!!
-#' Check inputs to genLatentData
+#' Generate randomly sampled data including noisy observations of latent
+#' variables
 #'
+#' TODO(gregfaletto) change cluster_size into a vector of sizes (maybe also
+#' deprecate n_clusters as an input, since this would be inferred by the length
+#' of cluster_sizes?)
 #' Generate a data set including latent features Z, observed features X (which
 #' may include noisy or noiseless observations of the latent features in Z),
 #' an observed response y which is a linear model of features from Z and X as
 #' well as independent mean zero noise, and mu (the responses from y without
 #' the added noise). Data is generated in the same way as in the simulations
 #' from Faletto and Bien (2022).
+#' @param n Integer or numeric; the number of observations to generate. (The
+#' generated X and Z will have n rows, and the generated y and mu will have
+#' length n.)
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
@@ -59,50 +65,40 @@
 #' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
-checkGenLatentDataInputs <- function(p, k_unclustered, cluster_size,
-    n_clusters, sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
-    sigma_eps_sq){
+#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+#' @export
+genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
+    sig_clusters=1, rho=0.9, var=1, beta_latent=1.5, beta_unclustered=1,
+    snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
 
-    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
-    stopifnot(sig_clusters <= n_clusters)
-    stopifnot(sig_clusters >= 0)
-    stopifnot(sig_clusters == round(sig_clusters))
-    
-    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
-    stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent 
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
-    stopifnot(n_clusters >= 1)
+    # Check inputs
+    checkGenClusteredDataInputs(p, k_unclustered, cluster_size, n_clusters,
+        sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
+        sigma_eps_sq)
 
-    stopifnot(cluster_size >= 1)
+    # Generate covariance matrix (latent features are mixed in matrix, so each
+    # cluster will be of size cluster_size + 1)
+    Sigma <- makeCovarianceMatrix(p=p + n_clusters, nblocks=n_clusters,
+        block_size=cluster_size + 1, rho=rho, var=var)
 
-    stopifnot(abs(rho) <= abs(var))
-    stopifnot(rho != 0)
-    stopifnot(var > 0)
+    # Generate coefficients
+    # Note that beta has length p + sig_clusters
+    coefs <- makeCoefficients(p=p + n_clusters, k_unblocked=k_unclustered,
+        beta_low=beta_unclustered, beta_high=beta_latent, nblocks=n_clusters,
+        sig_blocks=sig_clusters, block_size=cluster_size + 1)
 
-    stopifnot(beta_latent != 0)
-    stopifnot(beta_unclustered != 0)
+    # Generate mu, X, z, sd, y
+    gen_mu_x_z_sd_res <- genMuXZSd(n=n, p=p, beta=coefs$beta, Sigma=Sigma,
+        blocked_dgp_vars=coefs$blocked_dgp_vars, latent_vars=coefs$latent_vars, 
+        block_size=cluster_size, n_blocks=n_clusters, snr=snr,
+        sigma_eps_sq=sigma_eps_sq)
 
-    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 0)
-    stopifnot(k_unclustered == round(k_unclustered))
-    
-    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
+    mu <- gen_mu_x_z_sd_res$mu
+    sd <- gen_mu_x_z_sd_res$sd
 
-    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
-    # of weak signal features is beta_unclustered/sqrt(i) in order to have
-    # a definitive ranking of weak signal features.
-    if(is.na(snr) & is.na(sigma_eps_sq)){
-        stop("Must specify one of snr or sigma_eps_sq")
-    }
-    
-    if(!is.na(snr)){
-        stopifnot(snr > 0)
-    }
-    if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq > 0)
-    }
+    y <- mu + sd * stats::rnorm(n)
+
+    return(list(X=gen_mu_x_z_sd_res$X, y=y, Z=gen_mu_x_z_sd_res$z, mu=mu))
 }
