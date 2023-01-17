@@ -8,7 +8,7 @@
 
 ## Getting started
 
-Put instructions here for how to install your package:
+You can install the cssr package using the following command:
 
 ``` r
 remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
