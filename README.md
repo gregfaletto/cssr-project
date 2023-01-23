@@ -8,18 +8,18 @@ You can install the cssr package using the following command:
 remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
 ```
 
-Cluster stability selection is a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
+The cssr package implements cluster stability selection (read [our paper](https://arxiv.org/abs/2201.00494) for details), a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
 
 
 ```{r}
 library(cssr)
 # Generate some data containing clusters of highly correlated features
 data <- genClusteredData(n = 80, # Sample size
-                      p = 40, # Number of features 
-                      cluster_size = 10, # Number of features in a cluster correlated with a latent variable
-                      k_unclustered = 10, # Number of unclustered features that influence y
-                      snr = 3 # Signal-to-noise ratio in the response y generated from the data.
-                      )
+                         p = 40, # Number of features 
+                         cluster_size = 10, # Number of features in a cluster correlated with a latent variable
+                         k_unclustered = 10, # Number of unclustered features that influence y
+                         snr = 3 # Signal-to-noise ratio in the response y generated from the data.
+                         )
 
 X <- data$X
 y <- data$y
@@ -29,7 +29,7 @@ output <- cssSelect(X, y)
 output$selected_feats
 ```
 
-(You can learn more about cluster stability selection by reading [our paper](https://arxiv.org/abs/2201.00494).) Cluster stability selection is designed to be particularly useful for data that include clustered features--groups of highly correlated features. The data we generated earlier contain a cluster of 10 features (specifically, the first 10 columns of $X$) that are highly correlated both with each other and also with an unobserved variable $Z$ that is associated with $y$. We can tell cluster stability selection about this cluster using the "clusters" argument.
+Cluster stability selection is designed to be particularly useful for data that include clustered features--groups of highly correlated features. The data we generated above contain a cluster of 10 features (specifically, the first 10 columns of $X$) that are highly correlated both with each other and also with an unobserved variable $Z$ that is associated with $y$. We can tell cluster stability selection about this cluster using the "clusters" argument.
 
 ```{r}
 clus_output <- cssSelect(X, y, clusters=list("Z_cluster"=1:10))
@@ -42,6 +42,9 @@ clus_output$selected_feats
 ```{r}
 clus_output$selected_clusts
 ```
+
+Here's a brief summary of how cluster stability selection works: besides the data $(X, y)$, cluster stability selection also requires a "base" feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number $B$ of subsamples of size $n/2$ and runs the feature selection method on each subsample, yielding $B$ selected sets.
+
 
 need to finish vignette...
 
