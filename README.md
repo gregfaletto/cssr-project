@@ -29,6 +29,9 @@ output <- cssSelect(X, y)
 output$selected_feats
 ```
 
+![Stability Selection Flowchart Figure](stability-selection-diagram.png "Stability Selection")
+
+
 Cluster stability selection is designed to be particularly useful for data that include clustered features--groups of highly correlated features. The data we generated above contain a cluster of 10 features (specifically, the first 10 columns of $X$) that are highly correlated both with each other and also with an unobserved variable $Z$ that is associated with $y$. We can tell cluster stability selection about this cluster using the "clusters" argument.
 
 ```{r}
