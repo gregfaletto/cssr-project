@@ -11,7 +11,7 @@
 
 <meta name="author" content="Gregory Faletto" />
 
-<meta name="date" content="2023-01-17" />
+<meta name="date" content="2023-01-27" />
 
 <title>Creating the cssr R package</title>
 
@@ -353,7 +353,7 @@ display: none;
 <h1 class="title toc-ignore">Creating the <code>cssr</code> R
 package</h1>
 <h4 class="author">Gregory Faletto</h4>
-<h4 class="date">January 17, 2023</h4>
+<h4 class="date">January 27, 2023</h4>
 
 </div>
 
@@ -1396,7 +1396,7 @@ have been defined.)</p>
 
 
 })</code></pre>
-<pre><code>## Test passed 🎉</code></pre>
+<pre><code>## Test passed 🌈</code></pre>
 <p>formatClusters:</p>
 <pre class="r"><code>#&#39; Formats clusters in standardized way, optionally estimating cluster
 #&#39; prototypes
@@ -1698,7 +1698,7 @@ have been defined.)</p>
                          &quot;is.numeric(y) | is.integer(y) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 😸</code></pre>
+<pre><code>## Test passed 😀</code></pre>
 <p>Tests for checkFormatClustersInput:</p>
 <pre class="r"><code>testthat::test_that(&quot;checkFormatClustersInput works&quot;, {
   
@@ -1786,7 +1786,7 @@ have been defined.)</p>
                                                           get_prototypes=FALSE,
                                                           x=NA, y=NA, R=NA)))
 })</code></pre>
-<pre><code>## Test passed 🎊</code></pre>
+<pre><code>## Test passed 🥳</code></pre>
 <p>checkClusters:</p>
 <pre class="r"><code>#&#39; Helper function to confirm that the argument clusters to several functions is
 #&#39; as expected
@@ -1852,7 +1852,7 @@ have been defined.)</p>
                          &quot;all(all_clustered_feats &lt;= p) is not TRUE&quot;,
                          fixed=TRUE)
 })</code></pre>
-<pre><code>## Test passed 🥳</code></pre>
+<pre><code>## Test passed 🎊</code></pre>
 <p>getPrototypes:</p>
 <pre class="r"><code>#&#39; Estimate prototypes from a list of clusters
 #&#39;
@@ -10092,6 +10092,726 @@ already-defined functions.</p>
 ##   9. glmnet::cv.glmnet(...)
 ##  10. glmnet:::cv.glmnet.raw(...)</code></pre>
 </div>
+<div id="competitor-methods" class="section level2">
+<h2>Competitor Methods</h2>
+<p>We also provide implementations of some competitor feature selection
+methods. We used these in the simulation studies in our paper to compare
+cluster stability selection to the protolasso (Redi and Tibshirani,
+2016) and the cluster representative lasso (Bühlmann et. al. 2013), two
+other feature selection methods that are designed for data with
+clustered features. These feature selection methods are in some ways
+closely related, so their implementations share helper functions.</p>
+<ul>
+<li>protolasso
+<ul>
+<li>processClusterLassoInputs checks and formats the function
+inputs</li>
+<li>getXglmnet formats the provided design matrix Xglmnet for the lasso
+as implemented by glmnet (for the protolasso, this means discarding all
+features from each cluster except the one most highly correlated with
+the response; for the cluster representative lasso, this means replacing
+the clustered features with a simple average of the cluster members).
+<ul>
+<li>checkGetXglmnetInputs verifies the inputs to getXglmnet</li>
+</ul></li>
+<li>Finally, getClusterSelsFromGlmnet extracts the relevant output from
+the results yielded by a glmnet lasso fit.
+<ul>
+<li>getSelectedSets takes in a single selected set from Xglmnet and
+yields a selected feature set in the original feature space (with each
+selected cluster from Xglmnet replaced by its prototype) as well as a
+selected set of clusters.</li>
+</ul></li>
+</ul></li>
+<li>clusterRepLasso</li>
+</ul>
+<p>protolasso:</p>
+<pre class="r"><code>#&#39; Select features via the protolasso (Reid and Tibshirani 2016)
+#&#39;
+#&#39; @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; p &gt;= 2 features/predictors
+#&#39; @param y The response; A length n numeric (or integer) real-valued vector.
+#&#39; @param clusters A list of integer vectors; each vector should contain the 
+#&#39; indices of a cluster of features (a subset of 1:p). (If there is only one
+#&#39; cluster, clusters can either be a list of length 1 or an integer vector.)
+#&#39; All of the provided clusters must be non-overlapping. Every feature not
+#&#39; appearing in any cluster will be assumed to be unclustered (that is, they
+#&#39; will be treated as if they are in a &quot;cluster&quot; containing only themselves).
+#&#39; Default is list() (so no clusters are specified).
+#&#39; @param nlambda Integer; the number of lambda values to use in the lasso fit
+#&#39; for the protolasso. Default is 100 (following the default for glmnet). For
+#&#39; now, nlambda must be at least 2 (using a single lambda is not supported).
+#&#39; @return A list with three elements. \item{selected_sets}{A list of integer
+#&#39; vectors. Entry k of this list contains a selected set (an integer vector) of
+#&#39; size k yielded by the protolasso (If no set of size k was selected, entry k
+#&#39; will be empty.)} \item{selected_clusts_list}{A list; each element of the list
+#&#39; is a named list of selected clusters. (That is, if a selected set of size k
+#&#39; was yielded by the protolasso, then selected_clusts_list[[k]] is a named
+#&#39; list of length k, where each member of the list is an integer vector
+#&#39; of cluster members. In particular, selected_clusts_lists[[k]][[j]] will be
+#&#39; the cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The
+#&#39; beta output from glmnet when the lasso was estimated on a matrix of
+#&#39; prototypes. (See documentation for the function glmnet from the glmnet
+#&#39; package for details.)}
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal
+#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#&#39; @export
+<span id='protolasso'>protolasso</span> &lt;- function(X, y, clusters, nlambda=100){
+
+    # Handle and format inputs; get cluster prototypes
+    ret &lt;- <a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)
+
+    x &lt;- ret$x
+    clusters &lt;- ret$clusters
+    prototypes &lt;- ret$prototypes
+    feat_names &lt;- ret$var_names
+
+    rm(ret)
+
+    # Format the design matrix for glmnet according to the protolasso procedure
+    X_glmnet &lt;- <a href='create-cssr.html#getXglmnet'>getXglmnet</a>(x, clusters, type=&quot;protolasso&quot;,
+        prototypes=prototypes)
+
+    # Estimate the lasso on the cluster prototypes
+    fit &lt;- glmnet::glmnet(x=X_glmnet, y=y, family=&quot;gaussian&quot;, nlambda=nlambda)
+    lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))
+
+    # Finally, obtain a tidy list of selected sets--one for each model size
+    cluster_sel_results &lt;- <a href='create-cssr.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,
+        prototypes, feat_names)
+
+    return(list(selected_sets=cluster_sel_results$selected_sets,
+        selected_clusts_list=cluster_sel_results$selected_clusts_list,
+        beta=fit$beta))
+}</code></pre>
+<p>processClusterLassoInputs:</p>
+<pre class="r"><code>#&#39; Check the inputs to protolasso and clusterRepLasso, format clusters, and
+#&#39; identify prototypes for each cluster
+#&#39;
+#&#39; @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; p &gt;= 2 features/predictors
+#&#39; @param y The response; A length n numeric (or integer) real-valued vector.
+#&#39; @param clusters A list of integer vectors; each vector should contain the 
+#&#39; indices of a cluster of features (a subset of 1:p). (If there is only one
+#&#39; cluster, clusters can either be a list of length 1 or an integer vector.)
+#&#39; All of the provided clusters must be non-overlapping. Every feature not
+#&#39; appearing in any cluster will be assumed to be unclustered (that is, they
+#&#39; will be treated as if they are in a &quot;cluster&quot; containing only themselves).
+#&#39; Default is list() (so no clusters are specified).
+#&#39; @param nlambda Integer; the number of lambda values to use in the lasso fit
+#&#39; for the protolasso. Default is 100 (following the default for glmnet). For
+#&#39; now, nlambda must be at least 2 (using a single lambda is not supported).
+#&#39; @return A list with four elements. \item{x}{The provided X, converted to a
+#&#39; matrix if it was provided as a data.frame, and with column names removed.}
+#&#39; \item{clusters}{A named list where each entry is an integer vector of indices
+#&#39; of features that are in a common cluster. (The length of list clusters is
+#&#39; equal to the number of clusters.) All identified clusters are
+#&#39; non-overlapping. All features appear in exactly one cluster (any unclustered
+#&#39; features will be put in their own &quot;cluster&quot; of size 1).}
+#&#39; \item{prototypes}{An integer vector whose length is equal to the number of
+#&#39; clusters. Entry i is the index of the feature belonging to cluster i that is
+#&#39; most highly correlated with y (that is, the prototype for the cluster, as in
+#&#39; the protolasso; see Reid and Tibshirani 2016).} \item{var_names}{If the
+#&#39; provided X matrix had column names, the names of the featurrs in the provided
+#&#39; X matrix. If no names were provided, feat_names will be NA.}
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal
+#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}.
+<span id='processClusterLassoInputs'>processClusterLassoInputs</span> &lt;- function(X, y, clusters, nlambda){
+
+    stopifnot(is.matrix(X) | is.data.frame(X))
+
+    # Check if x is a matrix; if it&#39;s a data.frame, convert to matrix.
+    if(is.data.frame(X)){
+        X &lt;- stats::model.matrix(~ ., X)
+        X &lt;- X[, colnames(X) != &quot;(Intercept)&quot;]
+    }
+
+    stopifnot(is.matrix(X))
+    stopifnot(all(!is.na(X)))
+
+    feat_names &lt;- as.character(NA)
+    if(!is.null(colnames(X))){
+        feat_names &lt;- colnames(X)
+        if(any(is.na(feat_names))){
+            stop(&quot;Some features in provided X matrix had valid names and some had NA names; please neither name all features in X or remove the names altogether.&quot;)
+        }
+    }
+
+    n &lt;- nrow(X)
+
+    colnames(X) &lt;- character()
+
+    stopifnot(is.numeric(y) | is.integer(y))
+    stopifnot(n == length(y))
+    stopifnot(all(!is.na(y)))
+
+    # Check clusters argument
+    clusters &lt;- <a href='create-cssr.html#checkCssClustersInput'>checkCssClustersInput</a>(clusters)
+
+    # Format clusters into a list where all features are in exactly one
+    # cluster (any unclustered features are put in their own &quot;cluster&quot; of size
+    # 1).
+    clust_names &lt;- as.character(NA)
+    if(!is.null(names(clusters)) &amp; is.list(clusters)){
+        clust_names &lt;- names(clusters)
+    }
+
+    cluster_results &lt;- <a href='create-cssr.html#formatClusters'>formatClusters</a>(clusters, p=ncol(X),
+        clust_names=clust_names, get_prototypes=TRUE, x=X, y=y)
+
+    clusters &lt;- cluster_results$clusters
+    prototypes &lt;- cluster_results$prototypes
+
+    rm(cluster_results)
+
+    stopifnot(length(clusters) == length(prototypes))
+
+    stopifnot(is.numeric(nlambda) | is.integer(nlambda))
+    stopifnot(length(nlambda) == 1)
+    stopifnot(!is.na(nlambda))
+    stopifnot(nlambda &gt;= 2)
+
+    return(list(x=X, clusters=clusters, prototypes=prototypes,
+        var_names=feat_names))
+}</code></pre>
+<p>Tests for processClusterLassoInputs:</p>
+<pre class="r"><code>testthat::test_that(&quot;processClusterLassoInputs works&quot;, {
+  set.seed(82612)
+  
+  x &lt;- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y &lt;- stats::rnorm(15)
+  
+  good_clusters &lt;- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  ret &lt;- <a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=x, y=y, clusters=good_clusters, nlambda=10)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c(&quot;x&quot;, &quot;clusters&quot;, &quot;prototypes&quot;,
+                                           &quot;var_names&quot;))
+  
+  
+  # # sig_clusters
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=&quot;2&quot;, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=4, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;sig_clusters &lt;= n_clusters is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=-1, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;sig_clusters &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=.6, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;sig_clusters == round(sig_clusters) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # 
+  # # n_clusters
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5,
+  #                                                 n_clusters=&quot;3&quot;,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3.2,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;n_clusters == round(n_clusters) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=0,
+  #                                                 sig_clusters=0, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;n_clusters &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=.3, n_clusters=3,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;cluster_size &gt;= 1 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=16, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;p &gt;= n_clusters * cluster_size + k_unclustered is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;abs(rho) &lt;= abs(var) is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;rho != 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=-1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;var &gt; 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=0,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;beta_latent != 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=0, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;beta_unclustered != 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # # k_unclustered
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=&quot;2&quot;,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=-2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;k_unclustered &gt;= 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=.2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;k_unclustered == round(k_unclustered) is not TRUE&quot;,
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=NA,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;Must specify one of snr or sigma_eps_sq&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=-.2,
+  #                                                 sigma_eps_sq=NA),
+  #                        &quot;snr &gt; 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+  # testthat::expect_error(<a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=NA,
+  #                                                 sigma_eps_sq=-.3),
+  #                        &quot;sigma_eps_sq &gt; 0 is not TRUE&quot;, fixed=TRUE)
+  # 
+})</code></pre>
+<pre><code>## Test passed 🥇</code></pre>
+<p>getXglmnet:</p>
+<pre class="r"><code>#&#39; Converts the provided design matrix to an appropriate format for either the
+#&#39; protolasso or the cluster representative lasso.
+#&#39;
+#&#39; Creates design matrix for glmnet by dealing with clusters (for
+#&#39; type=&quot;protolasso&quot;, discards all cluster members except prototype; for
+#&#39; type=&quot;clusterRepLasso&quot;, replaces all cluster members with a simple
+#&#39; average of all the cluster members).
+#&#39; @param x A numeric matrix; the provided matrix with n observations and p
+#&#39; features.
+#&#39; @param clusters A named list where each entry is an integer vector of indices
+#&#39; of features that are in a common cluster. (The length of list clusters should
+#&#39; be equal to the number of clusters.) All identified clusters should be
+#&#39; non-overlapping. All features should appear in exactly one cluster (any
+#&#39; unclustered features should be put in their own &quot;cluster&quot; of size 1).
+#&#39; @param type Character; &quot;protolasso&quot; for the protolasso or &quot;clusterRepLasso&quot;
+#&#39; for the cluster representative lasso.
+#&#39; @param prototypes Only required for type &quot;protolasso&quot;. An integer vector
+#&#39; whose length is equal to the number of clusters. Entry i should be the
+#&#39; prototype for cluster i (the feature belonging to cluster i that is most
+#&#39; highly correlated with y; see Reid and Tibshirani 2016).
+#&#39; @return A numeric matrix; the design matrix as required for the protolasso or
+#&#39; cluster representative lasso, prepared for input to glmnet.
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal
+#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}.
+<span id='getXglmnet'>getXglmnet</span> &lt;- function(x, clusters, type, prototypes=NA){
+    
+    # Check inputs
+    <a href='create-cssr.html#checkGetXglmnetInputs'>checkGetXglmnetInputs</a>(x, clusters, type, prototypes)
+
+    n &lt;- nrow(x)
+    p &lt;- ncol(x)
+
+    # if(n_clusters &gt; 0){
+    for(i in 1:length(clusters)){
+        cluster_i &lt;- clusters[[i]]
+        
+        if(type == &quot;protolasso&quot;){
+            if(length(cluster_i) &gt; 1){
+                prototype_ind_i &lt;- which(prototypes %in% cluster_i)
+                stopifnot(length(prototype_ind_i) == 1)
+                prototype_i &lt;- prototypes[prototype_ind_i]
+            } else{
+                prototype_i &lt;- cluster_i
+            }
+            
+            X_glmnet_i &lt;- x[, prototype_i]
+        } else {
+            stopifnot(type == &quot;clusterRepLasso&quot;)
+            if(length(cluster_i) &gt; 1){
+                X_glmnet_i &lt;- rowMeans(x[, cluster_i])
+            } else{
+                X_glmnet_i &lt;- x[, cluster_i]
+            }    
+        }
+
+        stopifnot(length(X_glmnet_i) == n)
+        
+        if(i == 1){
+            X_glmnet &lt;- as.matrix(X_glmnet_i)
+        } else{
+            X_glmnet &lt;- cbind(X_glmnet, X_glmnet_i)
+        }
+    }
+    stopifnot(ncol(X_glmnet) == length(clusters))
+    colnames(X_glmnet) &lt;- character()
+
+    # Check output
+    stopifnot(is.matrix(X_glmnet))
+    stopifnot(nrow(X_glmnet) == n)
+    stopifnot(ncol(X_glmnet) &lt;= p)
+    stopifnot(ncol(X_glmnet) &gt;= 1)
+    
+    return(X_glmnet)
+}</code></pre>
+<p>checkGetXglmnetInputs:</p>
+<pre class="r"><code>#&#39; Verifies the inputs for getXglmnet.
+#&#39;
+#&#39; @param x A numeric matrix; the provided matrix with n observations and p
+#&#39; features.
+#&#39; @param clusters A named list where each entry is an integer vector of indices
+#&#39; of features that are in a common cluster. (The length of list clusters should
+#&#39; be equal to the number of clusters.) All identified clusters should be
+#&#39; non-overlapping. All features should appear in exactly one cluster (any
+#&#39; unclustered features should be put in their own &quot;cluster&quot; of size 1).
+#&#39; @param type Character; &quot;protolasso&quot; for the protolasso or &quot;clusterRepLasso&quot;
+#&#39; for the cluster representative lasso.
+#&#39; @param prototypes Only required for type &quot;protolasso&quot;. An integer vector
+#&#39; whose length is equal to the number of clusters. Entry i should be the
+#&#39; prototype for cluster i (the feature belonging to cluster i that is most
+#&#39; highly correlated with y; see Reid and Tibshirani 2016).
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal
+#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}.
+<span id='checkGetXglmnetInputs'>checkGetXglmnetInputs</span> &lt;- function(x, clusters, type, prototypes){
+    stopifnot(is.matrix(x))
+
+    stopifnot(is.list(clusters))
+    stopifnot(all(lengths(clusters) &gt;= 1))
+
+    stopifnot(length(type) == 1)
+    stopifnot(is.character(type))
+    stopifnot(!is.na(type))
+    stopifnot(type %in% c(&quot;protolasso&quot;, &quot;clusterRepLasso&quot;))
+
+    if(type==&quot;protolasso&quot;){
+        stopifnot(!is.na(prototypes))
+        stopifnot(is.integer(prototypes))
+        stopifnot(all(!is.na(prototypes)))
+        stopifnot(length(prototypes) == length(unique(prototypes)))
+        stopifnot(all(prototypes %in% 1:ncol(x)))
+    }
+    for(i in 1:length(clusters)){
+        cluster_i &lt;- clusters[[i]]
+        if(length(cluster_i) &gt; 1){
+            stopifnot(sum(prototypes %in% cluster_i) == 1)
+        }
+    }
+}</code></pre>
+<p>Tests for checkGetXglmnetInputs:</p>
+<p>Tests for getXglmnet:</p>
+<p>getClusterSelsFromGlmnet:</p>
+<pre class="r"><code>#&#39; Extracts selected clusters and cluster prototypes from the glmnet lasso
+#&#39; output
+#&#39;
+#&#39; @param lasso_sets A list of integer vectors. Each vector represents a set of
+#&#39; features selected by the lasso for a given value of the penalty parameter
+#&#39; lambda.
+#&#39; @param clusters A named list where each entry is an integer vector of indices
+#&#39; of features that are in a common cluster. (The length of list clusters is
+#&#39; equal to the number of clusters.) All identified clusters must be
+#&#39; non-overlapping. All features appear in exactly one cluster (any unclustered
+#&#39; features must be in their own &quot;cluster&quot; of size 1).
+#&#39; @param prototypes An integer vector whose length must be equal to the number
+#&#39; of clusters. Entry i should be the index of the feature belonging to cluster
+#&#39; i that is most highly correlated with y (that is, the prototype for the
+#&#39; cluster, as in the protolasso; see Reid and Tibshirani 2016).
+#&#39; @param feat_names Character vector; the names of the features in X. (If the
+#&#39; X provided to protolasso or clusterRepLasso did not have feature names,
+#&#39; feat_names will be NA.)
+#&#39; @return A list containing the following items: \item{selected_sets}{A list of
+#&#39; integer vectors. Entry k of this list contains a selected set of size k
+#&#39; yielded by glmnet--each member of the set is the index of a single feature
+#&#39; from a cluster selected by either the protolasso or the cluster
+#&#39; representative lasso (the prototype from that cluster--the cluster member
+#&#39; most highly correlated with y). (If no set of size k was selected, entry k
+#&#39; will be empty.)} \item{selected_clusts_list}{A list of lists; entry k of this
+#&#39; list is a list of length k of clusters (the clusters that were selected by
+#&#39; the cluster representative lasso).}
+#&#39; @author Gregory Faletto, Jacob Bien
+#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal
+#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
+#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}. \cr Bühlmann, P.,
+#&#39; Rütimann, P., van de Geer, S., &amp; Zhang, C. H. (2013). Correlated variables in
+#&#39; regression: Clustering and sparse estimation.
+#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
+#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}.
+<span id='getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</span> &lt;- function(lasso_sets, clusters, prototypes,
+    feat_names){
+
+    if(any(!is.na(feat_names))){
+        stopifnot(all(!is.na(feat_names)))
+    }
+
+    # Largest selected set among all those in lasso_sets
+    max_length &lt;- max(vapply(lasso_sets, length, integer(1)))
+
+    # Preparing lists to store 
+    selected_sets &lt;- list()
+    selected_clusts_list &lt;- list()
+    
+    for(j in 1:max_length){
+        # Lasso selected set of size j
+        lasso_sets_j &lt;- lasso_sets[lapply(lasso_sets, length) == j]
+        # Are there any lasso selected sets of size j? (If not, we will skip to
+        # the next j, and slot j in the list will be empty.)
+        if(length(lasso_sets_j) &gt; 0){
+
+            # Select the first set of size j
+            lasso_set_j &lt;- lasso_sets_j[[1]]
+            stopifnot(length(lasso_set_j) == j)
+            
+            ret &lt;- <a href='create-cssr.html#getSelectedSets'>getSelectedSets</a>(lasso_set=lasso_set_j, clusters=clusters,
+                prototypes=prototypes, feat_names=feat_names)
+
+            selected_sets[[j]] &lt;- ret$selected_set
+            selected_clusts_list[[j]] &lt;- ret$selected_clusts_list
+
+            rm(ret)
+        }
+    }
+
+    stopifnot(length(selected_sets) &lt;= max_length)
+    stopifnot(length(selected_clusts_list) &lt;= max_length)
+
+    return(list(selected_sets=selected_sets,
+        selected_clusts_list=selected_clusts_list))
+}</code></pre>
+<p>getSelectedSets:</p>
+<pre class="r"><code>#&#39; Converts a selected set from X_glmnet to selected sets and selected clusters
+#&#39; from the original feature space of X.
+#&#39;
+#&#39; @param lasso_set A vector containing the indices of selected cluster
+#&#39; representatives or prototypes.
+#&#39; @param clusters A named list where each entry is an integer vector of indices
+#&#39; of features that are in a common cluster. (The length of list clusters is
+#&#39; equal to the number of clusters.) All identified clusters must be
+#&#39; non-overlapping. All features appear in exactly one cluster (any unclustered
+#&#39; features must be in their own &quot;cluster&quot; of size 1).
+#&#39; @param prototypes An integer vector whose length must be equal to the number
+#&#39; of clusters. Entry i should be the index of the feature belonging to cluster
+#&#39; i that is most highly correlated with y (that is, the prototype for the
+#&#39; cluster, as in the protolasso).
+#&#39; @param feat_names Character vector; the names of the features in X.
+#&#39; @return A list containing two items: \item{selected_set}{An integer vector
+#&#39; with length equal to lasso_set containing a set of selected features in the
+#&#39; original X matrix. (Selections in lasso_set corresponding to a cluster will
+#&#39; be replaced by the cluster&#39;s prototype from X.)}
+#&#39; \item{selected_clusts_list}{A named list of integer vectors with length equal
+#&#39; to selected_set. selected_clusts_list[[k]] will be an integer vector
+#&#39; containing the indices of the features in X that are in the cluster
+#&#39; containing prototype selected_set[k].}
+#&#39; @author Gregory Faletto, Jacob Bien
+<span id='getSelectedSets'>getSelectedSets</span> &lt;- function(lasso_set, model_size, clusters, prototypes,
+    feat_names){
+    
+    model_size &lt;- length(lasso_set)
+
+    stopifnot(length(unique(lasso_set)) == model_size)
+    stopifnot(all(lasso_set &lt;= length(clusters)))
+
+    selected_set &lt;- integer()
+    selected_clusts_list &lt;- list()
+    # Recover features from original feature space
+    for(k in 1:model_size){
+        selected_cluster_k &lt;- clusters[[lasso_set[k]]]
+        stopifnot(is.integer(selected_cluster_k))
+        selected_clusts_list[[k]] &lt;- selected_cluster_k
+
+        if(length(selected_cluster_k) == 1){
+            stopifnot(!(selected_cluster_k %in% selected_set))
+            selected_set &lt;- c(selected_set, selected_cluster_k)
+        } else{
+            sel_prototype &lt;- which(prototypes %in% selected_cluster_k)
+            stopifnot(length(sel_prototype) == 1)
+            stopifnot(!(prototypes[sel_prototype] %in% selected_set))
+            selected_set &lt;- c(selected_set, prototypes[sel_prototype])
+        }
+    }
+
+    stopifnot(length(selected_set) == model_size)
+    stopifnot(length(unique(selected_set)) == model_size)
+    
+    if(any(!is.na(feat_names))){
+        names(selected_set) &lt;- feat_names[selected_set]
+    }
+
+    stopifnot(length(selected_clusts_list) == model_size)
+    all_feats &lt;- unlist(selected_clusts_list)
+    stopifnot(length(all_feats) == length(unique(all_feats)))
+
+    return(list(selected_set=selected_set,
+        selected_clusts_list=selected_clusts_list))
+}</code></pre>
+<p>Tests for getSelectedSets:</p>
+<p>Tests for getClusterSelsFromGlmnet</p>
+<p>Finally, tests for protolasso:</p>
+<p>clusterRepLasso:</p>
+<pre class="r"><code>#&#39; Select features via the cluster representative lasso (Bühlmann et. al. 2013)
+#&#39;
+#&#39; @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#&#39; be coerced internally to a matrix by the function model.matrix) containing
+#&#39; p &gt;= 2 features/predictors
+#&#39; @param y The response; A length n numeric (or integer) real-valued vector.
+#&#39; @param clusters A list of integer vectors; each vector should contain the 
+#&#39; indices of a cluster of features (a subset of 1:p). (If there is only one
+#&#39; cluster, clusters can either be a list of length 1 or an integer vector.)
+#&#39; All of the provided clusters must be non-overlapping. Every feature not
+#&#39; appearing in any cluster will be assumed to be unclustered (that is, they
+#&#39; will be treated as if they are in a &quot;cluster&quot; containing only themselves).
+#&#39; Default is list() (so no clusters are specified).
+#&#39; @param nlambda Integer; the number of lambda values to use in the lasso fit
+#&#39; for the cluster representative lasso. Default is 100 (following the default
+#&#39; for glmnet). For now, nlambda must be at least 2 (using a single lambda is
+#&#39; not supported).
+#&#39; @return A list with three elements. \item{selected_sets}{A list of integer
+#&#39; vectors. Entry k of this list contains a selected set (an integer vector) of
+#&#39; size k yielded by the lasso--each member of the set is the index of a single
+#&#39; feature from a cluster selected by the cluster representative lasso (the
+#&#39; prototype from that cluster--the cluster member most highly correlated with
+#&#39; y). (If no set of size k was selected, entry k will be empty.)}
+#&#39; \item{selected_clusts_list}{A list; each element of the list is a named list
+#&#39; of selected clusters. (That is, if a selected set of size k was yielded by
+#&#39; the cluster representative lasso, then selected_clusts_list[[k]] is a named
+#&#39; list of length k, where each member of the list is an integer vector
+#&#39; of cluster members. Note that selected_clusts_lists[[k]][[j]] will be the
+#&#39; cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The beta
+#&#39; output from glmnet when the lasso was estimated on a matrix of prototypes.
+#&#39; (See documentation for the function glmnet from the glmnet package for
+#&#39; details.)}
+#&#39; @references Bühlmann, P., Rütimann, P., van de Geer, S., &amp; Zhang, C. H.
+#&#39; (2013). Correlated variables in regression: Clustering and sparse estimation.
+#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
+#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor
+#&#39; Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear
+#&#39; Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)
+#&#39; &#39; 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+<span id='clusterRepLasso'>clusterRepLasso</span> &lt;- function(X, y, clusters=list(), nlambda=100){
+
+    # Handle and format inputs; get cluster prototypes
+    ret &lt;- <a href='create-cssr.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)
+
+    x &lt;- ret$x
+    clusters &lt;- ret$clusters
+    prototypes &lt;- ret$prototypes
+    feat_names &lt;- ret$var_names
+
+    rm(ret)
+
+    # Format the design matrix for glmnet according to the cluster
+    # representative lasso procedure
+    X_glmnet &lt;- <a href='create-cssr.html#getXglmnet'>getXglmnet</a>(x, clusters, type=&quot;clusterRepLasso&quot;)
+
+    # Estimate the lasso on the cluster representatives
+    fit &lt;- glmnet::glmnet(x=X_glmnet, y=y, family=&quot;gaussian&quot;, nlambda=nlambda)
+    lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))
+
+    # Finally, extract the desired information from the lasso fit--all the
+    # sets of selected clusters (one for each observed model size), and
+    # corresponding sets of selected features
+    cluster_sel_results &lt;- <a href='create-cssr.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,
+        prototypes, feat_names)
+
+    return(list(selected_sets=cluster_sel_results$selected_sets,
+        selected_clusts_list=cluster_sel_results$selected_clusts_list,
+        beta=fit$beta))
+}</code></pre>
+<p>Tests for clusterRepLasso:</p>
+</div>
 <div id="documenting-the-package-and-building" class="section level2">
 <h2>Documenting the package and building</h2>
 <p>We finish by running commands that will document, build, and install
@@ -10118,6 +10838,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetClusterSelMatrixInput&#39;)checkGetClusterSelMatrixInput.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetCssPredsInputs&#39;)checkGetCssPredsInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetSelectedClustersOutput&#39;)checkGetSelectedClustersOutput.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkGetXglmnetInputs&#39;)checkGetXglmnetInputs.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMaxNumClusts&#39;)checkMaxNumClusts.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkMinNumClusts&#39;)checkMinNumClusts.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkNewXProvided&#39;)checkNewXProvided.Rd]8;;&#39;
@@ -10127,6 +10848,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkWeighting&#39;)checkWeighting.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkXInputResults&#39;)checkXInputResults.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;checkY&#39;)checkY.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;clusterRepLasso&#39;)clusterRepLasso.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;corFunction&#39;)corFunction.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;createSubsamples&#39;)createSubsamples.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;css&#39;)css.Rd]8;;&#39;
@@ -10141,6 +10863,7 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getAllClustWeights&#39;)getAllClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClustWeights&#39;)getClustWeights.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelMatrix&#39;)getClusterSelMatrix.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getClusterSelsFromGlmnet&#39;)getClusterSelsFromGlmnet.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssDesign&#39;)getCssDesign.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssPreds&#39;)getCssPreds.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getCssSelections&#39;)getCssSelections.Rd]8;;&#39;
@@ -10149,13 +10872,17 @@ litr::document() # &lt;-- use instead of devtools::document()
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getPrototypes&#39;)getPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelMatrix&#39;)getSelMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelectedClusters&#39;)getSelectedClusters.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelectedSets&#39;)getSelectedSets.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSelectionPrototypes&#39;)getSelectionPrototypes.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getSubsamps&#39;)getSubsamps.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;getXglmnet&#39;)getXglmnet.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;identifyPrototype&#39;)identifyPrototype.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;makeCoefficients&#39;)makeCoefficients.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;makeCovarianceMatrix&#39;)makeCovarianceMatrix.Rd]8;;&#39;
 ## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;print.cssr&#39;)print.cssr.Rd]8;;&#39;
-## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;printCssDf&#39;)printCssDf.Rd]8;;&#39;</code></pre>
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;printCssDf&#39;)printCssDf.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;processClusterLassoInputs&#39;)processClusterLassoInputs.Rd]8;;&#39;
+## Writing &#39;]8;;ide:run:pkgload::dev_help(&#39;protolasso&#39;)protolasso.Rd]8;;&#39;</code></pre>
 </div>
 <div id="add-readme" class="section level2">
 <h2>Add README</h2>

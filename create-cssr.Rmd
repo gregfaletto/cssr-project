@@ -9583,29 +9583,219 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
         clust_names <- names(clusters)
     }
 
-    cluster_results <- formatClusters(clusters, p=ncol(x),
-        clust_names=clust_names, get_prototypes=TRUE, x=x, y=y)
+    cluster_results <- formatClusters(clusters, p=ncol(X),
+        clust_names=clust_names, get_prototypes=TRUE, x=X, y=y)
 
     clusters <- cluster_results$clusters
-    # multiple <- cluster_results$multiple
     prototypes <- cluster_results$prototypes
 
     rm(cluster_results)
 
-    n_clusters <- sum(lengths(clusters) > 1)
-    stopifnot(n_clusters == length(prototypes))
+    stopifnot(length(clusters) == length(prototypes))
 
     stopifnot(is.numeric(nlambda) | is.integer(nlambda))
     stopifnot(length(nlambda) == 1)
     stopifnot(!is.na(nlambda))
     stopifnot(nlambda >= 2)
 
-    return(list(x=x, clusters=clusters, prototypes=prototypes,
+    return(list(x=X, clusters=clusters, prototypes=prototypes,
         var_names=feat_names))
 }
 ```
 
 Tests for processClusterLassoInputs:
+
+```{r}
+testthat::test_that("processClusterLassoInputs works", {
+  set.seed(82612)
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  ret <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters, nlambda=10)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
+                                           "var_names"))
+  
+  
+  # # sig_clusters
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters="2", rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=4, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "sig_clusters <= n_clusters is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=-1, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "sig_clusters >= 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=.6, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "sig_clusters == round(sig_clusters) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # 
+  # # n_clusters
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5,
+  #                                                 n_clusters="3",
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3.2,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "n_clusters == round(n_clusters) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=0,
+  #                                                 sig_clusters=0, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "n_clusters >= 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=.3, n_clusters=3,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "cluster_size >= 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=16, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "p >= n_clusters * cluster_size + k_unclustered is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "abs(rho) <= abs(var) is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "rho != 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=-1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "var > 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=0,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "beta_latent != 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=0, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "beta_unclustered != 0 is not TRUE", fixed=TRUE)
+  # 
+  # # k_unclustered
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered="2",
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=-2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "k_unclustered >= 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=.2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=1,
+  #                                                 sigma_eps_sq=NA),
+  #                        "k_unclustered == round(k_unclustered) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=NA,
+  #                                                 sigma_eps_sq=NA),
+  #                        "Must specify one of snr or sigma_eps_sq", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=-.2,
+  #                                                 sigma_eps_sq=NA),
+  #                        "snr > 0 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
+  #                                                 cluster_size=5, n_clusters=3,
+  #                                                 sig_clusters=2, rho=0.8,
+  #                                                 var=1.1, beta_latent=1.5,
+  #                                                 beta_unclustered=-2, snr=NA,
+  #                                                 sigma_eps_sq=-.3),
+  #                        "sigma_eps_sq > 0 is not TRUE", fixed=TRUE)
+  # 
+})
+```
+
 
 getXglmnet:
 
