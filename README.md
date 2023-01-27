@@ -8,7 +8,7 @@ You can install the cssr package using the following command:
 remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
 ```
 
-The cssr package implements [cluster stability selection](https://arxiv.org/abs/2201.00494), a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
+The cssr package implements [cluster stability selection (Faletto and Bien 2022)](https://arxiv.org/abs/2201.00494), a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
 
 
 ```{r}
