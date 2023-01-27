@@ -1,6 +1,6 @@
 # cssr-project
 
-## Getting started
+## Installing the cssr Package
 
 You can install the cssr package using the following command:
 
@@ -8,7 +8,7 @@ You can install the cssr package using the following command:
 remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
 ```
 
-The cssr package implements cluster stability selection (read [our paper](https://arxiv.org/abs/2201.00494) for details), a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
+The cssr package implements [cluster stability selection](https://arxiv.org/abs/2201.00494), a feature selection method. Given data $(X, y)$, cluster stability selection selects the variables in $X$ that are useful for predicting $y$.
 
 
 ```{r}
@@ -29,27 +29,57 @@ output <- cssSelect(X, y)
 output$selected_feats
 ```
 
+I'll first walk through a description of [stability selection (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932), the method that cluster stability selection builds on. Then I'll illustrate a problem with stability selection when data with clusters of highly correlated features are observed. Finally, I'll demonstrate how to use the cssr package to implement cluster stability selection.
+
+## Stability Selection
+
+Cluster stability selection is an extension of [stability selection (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932). Stability selection is a procedure deisgned to make any feature selection procedure more *stable*. Given a data set $(\boldsymbol{X}, \boldsymbol{y})$ with $n$ observations, stability selection works as follows:
+
+* The data are divided into $B$ subsamples of size $n/2$ (typically, $B$ might be around 50 or 100).
+* The desired feature selection method is run on each subsample, yielding $B$ selected sets of features.
+* For each feature, we count how many times it was selected and divide by $B$ to get a *selection proportion*. We interpret the selection proportion for each feature as a measure of feature importance--the higher the selection proportion is for a feature, the more relevant we think it is for predicting $y$.
+* Finally, we use the selection proportions to get a selected set (for example, by taking the top $s$ features for some predetermined $s$).
+
+The below diagram (from Faletto and Bien 2022) demonstrates the procedure. In the diagram, the lasso is the chosen feature selection procedure, and a selected set is chosen by choosing all features with selection proportions larger than a predetermined $\tau$.
+
 ![Stability Selection Flowchart Figure](stability-selection-diagram.png "Stability Selection")
 
+In the classic framework of [bias/variance tradeoff](https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff), we can think of stability selection as a way to reduce variance at the price of increasing bias. We get a more stable and robust (lower variance) feature selection procedure because we average over many subsamples, but the price we pay is that each selected set is estimated using a sample of size $n/2$ rather than $n$.
 
-Cluster stability selection is designed to be particularly useful for data that include clustered features--groups of highly correlated features. The data we generated above contain a cluster of 10 features (specifically, the first 10 columns of $X$) that are highly correlated both with each other and also with an unobserved variable $Z$ that is associated with $y$. We can tell cluster stability selection about this cluster using the "clusters" argument.
+# Why Cluster Stability Selection?
+
+**Stability selection doesn't do well when features are highly correlated.** The problem is that if there are clusters of highly correlated features, any one member of the cluster might be a reasonably good choice for a predictive model. So the base feature selection might select one cluster member more or less at random. Then at the end, no one cluster member will have a high selection proportion, so no cluster member will be selected as an important feature, even if every selected set contained a cluster member. This problem has been called "vote-splitting."
+
+In [our paper](https://arxiv.org/abs/2201.00494), we walk through an example where there is a latent (unobserved) feature $Z$ that is important for predicting $y$. $Z$ is not observed, but 10 *proxies* for $Z$ are observed--features that are highly correlated with $Z$ and therefore with each other. There are also 10 "weak signal" features that influence $y$, but less so than $Z$. We show in a simulation study that stability selection tends to end up with low selection proportions for the proxies for $Z$, even though any one of the $Z$ proxies would be more useful for predicting $y$ than all of the "weak signal" features. 
+
+The below figure shows the selection proportions yielded by stability selection for proxies for $Z$, "weak signal" features, and "noise" features that are unrelated to $y$.
+
+![Selection Proportions](sel_props.png "Proxy Selection Proportions")
+
+## How does cluster stability selection fix this?
+
+Cluster stability selection modifies stability selection with a simple fix: instead of only keeping track of the individual feature selection proportions, we also keep track of the *cluster selection proportions*--the proportion of subsamples in which at least one cluster member was selected. Then we can rank clusters by their importance according to cluster selection proportion, and select entire clusters. This avoids the vote-splitting problem!
+
+## Using the cssr package to implement cluster stability selection
+
+The data we generated at the beginning of third document contain a cluster of 10 features (specifically, the first 10 columns of $X$) that are highly correlated both with each other and also with an unobserved variable $Z$ that is associated with $y$. The cssSelect function in the cssr package yields a set of features selected by cluster stability selection. We can tell cssSelect about the cluster using the "clusters" argument.
 
 ```{r}
 clus_output <- cssSelect(X, y, clusters=list("Z_cluster"=1:10))
+```
+
+This input tells cssSelect that features 1 through 10 are in a cluster, and it names the cluster "Z_cluster" (providing a name is optional and is only for your convenience). cssSelect returns both a set of selected clusters (below) and all of the features contained within those clusters (as in the above).
+
+```{r}
+clus_output$selected_clusts
 
 clus_output$selected_feats
 ```
 
-(Note that in our generated data, features 11 through 20 are also associated with y.) Cluster stability selection returns both a set of selected clusters (below) and all of the features contained within those clusters (as in the above).
 
-```{r}
-clus_output$selected_clusts
-```
+vignette incomplete past this point...
 
 Here's a brief summary of how cluster stability selection works: besides the data $(X, y)$, cluster stability selection also requires a "base" feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number $B$ of subsamples of size $n/2$ and runs the feature selection method on each subsample, yielding $B$ selected sets.
-
-
-need to finish vignette...
 
 ```{r}
 clusters <- list("Z_clust"=1:10, 36:40)
