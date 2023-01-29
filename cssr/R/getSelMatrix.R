@@ -8,15 +8,21 @@
 #' default fitfun = cssLasso), y should be an n-dimensional numeric vector
 #' containing the response.
 #' @param lambda A tuning parameter or set of tuning parameters that may be used
-#' by the feature selection method. For example, in the default case when
-#' fitfun = cssLasso, lambda is a numeric: the penalty to use for each lasso
-#' fit.
+#' by the feature selection method `fitfun`. In the default case when
+#' `fitfun = cssLasso`, lambda should be a numeric: the penalty to use for each
+#' lasso fit. (`css()` does not require lambda to be any particular object because
+#' for a user-specified feature selection method `fitfun`, lambda can be an
+#' arbitrary object. See the description of `fitfun` below.)
 #' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the number of lasso fits will be `B`; for
-#' sampling_type="SS" the number of lasso fits will be `2*B`.
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
-#' @param subsamps_object A list of length `B` (or `2*B` if sampling_type="SS"),
+#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
+#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param sampling_type A character vector; either "SS" or "MB". For "MB",
+#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
+#' 2010). For "SS", in addition to these B subsamples, the B complementary pair
+#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
+#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
+#' @param subsamps_object A list of length `B` (or `2*B` if `sampling_type="SS"`),
 #' where each element is one of the following: \item{subsample}{An integer
 #' vector of size `n/2` containing the indices of the observations in the
 #' subsample.} \item{drop_var_input}{A named list containing two elements: one
@@ -29,9 +35,16 @@
 #' @param num_cores Optional; an integer. If using parallel processing, the
 #' number of cores to use for parallel processing (num_cores will be supplied
 #' internally as the mc.cores argument of parallel::mclapply).
-#' @param fitfun A function that takes in arguments X, y, and lambda and returns
-#' a vector of indices of the columns of X (selected features). Default is
-#' cssLasso, an implementation of the lasso using glmnet.
+#' @param fitfun A function; the feature selection function used on each
+#' subsample by cluster stability selection. This can be any feature selection
+#' method; the only requirement is that it accepts the arguments (and only the
+#' arguments) `X`, `y`, and `lambda` and returns an integer vector that is a 
+#' subset of `1:p`. For example, `fitfun` could be best subset selection or 
+#' forward stepwise selection or LARS and `lambda` could be the desired model 
+#' size; or `fitfun` could be the elastic net and `lambda` could be a length-two
+#' vector specifying lambda and alpha. Default is `cssLasso`, an implementation 
+#' of lasso (relying on the R package `glmnet`), where `lambda` must be a 
+#' positive numeric specifying the L1 penalty for the `lasso`.
 #' @return A binary integer matrix of dimension `B` x `p` (if sampling_type ==
 #' "MB") or `2*B` x `p` (if sampling_type == "SS"). res[i, j] = 1 if feature j
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a

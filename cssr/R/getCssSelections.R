@@ -38,7 +38,8 @@
 #' indices of the features with nonzero weights from all of the selected
 #' clusters.}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' @references 
+#' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
 #' @export

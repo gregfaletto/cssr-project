@@ -15,7 +15,7 @@ exactly one cluster (any unclustered features should be in their own
 "cluster" of size 1).}
 
 \item{res}{A binary integer matrix. es\link{i, j} = 1 if feature j was selected
-on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+on subsample i and equals 0 otherwise, as in the output of \code{getSelMatrix()}.
 (That is, each row is a selected set.)}
 }
 \value{
