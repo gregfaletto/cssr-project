@@ -14,9 +14,95 @@ documentclass: book
 <!-- This Rmd file contains all the code needed to define an R package.  Press "Knit" in RStudio or more generally run `rmarkdown::render("name-of-this-file.Rmd")` to generate the R package.  Remember that when you want to modify anything about the R package, you should modify this document rather than the package that is outputted.
 -->
 
-# Package setup
+# Introduction
 
-We start by specifying the information needed in the DESCRIPTION file of the R package.
+Cluster stability selection is a feature selection method designed to allow stability selection to work effectively in the presence of highly correlated features.  It was proposed in [this paper](https://arxiv.org/abs/2201.00494):
+
+```{r faletto2022}
+#' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' \emph{arXiv preprint arXiv:2201.00494}.
+#' \url{https://arxiv.org/abs/2201.00494}.
+```
+
+This bookdown uses [literate programming](https://jacobbien.github.io/litr-project/) to define the ``r params$package_name`` R package, which implements the procedures described in the paper.  For a light introduction demonstrating how to use ``r params$package_name``, please see the package's vignette [here]().
+
+TODO: CREATE VIGNETTE FOR PACKAGE AND PKGDOWN SITE FOR PACKAGE AND THEN LINK IN THE ABOVE TO THE VIGNETTE THAT APPEARS IN THE PKGDOWN SITE.
+
+# Overview
+
+## Background
+
+### Complementary pairs stability selection {#cpss}
+
+The following paper introduces complementary pairs subsampling:
+
+```{r shah2013}
+#' Shah, R. D., & Samworth, R. J.
+#' (2013). Variable selection with error control: Another look at stability
+#' selection. \emph{Journal of the Royal Statistical Society. Series B:
+#' Statistical Methodology}, 75(1), 55–80.
+#' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+```
+
+Subsamples \(A_1, \ldots, A_B \subset [n]\) of size \(\lfloor n/2 \rfloor\) are drawn, as well as subsamples \( \overline{A}_b \subset [n] \) of the same size with \(A_b \cap \overline{A}_b = \emptyset\).
+
+Writing $\hat{S}^\lambda(A)$ for the selected features from applying a variable selection procedure with tuning parameter $\lambda$ on the data in a subset $A\subset[n]$, Shah and Samworth suggest computing the following:
+
+$$
+\hat{\Pi}_B^{\text{(SS)}}(j) = \frac{1}{2B} \sum_{b=1}^B \left[1\left\{j \in \hat{S}^\lambda \left( A_b \right)\right\} + 1\left\{j \in \hat{S}^\lambda (\overline{A}_b)\right\} \right].
+$$
+
+### Cluster stability selection
+
+We compute the proportion of the time that a feature \(j \in [p]\) is selected for at least one \(\lambda \in \Lambda\):
+$$
+\hat{\Pi}_B(j) := \frac{1}{2B} \sum_{b=1}^B \left[ 1\left\{   j \in \bigcup_{\lambda \in \Lambda} \hat{S}^\lambda \left( A_b \right) \right\} + 1\left\{  j \in  \bigcup_{\lambda \in \Lambda} \hat{S}^\lambda (\overline{A}_b)\right\} \right].
+$$
+
+We also compute a similar quantity at the level of clusters: For every cluster $C_k$, we calculate the proportion of the time that at least one feature from \(C_k\) is selected for at least one \(\lambda \in \Lambda\):
+
+$$
+\hat{\Theta}_B(C_k) :=  \frac{1}{2B} \sum_{b=1}^B \left[  1 \left\{    C_k \cap \bigcup_{\lambda \in \Lambda} \hat{S}^{\lambda}\left(A_b \right) \neq \emptyset   \right\} +  1 \left\{   C_k \cap \bigcup_{\lambda \in \Lambda} \hat{S}^{\lambda}\left(\overline{A}_b \right) \neq \emptyset  \right\} \right].
+$$
+
+We then calculate *cluster representatives* \(\boldsymbol{X}_{\cdot C_k}^{\text{rep}}\) as weighted averages of the cluster members:
+
+$$
+\boldsymbol{X}_{\cdot C_k}^{\text{rep}}:=  \sum_{j \in C_k } w_{kj} \boldsymbol{X}_{\cdot j}.
+$$
+We allow for several choices of weights:
+
+- **Weighted averaged cluster stability selection:**
+
+$$
+w_{kj} = \frac{\hat{\Pi}_B(j)}{\sum_{j' \in C_k} \hat{\Pi}_B(j')} \qquad \forall j \in C_k  .
+$$
+
+- **Simple averaged cluster stability selection:**  
+
+$$
+w_{kj} = \frac{1}{\left| C_k \right|}  \qquad \forall j \in C_k .
+$$
+
+- **Sparse cluster stability selection:** For each \(j \in C_k \), 
+
+$$
+w_{kj} = \left. 1 \left\{ j \in \underset{j' \in C_k}{\arg \max}  \left\{ \hat{\Pi}_B(j') \right\} \right\} \middle/ \left| \underset{j' \in C_k}{\arg \max}  \left\{ \hat{\Pi}_B(j')  \right\} \right| \right. .
+$$
+
+## Outline
+
+We will define the functions in this package in steps.
+
+* First we define [the workhorse function of the package](#css), `css()`. This function takes as inputs a data set ($X$, $y$), a feature selection method $\hat S^\lambda(\cdot)$, and clusters of features appearing in the data: $C_1,\ldots,C_K$. It calculates random subsamples of the data ($A_1,\ldots, A_B$ and $\bar A_1,\ldots, \bar A_B$) and gets selected sets of features on each subsample (i.e., $\hat S^\lambda(A_b)$ and $\hat S^\lambda(\bar A_b)$). It returns a $2B\times p$ matrix of indicator variables for whether each feature was selected on each subsample (one row for each subsample, one column for each feature). It returns a similar $2B\times K$ matrix of indicator variables for whether any feature from each cluster was selected on each subsample. This is the most computationally intensive step of cluster stability selection, so it is isolated within its own function that is designed to be run only once on a data set.
+* Next we [define functions](#sel-and-pred) that take these indicator matrices and return useful output--for example, selected sets of features, or predictions on test data. These outputs depend on the selected features, which themselves depend on user-selected parameters (for example, the cutoff for selection proportions for selected clusters). 
+* Next, we define [wrapper functions](#wrapper-functions) that compute all of the above in one step in a user-friendly way. (These functions are not recommended for large data sets or for "power users" who may want to call these functions multiple times on the same data set, because these wrapper functions make a new call to `css()` every time they are called, which is slow and computationally wasteful if the inputs to `css()` are not changed.)
+* Finally, we define [some other useful functions](#other-useful), like functions that generate clustered data to use for simulations or testing, or select a tuning parameter for the lasso via cross-validation.
+
+
+## Package setup
+
+Before proceeding to the actual functionality of the package, we start by specifying the information needed in the DESCRIPTION file of the R package.
 
 ```{r package-setup, message=FALSE, results='hide'}
 usethis::create_package(
@@ -42,24 +128,95 @@ usethis::create_package(
 usethis::use_mit_license(copyright_holder = "F. Last")
 ```
 
-# Now to the package itself
+We also define the package-level documentation that shows up when someone types `package?cssr` in the console:
 
-Cluster stability selection is a feature selection method designed to allow stability selection to work effectively in the presence of highly correlated features. We will define the functions in this package in steps.
+```{package_doc}
+#' Cluster Stability Selection
+#'
+#' DESCRIBE PACKAGE HERE AND PERHAPS POINT USER TO PKGDOWN WEBSITE ONCE 
+#' IT EXISTS.
+#' 
+#' @docType package
+#' @seealso \code{\link{css}}
+```
 
-* First we define the workhorse function of the package, css. This function takes as inputs a data set, a feature selection method, and clusters of features appearing in the data. It calculates random subsamples of the data and gets selected sets of features on each subsample. It returns a matrix of indicator variables for whether each feature was selected on each subsample (one row for each subsample, one column for each feature). It returns a similar matrix of indicator variables for whether any feature from each cluster was selected on each subsample. This is the most computationally intensive step of cluster stability selection, so it is isolated within its own function that is designed to be run only once on a data set.
-* Next we define functions that take these indicator matrices and return useful output--for example, selected sets of features, or predictions on test data. These outputs depend on the selected features, which themselves depend on user-selected parameters (for example, the cutoff for selection proportions for selected clusters). 
-* Next, we define wrapper functions that compute all of the above in one step in a user-friendly way. (These functions are not recommended for large data sets or for "power users" who may want to call these functions multiple times on the same data set, because these wrapper functions make a new call to css every time they are called, which is slow and computationally wasteful if the inputs to css are not changed.)
-* Finally, we define some other useful functions, like functions that generate clustered data to use for simulations or testing, or select a tuning parameter for the lasso via cross-validation.
+# The core function: `css` {#css}
 
-## The core function: css
+The main inputs that `css()` accepts are...
 
-css accepts as an input a design matrix X, a response y, a selection method fitfun with specified tuning parameter lambda, and a specification of which features belong together in highly correlated clusters. In this section, we will build the function css step-by-step.
+* a design matrix `X`
+* a response `y`
+* a selection method `fitfun` with specified tuning parameter `lambda`.  This specifies $\hat{S}^\lambda(A)$.  In particular:
 
-* First, css creates random subsamples of the data. This is implemented in the function createSubsamples.
-* Next, css executes the specified feature selection method on each subsample. This generates a binary matrix, feat_sel_mat, with one row for each subsample and one column for each feature in X. In each row, the entry corresponding to each feature equals 1 if the feature was selected on that subsample and 0 otherwise. feat_sel_mat is one of the outputs of css; it is used to calculate the selection proportions for individual features. This is implemented in the function getSelMatrix.
-* So far this is the same as the original stability selection procedure. Now we take into account the clusters. The function getClusterSelMatrix takes in the formatted clusters as well as feat_sel_mat and generates the binary matrix clus_sel_mat, which contains selection indicators for each cluster. clus_sel_mat has the same number of rows as feat_sel_mat and one column for each cluster rather than one for each feature. This is used to calculate the cluster selection proportions.
+```{r param-fitfun}
+#' @param fitfun A function; the feature selection function used on each
+#' subsample by cluster stability selection. This can be any feature selection
+#' method; the only requirement is that it accepts the arguments (and only the
+#' arguments) `X`, `y`, and `lambda` and returns an integer vector that is a 
+#' subset of `1:p`. For example, `fitfun` could be best subset selection or 
+#' forward stepwise selection or LARS and `lambda` could be the desired model 
+#' size; or `fitfun` could be the elastic net and `lambda` could be a length-two
+#' vector specifying lambda and alpha. Default is `cssLasso`, an implementation 
+#' of lasso (relying on the R package `glmnet`), where `lambda` must be a 
+#' positive numeric specifying the L1 penalty for the `lasso`.
+```
 
-The function css is specified below. (There are some extra details that I omitted in the above description for brevity; you can read the full details below.)
+and
+
+```{r param-lambda}
+#' @param lambda A tuning parameter or set of tuning parameters that may be used
+#' by the feature selection method `fitfun`. In the default case when
+#' `fitfun = cssLasso`, lambda should be a numeric: the penalty to use for each
+#' lasso fit. (`css()` does not require lambda to be any particular object because
+#' for a user-specified feature selection method `fitfun`, lambda can be an
+#' arbitrary object. See the description of `fitfun` below.)
+```
+
+* a specification of which features belong together in highly correlated clusters. This specifies the clusters $C_1,\ldots, C_K$. In particular:
+
+```{r param-clusters}
+#' @param clusters A list of integer vectors; each vector should contain the 
+#' indices of a cluster of features (a subset of `1:p`). (If there is only one
+#' cluster, clusters can either be a list of length 1 or an integer vector.)
+#' All of the provided clusters must be non-overlapping. Every feature not
+#' appearing in any cluster will be assumed to be unclustered (that is, they
+#' will be treated as if they are in a "cluster" containing only themselves). If
+#' clusters is a list of length 0 (or a list only containing clusters of length
+#' 1), then `css()` returns the same results as stability selection (so the
+#' returned `feat_sel_mat` will be identical to `clus_sel_mat`). Names for the
+#' clusters will be needed later; any clusters that are not given names in the
+#' provided list will be given names automatically by `css()`. Default is 
+#' `list()` (so no clusters are specified).
+```
+
+* and a specification of the type of subsamples.  For now we only consider the complementary subsets sampling of Shah and Samworth.  However, we have included an option for Meinshausen-Buhlmann sampling which we may add later:
+
+```{r param-sampling_type}
+#' @param sampling_type A character vector; either "SS" or "MB". For "MB",
+#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
+#' 2010). For "SS", in addition to these B subsamples, the B complementary pair
+#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
+#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
+```
+
+The number of subsamples is also up to the user:
+
+```{r param-B}
+#' @param B Integer or numeric; the number of subsamples. Note: For
+#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
+#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+```
+
+
+In this section, we will build the function `css()` step-by-step.
+
+* First, `css()` creates random subsamples of the data: $A_1,\ldots, A_B$ (and $\bar A_1,\ldots, \bar A_B$ for Shah-Samworth subsampling). This is implemented in the function `createSubsamples()`.
+
+* Next, `css()` executes the specified feature selection method $\hat S^\lambda(\cdot)$ on each subsample. This generates a binary matrix, `feat_sel_mat`, with one row for each subsample and one column for each feature in `X`. In each row, the entry corresponding to each feature equals 1 if the feature was selected on that subsample and 0 otherwise. `feat_sel_mat` is one of the outputs of `css()`; it is used to calculate the selection proportions for individual features. This is implemented in the function `getSelMatrix()`.
+* So far this is the same as the original stability selection procedure. Now we take into account the clusters. The function `getClusterSelMatrix()` takes in the formatted clusters as well as `feat_sel_mat` and generates the binary matrix `clus_sel_mat`, which contains selection indicators for each cluster. `clus_sel_mat` has the same number of rows as `feat_sel_mat` and one column for each cluster rather than one for each feature. This is used to calculate the cluster selection proportions.
+
+The function `css()` is specified below. (There are some extra details that I omitted in the above description for brevity; you can read the full details below.)
 
 ```{r}
 #' Cluster Stability Selection
@@ -73,99 +230,63 @@ The function css is specified below. (There are some extra details that I omitte
 #' p >= 2 features/predictors.
 #' @param y The response; can be anything that takes the form of an
 #' n-dimensional vector, with the ith entry corresponding to the ith row of X.
-#' Typically (and for default fitfun = cssLasso), y should be an n-dimensional
+#' Typically (and for default `fitfun = cssLasso`), `y` should be an n-dimensional
 #' numeric vector.
-#' @param lambda A tuning parameter or set of tuning parameters that may be used
-#' by the feature selection method fitfun. In the default case when
-#' fitfun = cssLasso, lambda should be a numeric: the penalty to use for each
-#' lasso fit. (css does not require lambda to be any particular object because
-#' for a user-specified feature selection method fitfun, lambda can be an
-#' arbitrary object. See the description of fitfun below.)
-#' @param clusters A list of integer vectors; each vector should contain the 
-#' indices of a cluster of features (a subset of 1:p). (If there is only one
-#' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
-#' appearing in any cluster will be assumed to be unclustered (that is, they
-#' will be treated as if they are in a "cluster" containing only themselves). If
-#' clusters is a list of length 0 (or a list only containing clusters of length
-#' 1), then css() returns the same results as stability selection (so the
-#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
-#' clusters will be needed later; any clusters that are not given names in the
-#' provided list will be given names automatically by css. Default is list() (so
-#' no clusters are specified).
-#' @param fitfun A function; the feature selection function used on each
-#' subsample by cluster stability selection. This can be any feature selection
-#' method; the only requirement is that it accepts the arguments (and only the
-#' arguments) X, y, and lambda and returns an integer vector that is a subset of
-#' 1:p. For example, fitfun could be best subset selection or forward stepwise
-#' selection or LARS and lambda could be the desired model size; or fitfun could be the
-#' elastic net and lambda could be a length-two vector specifying lambda and
-#' alpha. Default is cssLasso, an implementation of lasso (relying on the R
-#' package glmnet), where lambda must be a positive numeric specifying the L1
-#' penalty for the lasso.
-#' @param sampling_type A character vector; either "SS" or "MB". For "MB",
-#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
-#' 2010). For "SS", in addition to these B subsamples, the B complementary pair
-#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
-#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the total number of subsamples will be `B`; for
-#' sampling_type="SS" the number of subsamples will be `2*B`. Default is 100
-#' for sampling_type="MB" and 50 for sampling_type="SS".
-#' @param prop_feats_remove Numeric; if prop_feats_remove is greater than 0,
+<<param-lambda>>
+<<param-clusters>>
+<<param-fitfun>>
+<<param-sampling_type>>
+<<param-B>>
+#' @param prop_feats_remove Numeric; if `prop_feats_remove` is greater than 0,
 #' then on each subsample, each feature is randomly dropped from the design
-#' matrix that is provided to fitfun with probability prop_feats_remove
+#' matrix that is provided to `fitfun` with probability `prop_feats_remove`
 #' (independently across features). That is, in a typical subsample,
-#' prop_feats_remove*p features will be dropped (though this number will vary).
+#' `prop_feats_remove*p` features will be dropped (though this number will vary).
 #' This is similar in spirit (but distinct from) extended stability selection
 #' (Beinrucker et. al. 2016); see their paper for some of the benefits of
 #' dropping features (besides increasing computational speed and decreasing
-#' memory requirements). For sampling_type="SS", the features dropped in
+#' memory requirements). For `sampling_type="SS"`, the features dropped in
 #' each complementary pair of subsamples are identical in order to ensure that
 #' the theoretical guarantees of Faletto and Bien (2022) are retained within
 #' each individual pair of subsamples. (Note that this feature is not
 #' investigated either theoretically or in simulations by Faletto and Bien
 #' 2022). Must be between 0 and 1. Default is 0.
 #' @param train_inds Optional; an integer or numeric vector containing the
-#' indices of observations in X and y to set aside for model training by the
-#' function getCssPreds after feature selection. (This will only work if y is
-#' real-valued, because getCssPreds using ordinary least squares regression to
-#' generate predictions.) If train_inds is not provided, all of the observations
+#' indices of observations in `X` and `y` to set aside for model training by the
+#' function `getCssPreds()` after feature selection. (This will only work if `y` is
+#' real-valued, because `getCssPreds()` using ordinary least squares regression to
+#' generate predictions.) If `train_inds` is not provided, all of the observations
 #' in the provided data set will be used for feature selection.
 #' @param num_cores Optional; an integer. If using parallel processing, the
-#' number of cores to use for parallel processing (num_cores will be supplied
-#' internally as the mc.cores argument of parallel::mclapply).
-#' @return A list containing the following items: \item{feat_sel_mat}{A B (or
-#' `2*B` for sampling.method "SS") x p numeric (binary) matrix.
-#' `feat_sel_mat[i, j] = 1` if feature j was selected by the base feature
-#' selection method on subsample i, and 0 otherwise.} \item{clus_sel_mat}{A B
-#' (or 2*B for SS sampling) x length(clusters) numeric (binary) matrix.
-#' `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected
-#' by the base feature selection method on subsample i, and 0 otherwise.}
-#' \item{X}{The X matrix provided to css, coerced from a data.frame to a matrix
-#' if needed.} \item{y}{The y vector provided to css.} \item{clusters}{A named
-#' list of integer vectors containing all of the clusters provided to css, as
-#' well as size 1 clusters of any features not listed in any of the clusters
-#' provided to css. All clusters will have names; any clusters not provided with
-#' a name in the input to css will be given names automatically by css (of the
-#' form c1, etc.).} \item{train_inds}{Identical to the train_inds provided to
-#' css.}
+#' number of cores to use for parallel processing (`num_cores` will be supplied
+#' internally as the `mc.cores` argument of `parallel::mclapply()`).
+#' @return A list containing the following items:
+#' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
+#' \item{`clus_sel_mat`}{A `B` (or `2*B` for SS sampling) x `length(clusters)` numeric (binary) matrix. `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
+#' \item{`X`}{The `X` matrix provided to `css()`, coerced from a data.frame to a 
+#' matrix if needed.}
+#' \item{`y`}{The `y` vector provided to `css()`.}
+#' \item{`clusters`}{A named list of integer vectors containing all of the clusters provided to `css()`, as well as size 1 clusters of any features not listed in any
+#' of the clusters provided to `css()`. All clusters will have names; any 
+#' clusters not provided with a name in the input to `css()` will be given names
+#' automatically by `css()` (of the form c1, etc.).}
+#' \item{`train_inds`}{Identical to the `train_inds` provided to `css()`.}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}. \cr Shah, R. D., & Samworth, R. J.
-#' (2013). Variable selection with error control: Another look at stability
-#' selection. \emph{Journal of the Royal Statistical Society. Series B:
-#' Statistical Methodology}, 75(1), 55–80.
-#' \url{https://doi.org/10.1109/RITA.2014.2302071}. \cr Meinshausen, N., &
-#' Bühlmann, P. (2010). Stability Selection. \emph{Journal of the Royal
+#' @references
+<<faletto2022>>
+#' 
+<<shah2013>>
+#' 
+#' Meinshausen, N., & Bühlmann, P. (2010). Stability Selection. \emph{Journal of the Royal
 #' Statistical Society. Series B: Statistical Methodology}, 72(4), 417–473.
 #' \url{https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00740.x}.
-#' \cr Beinrucker, A., Dogan, Ü., &
+#' 
+#' Beinrucker, A., Dogan, Ü., &
 #' Blanchard, G. (2016). Extensions of stability selection using subsamples of
 #' observations and covariates. \emph{Statistics and Computing}, 26(5), 1059-
-#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}. \cr Jerome Friedman,
-#' Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized
+#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}.
+#' 
+#' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized
 #' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},
 #' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @export
@@ -235,37 +356,31 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 }
 ```
 
-Tests for css and the other functions in this section are located at the end of this document. Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is checkCssInputs, which confirms that the inputs to css are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.) First we specify createSubsamples.
+Tests for `css()` and the other functions in this section are located at the end of this document. Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is `checkCssInputs()`, which confirms that the inputs to `css()` are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.) First we specify `createSubsamples()`.
 
 ```{r}
 #' Creates lists of subsamples for stability selection.
 #'
 #' @param n Integer or numeric; sample size of the data set.
 #' @param p Integer or numeric; number of features.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the number of lasso fits will be `B`; for
-#' sampling_type="SS" the number of lasso fits will be `2*B`.
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
+<<param-B>>
+<<param-sampling_type>>
 #' @param num_feats_remove Integer; number of features select automatically on
 #' every iteration. Determined earlier from input prop_feats_remove to css.
-#' @return A list of length `B` (or `2*B` for sampling_type = "SS"). If
-#' prop_feats_remove = 0, each list element is an integer vector of length
-#' floor(`n/2`) containing the indices of a subsample of 1:`n`. (For
-#' sampling_type=="SS", the last `B` subsamples will be complementary pairs of
+#' @return A list of length `B` (or `2*B` for `sampling_type = "SS"`). If
+#' `prop_feats_remove = 0`, each list element is an integer vector of length
+#' `floor(n/2)` containing the indices of a subsample of `1:n`. (For
+#' `sampling_type=="SS"`, the last `B` subsamples will be complementary pairs of
 #' the first `B` subsamples; see Faletto and Bien 2022 or Shah and Samworth 2013
-#' for details.) If prop_feats_remove > 0, each element is a named list with
+#' for details.) If `prop_feats_remove > 0`, each element is a named list with
 #' members "subsample" (same as above) and "feats_to_keep", a logical vector
-#' of length p; feats_to_keep[j] = TRUE if feature j is chosen for this
+#' of length `p`; `feats_to_keep[j] = TRUE` if feature `j` is chosen for this
 #' subsample, and false otherwise.
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}. \cr Shah, R. D., & Samworth, R. J.
-#' (2013). Variable selection with error control: Another look at stability
-#' selection. \emph{Journal of the Royal Statistical Society. Series B:
-#' Statistical Methodology}, 75(1), 55–80.
-#' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+#' @references
+<<faletto2022>>
+#' 
+<<shah2013>>
 createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 
     # Check inputs
@@ -330,7 +445,7 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 }
 ```
 
-Notice that createSubsamples calls some helper functions to check the inputs (again, these are specified later in the helper functions section). createSubsamples also calls the workhorse function getSubsamps to generate a list of subsamples.
+Notice that `createSubsamples()` calls some helper functions to check the inputs (again, these are specified later in the helper functions section). `createSubsamples()` also calls the workhorse function `getSubsamps()` to generate a list of subsamples.
 
 ```{r}
 #' Generate list of subsamples
@@ -338,31 +453,26 @@ Notice that createSubsamples calls some helper functions to check the inputs (ag
 #` Generate list of `B` (or `2*B` for sampling_type="SS") subsamples of size
 #` `n/2`
 #' @param n Integer or numeric; sample size of the data set.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the number of lasso fits will be `B`; for
-#' sampling_type="SS" the number of lasso fits will be `2*B`.
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
-#' @return A list of length `B` (or `2*B` for sampling_type="SS"), where each
-#' element is an integer vector of length floor(`n/2`) containing the indices
-#' of a subsample of 1:`n`. For sampling_type=="SS", the last `B` subsamples
+<<param-B>>
+<<param-sampling_type>>
+#' @return A list of length `B` (or `2*B` for `sampling_type="SS"`), where each
+#' element is an integer vector of length `floor(n/2)` containing the indices
+#' of a subsample of `1:n`. For `sampling_type=="SS"`, the last `B` subsamples
 #' will be complementary pairs of the first `B` subsamples (see Faletto and
 #' Bien 2022 or Shah and Samworth 2013 for details).
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}. \cr Shah, R. D., & Samworth, R. J.
-#' (2013). Variable selection with error control: Another look at stability
-#' selection. \emph{Journal of the Royal Statistical Society. Series B:
-#' Statistical Methodology}, 75(1), 55–80.
-#' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+#' @references
+#' 
+<<faletto2022>>
+#' 
+<<shah2013>>
 getSubsamps <- function(n, B, sampling_type){
     subsamples <- list()
     for(i in 1:B){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }
     stopifnot(length(subsamples) == B)
-    # TODO(gregfaletto): add support for sampling_type="MS"
+    # TODO(gregfaletto): add support for sampling_type="MB"
     if(sampling_type=="SS"){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the
@@ -391,7 +501,7 @@ getSubsamps <- function(n, B, sampling_type){
 }
 ```
 
-The next function called in the body of css is getSelMatrix.
+The next function called in the body of `css()` is `getSelMatrix()`.
 
 ```{r}
 #' Generates matrix of selection indicators from stability selection.
@@ -401,16 +511,10 @@ The next function called in the body of css is getSelMatrix.
 #' length n vector and is used (or not used) by fitfun. Typically (and for
 #' default fitfun = cssLasso), y should be an n-dimensional numeric vector
 #' containing the response.
-#' @param lambda A tuning parameter or set of tuning parameters that may be used
-#' by the feature selection method. For example, in the default case when
-#' fitfun = cssLasso, lambda is a numeric: the penalty to use for each lasso
-#' fit.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the number of lasso fits will be `B`; for
-#' sampling_type="SS" the number of lasso fits will be `2*B`.
-#' @param sampling_type A character vector (either "SS" or "MB"); the sampling
-#' type used for stability selection.
-#' @param subsamps_object A list of length `B` (or `2*B` if sampling_type="SS"),
+<<param-lambda>>
+<<param-B>>
+<<param-sampling_type>>
+#' @param subsamps_object A list of length `B` (or `2*B` if `sampling_type="SS"`),
 #' where each element is one of the following: \item{subsample}{An integer
 #' vector of size `n/2` containing the indices of the observations in the
 #' subsample.} \item{drop_var_input}{A named list containing two elements: one
@@ -423,9 +527,7 @@ The next function called in the body of css is getSelMatrix.
 #' @param num_cores Optional; an integer. If using parallel processing, the
 #' number of cores to use for parallel processing (num_cores will be supplied
 #' internally as the mc.cores argument of parallel::mclapply).
-#' @param fitfun A function that takes in arguments X, y, and lambda and returns
-#' a vector of indices of the columns of X (selected features). Default is
-#' cssLasso, an implementation of the lasso using glmnet.
+<<param-fitfun>>
 #' @return A binary integer matrix of dimension `B` x `p` (if sampling_type ==
 #' "MB") or `2*B` x `p` (if sampling_type == "SS"). res[i, j] = 1 if feature j
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a
@@ -507,9 +609,9 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 }
 ```
 
-Again, getSelMatrix uses some helper functions to check the inputs for safety. getSelMatrix leverages the function mclapply from the parallel package, in order to allow for parallel processing if the user has set this up. This requires a helper function cssLoop, which is also specified in the later section for helper functions. 
+Again, `getSelMatrix()` uses some helper functions to check the inputs for safety. `getSelMatrix()` leverages the function `mclapply()` from the parallel package, in order to allow for parallel processing if the user has set this up. This requires a helper function `cssLoop()`, which is also specified in the later section for helper functions. 
 
-getSelMatrix also uses a feature selection function fitfun as an input. fitfun can be provided by the user as an input to css. We provide one default fitfun, cssLasso, which works on a real-valued response y given a specified penalty parameter lambda > 0. Both for its own importance and to show an example of a valid fitfun, we show cssLasso here.
+`getSelMatrix()` also uses a feature selection function `fitfun` as an input. `fitfun` can be provided by the user as an input to `css()`. We provide one default `fitfun`, `cssLasso()`, which works on a real-valued response y given a specified penalty parameter lambda > 0. Both for its own importance and to show an example of a valid `fitfun`, we show `cssLasso()` here.
 
 ```{r}
 #' Provided fitfun implementing the lasso
@@ -517,17 +619,19 @@ getSelMatrix also uses a feature selection function fitfun as an input. fitfun c
 #' Function used to select features with the lasso on each subsample in cluster
 #' stability selection. Uses glmnet implementation of the lasso.
 #' @param X A design matrix containing the predictors. (In practice this will
-#' be a subsample of the full design matrix provided to css.)
+#' be a subsample of the full design matrix provided to `css()`.)
 #' @param y A numeric vector containing the response.
 #' @param lambda Numeric; a nonnegative number for the lasso penalty to use
 #' on each subsample. (For now, only one lambda value can be provided to
-#' cssLasso; in the future, we plan to allow for multiple lambda values to be
-#' provided to cssLasso, as described in Faletto and Bien 2022.)
+#' `cssLasso()`; in the future, we plan to allow for multiple lambda values to be
+#' provided to `cssLasso()`, as described in Faletto and Bien 2022.)
 #' @return An integer vector; the indices of the features selected by the lasso.
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}. \cr Jerome Friedman, Trevor Hastie,
+#' @references 
+#' 
+<<faletto2022>>
+#' 
+#' Jerome Friedman, Trevor Hastie,
 #' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models
 #' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.
 #' URL \url{https://www.jstatsoft.org/v33/i01/}.
@@ -580,9 +684,9 @@ cssLasso <- function(X, y, lambda){
 }
 ```
 
-Notice that cssLasso depends on the package glmnet, and calls the function checkCssLassoInputs, which verifies that the inputs to cssLasso are as needed. (In particular, the function css imposes very few requirements on lambda and y to allow the end user flexibility for any specified fitfun. checkCssLassoInputs ensures that y is a real-valued response, lambda is a nonnegative real number, etc.) checkCssLassoInputs is specified in the helper functions section later.
+Notice that `cssLasso()` depends on the package `glmnet`, and calls the function `checkCssLassoInputs()`, which verifies that the inputs to `cssLasso()` are as needed. (In particular, the function `css()` imposes very few requirements on `lambda` and `y` to allow the end user flexibility for any specified `fitfun`. `checkCssLassoInputs()` ensures that `y` is a real-valued response, `lambda` is a nonnegative real number, etc.) `checkCssLassoInputs()` is specified in the helper functions section later.
 
-Finally, getClusterSelMatrix is the last significant function called within css.
+Finally, `getClusterSelMatrix()` is the last significant function called within `css()`.
 
 ```{r}
 #' Get cluster selection matrix
@@ -597,7 +701,7 @@ Finally, getClusterSelMatrix is the last significant function called within css.
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
 #' @param res A binary integer matrix. es[i, j] = 1 if feature j was selected
-#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
+#' on subsample i and equals 0 otherwise, as in the output of `getSelMatrix()`.
 #' (That is, each row is a selected set.)
 #' @return A binary integer matrix with the same number of rows
 #' as res and length(clusters) columns. Entry i, j is 1 if at least
@@ -640,37 +744,37 @@ getClusterSelMatrix <- function(clusters, res){
 }
 ```
 
-The helper function checkGetClusterSelMatrixInput verifies the inputs to getClusterSelMatrix.
+The helper function `checkGetClusterSelMatrixInput()` verifies the inputs to `getClusterSelMatrix()`.
 
-With the above and the helper functions below, the css function is complete!
+With the above and the helper functions below, the `css()` function is complete!
 
-# Helper Functions
+# Helper functions
 
-Below, we specify some of the helper functions for css, which are less important for understanding what css does.
+Below, we specify some of the helper functions for `css()`, which are less important for understanding what `css()` does.
 
-* The function checkCssInputs is called at the beginning of the css function. It confirms that the inputs to css are as expected. Also, css allows some flexibility in how the inputs are formatted, and checkCssInputs converts the inputs into consistent formats for later use.
-  - The function checkCssClustersInput is called within checkCssInputs, and specifically checks the clusters input.
-  - formatClusters modifies clusters, ensuring every feature appears in exactly one cluster (any unclustered features are put in a "cluster" by themselves).
-    * checkFormatClustersInput verifies the input to formatClusters for safety (this might seem a little redundant here, but formatClusters is also called by different functions in this package).
-      - checkY ensures (here and elsewhere) that the provided y is as expected. (In particular, in general the inputted y can be a vector of any type as long as the specified fitfun can handle y appropriately. For some function inputs, y must be a numeric vector. checkY enforces this, among other things.)
-    * checkClusters verifies that the output of formatClusters is as expected.
-    * getPrototypes identifies the prototypes of each cluster--the feature within each cluster that has the largest marginal sample correlation with y.
-      - identifyPrototype is the workhorse of getPrototypes, identifyng the prototype given a single cluster.
-        * corFunction is a helper function called within identifyPrototype to calculate the aboslute value of the correlation between two vectors.
-  - checkSamplingType ensures that the input sampling_type is as expected. 
-  - checkB ensures that the input B is as expected.
-  - checkPropFeatsRemove ensures that the input prop_feats_remove is as expected.
-* The function cssLoop is called within css. In particular, it is a helper function needed in order to allow for parallel processing of the feature selection method on each of the subsamples.
-  - checkCssLoopOutput verifies that the output of cssLoop as expected. This is particularly important because the user can specify their own feature selection method; checkCssLoopOutput verifies that the output of the feature selection method is valid, and provides an informative error message if not.
-* checkCssLassoInputs checks that the inputs to the provided fitfun, cssLasso, are as needed.
-* checkGetClusterSelMatrixInput verifies that the input to getClusterSelMatrix is as expected.
+* The function checkCssInputs is called at the beginning of the `css()` function. It confirms that the inputs to `css()` are as expected. Also, `css()` allows some flexibility in how the inputs are formatted, and `checkCssInputs()` converts the inputs into consistent formats for later use.
+  - The function `checkCssClustersInput()` is called within `checkCssInputs()`, and specifically checks the clusters input.
+  - `formatClusters()` modifies clusters, ensuring every feature appears in exactly one cluster (any unclustered features are put in a "cluster" by themselves).
+    * `checkFormatClustersInput()` verifies the input to `formatClusters()` for safety (this might seem a little redundant here, but `formatClusters()` is also called by different functions in this package).
+      - `checkY()` ensures (here and elsewhere) that the provided `y` is as expected. (In particular, in general the inputted `y` can be a vector of any type as long as the specified `fitfun` can handle `y` appropriately. For some function inputs, `y` must be a numeric vector. `checkY()` enforces this, among other things.)
+    * `checkClusters()` verifies that the output of `formatClusters()` is as expected.
+    * `getPrototypes()` identifies the prototypes of each cluster--the feature within each cluster that has the largest marginal sample correlation with `y`.
+      - `identifyPrototype()` is the workhorse of `getPrototypes()`, identifying the prototype given a single cluster.
+        * `corFunction()` is a helper function called within `identifyPrototype()` to calculate the absolute value of the correlation between two vectors.
+  - `checkSamplingType()` ensures that the input `sampling_type` is as expected. 
+  - `checkB()` ensures that the input `B` is as expected.
+  - `checkPropFeatsRemove()` ensures that the input `prop_feats_remove` is as expected.
+* The function `cssLoop()` is called within `css()`. In particular, it is a helper function needed in order to allow for parallel processing of the feature selection method on each of the subsamples.
+  - `checkCssLoopOutput()` verifies that the output of `cssLoop()` is as expected. This is particularly important because the user can specify their own feature selection method; `checkCssLoopOutput()` verifies that the output of the feature selection method is valid, and provides an informative error message if not.
+* `checkCssLassoInputs()` checks that the inputs to the provided `fitfun`, `cssLasso()`, are as needed.
+* `checkGetClusterSelMatrixInput()` verifies that the input to `getClusterSelMatrix()` is as expected.
 
 Tests are written for all of these functions and appear as early as possible after the function is defined. (For functions that don't depend on any other functions, tests appear immediately after the function; for functions with dependencies, the tests appear after all dependencies have been defined.)
-      
-checkCssInputs:
+
+`checkCssInputs()`:
 
 ```{r}
-#' Helper function to confirm that inputs to the function css are as expected,
+#' Helper function to confirm that inputs to the function `css()` are as expected,
 #' and modify inputs if needed
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
@@ -2590,7 +2694,7 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
 })
 ```
 
-# Tests for main functions in css (now that helper functions have been defined)
+# Tests for main functions in ``r params$package_name`` (now that helper functions have been defined)
 
 Tests for createSubsamples:
 
@@ -2996,7 +3100,7 @@ testthat::test_that("css works", {
 })
 ```
 
-## Selection and Prediction Functions
+# Selection and prediction functions {#sel-and-pred}
 
 Now that css has been defined and tested, we write functions to work with the output of css. The output of these functions will be of more direct interest for most end users than the output of css. These functions are defined separately from css because the most computationally intensive steps happen within css. css can be called only once on a data set, and then the functions that follow can be explored relatively quickly (one can try different parameters, etc.).
 
@@ -3065,9 +3169,8 @@ getCssSelections:
 #' indices of the features with nonzero weights from all of the selected
 #' clusters.}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' @references 
+<<faletto2022>>
 #' @export
 getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA){
@@ -4797,9 +4900,8 @@ formCssDesign:
 #' train_inds provided to css) where the columns are the constructed cluster
 #' representatives.
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' @references
+<<faletto2022>>
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, newx=NA){
 
@@ -5712,9 +5814,8 @@ getCssPreds
 #' observations from the train_inds that were provided to css).
 #' @return A vector of predictions corresponding to the observations from testX.
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' @references 
+<<faletto2022>>
 #' @export
 getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, trainX=NA, trainY=NA){
@@ -6541,7 +6642,7 @@ testthat::test_that("getCssPreds works", {
 })
 ```
 
-## Other useful functions
+# Other useful functions {#other-useful}
 
 The following are some other functions that are useful for specific tasks.
 
@@ -6630,9 +6731,8 @@ genClusteredData
 #' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' @references
+<<faletto2022>>
 #' @export
 genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     sig_clusters=1, rho=0.9, var=1, beta_latent=1.5, beta_unclustered=1,
@@ -7135,9 +7235,8 @@ testthat::test_that("makeCovarianceMatrix works", {
 #' \item{latent_vars}{An integer vector of length nblocks containing the indices
 #' of all of the latent features.}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
-#' \emph{arXiv preprint arXiv:2201.00494}.
-#' \url{https://arxiv.org/abs/2201.00494}.
+#' @references
+<<faletto2022>>
 makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
     sig_blocks, block_size){
 
@@ -8701,7 +8800,7 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 ```
 
 
-## Convenient Wrapper Functions
+# Convenient wrapper functions {#wrapper-functions}
 
 Finally, we provide convenient wrapper functions which yield user-desired output in a single step at the price of flexibility and efficiency. cssSelect yields a selected set of clusters and features (the same output as getCssSelections) in a single function call. cssPredict takes in a training/selection data set as well as a test X. It uses the labeled data to select a set of features and train an OLS model on the selected features, and then it generates predictions on the test set using the fitted model.
 
@@ -10167,19 +10266,15 @@ clusterRepLasso <- function(X, y, clusters=list(), nlambda=100){
 
 Tests for clusterRepLasso:
 
-# Documenting the package and building
+# Documenting the package and adding README
 
 We finish by running commands that will document, build, and install the package.  It may also be a good idea to check the package from within this file.
 
 ```{r}
-# rm(list = ls())
 litr::document() # <-- use instead of devtools::document()
-# devtools::build()
-# devtools::install()
-# devtools::check(document = FALSE)
 ```
 
-# Add README
+## Add README
 
 ```{r}
 litr::add_readme("../source-files/README.Rmd")
