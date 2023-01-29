@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>5 Tests for main functions in cssr (now that helper functions have been defined) | Creating the cssr R package</title>
+  <meta name="description" content="5 Tests for main functions in cssr (now that helper functions have been defined) | Creating the cssr R package" />
+  <meta name="generator" content="bookdown 0.32 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="5 Tests for main functions in cssr (now that helper functions have been defined) | Creating the cssr R package" />
+  <meta property="og:type" content="book" />
+  
+  
+  
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="5 Tests for main functions in cssr (now that helper functions have been defined) | Creating the cssr R package" />
+  
+  
+  
+
+<meta name="author" content="Gregory Faletto" />
+
+
+<meta name="date" content="2023-01-29" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="helper-functions.html"/>
+<link rel="next" href="sel-and-pred.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="overview.html"><a href="overview.html"><i class="fa fa-check"></i><b>2</b> Overview</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="overview.html"><a href="overview.html#background"><i class="fa fa-check"></i><b>2.1</b> Background</a>
+<ul>
+<li class="chapter" data-level="2.1.1" data-path="overview.html"><a href="overview.html#cpss"><i class="fa fa-check"></i><b>2.1.1</b> Complementary pairs stability selection</a></li>
+<li class="chapter" data-level="2.1.2" data-path="overview.html"><a href="overview.html#cluster-stability-selection"><i class="fa fa-check"></i><b>2.1.2</b> Cluster stability selection</a></li>
+</ul></li>
+<li class="chapter" data-level="2.2" data-path="overview.html"><a href="overview.html#outline"><i class="fa fa-check"></i><b>2.2</b> Outline</a></li>
+<li class="chapter" data-level="2.3" data-path="overview.html"><a href="overview.html#package-setup"><i class="fa fa-check"></i><b>2.3</b> Package setup</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="css.html"><a href="css.html"><i class="fa fa-check"></i><b>3</b> The core function: <code>css</code></a></li>
+<li class="chapter" data-level="4" data-path="helper-functions.html"><a href="helper-functions.html"><i class="fa fa-check"></i><b>4</b> Helper functions</a></li>
+<li class="chapter" data-level="5" data-path="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html"><i class="fa fa-check"></i><b>5</b> Tests for main functions in <code>cssr</code> (now that helper functions have been defined)</a></li>
+<li class="chapter" data-level="6" data-path="sel-and-pred.html"><a href="sel-and-pred.html"><i class="fa fa-check"></i><b>6</b> Selection and prediction functions</a></li>
+<li class="chapter" data-level="7" data-path="other-useful.html"><a href="other-useful.html"><i class="fa fa-check"></i><b>7</b> Other useful functions</a></li>
+<li class="chapter" data-level="8" data-path="wrapper-functions.html"><a href="wrapper-functions.html"><i class="fa fa-check"></i><b>8</b> Convenient wrapper functions</a></li>
+<li class="chapter" data-level="9" data-path="competitor-methods.html"><a href="competitor-methods.html"><i class="fa fa-check"></i><b>9</b> Competitor Methods</a></li>
+<li class="chapter" data-level="10" data-path="documenting-the-package-and-adding-readme.html"><a href="documenting-the-package-and-adding-readme.html"><i class="fa fa-check"></i><b>10</b> Documenting the package and adding README</a>
+<ul>
+<li class="chapter" data-level="10.1" data-path="documenting-the-package-and-adding-readme.html"><a href="documenting-the-package-and-adding-readme.html#add-readme"><i class="fa fa-check"></i><b>10.1</b> Add README</a></li>
+</ul></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Creating the <code>cssr</code> R package</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined" class="section level1 hasAnchor" number="5">
+<h1><span class="header-section-number">5</span> Tests for main functions in <code>cssr</code> (now that helper functions have been defined)<a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>Tests for createSubsamples:</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;createSubsamples works&quot;</span>, {</span>
+<span id="cb64-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-2" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span>20L, <span class="at">p=</span>5L, <span class="at">B=</span>11L, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb64-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>)</span>
+<span id="cb64-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-4" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb64-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-5" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">2</span><span class="sc">*</span><span class="dv">11</span>)</span>
+<span id="cb64-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-6" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(res) <span class="sc">==</span> <span class="dv">20</span><span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb64-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-7" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">unique</span>(res[[<span class="dv">13</span>]])), <span class="dv">20</span><span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb64-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-9" aria-hidden="true" tabindex="-1"></a>  set <span class="ot">&lt;-</span> res[[<span class="dv">4</span>]]</span>
+<span id="cb64-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-10" aria-hidden="true" tabindex="-1"></a>  comp_set <span class="ot">&lt;-</span> res[[<span class="dv">4</span> <span class="sc">+</span> <span class="dv">11</span>]]</span>
+<span id="cb64-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-12" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(set, comp_set)), <span class="dv">0</span>)</span>
+<span id="cb64-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-13" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">union</span>(set, comp_set)), <span class="fu">length</span>(<span class="fu">c</span>(set, comp_set)))</span>
+<span id="cb64-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-14" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="dv">20</span>, <span class="fu">length</span>(<span class="fu">c</span>(set, comp_set)))</span>
+<span id="cb64-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-16"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Try odd n</span></span>
+<span id="cb64-17"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-18"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-18" aria-hidden="true" tabindex="-1"></a>  res_odd <span class="ot">&lt;-</span> <a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span>19L, <span class="at">p=</span>23L, <span class="at">B=</span>13L, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb64-19"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-19" aria-hidden="true" tabindex="-1"></a>                              <span class="at">prop_feats_remove=</span><span class="dv">0</span>)</span>
+<span id="cb64-20"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-20" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_odd))</span>
+<span id="cb64-21"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-21" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_odd), <span class="dv">2</span><span class="sc">*</span><span class="dv">13</span>)</span>
+<span id="cb64-22"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-22" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(res_odd) <span class="sc">==</span> <span class="fu">floor</span>(<span class="dv">19</span><span class="sc">/</span><span class="dv">2</span>)))</span>
+<span id="cb64-23"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-23" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">unique</span>(res_odd[[<span class="dv">3</span>]])), <span class="fu">floor</span>(<span class="dv">19</span><span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb64-24"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-25"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-25" aria-hidden="true" tabindex="-1"></a>  set_odd <span class="ot">&lt;-</span> res_odd[[<span class="dv">2</span>]]</span>
+<span id="cb64-26"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-26" aria-hidden="true" tabindex="-1"></a>  comp_set_odd <span class="ot">&lt;-</span> res_odd[[<span class="dv">2</span> <span class="sc">+</span> <span class="dv">13</span>]]</span>
+<span id="cb64-27"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-28"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-28" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(set_odd, comp_set_odd)), <span class="dv">0</span>)</span>
+<span id="cb64-29"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-29" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">union</span>(set_odd, comp_set_odd)),</span>
+<span id="cb64-30"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-30" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">c</span>(set_odd, comp_set_odd)))</span>
+<span id="cb64-31"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-31" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="dv">19</span> <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">length</span>(<span class="fu">c</span>(set_odd, comp_set_odd)))</span>
+<span id="cb64-32"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb64-33"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-33" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span>20L, <span class="at">p=</span>5L, <span class="at">B=</span>11L, <span class="at">sampling_type=</span><span class="st">&quot;MB&quot;</span>,</span>
+<span id="cb64-34"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-34" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>),</span>
+<span id="cb64-35"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-35" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;</span>,</span>
+<span id="cb64-36"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-36" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb64-37"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-37" aria-hidden="true" tabindex="-1"></a>  <span class="co"># misspecified sampling_type (not specifying error because contains quotation</span></span>
+<span id="cb64-38"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-38" aria-hidden="true" tabindex="-1"></a>  <span class="co"># marks)</span></span>
+<span id="cb64-39"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-39" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span>20L, <span class="at">p=</span>5L, <span class="at">B=</span>11L, <span class="at">sampling_type=</span><span class="st">&quot;S&quot;</span>,</span>
+<span id="cb64-40"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-40" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>))</span>
+<span id="cb64-41"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-41" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span><span class="fl">11.1</span>, <span class="at">p=</span>5L, <span class="at">B=</span>11L, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb64-42"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-42" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>),</span>
+<span id="cb64-43"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-43" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;n == round(n) is not TRUE&quot;</span>,</span>
+<span id="cb64-44"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-44" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb64-45"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-45" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span><span class="sc">-</span>20L, <span class="at">p=</span>5L, <span class="at">B=</span>11L, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb64-46"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-46" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>),</span>
+<span id="cb64-47"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-47" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;n &gt; 0 is not TRUE&quot;</span>,</span>
+<span id="cb64-48"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-48" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb64-49"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-49" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span>20L, <span class="at">p=</span>5L, <span class="at">B=</span><span class="fl">25.6</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb64-50"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-50" aria-hidden="true" tabindex="-1"></a>                          <span class="at">prop_feats_remove=</span><span class="dv">0</span>),</span>
+<span id="cb64-51"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-51" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(subsamples) == B is not TRUE&quot;</span>,</span>
+<span id="cb64-52"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-52" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb64-53"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb64-53" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 😸</code></pre>
+<p>Tests for getSubsamps</p>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;getSubsamps works&quot;</span>, {</span>
+<span id="cb66-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-2" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#getSubsamps'>getSubsamps</a>(<span class="at">n=</span>18L, <span class="at">B=</span>21L, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>)</span>
+<span id="cb66-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb66-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-4" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb66-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-5" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">2</span><span class="sc">*</span><span class="dv">21</span>)</span>
+<span id="cb66-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-6" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(res) <span class="sc">==</span> <span class="dv">18</span><span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb66-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-7" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">unique</span>(res[[<span class="dv">7</span>]])), <span class="dv">18</span><span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb66-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb66-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-9" aria-hidden="true" tabindex="-1"></a>  set <span class="ot">&lt;-</span> res[[<span class="dv">3</span>]]</span>
+<span id="cb66-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-10" aria-hidden="true" tabindex="-1"></a>  comp_set <span class="ot">&lt;-</span> res[[<span class="dv">3</span> <span class="sc">+</span> <span class="dv">21</span>]]</span>
+<span id="cb66-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb66-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-12" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(set, comp_set)), <span class="dv">0</span>)</span>
+<span id="cb66-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-13" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">union</span>(set, comp_set)), <span class="fu">length</span>(<span class="fu">c</span>(set, comp_set)))</span>
+<span id="cb66-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-14" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="dv">18</span>, <span class="fu">length</span>(<span class="fu">c</span>(set, comp_set)))</span>
+<span id="cb66-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb66-15" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 😸</code></pre>
+<p>Tests for getSelMatrix</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;getSelMatrix works&quot;</span>, {</span>
+<span id="cb68-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">98623</span>)</span>
+<span id="cb68-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">25</span><span class="sc">*</span><span class="dv">6</span>), <span class="at">nrow=</span><span class="dv">25</span>, <span class="at">ncol=</span><span class="dv">6</span>)</span>
+<span id="cb68-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-4" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">25</span>)</span>
+<span id="cb68-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-5" aria-hidden="true" tabindex="-1"></a>  subsamps_object <span class="ot">&lt;-</span> <a href='css.html#createSubsamples'>createSubsamples</a>(<span class="at">n=</span><span class="dv">25</span>, <span class="at">p=</span><span class="dv">6</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-6" aria-hidden="true" tabindex="-1"></a>                                      <span class="at">prop_feats_remove=</span><span class="dv">0</span>)</span>
+<span id="cb68-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-7" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-8" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span>subsamps_object, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-9" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>cssLasso)</span>
+<span id="cb68-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-11" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb68-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-12" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res), <span class="dv">2</span><span class="sc">*</span><span class="dv">12</span>)</span>
+<span id="cb68-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-13" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res), <span class="dv">6</span>)</span>
+<span id="cb68-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-14" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb68-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-15" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">is.integer</span>(res)))</span>
+<span id="cb68-16"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-17"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Try a different fitfun</span></span>
+<span id="cb68-18"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-19"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-19" aria-hidden="true" tabindex="-1"></a>  <span id='testFitfun'>testFitfun</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
+<span id="cb68-20"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-20" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb68-21"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb68-22"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Choose p/2 features randomly</span></span>
+<span id="cb68-23"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-23" aria-hidden="true" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(p, <span class="at">size=</span><span class="fu">floor</span>(p<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb68-24"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
+<span id="cb68-25"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-25" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb68-26"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-26" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb68-27"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Note that value of lambda doesn&#39;t matter</span></span>
+<span id="cb68-28"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-28" aria-hidden="true" tabindex="-1"></a>  res2 <span class="ot">&lt;-</span> <a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="st">&quot;foo&quot;</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-29"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-29" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span>subsamps_object, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-30"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-30" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>testFitfun)</span>
+<span id="cb68-31"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb68-32"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-32" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res2))</span>
+<span id="cb68-33"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-33" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res2), <span class="dv">2</span><span class="sc">*</span><span class="dv">12</span>)</span>
+<span id="cb68-34"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-34" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res2), <span class="dv">6</span>)</span>
+<span id="cb68-35"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-35" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res2 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb68-36"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-36" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">is.integer</span>(res2)))</span>
+<span id="cb68-37"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-37" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb68-38"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-38" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="st">&quot;0.02&quot;</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-39"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-39" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span><span class="st">&quot;subsamps_object&quot;</span>, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-40"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-40" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>testFitfun),</span>
+<span id="cb68-41"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-41" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;is.integer(subsample) is not TRUE&quot;</span>,</span>
+<span id="cb68-42"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-42" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb68-43"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-43" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>, ], <span class="at">y=</span>y, <span class="at">lambda=</span><span class="st">&quot;foo&quot;</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-44"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-44" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span>subsamps_object, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-45"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-45" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>testFitfun),</span>
+<span id="cb68-46"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-46" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;length(y) == n is not TRUE&quot;</span>,</span>
+<span id="cb68-47"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-47" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb68-48"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-48" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.02</span>, <span class="at">B=</span><span class="dv">12</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-49"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-49" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span>subsamps_object, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-50"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-50" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb68-51"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-51" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;For method cssLasso, lambda must be nonnegative.&quot;</span>,</span>
+<span id="cb68-52"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-52" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb68-53"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-53" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Wrong B</span></span>
+<span id="cb68-54"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-54" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getSelMatrix'>getSelMatrix</a>(<span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.02</span>, <span class="at">B=</span><span class="dv">37</span>, <span class="at">sampling_type=</span><span class="st">&quot;SS&quot;</span>,</span>
+<span id="cb68-55"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-55" aria-hidden="true" tabindex="-1"></a>                      <span class="at">subsamps_object=</span>subsamps_object, <span class="at">num_cores=</span><span class="dv">1</span>,</span>
+<span id="cb68-56"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-56" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb68-57"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-57" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;length(res_list) == nrow(res) is not TRUE&quot;</span>,</span>
+<span id="cb68-58"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-58" aria-hidden="true" tabindex="-1"></a>                      <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb68-59"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb68-59" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 🎉</code></pre>
+<p>Tests for cssLasso</p>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;cssLasso works&quot;</span>, {</span>
+<span id="cb70-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">24509</span>)</span>
+<span id="cb70-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span><span class="sc">*</span><span class="dv">4</span>), <span class="at">nrow=</span><span class="dv">15</span>, <span class="at">ncol=</span><span class="dv">4</span>)</span>
+<span id="cb70-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-4" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span>)</span>
+<span id="cb70-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb70-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-6" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#cssLasso'>cssLasso</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>)</span>
+<span id="cb70-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb70-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-8" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res))</span>
+<span id="cb70-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-9" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res) <span class="sc">&lt;=</span> <span class="dv">4</span>)</span>
+<span id="cb70-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-10" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res) <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb70-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-11" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(res)))</span>
+<span id="cb70-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-12" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res <span class="sc">&lt;=</span> <span class="dv">4</span>))</span>
+<span id="cb70-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-13" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb70-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb70-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-15" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#cssLasso'>cssLasso</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">13</span>, ], <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>),</span>
+<span id="cb70-16"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-16" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;For method cssLasso, y must be a vector of length equal to nrow(X).&quot;</span>,</span>
+<span id="cb70-17"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-17" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-18"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-18" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#cssLasso'>cssLasso</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
+<span id="cb70-19"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-19" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;For method cssLasso, lambda must be nonnegative.&quot;</span>,</span>
+<span id="cb70-20"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-20" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-21"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-22"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb70-22" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 😀</code></pre>
+<p>Tests for getClusterSelMatrix:</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb72-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;getClusterSelMatrix works&quot;</span>, {</span>
+<span id="cb72-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-2" aria-hidden="true" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span>1L<span class="sc">:</span>5L,</span>
+<span id="cb72-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">green_cluster=</span>6L<span class="sc">:</span>8L, <span class="at">blue_clust=</span>9L)</span>
+<span id="cb72-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-5" aria-hidden="true" tabindex="-1"></a>  B <span class="ot">&lt;-</span> <span class="dv">14</span></span>
+<span id="cb72-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-6" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="dv">9</span></span>
+<span id="cb72-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-8" aria-hidden="true" tabindex="-1"></a>  res_entries <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">size=</span><span class="dv">2</span><span class="sc">*</span>B<span class="sc">*</span>p, <span class="at">replace=</span><span class="cn">TRUE</span>))</span>
+<span id="cb72-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-9" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-10" aria-hidden="true" tabindex="-1"></a>  good_res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(res_entries, <span class="at">nrow=</span><span class="dv">2</span><span class="sc">*</span>B, <span class="at">ncol=</span>p)</span>
+<span id="cb72-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-12" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#getClusterSelMatrix'>getClusterSelMatrix</a>(good_clusters, good_res)</span>
+<span id="cb72-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-14" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb72-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-15" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res), <span class="dv">2</span><span class="sc">*</span>B)</span>
+<span id="cb72-16"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-16" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 3 clusters</span></span>
+<span id="cb72-17"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-17" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res), <span class="dv">3</span>)</span>
+<span id="cb72-18"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-18" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">colnames</span>(res), <span class="fu">c</span>(<span class="st">&quot;red_cluster&quot;</span>, <span class="st">&quot;green_cluster&quot;</span>,</span>
+<span id="cb72-19"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-19" aria-hidden="true" tabindex="-1"></a>                                              <span class="st">&quot;blue_clust&quot;</span>))</span>
+<span id="cb72-20"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-20" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">is.integer</span>(res)))</span>
+<span id="cb72-21"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-21" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb72-22"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-23"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-23" aria-hidden="true" tabindex="-1"></a>  clust_2 <span class="ot">&lt;-</span> good_clusters[[<span class="dv">2</span>]]</span>
+<span id="cb72-24"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb72-25"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-25" aria-hidden="true" tabindex="-1"></a>  any_one <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(good_res[, clust_2]) <span class="sc">&gt;</span> <span class="dv">0</span></span>
+<span id="cb72-26"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">any</span>(any_one)){</span>
+<span id="cb72-27"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-27" aria-hidden="true" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res[any_one, <span class="dv">2</span>] <span class="sc">==</span> <span class="dv">1</span>))</span>
+<span id="cb72-28"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb72-29"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-30"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-30" aria-hidden="true" tabindex="-1"></a>  all_zeros <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(good_res[, clust_2]) <span class="sc">==</span> <span class="dv">0</span></span>
+<span id="cb72-31"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-31" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="fu">any</span>(all_zeros)){</span>
+<span id="cb72-32"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-32" aria-hidden="true" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res[all_zeros, <span class="dv">2</span>] <span class="sc">==</span> <span class="dv">0</span>))</span>
+<span id="cb72-33"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-33" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb72-34"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-35"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-35" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Not all features in a cluster</span></span>
+<span id="cb72-36"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-36" aria-hidden="true" tabindex="-1"></a>  bad_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span>1L<span class="sc">:</span>5L, <span class="at">green_cluster=</span>6L<span class="sc">:</span>7L, <span class="at">blue_clust=</span>9L)</span>
+<span id="cb72-37"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-38"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-38" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getClusterSelMatrix'>getClusterSelMatrix</a>(bad_clusters, good_res),</span>
+<span id="cb72-39"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-39" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(all_clustered_feats) == p is not TRUE&quot;</span>,</span>
+<span id="cb72-40"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-40" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb72-41"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-42"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-42" aria-hidden="true" tabindex="-1"></a>  bad_res_entries <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">size=</span><span class="dv">2</span><span class="sc">*</span>B<span class="sc">*</span>p, <span class="at">replace=</span><span class="cn">TRUE</span>))</span>
+<span id="cb72-43"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-44"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-44" aria-hidden="true" tabindex="-1"></a>  bad_res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(bad_res_entries, <span class="at">nrow=</span><span class="dv">2</span><span class="sc">*</span>B, <span class="at">ncol=</span>p)</span>
+<span id="cb72-45"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-46"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-46" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#getClusterSelMatrix'>getClusterSelMatrix</a>(good_clusters, bad_res),</span>
+<span id="cb72-47"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-47" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;all(res %in% c(0, 1)) is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb72-48"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb72-48" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 🌈</code></pre>
+<p>Finally, tests for css itself!</p>
+<div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb74-1"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;css works&quot;</span>, {</span>
+<span id="cb74-2"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">8712</span>)</span>
+<span id="cb74-3"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-4"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span><span class="sc">*</span><span class="dv">11</span>), <span class="at">nrow=</span><span class="dv">15</span>, <span class="at">ncol=</span><span class="dv">11</span>)</span>
+<span id="cb74-5"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-5" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span>)</span>
+<span id="cb74-6"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-7"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Intentionally don&#39;t provide clusters for all feature, mix up formatting,</span></span>
+<span id="cb74-8"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># etc.</span></span>
+<span id="cb74-9"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-9" aria-hidden="true" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span>1L<span class="sc">:</span>5L,</span>
+<span id="cb74-10"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">green_cluster=</span>6L<span class="sc">:</span>8L,</span>
+<span id="cb74-11"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">c4=</span><span class="dv">10</span><span class="sc">:</span><span class="dv">11</span>)</span>
+<span id="cb74-12"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-13"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-13" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">clusters=</span>good_clusters, <span class="at">fitfun =</span> cssLasso,</span>
+<span id="cb74-14"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">sampling_type =</span> <span class="st">&quot;SS&quot;</span>, <span class="at">B =</span> <span class="dv">13</span>,</span>
+<span id="cb74-15"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">prop_feats_remove =</span> <span class="dv">0</span>, <span class="at">train_inds =</span> <span class="fu">integer</span>(), <span class="at">num_cores =</span> 1L)</span>
+<span id="cb74-16"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-17"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Basic output</span></span>
+<span id="cb74-18"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-18" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb74-19"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-19" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-20"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-20" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">&quot;feat_sel_mat&quot;</span>, <span class="st">&quot;clus_sel_mat&quot;</span>, <span class="st">&quot;X&quot;</span>,</span>
+<span id="cb74-21"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-21" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">&quot;y&quot;</span>, <span class="st">&quot;clusters&quot;</span>, <span class="st">&quot;train_inds&quot;</span>))</span>
+<span id="cb74-22"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-23"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-23" aria-hidden="true" tabindex="-1"></a>  <span class="co"># feat_sel mat</span></span>
+<span id="cb74-24"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-24" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>feat_sel_mat))</span>
+<span id="cb74-25"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-25" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res<span class="sc">$</span>feat_sel_mat))</span>
+<span id="cb74-26"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-26" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>feat_sel_mat <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb74-27"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-27" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res<span class="sc">$</span>feat_sel_mat), <span class="dv">11</span>)</span>
+<span id="cb74-28"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-28" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>feat_sel_mat))</span>
+<span id="cb74-29"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-30"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># clus_sel_mat</span></span>
+<span id="cb74-31"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-31" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>clus_sel_mat))</span>
+<span id="cb74-32"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-32" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res<span class="sc">$</span>clus_sel_mat))</span>
+<span id="cb74-33"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-33" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>clus_sel_mat <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb74-34"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># 4 clusters</span></span>
+<span id="cb74-35"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-35" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res<span class="sc">$</span>clus_sel_mat), <span class="dv">4</span>)</span>
+<span id="cb74-36"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-36" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>clus_sel_mat), <span class="fu">names</span>(res<span class="sc">$</span>clusters))</span>
+<span id="cb74-37"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-37" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>clus_sel_mat)), <span class="dv">4</span>)</span>
+<span id="cb74-38"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-38" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>clus_sel_mat))), <span class="dv">4</span>)</span>
+<span id="cb74-39"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-39" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>clus_sel_mat))))</span>
+<span id="cb74-40"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-40" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>clus_sel_mat))))</span>
+<span id="cb74-41"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-42"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-42" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X</span></span>
+<span id="cb74-43"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-43" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res<span class="sc">$</span>X))</span>
+<span id="cb74-44"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-44" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>X)))</span>
+<span id="cb74-45"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-45" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res<span class="sc">$</span>X))</span>
+<span id="cb74-46"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-46" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res<span class="sc">$</span>X), <span class="dv">11</span>)</span>
+<span id="cb74-47"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-47" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res<span class="sc">$</span>X), <span class="dv">15</span>)</span>
+<span id="cb74-48"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-49"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-49" aria-hidden="true" tabindex="-1"></a>  <span class="co"># y</span></span>
+<span id="cb74-50"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-50" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res<span class="sc">$</span>y))</span>
+<span id="cb74-51"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-51" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>y), <span class="dv">15</span>)</span>
+<span id="cb74-52"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-53"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-53" aria-hidden="true" tabindex="-1"></a>  <span class="co"># clusters</span></span>
+<span id="cb74-54"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-54" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>clusters))</span>
+<span id="cb74-55"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-55" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>clusters), <span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>clusters)))</span>
+<span id="cb74-56"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-56" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>clusters),</span>
+<span id="cb74-57"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-57" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>clusters))))</span>
+<span id="cb74-58"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-58" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">names</span>(res<span class="sc">$</span>clusters))))</span>
+<span id="cb74-59"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-59" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>clusters))))</span>
+<span id="cb74-60"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-60" aria-hidden="true" tabindex="-1"></a>  clust_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb74-61"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-61" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>clusters)){</span>
+<span id="cb74-62"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-62" aria-hidden="true" tabindex="-1"></a>    clust_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(clust_feats, res<span class="sc">$</span>clusters[[i]])</span>
+<span id="cb74-63"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-63" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb74-64"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-64" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(clust_feats), <span class="fu">length</span>(<span class="fu">unique</span>(clust_feats)))</span>
+<span id="cb74-65"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-65" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(clust_feats), <span class="fu">length</span>(<span class="fu">intersect</span>(clust_feats,</span>
+<span id="cb74-66"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-66" aria-hidden="true" tabindex="-1"></a>                                                               <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>)))</span>
+<span id="cb74-67"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-67" aria-hidden="true" tabindex="-1"></a>  <span class="co"># train_inds</span></span>
+<span id="cb74-68"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-68" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(res<span class="sc">$</span>train_inds, <span class="fu">integer</span>())</span>
+<span id="cb74-69"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-70"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-70" aria-hidden="true" tabindex="-1"></a>  <span class="do">## Trying other inputs</span></span>
+<span id="cb74-71"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-71" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-72"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a data.frame</span></span>
+<span id="cb74-73"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-73" aria-hidden="true" tabindex="-1"></a>  X_df <span class="ot">&lt;-</span> datasets<span class="sc">::</span>mtcars</span>
+<span id="cb74-74"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-74" aria-hidden="true" tabindex="-1"></a>  res_fitfun <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>X_df, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)), <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb74-75"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-75" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res_fitfun), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-76"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-76" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-77"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-77" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a dataframe with factors (number of columns of final design matrix</span></span>
+<span id="cb74-78"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-78" aria-hidden="true" tabindex="-1"></a>  <span class="co"># after one-hot encoding factors won&#39;t match number of columns of df2)</span></span>
+<span id="cb74-79"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-79" aria-hidden="true" tabindex="-1"></a>  df2 <span class="ot">&lt;-</span> X_df</span>
+<span id="cb74-80"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-80" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>cyl)</span>
+<span id="cb74-81"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-81" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>vs)</span>
+<span id="cb74-82"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-82" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>am)</span>
+<span id="cb74-83"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-83" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>gear)</span>
+<span id="cb74-84"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-84" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>carb)</span>
+<span id="cb74-85"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-85" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-86"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-86" aria-hidden="true" tabindex="-1"></a>  res_fitfun <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>df2, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)), <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb74-87"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-87" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res_fitfun), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-88"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-88" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-89"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-89" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a matrix with column names</span></span>
+<span id="cb74-90"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-90" aria-hidden="true" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> x</span>
+<span id="cb74-91"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(x2) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>]</span>
+<span id="cb74-92"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-92" aria-hidden="true" tabindex="-1"></a>  res_names <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>x2, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">clusters=</span>good_clusters, <span class="at">B =</span> <span class="dv">13</span>)</span>
+<span id="cb74-93"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-93" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res_names), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-94"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-94" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">colnames</span>(x2), <span class="fu">colnames</span>(res_names<span class="sc">$</span>X))</span>
+<span id="cb74-95"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-95" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">colnames</span>(x2), <span class="fu">colnames</span>(res_names<span class="sc">$</span>feat_sel_mat))</span>
+<span id="cb74-96"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-97"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-97" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Custom fitfun with nonsense lambda (which will be ignored by fitfun, and</span></span>
+<span id="cb74-98"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-98" aria-hidden="true" tabindex="-1"></a>  <span class="co"># shouldn&#39;t throw any error, because the acceptable input for lambda should be</span></span>
+<span id="cb74-99"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-99" aria-hidden="true" tabindex="-1"></a>  <span class="co"># enforced only by fitfun)</span></span>
+<span id="cb74-100"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-100" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-101"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-101" aria-hidden="true" tabindex="-1"></a>  <span id='testFitfun'>testFitfun</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
+<span id="cb74-102"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-102" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb74-103"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-103" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb74-104"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-104" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Choose p/2 features randomly</span></span>
+<span id="cb74-105"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-105" aria-hidden="true" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(p, <span class="at">size=</span><span class="fu">floor</span>(p<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb74-106"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-106" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
+<span id="cb74-107"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-107" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb74-108"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-108" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-109"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-109" aria-hidden="true" tabindex="-1"></a>  res_fitfun <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="st">&quot;foo&quot;</span>, <span class="fu">as.character</span>(<span class="cn">NA</span>), <span class="st">&quot;bar&quot;</span>),</span>
+<span id="cb74-110"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-110" aria-hidden="true" tabindex="-1"></a>                    <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">B =</span> <span class="dv">10</span>, <span class="at">fitfun=</span>testFitfun)</span>
+<span id="cb74-111"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-111" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res_fitfun), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-112"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-113"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-113" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bad lambda</span></span>
+<span id="cb74-114"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-114" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>),</span>
+<span id="cb74-115"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-115" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;For method cssLasso, lambda must be nonnegative.&quot;</span>,</span>
+<span id="cb74-116"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-116" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-117"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-117" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-118"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-118" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="st">&quot;foo&quot;</span>, <span class="at">B =</span> <span class="dv">10</span>),</span>
+<span id="cb74-119"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-119" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;For method cssLasso, lambda must be a numeric.&quot;</span>,</span>
+<span id="cb74-120"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-120" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-121"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-122"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-122" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Single cluster</span></span>
+<span id="cb74-123"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-123" aria-hidden="true" tabindex="-1"></a>  res_sing_clust <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb74-124"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-124" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(res_sing_clust), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-125"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-125" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_sing_clust<span class="sc">$</span>clusters), <span class="dv">11</span> <span class="sc">-</span> <span class="dv">3</span> <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb74-126"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-126" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res_sing_clust<span class="sc">$</span>clusters))) <span class="sc">==</span> <span class="dv">11</span> <span class="sc">-</span></span>
+<span id="cb74-127"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-127" aria-hidden="true" tabindex="-1"></a>                          <span class="dv">3</span> <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb74-128"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-128" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">names</span>(res_sing_clust<span class="sc">$</span>clusters))))</span>
+<span id="cb74-129"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-129" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res_sing_clust<span class="sc">$</span>clusters))))</span>
+<span id="cb74-130"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-130" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-131"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-131" aria-hidden="true" tabindex="-1"></a>  <span class="co"># No cluster</span></span>
+<span id="cb74-132"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-132" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-133"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-133" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-134"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-134" aria-hidden="true" tabindex="-1"></a>  <span class="co"># All clusters named</span></span>
+<span id="cb74-135"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-135" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="st">&quot;a&quot;</span><span class="ot">=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,</span>
+<span id="cb74-136"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-136" aria-hidden="true" tabindex="-1"></a>                                                               <span class="st">&quot;b&quot;</span><span class="ot">=</span><span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>,</span>
+<span id="cb74-137"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-137" aria-hidden="true" tabindex="-1"></a>                                                               <span class="st">&quot;c&quot;</span><span class="ot">=</span><span class="dv">11</span>),</span>
+<span id="cb74-138"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-138" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B=</span><span class="dv">10</span>)), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-139"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-140"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-140" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Other sampling types</span></span>
+<span id="cb74-141"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-141" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">sampling_type=</span><span class="st">&quot;MB&quot;</span>),</span>
+<span id="cb74-142"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-142" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;sampling_type MB is not yet supported (and isn&#39;t recommended anyway)&quot;</span>,</span>
+<span id="cb74-143"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-143" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-144"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-144" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-145"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-145" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Error has quotation marks in it</span></span>
+<span id="cb74-146"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-146" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">sampling_type=</span><span class="st">&quot;S&quot;</span>))</span>
+<span id="cb74-147"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-147" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-148"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-148" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">sampling_type=</span><span class="dv">1</span>),</span>
+<span id="cb74-149"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-149" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.character(sampling_type) is not TRUE&quot;</span>,</span>
+<span id="cb74-150"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-150" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-151"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-151" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-152"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-152" aria-hidden="true" tabindex="-1"></a>  <span class="co"># B</span></span>
+<span id="cb74-153"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-153" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_warning</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">B=</span><span class="dv">5</span>),</span>
+<span id="cb74-154"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-154" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;Small values of B may lead to poor results.&quot;</span>,</span>
+<span id="cb74-155"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-155" aria-hidden="true" tabindex="-1"></a>                           <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-156"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-157"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-157" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">B=</span><span class="fu">list</span>(<span class="dv">10</span>)),</span>
+<span id="cb74-158"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-158" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;is.numeric(B) | is.integer(B) is not TRUE&quot;</span>,</span>
+<span id="cb74-159"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-159" aria-hidden="true" tabindex="-1"></a>                           <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-160"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-160" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-161"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-161" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Clusters</span></span>
+<span id="cb74-162"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-162" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="dv">1</span>, <span class="at">clusters=</span><span class="st">&quot;red&quot;</span>),</span>
+<span id="cb74-163"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-163" aria-hidden="true" tabindex="-1"></a>                           <span class="st">&quot;is.numeric(clusters) | is.integer(clusters) is not TRUE&quot;</span>,</span>
+<span id="cb74-164"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-164" aria-hidden="true" tabindex="-1"></a>                           <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb74-165"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-166"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-166" aria-hidden="true" tabindex="-1"></a>  <span class="co"># prop_feats_remove</span></span>
+<span id="cb74-167"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-167" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>,</span>
+<span id="cb74-168"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-168" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">prop_feats_remove=</span><span class="fl">0.3</span>)), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-169"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-169" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Weirdly high, but still valid, value of prop_feats_remove</span></span>
+<span id="cb74-170"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-170" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">class</span>(<a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>,</span>
+<span id="cb74-171"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-171" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">prop_feats_remove=</span><span class="fl">0.9999999999</span>)), <span class="st">&quot;cssr&quot;</span>)</span>
+<span id="cb74-172"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-172" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb74-173"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-173" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use train_inds argument</span></span>
+<span id="cb74-174"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-174" aria-hidden="true" tabindex="-1"></a>  res_train <span class="ot">&lt;-</span> <a href='css.html#css'>css</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>, <span class="at">train_inds=</span><span class="dv">11</span><span class="sc">:</span><span class="dv">15</span>)</span>
+<span id="cb74-175"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-175" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(res_train<span class="sc">$</span>train_inds, <span class="dv">11</span><span class="sc">:</span><span class="dv">15</span>)</span>
+<span id="cb74-176"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb74-177"><a href="tests-for-main-functions-in-cssr-now-that-helper-functions-have-been-defined.html#cb74-177" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 🥳</code></pre>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="helper-functions.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sel-and-pred.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": false,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": null,
+"text": null
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Generated coefficients for y in latent variable model
 #'
@@ -45,7 +45,8 @@
 #' \item{latent_vars}{An integer vector of length nblocks containing the indices
 #' of all of the latent features.}
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' @references
+#' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
 makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,

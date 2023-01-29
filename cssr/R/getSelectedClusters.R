@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' From css output, obtain names of selected clusters and selection proportions,
 #' indices of all selected features, and weights of individual cluster members

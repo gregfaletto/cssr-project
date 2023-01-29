@@ -1,6 +1,6 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
-#' Helper function to confirm that inputs to the function css are as expected,
+#' Helper function to confirm that inputs to the function `css()` are as expected,
 #' and modify inputs if needed
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will

@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Create design matrix of cluster representatives from matrix of raw features
 #' using results of css function
@@ -46,7 +46,8 @@
 #' train_inds provided to css) where the columns are the constructed cluster
 #' representatives.
 #' @author Gregory Faletto, Jacob Bien
-#' @references Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
+#' @references
+#' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
