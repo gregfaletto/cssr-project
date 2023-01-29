@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Create design matrix of cluster representatives from matrix of raw features
 #' using results of css function

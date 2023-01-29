@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Extracts selected clusters and cluster prototypes from the glmnet lasso
 #' output

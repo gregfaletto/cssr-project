@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Check the inputs to protolasso and clusterRepLasso, format clusters, and
 #' identify prototypes for each cluster

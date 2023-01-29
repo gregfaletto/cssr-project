@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Fit model and generate predictions from new data
 #'

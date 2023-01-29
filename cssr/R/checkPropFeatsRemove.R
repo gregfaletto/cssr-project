@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Helper function to confirm that the argument prop_feats_remove to several 
 #' functions is as expected

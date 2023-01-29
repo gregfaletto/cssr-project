@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Converts a selected set from X_glmnet to selected sets and selected clusters
 #' from the original feature space of X.

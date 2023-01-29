@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand  
+# Generated from _main.Rmd: do not edit by hand  
 testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,

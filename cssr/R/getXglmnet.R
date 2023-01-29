@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Converts the provided design matrix to an appropriate format for either the
 #' protolasso or the cluster representative lasso.

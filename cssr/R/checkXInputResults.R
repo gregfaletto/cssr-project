@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Helper function to confirm that inputs to several functions are as expected,
 #' and modify inputs if needed

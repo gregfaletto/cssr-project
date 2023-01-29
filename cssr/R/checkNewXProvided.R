@@ -1,4 +1,4 @@
-# Generated from create-cssr.Rmd: do not edit by hand
+# Generated from _main.Rmd: do not edit by hand
 
 #' Helper function to confirm that the new X matrix provided to getCssDesign or
 #' getCssPreds matches the characteristics of the X that was provided to css.
