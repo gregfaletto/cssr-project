@@ -148,7 +148,7 @@ str(css_output_test)
   
 ```
 
-Here's another that requires lambda to be an integer and takes the top lambda features with the highest absolute correlations with y. (Lambda can be anything you want and mean whatever you want, it's up to you!)
+Here's another that requires lambda to be an integer and takes the top lambda features with the highest absolute correlations with y:
 
 ```{r}
 corFitfun <- function(X, y, lambda){
@@ -159,7 +159,7 @@ corFitfun <- function(X, y, lambda){
     return(selected)
   }
   
-css_output_cor <- css(X, y, lambda=8, clusters=list("Z_cluster"=1:10),
+css_output_cor <- css(X, y, lambda, clusters=list("Z_cluster"=1:10),
   fitfun=testFitfun, B=10)
 
 str(css_output_cor)
