@@ -31,7 +31,7 @@ output <- cssSelect(X, y)
 output$selected_feats
 ```
 
-I'll first walk through a description of [stability selection (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932), the method that cluster stability selection builds on. Then I'll illustrate a problem with stability selection when data with clusters of highly correlated features are observed. This problem motivates cluster stability selection. Finally, I'll demonstrate how to use the cssr package to implement cluster stability selection. The cssr package is **written with over 1500 tests** ensuring that it functions exactly the way we intended when we wrote the paper.
+I'll first walk through a description of [stability selection (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932), the method that cluster stability selection builds on. Then I'll illustrate a problem with stability selection when data with clusters of highly correlated features are observed. This problem motivates cluster stability selection. Finally, I'll demonstrate how to use the cssr package to implement cluster stability selection.
 
 ## Stability Selection
 
