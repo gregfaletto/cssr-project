@@ -29,24 +29,24 @@ Typically (and for default fitfun = cssLasso), y should be an n-dimensional
 numeric vector.}
 
 \item{lambda}{A tuning parameter or set of tuning parameters that may be used
-by the feature selection method fitfun. In the default case when
-fitfun = cssLasso, lambda should be a numeric: the penalty to use for each
-lasso fit. (css does not require lambda to be any particular object because
-for a user-specified feature selection method fitfun, lambda can be an
-arbitrary object. See the description of fitfun below.)}
+by the feature selection method \code{fitfun}. In the default case when
+\code{fitfun = cssLasso}, lambda should be a numeric: the penalty to use for each
+lasso fit. (\code{css()} does not require lambda to be any particular object because
+for a user-specified feature selection method \code{fitfun}, lambda can be an
+arbitrary object. See the description of \code{fitfun} below.)}
 
 \item{clusters}{A list of integer vectors; each vector should contain the
-indices of a cluster of features (a subset of 1:p). (If there is only one
+indices of a cluster of features (a subset of \code{1:p}). (If there is only one
 cluster, clusters can either be a list of length 1 or an integer vector.)
 All of the provided clusters must be non-overlapping. Every feature not
 appearing in any cluster will be assumed to be unclustered (that is, they
 will be treated as if they are in a "cluster" containing only themselves). If
 clusters is a list of length 0 (or a list only containing clusters of length
-1), then css() returns the same results as stability selection (so the
-returned feat_sel_mat will be identical to clus_sel_mat). Names for the
+1), then \code{css()} returns the same results as stability selection (so the
+returned \code{feat_sel_mat} will be identical to \code{clus_sel_mat}). Names for the
 clusters will be needed later; any clusters that are not given names in the
-provided list will be given names automatically by css. Default is list() (so
-no clusters are specified).}
+provided list will be given names automatically by \code{css()}. Default is
+\code{list()} (so no clusters are specified).}
 
 \item{fitfun}{A function; the feature selection function used on each
 subsample by cluster stability selection. This can be any feature selection
