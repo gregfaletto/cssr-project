@@ -1,15 +1,15 @@
 # Generated from _main.Rmd: do not edit by hand
 
-#' Helper function to confirm that the inputs to cssLasso are as expected. 
+#' Helper function to confirm that the inputs to `cssLasso()` are as expected. 
 #'
 #' @param X A design matrix containing the predictors. (Note that we don't need
 #' to check X very much, because X will have already been checked by the
-#' function checkCssInputs when it was provided to css.)
+#' function `checkCssInputs()` when it was provided to `css()`.)
 #' @param y A numeric vector containing the response.
 #' @param lambda Numeric; a nonnegative number for the lasso penalty to use
 #' on each subsample. (For now, only one lambda value can be provided to
-#' cssLasso; in the future, we plan to allow for multiple lambda values to be
-#' provided to cssLasso, as described in Faletto and Bien 2022.)
+#' `cssLasso()`; in the future, we plan to allow for multiple lambda values to be
+#' provided to `cssLasso()`, as described in Faletto and Bien 2022.)
 #' @author Gregory Faletto, Jacob Bien
 checkCssLassoInputs <- function(X, y, lambda){
 

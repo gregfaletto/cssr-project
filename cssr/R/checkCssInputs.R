@@ -11,23 +11,23 @@
 #' Typically (and for default fitfun = cssLasso), y should be an n-dimensional
 #' numeric vector.
 #' @param lambda A tuning parameter or set of tuning parameters that may be used
-#' by the feature selection method fitfun. In the default case when
-#' fitfun = cssLasso, lambda should be a numeric: the penalty to use for each
-#' lasso fit. (css does not require lambda to be any particular object because
-#' for a user-specified feature selection method fitfun, lambda can be an
-#' arbitrary object. See the description of fitfun below.)
+#' by the feature selection method `fitfun`. In the default case when
+#' `fitfun = cssLasso`, lambda should be a numeric: the penalty to use for each
+#' lasso fit. (`css()` does not require lambda to be any particular object because
+#' for a user-specified feature selection method `fitfun`, lambda can be an
+#' arbitrary object. See the description of `fitfun` below.)
 #' @param clusters A list of integer vectors; each vector should contain the 
-#' indices of a cluster of features (a subset of 1:p). (If there is only one
+#' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
 #' All of the provided clusters must be non-overlapping. Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves). If
 #' clusters is a list of length 0 (or a list only containing clusters of length
-#' 1), then css() returns the same results as stability selection (so the
-#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
+#' 1), then `css()` returns the same results as stability selection (so the
+#' returned `feat_sel_mat` will be identical to `clus_sel_mat`). Names for the
 #' clusters will be needed later; any clusters that are not given names in the
-#' provided list will be given names automatically by css. Default is list() (so
-#' no clusters are specified).
+#' provided list will be given names automatically by `css()`. Default is 
+#' `list()` (so no clusters are specified).
 #' @param fitfun A function; the feature selection function used on each
 #' subsample by cluster stability selection. This can be any feature selection
 #' method; the only requirement is that it accepts the arguments (and only the
