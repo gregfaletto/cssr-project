@@ -44,7 +44,7 @@ The following paper introduces complementary pairs subsampling:
 #' \url{https://doi.org/10.1109/RITA.2014.2302071}.
 ```
 
-Subsamples \(A_1, \ldots, A_B \subset [n]\) of size \(\lfloor n/2 \rfloor\) are drawn, as well as subsamples \( \overline{A}_b \subset [n] \) of the same size with \(A_b \cap \overline{A}_b = \emptyset\).
+Subsamples \(A_1, \ldots, A_B \subset [n]\) of size \(\lfloor n/2 \rfloor\) are drawn, as well as subsamples \( \overline{A}_b \subset [n] \) of the same size with \(A_b \cap \overline{A}_b = \emptyset\).  Our function `getSubsamps()` implements this subsampling.
 
 Writing $\hat{S}^\lambda(A)$ for the selected features from applying a variable selection procedure with tuning parameter $\lambda$ on the data in a subset $A\subset[n]$, Shah and Samworth suggest computing the following:
 
@@ -142,7 +142,7 @@ We also define the package-level documentation that shows up when someone types 
 
 # The core function: `css` {#css}
 
-The main inputs that `css()` accepts are...
+The main inputs that `css()` accepts are the following:
 
 * a design matrix `X`
 * a response `y`
@@ -189,7 +189,7 @@ and
 #' `list()` (so no clusters are specified).
 ```
 
-* and a specification of the type of subsamples.  For now we only consider the complementary subsets sampling of Shah and Samworth.  However, we have included an option for Meinshausen-Buhlmann sampling which we may add later:
+* and a specification of the type of subsamples.  For now we only consider the [complementary subsets sampling of Shah and Samworth](#cpss).  However, we have included an option for Meinshausen-Buhlmann sampling which we may add later:
 
 ```{r param-sampling_type}
 #' @param sampling_type A character vector; either "SS" or "MB". For "MB",
@@ -356,7 +356,13 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 }
 ```
 
-Tests for `css()` and the other functions in this section are located at the end of this document. Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is `checkCssInputs()`, which confirms that the inputs to `css()` are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.) First we specify `createSubsamples()`.
+Tests for `css()` and the other functions in this section are located at the end of this document. Next, we'll build the individual functions one at a time. (The one function above that I didn't mention at all is `checkCssInputs()`, which confirms that the inputs to `css()` are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.)
+
+## Main components of `css`
+
+### Generating subsamples
+
+The function `createSubsamples()` is responsible for generating the subsamples $A_b$, where $b$ ranges from 1 to $B$ or 1 to $2B$ depending on the type of subsampling:
 
 ```{r}
 #' Creates lists of subsamples for stability selection.
@@ -501,7 +507,9 @@ getSubsamps <- function(n, B, sampling_type){
 }
 ```
 
-The next function called in the body of `css()` is `getSelMatrix()`.
+### Forming selection matrices
+
+The next function called in the body of `css()` is `getSelMatrix()`, which records for each feature $j$ and subsample $b$ whether $j\in \hat S^\lambda(A_b)$:
 
 ```{r}
 #' Generates matrix of selection indicators from stability selection.
@@ -609,7 +617,12 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 }
 ```
 
-Again, `getSelMatrix()` uses some helper functions to check the inputs for safety. `getSelMatrix()` leverages the function `mclapply()` from the parallel package, in order to allow for parallel processing if the user has set this up. This requires a helper function `cssLoop()`, which is also specified in the later section for helper functions. 
+Again, `getSelMatrix()` uses some helper functions to check the inputs for safety. `getSelMatrix()` leverages the function `parallel::mclapply()` package, in order to allow for parallel processing if the user has set this up. This requires a helper function `cssLoop()`, which is also specified in the later section for helper functions. 
+We add the `parallel` package to the DESCRIPTION file:
+
+```{r}
+usethis::use_package("parallel")
+```
 
 `getSelMatrix()` also uses a feature selection function `fitfun` as an input. `fitfun` can be provided by the user as an input to `css()`. We provide one default `fitfun`, `cssLasso()`, which works on a real-valued response y given a specified penalty parameter lambda > 0. Both for its own importance and to show an example of a valid `fitfun`, we show `cssLasso()` here.
 
@@ -686,7 +699,15 @@ cssLasso <- function(X, y, lambda){
 
 Notice that `cssLasso()` depends on the package `glmnet`, and calls the function `checkCssLassoInputs()`, which verifies that the inputs to `cssLasso()` are as needed. (In particular, the function `css()` imposes very few requirements on `lambda` and `y` to allow the end user flexibility for any specified `fitfun`. `checkCssLassoInputs()` ensures that `y` is a real-valued response, `lambda` is a nonnegative real number, etc.) `checkCssLassoInputs()` is specified in the helper functions section later.
 
-Finally, `getClusterSelMatrix()` is the last significant function called within `css()`.
+We add `glmnet` to the DESCRIPTION file as well:
+
+```{r}
+usethis::use_package("glmnet")
+```
+
+
+
+Finally, `getClusterSelMatrix()` is the last significant function called within `css()`.  It takes the information from `getSelMatrix()`, i.e. whether feature $j\in\hat S^\lambda(A_b)$, and outputs for every cluster $C$ whether $C\cap S^\lambda(A_b)\neq\emptyset$.
 
 ```{r}
 #' Get cluster selection matrix
@@ -748,11 +769,11 @@ The helper function `checkGetClusterSelMatrixInput()` verifies the inputs to `ge
 
 With the above and the helper functions below, the `css()` function is complete!
 
-# Helper functions
+## Helper functions
 
 Below, we specify some of the helper functions for `css()`, which are less important for understanding what `css()` does.
 
-* The function checkCssInputs is called at the beginning of the `css()` function. It confirms that the inputs to `css()` are as expected. Also, `css()` allows some flexibility in how the inputs are formatted, and `checkCssInputs()` converts the inputs into consistent formats for later use.
+* The function `checkCssInputs()` is called at the beginning of the `css()` function. It confirms that the inputs to `css()` are as expected. Also, `css()` allows some flexibility in how the inputs are formatted, and `checkCssInputs()` converts the inputs into consistent formats for later use.
   - The function `checkCssClustersInput()` is called within `checkCssInputs()`, and specifically checks the clusters input.
   - `formatClusters()` modifies clusters, ensuring every feature appears in exactly one cluster (any unclustered features are put in a "cluster" by themselves).
     * `checkFormatClustersInput()` verifies the input to `formatClusters()` for safety (this might seem a little redundant here, but `formatClusters()` is also called by different functions in this package).
@@ -784,24 +805,8 @@ Tests are written for all of these functions and appear as early as possible aft
 #' n-dimensional vector, with the ith entry corresponding to the ith row of X.
 #' Typically (and for default fitfun = cssLasso), y should be an n-dimensional
 #' numeric vector.
-#' @param lambda A tuning parameter or set of tuning parameters that may be used
-#' by the feature selection method fitfun. In the default case when
-#' fitfun = cssLasso, lambda should be a numeric: the penalty to use for each
-#' lasso fit. (css does not require lambda to be any particular object because
-#' for a user-specified feature selection method fitfun, lambda can be an
-#' arbitrary object. See the description of fitfun below.)
-#' @param clusters A list of integer vectors; each vector should contain the 
-#' indices of a cluster of features (a subset of 1:p). (If there is only one
-#' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
-#' appearing in any cluster will be assumed to be unclustered (that is, they
-#' will be treated as if they are in a "cluster" containing only themselves). If
-#' clusters is a list of length 0 (or a list only containing clusters of length
-#' 1), then css() returns the same results as stability selection (so the
-#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
-#' clusters will be needed later; any clusters that are not given names in the
-#' provided list will be given names automatically by css. Default is list() (so
-#' no clusters are specified).
+<<param-lambda>>
+<<param-clusters>>
 #' @param fitfun A function; the feature selection function used on each
 #' subsample by cluster stability selection. This can be any feature selection
 #' method; the only requirement is that it accepts the arguments (and only the
@@ -944,18 +949,7 @@ checkCssClustersInput:
 ```{r}
 #' Helper function to confirm that clusters input to css is as expected
 #'
-#' @param clusters A list of integer vectors; each vector should contain the 
-#' indices of a cluster of features (a subset of 1:p). (If there is only one
-#' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
-#' appearing in any cluster will be assumed to be unclustered (that is, they
-#' will be treated as if they are in a "cluster" containing only themselves). If
-#' clusters is a list of length 0 (or a list only containing clusters of length
-#' 1), then css() returns the same results as stability selection (so the
-#' returned feat_sel_mat will be identical to clus_sel_mat). Names for the
-#' clusters will be needed later; any clusters that are not given names in the
-#' provided list will be given names automatically by css. Default is list() (so
-#' no clusters are specified).
+<<param-clusters>>
 #' @return Same as the input, but all of the clusters will be coerced to
 #' integers.
 #' @author Gregory Faletto, Jacob Bien
@@ -1077,7 +1071,7 @@ testthat::test_that("checkCssClustersInput works", {
 ```
 
 
-formatClusters:
+`formatClusters()`:
 
 ```{r}
 #' Formats clusters in standardized way, optionally estimating cluster
@@ -1211,7 +1205,7 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
 }
 ```
 
-checkFormatClustersInput:
+`checkFormatClustersInput()`:
 
 ```{r}
 #' Helper function to ensure that the inputs to formatClusters are as expected
@@ -1353,7 +1347,7 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
 }
 ```
 
-checkY:
+`checkY()`:
 
 ```{r}
 #' Helper function to confirm that the argument y to several functions is
@@ -1375,7 +1369,7 @@ checkY <- function(y, n){
 }
 ```
 
-Tests for checkY:
+Tests for `checkY()`:
 
 ```{r}
 testthat::test_that("checkY works", {
@@ -1394,7 +1388,7 @@ testthat::test_that("checkY works", {
 })
 ```
 
-Tests for checkFormatClustersInput:
+Tests for `checkFormatClustersInput()`:
 
 ```{r}
 testthat::test_that("checkFormatClustersInput works", {
@@ -1486,7 +1480,7 @@ testthat::test_that("checkFormatClustersInput works", {
 ```
 
 
-checkClusters:
+`checkClusters()`:
 
 ```{r}
 #' Helper function to confirm that the argument clusters to several functions is
@@ -1528,7 +1522,7 @@ checkClusters <- function(clusters, p){
 }
 ```
 
-Tests for checkClusters
+Tests for `checkClusters()`:
 
 ```{r}
 testthat::test_that("checkClusters works", {
@@ -1560,7 +1554,7 @@ testthat::test_that("checkClusters works", {
 ```
 
 
-getPrototypes:
+`getPrototypes()`:
 
 ```{r}
 #' Estimate prototypes from a list of clusters
@@ -1632,7 +1626,7 @@ getPrototypes <- function(clusters, x, y){
 }
 ```
 
-identifyPrototype:
+`identifyPrototype()`:
 
 ```{r}
 #' Estimate prototypes from a single cluster
@@ -1685,7 +1679,7 @@ identifyPrototype <- function(cluster_members_i, x, y){
 }
 ```
 
-corFunction:
+`corFunction()`:
 
 ```{r}
 #' Absolute value of sample correlation between two vectors
@@ -1715,7 +1709,7 @@ corFunction <- function(t, y){
 ```
 
 
-Tests for corFunction
+Tests for `corFunction()`
 
 ```{r}
 testthat::test_that("corFunction works", {
@@ -1742,7 +1736,7 @@ testthat::test_that("corFunction works", {
 })
 ```
 
-Tests for identifyPrototype (requires corFunction)
+Tests for `identifyPrototype()` (requires `corFunction()`):
 
 ```{r}
 testthat::test_that("identifyPrototype works", {
@@ -1774,7 +1768,7 @@ testthat::test_that("identifyPrototype works", {
 })
 ```
 
-Tests for getPrototypes
+Tests for `getPrototypes()`
 
 ```{r}
 testthat::test_that("getPrototypes works", {
@@ -1819,7 +1813,7 @@ testthat::test_that("getPrototypes works", {
 })
 ```
 
-Finally, tests for formatClusters:
+Finally, tests for `formatClusters()`:
 
 
 ```{r}
@@ -1953,7 +1947,7 @@ testthat::test_that("formatClusters works", {
 })
 ```
 
-checkSamplingType
+`checkSamplingType()`:
 
 ```{r}
 #' Helper function to confirm that the argument sampling_type to several 
@@ -1973,7 +1967,7 @@ checkSamplingType <- function(sampling_type){
 }
 ```
 
-Tests for checkSamplingType
+Tests for `checkSamplingType()`:
 
 ```{r}
 testthat::test_that("checkSamplingType works", {
@@ -1991,7 +1985,7 @@ testthat::test_that("checkSamplingType works", {
 ```
 
 
-checkB
+`checkB()`:
 
 ```{r}
 #' Helper function to confirm that the argument B to several functions is as
@@ -2015,7 +2009,7 @@ checkB <- function(B){
 }
 ```
 
-Tests for checkB
+Tests for `checkB()`:
 
 ```{r}
 testthat::test_that("checkB works", {
@@ -2042,7 +2036,7 @@ testthat::test_that("checkB works", {
 ```
 
 
-checkPropFeatsRemove
+`checkPropFeatsRemove()`:
 
 ```{r}
 #' Helper function to confirm that the argument prop_feats_remove to several 
@@ -2065,7 +2059,7 @@ checkPropFeatsRemove <- function(prop_feats_remove, p){
 }
 ```
 
-Tests for checkPropFeatsRemove
+Tests for `checkPropFeatsRemove()`:
 
 ```{r}
 testthat::test_that("checkPropFeatsRemove works", {
@@ -2089,7 +2083,7 @@ testthat::test_that("checkPropFeatsRemove works", {
 })
 ```
 
-Finally, tests for checkCssInputs:
+Finally, tests for `checkCssInputs()`:
 
 ```{r}
 testthat::test_that("checkCssInputs works", {
@@ -2247,35 +2241,35 @@ testthat::test_that("checkCssInputs works", {
 ```
 
 
-cssLoop:
+`cssLoop()`:
 
 ```{r}
 #' Helper function run on each subsample
 #' 
-#' Runs provided feature selection method fitfun on each subsample for cluster
-#' stability selection (this function is called within mclapply).
+#' Runs provided feature selection method `fitfun` on each subsample for cluster
+#' stability selection (this function is called within `mclapply`).
 #' @param input Could be one of two things: \item{subsample}{An integer vector
 #' of size `n/2` containing the indices of the observations in the subsample.}
 #' \item{drop_var_input}{A named list containing two elements: one named
 #' "subsample" and the same as the previous description, and a logical vector
 #' named "feats_to_keep" containing the indices of the features to be
 #' automatically selected.} (The first object is the output of the function
-#' createSubsamples when the provided prop_feats_remove is 0, the default, and
-#' the second object is the output of createSubsamples when prop_feats_remove >
-#' 0.)
+#' `createSubsamples()` when the provided `prop_feats_remove` is 0, the default, and
+#' the second object is the output of `createSubsamples()` when `prop_feats_remove >
+#' 0`.)
 #' @param x an n x p numeric matrix containing the predictors. (This should be
 #' the full design matrix provided to css.)
 #' @param y A response; can be any response that takes the form of a length n
-#' vector and is used (or not used) by fitfun. Typically (and for default fitfun
-#' = cssLasso), y should be an n-dimensional numeric vector containing the
+#' vector and is used (or not used) by `fitfun`. Typically (and for default
+#' `fitfun = cssLasso`), `y` should be an n-dimensional numeric vector containing the
 #' response. This should be the full response provided to css.
 #' @param lambda A tuning parameter or set of tuning parameters that may be used
 #' by the feature selection method. For example, in the default case when
-#' fitfun = cssLasso, lambda is a numeric: the penalty to use for each lasso
+#' `fitfun = cssLasso`, `lambda` is a numeric: the penalty to use for each lasso
 #' fit.
 #' @param fitfun A function that takes in arguments X, y, and lambda and returns
 #' a vector of indices of the columns of X (selected features).
-#' @return An integer vector; the indices of the features selected by fitfun.
+#' @return An integer vector; the indices of the features selected by `fitfun`.
 #' @author Gregory Faletto, Jacob Bien
 cssLoop <- function(input, x, y, lambda, fitfun){
     # Check inputs
@@ -2320,7 +2314,7 @@ cssLoop <- function(input, x, y, lambda, fitfun){
 }
 ```
 
-checkCssLoopOutput:
+`checkCssLoopOutput()`:
 
 ```{r}
 #' Helper function to confirm that the outputs of the provided feature selection
@@ -2372,7 +2366,7 @@ checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
 }
 ```
 
-Tests for checkCssLoopOutput:
+Tests for `checkCssLoopOutput()`:
 
 ```{r}
 testthat::test_that("checkCssLoopOutput works", {
@@ -2425,19 +2419,19 @@ testthat::test_that("checkCssLoopOutput works", {
 
 
 
-checkCssLassoInputs:
+`checkCssLassoInputs()`:
 
 ```{r}
-#' Helper function to confirm that the inputs to cssLasso are as expected. 
+#' Helper function to confirm that the inputs to `cssLasso()` are as expected. 
 #'
 #' @param X A design matrix containing the predictors. (Note that we don't need
 #' to check X very much, because X will have already been checked by the
-#' function checkCssInputs when it was provided to css.)
+#' function `checkCssInputs()` when it was provided to `css()`.)
 #' @param y A numeric vector containing the response.
 #' @param lambda Numeric; a nonnegative number for the lasso penalty to use
 #' on each subsample. (For now, only one lambda value can be provided to
-#' cssLasso; in the future, we plan to allow for multiple lambda values to be
-#' provided to cssLasso, as described in Faletto and Bien 2022.)
+#' `cssLasso()`; in the future, we plan to allow for multiple lambda values to be
+#' provided to `cssLasso()`, as described in Faletto and Bien 2022.)
 #' @author Gregory Faletto, Jacob Bien
 checkCssLassoInputs <- function(X, y, lambda){
 
@@ -2471,7 +2465,7 @@ checkCssLassoInputs <- function(X, y, lambda){
 }
 ```
 
-Tests for checkCssLassoInputs
+Tests for `checkCssLassoInputs()`:
 
 ```{r}
 testthat::test_that("checkCssLassoInputs works", {
@@ -2522,7 +2516,7 @@ testthat::test_that("checkCssLassoInputs works", {
 ```
 
 
-Tests for cssLoop (had to define checkCssLassoInputs first):
+Tests for `cssLoop()` (had to define `checkCssLassoInputs()` first):
 
 ```{r}
 testthat::test_that("cssLoop works", {
@@ -2610,7 +2604,7 @@ testthat::test_that("cssLoop works", {
 ```
 
 
-checkGetClusterSelMatrixInput:
+`checkGetClusterSelMatrixInput()`:
 
 ```{r}
 #' Helper function to check inputs to getClusterSelMatrix function
@@ -2637,7 +2631,7 @@ checkGetClusterSelMatrixInput <- function(clusters, res){
 ```
 
 
-Tests for checkGetClusterSelMatrixInput
+Tests for `checkGetClusterSelMatrixInput()`:
 
 ```{r}
 testthat::test_that("checkGetClusterSelMatrixInput works", {
@@ -2694,9 +2688,11 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
 })
 ```
 
-# Tests for main functions in ``r params$package_name`` (now that helper functions have been defined)
+# Tests for main functions in ``r params$package_name``
 
-Tests for createSubsamples:
+Now that the helper functions have been defined, we move on to tests for the main functions in the package.
+
+Tests for `createSubsamples()`:
 
 ```{r}
 testthat::test_that("createSubsamples works", {
@@ -2754,7 +2750,7 @@ testthat::test_that("createSubsamples works", {
 })
 ```
 
-Tests for getSubsamps
+Tests for `getSubsamps()`:
 
 ```{r}
 testthat::test_that("getSubsamps works", {
@@ -2774,7 +2770,7 @@ testthat::test_that("getSubsamps works", {
 })
 ```
 
-Tests for getSelMatrix
+Tests for `getSelMatrix()`:
 
 ```{r}
 testthat::test_that("getSelMatrix works", {
@@ -2838,7 +2834,7 @@ testthat::test_that("getSelMatrix works", {
 })
 ```
 
-Tests for cssLasso
+Tests for `cssLasso()`:
 
 ```{r}
 testthat::test_that("cssLasso works", {
@@ -2865,7 +2861,7 @@ testthat::test_that("cssLasso works", {
 })
 ```
 
-Tests for getClusterSelMatrix:
+Tests for `getClusterSelMatrix()`:
 
 ```{r}
 testthat::test_that("getClusterSelMatrix works", {
@@ -2918,7 +2914,7 @@ testthat::test_that("getClusterSelMatrix works", {
 })
 ```
 
-Finally, tests for css itself!
+Finally, tests for `css()` itself!
 
 ```{r}
 testthat::test_that("css works", {
@@ -3102,33 +3098,33 @@ testthat::test_that("css works", {
 
 # Selection and prediction functions {#sel-and-pred}
 
-Now that css has been defined and tested, we write functions to work with the output of css. The output of these functions will be of more direct interest for most end users than the output of css. These functions are defined separately from css because the most computationally intensive steps happen within css. css can be called only once on a data set, and then the functions that follow can be explored relatively quickly (one can try different parameters, etc.).
+Now that `css()` has been defined and tested, we write functions to work with the output of `css()`. The output of these functions will be of more direct interest for most end users than the output of `css()`. These functions are defined separately from `css()` because the most computationally intensive steps happen within `css()`. `css()` can be called only once on a data set, and then the functions that follow can be explored relatively quickly (one can try different parameters, etc.).
 
-* getCssSelections takes in the results of css along with user-defined parameters on how to select clusters (a mininmum or maximum number of clusters to select, along with a cutoff for cluster selection proportions) and selects clusters as well as features from those clusters.
-* getCssDesign takes in the same inputs as getCssSelections along with an unlabeled test matrix of features X (containing the same features as the X matrix provided originally to css). It uses the results from css to select clusters like getCssSelections, then it uses a user-selected weighting scheme to compute weighted averages of the cluster members. It returns a test matrix of cluster representatives, which can be used for downstream predictive tasks.
-* Finally, getCssPreds has the same inputs as getCssPreds *FIX THIS TYPO*, except it also accepts a set of labeled training data (where the response must be real-valued). getCssPreds selects clusters, forms matrices of cluster representatives on the training and test data, uses the training matrix of cluster representatives (along with the vector of responses for the training data) to estimate a linear model via ordinary least squares, and finally generates predictions on the test data using this linear model.
+* `getCssSelections()` takes in the results of `css()` along with user-defined parameters on how to select clusters (a minimum or maximum number of clusters to select, along with a cutoff for cluster selection proportions) and selects clusters as well as features from those clusters.
+* `getCssDesign()` takes in the same inputs as `getCssSelections()` along with an unlabeled test matrix of features X (containing the same features as the X matrix provided originally to `css()`). It uses the results from `css()` to select clusters like `getCssSelections()`, then it uses a user-selected weighting scheme to compute weighted averages of the cluster members. It returns a test matrix of cluster representatives, which can be used for downstream predictive tasks.
+* Finally, `getCssPreds()` has the same inputs as `getCssPreds()` *FIX THIS TYPO*, except it also accepts a set of labeled training data (where the response must be real-valued). `getCssPreds()` selects clusters, forms matrices of cluster representatives on the training and test data, uses the training matrix of cluster representatives (along with the vector of responses for the training data) to estimate a linear model via ordinary least squares, and finally generates predictions on the test data using this linear model.
 
 As in the previous section, we first define each function and then define the helper functions called by that function. Tests are written for each function as soon as all of its dependencies have been defined.
 
-* getCssSelections
-  - Calls checkCutoff, which checks that the specified cutoff input is as expected
-  - checkWeighting verifies the weighting input to getCssSelections
-  - checkMinNumClusts confirms that the min_num_clusts parameter provided to getCssSelections is as expected
-  - Likewise for checkMaxNumClusts
-  - getSelectedClusters is the workhorse function of getCssSelections, doing most of the work to get the selected clusters (and the selected features from those clusters) with the verified inputs
-    * checkSelectedClusters checks internally that the selected clusters are as expected
-    * getAllClustWeights gets the weights for each of the members of the selected clusters
-      - getClustWeights gets the weights for a single cluster
-    * checkGetSelectedClustersOutput verifies the output of getSelectedClusters
-* getCssDesign
-  - checkNewXProvided confirms that the design matrix provided to getCssDesign matches the characteristics of the matrix that was provided to css. 
-    * checkXInputResults also verifies these inputs (and is also used by getCssPreds on both the training and test data)
-  - formCssDesign is the workhorse function, generating a matrix of cluster representatives with the verified inputs to getCssDesign
-    * checkFormCssDesignInputs verifies the inputs to formCssDesign (somewhat redundantly here, but formCssDesign is called by more than one function, so this verifies the inputs to formCssDesign regardless of where it is called).
-* getCssPreds
-  - checkGetCssPredsInputs verifies the inputs to getCssPreds
+* `getCssSelections()`
+  - Calls `checkCutoff()`, which checks that the specified cutoff input is as expected
+  - `checkWeighting()` verifies the weighting input to `getCssSelections()`
+  - `checkMinNumClusts()` confirms that the `min_num_clusts` parameter provided to `getCssSelections()` is as expected
+  - Likewise for `checkMaxNumClusts()`
+  - `getSelectedClusters()` is the workhorse function of `getCssSelections()`, doing most of the work to get the selected clusters (and the selected features from those clusters) with the verified inputs
+    * `checkSelectedClusters()` checks internally that the selected clusters are as expected
+    * `getAllClustWeights()` gets the weights for each of the members of the selected clusters
+      - `getClustWeights()` gets the weights for a single cluster
+    * `checkGetSelectedClustersOutput()` verifies the output of `getSelectedClusters()`
+* `getCssDesign()`
+  - `checkNewXProvided()` confirms that the design matrix provided to `getCssDesign()` matches the characteristics of the matrix that was provided to `css()`. 
+    * `checkXInputResults()` also verifies these inputs (and is also used by `getCssPreds()` on both the training and test data)
+  - `formCssDesign()` is the workhorse function, generating a matrix of cluster representatives with the verified inputs to `getCssDesign()`
+    * `checkFormCssDesignInputs()` verifies the inputs to `formCssDesign()` (somewhat redundantly here, but `formCssDesign()` is called by more than one function, so this verifies the inputs to `formCssDesign()` regardless of where it is called).
+* `getCssPreds()`
+  - `checkGetCssPredsInputs()` verifies the inputs to `getCssPreds()`
 
-getCssSelections: 
+`getCssSelections()`: 
 
 ```{r}
 #' Obtain a selected set of clusters and features
@@ -3212,7 +3208,7 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 }
 ```
 
-checkCutoff:
+`checkCutoff()`:
 
 ```{r}
 #' Helper function to confirm that the argument cutoff to several functions is
@@ -3231,7 +3227,7 @@ checkCutoff <- function(cutoff){
 }
 ```
 
-Tests for checkCutoff:
+Tests for `checkCutoff()`:
 
 ```{r}
 testthat::test_that("checkCutoff works", {
@@ -3254,7 +3250,7 @@ testthat::test_that("checkCutoff works", {
 })
 ```
 
-checkWeighting:
+`checkWeighting()`:
 
 ```{r}
 #' Helper function to confirm that the argument weighting to several 
@@ -3277,7 +3273,7 @@ checkWeighting <- function(weighting){
 }
 ```
 
-Tests for checkWeighting:
+Tests for `checkWeighting()`:
 
 ```{r}
 testthat::test_that("checkWeighting works", {
@@ -3297,7 +3293,7 @@ testthat::test_that("checkWeighting works", {
 })
 ```
 
-checkMinNumClusts:
+`checkMinNumClusts()`:
 
 ```{r}
 #' Helper function to confirm that the argument min_num_clusts to several 
@@ -3323,7 +3319,7 @@ checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
 }
 ```
 
-Tests for checkMinNumClusts:
+Tests for `checkMinNumClusts()`:
 
 ```{r}
 testthat::test_that("checkMinNumClusts works", {
@@ -3353,7 +3349,7 @@ testthat::test_that("checkMinNumClusts works", {
 })
 ```
 
-checkMaxNumClusts:
+`checkMaxNumClusts()`:
 
 ```{r}
 #' Helper function to confirm that the argument max_num_clusts to several 
@@ -3390,7 +3386,7 @@ checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
 }
 ```
 
-Tests for checkMaxNumClusts:
+Tests for `checkMaxNumClusts()`:
 
 ```{r}
 testthat::test_that("checkMaxNumClusts works", {
@@ -3442,7 +3438,7 @@ testthat::test_that("checkMaxNumClusts works", {
 })
 ```
 
-getSelectedClusters:
+`getSelectedClusters()`:
 
 ```{r}
 #' From css output, obtain names of selected clusters and selection proportions,
@@ -3574,7 +3570,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 }
 ```
 
-checkSelectedClusters:
+`checkSelectedClusters()`:
 
 ```{r}
 #' Helper function to check operations within getSelectedClusters function
@@ -3624,7 +3620,7 @@ checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
 }
 ```
 
-Test for checkSelectedClusters:
+Test for `checkSelectedClusters()`:
 
 ```{r}
 testthat::test_that("checkSelectedClusters works", {
@@ -3658,7 +3654,7 @@ testthat::test_that("checkSelectedClusters works", {
 })
 ```
 
-getAllClustWeights:
+`getAllClustWeights()`:
 
 ```{r}
 #' Calculate weights for each cluster member of all of the selected clusters.
@@ -3735,7 +3731,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
 }
 ```
 
-getClustWeights:
+`getClustWeights()`:
 
 ```{r}
 #' Calculate weights for members of a cluster using selection proportions
@@ -3822,7 +3818,7 @@ getClustWeights <- function(cluster_i, weighting, feat_sel_props){
 ```
 
 
-Tests for getClustWeights:
+Tests for `getClustWeights()`:
 
 ```{r}
 testthat::test_that("getClustWeights works", {
@@ -3852,7 +3848,7 @@ testthat::test_that("getClustWeights works", {
 ```
 
 
-Tests for getAllClustWeights:
+Tests for `getAllClustWeights()`:
 
 ```{r}
 testthat::test_that("getAllClustWeights works", {
@@ -3958,7 +3954,7 @@ testthat::test_that("getAllClustWeights works", {
 })
 ```
 
-checkGetSelectedClustersOutput:
+`checkGetSelectedClustersOutput()`:
 
 ```{r}
 #' Helper function to check that output of getSelectedClusters is as expected
@@ -3999,7 +3995,7 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
 }
 ```
 
-Tests for checkGetSelectedClustersOutput:
+Tests for `checkGetSelectedClustersOutput()`:
 
 ```{r}
 testthat::test_that("checkGetSelectedClustersOutput works", {
@@ -4123,7 +4119,7 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
 })
 ```
 
-Tests for getSelectedClusters
+Tests for `getSelectedClusters()`
 
 ```{r}
 testthat::test_that("getSelectedClusters works", {
@@ -4262,7 +4258,7 @@ testthat::test_that("getSelectedClusters works", {
 })
 ```
 
-Finally, tests for getCssSelections
+Finally, tests for `getCssSelections()`
 
 ```{r}
 testthat::test_that("getCssSelections works", {
@@ -4375,7 +4371,7 @@ testthat::test_that("getCssSelections works", {
 })
 ```
 
-getCssDesign
+`getCssDesign()`
 
 ```{r}
 #' Obtain a design matrix of cluster representatives
@@ -4473,7 +4469,7 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 }
 ```
 
-checkNewXProvided
+`checkNewXProvided()`
 
 ```{r}
 #' Helper function to confirm that the new X matrix provided to getCssDesign or
@@ -4519,7 +4515,7 @@ checkNewXProvided <- function(trainX, css_results){
 ```
 
 
-checkXInputResults
+`checkXInputResults()`
 
 ```{r}
 #' Helper function to confirm that inputs to several functions are as expected,
@@ -4592,7 +4588,7 @@ checkXInputResults <- function(newx, css_X){
 }
 ```
 
-Tests for checkXInputResults
+Tests for `checkXInputResults()`
 
 ```{r}
 testthat::test_that("checkXInputResults works", {
@@ -4704,7 +4700,7 @@ testthat::test_that("checkXInputResults works", {
 })
 ```
 
-Tests for checkNewXProvided
+Tests for `checkNewXProvided()`
 
 ```{r}
 testthat::test_that("checkNewXProvided works", {
@@ -4851,7 +4847,7 @@ testthat::test_that("checkNewXProvided works", {
 })
 ```
 
-formCssDesign:
+`formCssDesign()`:
 
 ```{r}
 #' Create design matrix of cluster representatives from matrix of raw features
@@ -4963,7 +4959,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
 ```
 
-checkFormCssDesignInputs:
+`checkFormCssDesignInputs()`:
 
 ```{r}
 #' Helper function to check that the inputs to formCssDesign are as expected
@@ -5043,7 +5039,7 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 }
 ```
 
-Tests for checkFormCssDesignInputs
+Tests for `checkFormCssDesignInputs()`
 
 ```{r}
 testthat::test_that("checkFormCssDesignInputs works", {
@@ -5338,7 +5334,7 @@ testthat::test_that("checkFormCssDesignInputs works", {
 })
 ```
 
-Tests for formCssDesign
+Tests for `formCssDesign()`
 
 
 ```{r}
@@ -5547,7 +5543,7 @@ testthat::test_that("formCssDesign works", {
 })
 ```
 
-Finally, tests for getCssDesign
+Finally, tests for `getCssDesign()`
 
 
 
@@ -5754,7 +5750,7 @@ testthat::test_that("getCssDesign works", {
 })
 ```
 
-getCssPreds
+`getCssPreds()`
 
 ```{r}
 #' Fit model and generate predictions from new data
@@ -5902,7 +5898,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 ```
 
 
-checkGetCssPredsInputs:
+`checkGetCssPredsInputs()`:
 
 ```{r}
 #' Helper function to confirm that inputs to the function getCssPreds are as
@@ -6045,7 +6041,7 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 }
 ```
 
-Tests for checkGetCssPredsInputs
+Tests for `checkGetCssPredsInputs()`
 
 
 ```{r}
@@ -6442,7 +6438,7 @@ testthat::test_that("checkGetCssPredsInputs works", {
 })
 ```
 
-Finally, tests for getCssPreds
+Finally, tests for `getCssPreds()`
 
 ```{r}
 testthat::test_that("getCssPreds works", {
@@ -6646,24 +6642,24 @@ testthat::test_that("getCssPreds works", {
 
 The following are some other functions that are useful for specific tasks.
 
-* genClusteredData generates jointly Gaussian data sets that include clusters of features that are correlated with a latent feature (the latent features themselves are also provided).
-* getLassoLambda uses a data set to choose a good value of lambda for subsamples of size n/2 (as in cluster stability selection) by cross-validation.
-* getModelSize estimates the best size for a lasso model on a provided data set.
-* printCssDf converts the output of the css function (an object of class cssr) to a data.frame that is ready to be printed. We provide end-user access to printCssDf because this data.frame itself may be useful as an object that summarizes the output from css.
-* print.cssr is the print function for objects of class cssr.
+* `genClusteredData()` generates jointly Gaussian data sets that include clusters of features that are correlated with a latent feature (the latent features themselves are also provided).
+* `getLassoLambda()` uses a data set to choose a good value of lambda for subsamples of size n/2 (as in cluster stability selection) by cross-validation.
+* `getModelSize()` estimates the best size for a lasso model on a provided data set.
+* `printCssDf()` converts the output of the `css()` function (an object of class cssr) to a data.frame that is ready to be printed. We provide end-user access to `printCssDf()` because this data.frame itself may be useful as an object that summarizes the output from `css()`.
+* `print.cssr()` is the print function for objects of class cssr.
 
-* genClusteredData
-  - checkGenClusteredDataInputs checks that the inputs to genClusteredData are as expected.
-  - makeCovarianceMatrix generates a covariance matrix for a jointly Gaussian random variable with distribution matching the provided inputs.
-  - makeCoefficients generates a coefficient vector for the response according to the provided inputs.
-  - Finally, genMuXZSd draws a random Z (matrix of latent variables), X (observed matrix, containing, in general, features correlated with latent features, directly observed features that are associated with y, and noise features), conditional means mu, and observed responses y.
-* getLassoLambda
-* getModelSize
-* printCssDf
-  - getSelectionPrototypes identifies the prototypes from selected clusters (the feature in each cluster that is most correlated with the response)
-* print.cssr
+* `genClusteredData()`
+  - `checkGenClusteredDataInputs()` checks that the inputs to `genClusteredData()` are as expected.
+  - `makeCovarianceMatrix()` generates a covariance matrix for a jointly Gaussian random variable with distribution matching the provided inputs.
+  - `makeCoefficients()` generates a coefficient vector for the response according to the provided inputs.
+  - Finally, `genMuXZSd()` draws a random Z (matrix of latent variables), X (observed matrix, containing, in general, features correlated with latent features, directly observed features that are associated with y, and noise features), conditional means mu, and observed responses y.
+* `getLassoLambda()`
+* `getModelSize()`
+* `printCssDf()`
+  - `getSelectionPrototypes()` identifies the prototypes from selected clusters (the feature in each cluster that is most correlated with the response)
+* `print.cssr()`
 
-genClusteredData
+`genClusteredData()`
 
 ```{r}
 #' Generate randomly sampled data including noisy observations of latent
@@ -6769,7 +6765,7 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 }
 ```
 
-checkGenClusteredDataInputs ## NEED TO START WITH ROXYGEN FORMATTING
+`checkGenClusteredDataInputs()` ## NEED TO START WITH ROXYGEN FORMATTING
 
 ```{r}
 #' TODO(gregfaletto) fix this description!!!
@@ -6880,7 +6876,7 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
 }
 ```
 
-Tests for checkGenClusteredDataInputs
+Tests for `checkGenClusteredDataInputs()`
 
 ```{r}
 testthat::test_that("checkGenClusteredDataInputs works", {
@@ -7070,7 +7066,7 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 })
 ```
 
-makeCovarianceMatrix
+`makeCovarianceMatrix()`
 
 ```{r}
 #' Generate covariance matrix for simulated clustered data
@@ -7135,7 +7131,7 @@ makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
 }
 ```
 
-Tests for makeCovarianceMatrix
+Tests for `makeCovarianceMatrix()`
 
 ```{r}
 testthat::test_that("makeCovarianceMatrix works", {
@@ -7187,7 +7183,7 @@ testthat::test_that("makeCovarianceMatrix works", {
 })
 ```
 
- 
+`makeCoefficients()`:
 
 ```{r}
 #' Generated coefficients for y in latent variable model
@@ -7310,7 +7306,7 @@ makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
 }
 ```
 
-Tests for makeCoefficients
+Tests for `makeCoefficients()`
 
 ```{r}
 testthat::test_that("makeCoefficients works", {
@@ -7367,7 +7363,7 @@ testthat::test_that("makeCoefficients works", {
 })
 ```
 
-genMuXZSd
+`genMuXZSd()`
 
 ```{r}
 #' Generate observed and latent variables along with conditional mean
@@ -7487,7 +7483,7 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
 }
 ```
 
-Tests for genMuXZSd
+Tests for `genMuXZSd()`
 
 ```{r}
 testthat::test_that("genMuXZSd works", {
@@ -7672,7 +7668,7 @@ testthat::test_that("genMuXZSd works", {
 })
 ```
 
-Finally, tests for genClusteredData
+Finally, tests for `genClusteredData()`
 
 ```{r}
 testthat::test_that("genClusteredData works", {
@@ -7930,7 +7926,7 @@ testthat::test_that("genClusteredData works", {
 })
 ```
 
-getLassoLambda:
+`getLassoLambda()`:
 
 ```{r}
 #' Get lambda value for lasso
@@ -8008,7 +8004,7 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
 }
 ```
 
-Tests for getLassoLambda:
+Tests for `getLassoLambda()`:
 
 ```{r}
 testthat::test_that("getLassoLambda works", {
@@ -8070,7 +8066,7 @@ testthat::test_that("getLassoLambda works", {
 })
 ```
 
-getModelSize:
+`getModelSize()`:
 
 ```{r}
 #' Automated estimation of model size
@@ -8173,7 +8169,7 @@ getModelSize <- function(X, y, clusters){
 }
 ```
 
-Tests for getModelSize:
+Tests for `getModelSize()`:
 
 ```{r}
 testthat::test_that("getModelSize works", {
@@ -8285,7 +8281,7 @@ testthat::test_that("getModelSize works", {
 })
 ```
 
-printCssDf:
+`printCssDf()`:
 
 ```{r}
 #' Prepares a data.frame summarazing cluster stability selection output to print
@@ -8376,7 +8372,7 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
 }
 ```
 
-getSelectionPrototypes
+`getSelectionPrototypes()`
 
 ```{r}
 #' Identify selection prototypes from selected clusters
@@ -8434,7 +8430,7 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 }
 ```
 
-Tests for getSelectionPrototypes:
+Tests for `getSelectionPrototypes()`:
 
 ```{r}
 testthat::test_that("getSelectionPrototypes works", {
@@ -8501,7 +8497,7 @@ testthat::test_that("getSelectionPrototypes works", {
 })
 ```
 
-Tests for printCssDf:
+Tests for `printCssDf()`:
 
 ```{r}
 testthat::test_that("printCssDf works", {
@@ -8758,7 +8754,7 @@ testthat::test_that("printCssDf works", {
 })
 ```
 
-print.cssr
+`print.cssr()`
 
 ```{r}
 #' Print cluster stability selection output
@@ -8802,15 +8798,15 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 
 # Convenient wrapper functions {#wrapper-functions}
 
-Finally, we provide convenient wrapper functions which yield user-desired output in a single step at the price of flexibility and efficiency. cssSelect yields a selected set of clusters and features (the same output as getCssSelections) in a single function call. cssPredict takes in a training/selection data set as well as a test X. It uses the labeled data to select a set of features and train an OLS model on the selected features, and then it generates predictions on the test set using the fitted model.
+Finally, we provide convenient wrapper functions which yield user-desired output in a single step at the price of flexibility and efficiency. `cssSelect()` yields a selected set of clusters and features (the same output as `getCssSelections()`) in a single function call. `cssPredict()` takes in a training/selection data set as well as a test X. It uses the labeled data to select a set of features and train an OLS model on the selected features, and then it generates predictions on the test set using the fitted model.
 
-Besides requiring only a single function call to yield desired output, these wrapper functions also automatically select hyperparameters (lambda used for the lasso, a desired model size, and even selecdtion and training splits for cssPredict) in a sensible way if these values are not provided by the user. So these functions are very convenient for an end user who wants quick results without getting "under the hood."
+Besides requiring only a single function call to yield desired output, these wrapper functions also automatically select hyperparameters (lambda used for the lasso, a desired model size, and even selection and training splits for `cssPredict()`) in a sensible way if these values are not provided by the user. So these functions are very convenient for an end user who wants quick results without getting "under the hood."
 
-The two main disadvantages of these functions are flexibility and computational efficiency. For simplicity of use, these functions do not provide as many options as the component functions they call (for example, min_num_clusts is not an available argument for these models). Further, both of these functions make (computationally intensive) calls to css internally every time they are called, so these functions are not recommended for users who want to tinker with the model size and other parameters. Instead, it would be more efficient to call css once and then work with the output as desired using the other package functions, which are very efficient given the stored output from css.
+The two main disadvantages of these functions are flexibility and computational efficiency. For simplicity of use, these functions do not provide as many options as the component functions they call (for example, `min_num_clusts` is not an available argument for these models). Further, both of these functions make (computationally intensive) calls to `css()` internally every time they are called, so these functions are not recommended for users who want to tinker with the model size and other parameters. Instead, it would be more efficient to call css once and then work with the output as desired using the other package functions, which are very efficient given the stored output from `css()`.
 
-cssSelect and cssPredict have no new dependencies; they rely only on already-defined functions.
+`cssSelect()` and `cssPredict()` have no new dependencies; they rely only on already-defined functions.
 
-cssSelect:
+`cssSelect()`:
 
 ```{r}
 #' Obtain a selected set of clusters and features using cluster stability
@@ -8919,7 +8915,7 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 }
 ```
 
-Tests for cssSelect:
+Tests for `cssSelect()`:
 
 ```{r}
 testthat::test_that("cssSelect works", {
@@ -9232,7 +9228,7 @@ testthat::test_that("cssSelect works", {
 })
 ```
 
-cssPredict:
+`cssPredict()`:
 
 ```{r}
 #' Wrapper function to generate predictions from cluster stability selected
@@ -9362,7 +9358,7 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 }
 ```
 
-Tests for cssPredict:
+Tests for `cssPredict()`:
 
 ```{r}
 testthat::test_that("cssPredict works", {
@@ -9534,15 +9530,15 @@ testthat::test_that("cssPredict works", {
 
 We also provide implementations of some competitor feature selection methods. We used these in the simulation studies in our paper to compare cluster stability selection to the protolasso (Redi and Tibshirani, 2016) and the cluster representative lasso (Bühlmann et. al. 2013), two other feature selection methods that are designed for data with clustered features. These feature selection methods are in some ways closely related, so their implementations share helper functions.
 
-* protolasso
-  - processClusterLassoInputs checks and formats the function inputs
-  - getXglmnet formats the provided design matrix Xglmnet for the lasso as implemented by glmnet (for the protolasso, this means discarding all features from each cluster except the one most highly correlated with the response; for the cluster representative lasso, this means replacing the clustered features with a simple average of the cluster members).
-    * checkGetXglmnetInputs verifies the inputs to getXglmnet
-  - Finally, getClusterSelsFromGlmnet extracts the relevant output from the results yielded by a glmnet lasso fit.
-    * getSelectedSets takes in a single selected set from Xglmnet and yields a selected feature set in the original feature space (with each selected cluster from Xglmnet replaced by its prototype) as well as a selected set of clusters.
-* clusterRepLasso
+* `protolasso()`
+  - `processClusterLassoInputs()` checks and formats the function inputs
+  - `getXglmnet()` formats the provided design matrix `Xglmnet` for the lasso as implemented by `glmnet` (for the protolasso, this means discarding all features from each cluster except the one most highly correlated with the response; for the cluster representative lasso, this means replacing the clustered features with a simple average of the cluster members).
+    * `checkGetXglmnetInputs()` verifies the inputs to `getXglmnet()`
+  - Finally, `getClusterSelsFromGlmnet()` extracts the relevant output from the results yielded by a `glmnet` lasso fit.
+    * `getSelectedSets()` takes in a single selected set from `Xglmnet` and yields a selected feature set in the original feature space (with each selected cluster from `Xglmnet` replaced by its prototype) as well as a selected set of clusters.
+* `clusterRepLasso()`
 
-protolasso:
+`protolasso()`:
 
 ```{r}
 #' Select features via the protolasso (Reid and Tibshirani 2016)
@@ -9608,7 +9604,7 @@ protolasso <- function(X, y, clusters, nlambda=100){
 }
 ```
 
-processClusterLassoInputs:
+`processClusterLassoInputs()`:
 
 ```{r}
 #' Check the inputs to protolasso and clusterRepLasso, format clusters, and
@@ -9705,7 +9701,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
 }
 ```
 
-Tests for processClusterLassoInputs:
+Tests for `processClusterLassoInputs()`:
 
 ```{r}
 testthat::test_that("processClusterLassoInputs works", {
@@ -9899,7 +9895,7 @@ testthat::test_that("processClusterLassoInputs works", {
 ```
 
 
-getXglmnet:
+`getXglmnet()`:
 
 ```{r}
 #' Converts the provided design matrix to an appropriate format for either the
@@ -9980,7 +9976,7 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
 }
 ```
 
-checkGetXglmnetInputs:
+`checkGetXglmnetInputs()`:
 
 ```{r}
 #' Verifies the inputs for getXglmnet.
@@ -10029,11 +10025,11 @@ checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
 }
 ```
 
-Tests for checkGetXglmnetInputs:
+Tests for `checkGetXglmnetInputs()`:
 
-Tests for getXglmnet:
+Tests for `getXglmnet()`:
 
-getClusterSelsFromGlmnet:
+`getClusterSelsFromGlmnet()`:
 
 ```{r}
 #' Extracts selected clusters and cluster prototypes from the glmnet lasso
@@ -10114,7 +10110,7 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
 }
 ```
 
-getSelectedSets:
+`getSelectedSets()`:
 
 ```{r}
 #' Converts a selected set from X_glmnet to selected sets and selected clusters
@@ -10184,13 +10180,13 @@ getSelectedSets <- function(lasso_set, model_size, clusters, prototypes,
 }
 ```
 
-Tests for getSelectedSets:
+Tests for `getSelectedSets()`:
 
-Tests for getClusterSelsFromGlmnet
+Tests for `getClusterSelsFromGlmnet()`
 
-Finally, tests for protolasso:
+Finally, tests for `protolasso()`:
 
-clusterRepLasso:
+`clusterRepLasso()`:
 
 ```{r}
 #' Select features via the cluster representative lasso (Bühlmann et. al. 2013)
@@ -10264,7 +10260,7 @@ clusterRepLasso <- function(X, y, clusters=list(), nlambda=100){
 }
 ```
 
-Tests for clusterRepLasso:
+Tests for `clusterRepLasso()`:
 
 # Documenting the package and adding README
 
