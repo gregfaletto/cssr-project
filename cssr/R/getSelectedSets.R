@@ -24,8 +24,7 @@
 #' containing the indices of the features in X that are in the cluster
 #' containing prototype selected_set[k].}
 #' @author Gregory Faletto, Jacob Bien
-getSelectedSets <- function(lasso_set, model_size, clusters, prototypes,
-    feat_names){
+getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     
     model_size <- length(lasso_set)
 

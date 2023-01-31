@@ -5,7 +5,7 @@
 \title{Converts a selected set from X_glmnet to selected sets and selected clusters
 from the original feature space of X.}
 \usage{
-getSelectedSets(lasso_set, model_size, clusters, prototypes, feat_names)
+getSelectedSets(lasso_set, clusters, prototypes, feat_names)
 }
 \arguments{
 \item{lasso_set}{A vector containing the indices of selected cluster

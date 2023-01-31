@@ -10062,207 +10062,305 @@ testthat::test_that("checkGetXglmnetInputs works", {
   checkGetXglmnetInputs(x=process$x, clusters=process$clusters,
                                type="clusterRepLasso",
                         prototypes=process$prototypes)
+  
+  # X as a data.frame
+  X_df <- datasets::mtcars
+  res <- processClusterLassoInputs(X=X_df, y=stats::rnorm(nrow(X_df)),
+                                   clusters=1:3, nlambda=10)
+  
+  checkGetXglmnetInputs(x=res$x, clusters=res$clusters, type="clusterRepLasso",
+                        prototypes=res$prototypes)
+  
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
-  #                                          "var_names"))
-  # 
-  # # X
-  # testthat::expect_true(is.matrix(ret$x))
-  # testthat::expect_true(all(!is.na(ret$x)))
-  # testthat::expect_true(is.numeric(ret$x))
-  # testthat::expect_equal(ncol(ret$x), 11)
-  # testthat::expect_equal(nrow(ret$x), 15)
-  # testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
-  # 
-  # # clusters
-  # testthat::expect_true(is.list(ret$clusters))
-  # testthat::expect_equal(length(ret$clusters), 5)
-  # testthat::expect_equal(5, length(names(ret$clusters)))
-  # testthat::expect_equal(5, length(unique(names(ret$clusters))))
-  # testthat::expect_true("red_cluster" %in% names(ret$clusters))
-  # testthat::expect_true("green_cluster" %in% names(ret$clusters))
-  # testthat::expect_true(all(!is.na(names(ret$clusters))))
-  # testthat::expect_true(all(!is.null(names(ret$clusters))))
-  # testthat::expect_true(all(names(ret$clusters) != ""))
-  # 
-  # clust_feats <- integer()
-  # true_list <- list(1:4, 5:8, 9, 10, 11)
-  # for(i in 1:length(ret$clusters)){
-  #   testthat::expect_true(is.integer(ret$clusters[[i]]))
-  #   testthat::expect_equal(length(intersect(clust_feats, ret$clusters[[i]])), 0)
-  #   testthat::expect_true(all(ret$clusters[[i]] %in% 1:11))
-  #   testthat::expect_equal(length(ret$clusters[[i]]),
-  #                          length(unique(ret$clusters[[i]])))
-  #   testthat::expect_true(all(ret$clusters[[i]] == true_list[[i]]))
-  #   clust_feats <- c(clust_feats, ret$clusters[[i]])
-  # }
-  # 
-  # testthat::expect_equal(length(clust_feats), 11)
-  # testthat::expect_equal(11, length(unique(clust_feats)))
-  # testthat::expect_equal(11, length(intersect(clust_feats, 1:11)))
-  # 
-  # # prototypes
-  # testthat::expect_true(is.integer(ret$prototypes))
-  # testthat::expect_true(all(ret$prototypes %in% 1:11))
-  # testthat::expect_equal(length(ret$prototypes), 5)
-  # testthat::expect_true(ret$prototypes[1] %in% 1:4)
-  # testthat::expect_true(ret$prototypes[2] %in% 5:8)
-  # testthat::expect_equal(ret$prototypes[3], 9)
-  # testthat::expect_equal(ret$prototypes[4], 10)
-  # testthat::expect_equal(ret$prototypes[5], 11)
-  # 
-  # # var_names
-  # testthat::expect_equal(length(ret$var_names), 1)
-  # testthat::expect_true(is.na(ret$var_names))
-  # 
-  # # X as a data.frame
-  # X_df <- datasets::mtcars
-  # res <- checkGetXglmnetInputs(X=X_df, y=stats::rnorm(nrow(X_df)),
-  #                                  clusters=1:3, nlambda=10)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
-  #                                          "var_names"))
-  # 
-  # X_df_model <- stats::model.matrix(~ ., X_df)
-  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
-  # 
-  # # X
-  # testthat::expect_true(is.matrix(res$x))
-  # testthat::expect_true(all(!is.na(res$x)))
-  # testthat::expect_true(is.numeric(res$x))
-  # testthat::expect_equal(ncol(res$x), ncol(X_df_model))
-  # testthat::expect_equal(nrow(res$x), nrow(X_df))
-  # testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
-  # 
-  # # var_names
-  # testthat::expect_equal(length(res$var_names), ncol(X_df_model))
-  # testthat::expect_true(is.character(res$var_names))
-  # testthat::expect_identical(res$var_names, colnames(X_df_model))
-  # 
-  # 
-  # # X as a dataframe with factors (number of columns of final design matrix
-  # # after one-hot encoding factors won't match number of columns of df2)
-  # df2 <- X_df
-  # df2$cyl <- as.factor(df2$cyl)
-  # df2$vs <- as.factor(df2$vs)
-  # df2$am <- as.factor(df2$am)
-  # df2$gear <- as.factor(df2$gear)
-  # df2$carb <- as.factor(df2$carb)
-  # 
-  # res <- checkGetXglmnetInputs(X=df2, y=stats::rnorm(nrow(df2)),
-  #                                  clusters=1:3, nlambda=10)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
-  #                                          "var_names"))
-  # 
-  # X_df_model <- stats::model.matrix(~ ., df2)
-  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
-  # 
-  # # X
-  # testthat::expect_true(is.matrix(res$x))
-  # testthat::expect_true(all(!is.na(res$x)))
-  # testthat::expect_true(is.numeric(res$x))
-  # testthat::expect_equal(ncol(res$x), ncol(X_df_model))
-  # testthat::expect_equal(nrow(res$x), nrow(X_df))
-  # testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
-  # 
-  # # var_names
-  # testthat::expect_equal(length(res$var_names), ncol(X_df_model))
-  # testthat::expect_true(is.character(res$var_names))
-  # testthat::expect_identical(res$var_names, colnames(X_df_model))
-  # 
-  # # X as a matrix with column names
-  # x2 <- x
-  # colnames(x2) <- LETTERS[1:11]
-  # 
-  # ret <- checkGetXglmnetInputs(X=x2, y=y, clusters=good_clusters, nlambda=10)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
-  #                                          "var_names"))
-  # 
-  # # X
-  # testthat::expect_true(is.matrix(ret$x))
-  # testthat::expect_true(all(!is.na(ret$x)))
-  # testthat::expect_true(is.numeric(ret$x))
-  # testthat::expect_equal(ncol(ret$x), 11)
-  # testthat::expect_equal(nrow(ret$x), 15)
-  # testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
-  # 
-  # # var_names
-  # testthat::expect_equal(length(ret$var_names), ncol(x2))
-  # testthat::expect_true(is.character(ret$var_names))
-  # testthat::expect_identical(ret$var_names, LETTERS[1:11])
-  # 
-  # # Bad inputs
-  # testthat::expect_error(checkGetXglmnetInputs(X="x", y=y[1:10],
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda=10),
-  #                        "is.matrix(X) | is.data.frame(X) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y[1:10],
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda=10),
-  #                        "n == length(y) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=list(1:4, 4:6),
-  #                                                  nlambda=10),
-  #                        "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=list(2:3, 2:3),
-  #                                                  nlambda=10),
-  #                        "length(clusters) == length(unique(clusters)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=list(1:4,
-  #                                                                as.integer(NA)),
-  #                                                  nlambda=10),
-  #                        "!is.na(clusters) are not all TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=list(2:3,
-  #                                                                c(4, 4, 5)),
-  #                                                  nlambda=10),
-  #                        "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda=1),
-  #                        "nlambda >= 2 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda=x),
-  #                        "length(nlambda) == 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda="nlambda"),
-  #                        "is.numeric(nlambda) | is.integer(nlambda) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
-  #                                                  clusters=good_clusters,
-  #                                                  nlambda=10.5),
-  #                        "nlambda == round(nlambda) is not TRUE",
-  #                        fixed=TRUE)
+  res <- processClusterLassoInputs(X=df2, y=stats::rnorm(nrow(df2)),
+                                   clusters=1:3, nlambda=10)
+  
+  checkGetXglmnetInputs(x=res$x, clusters=res$clusters, type="protolasso",
+                        prototypes=res$prototypes)
+
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+
+  ret <- processClusterLassoInputs(X=x2, y=y, clusters=good_clusters, nlambda=10)
+
+  checkGetXglmnetInputs(x=ret$x, clusters=ret$clusters, type="clusterRepLasso",
+                        prototypes=ret$prototypes)
+
+  # Bad prototype inputs
+  # Error has quotation marks
+  testthat::expect_error(checkGetXglmnetInputs(x=process$x,
+                                               clusters=process$clusters,
+                                               type="clsterRepLasso",
+                                               prototypes=process$prototypes))
+
+  testthat::expect_error(checkGetXglmnetInputs(x=process$x,
+                                               clusters=process$clusters,
+                                               type=c("clusterRepLasso",
+                                                      "protolasso"),
+                                               prototypes=process$prototypes),
+                         "length(type) == 1 is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetXglmnetInputs(x=process$x,
+                                               clusters=process$clusters,
+                                               type=2,
+                                               prototypes=process$prototypes),
+                         "is.character(type) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(checkGetXglmnetInputs(x=process$x,
+                                               clusters=process$clusters,
+                                               type=as.character(NA),
+                                               prototypes=process$prototypes),
+                         "!is.na(type) is not TRUE",
+                         fixed=TRUE)
   
 })
 ```
 
-
 Tests for `getXglmnet()`:
+
+```{r}
+testthat::test_that("getXglmnet works", {
+  set.seed(82612)
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+  
+  process <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters,
+                                       nlambda=10)
+
+  res <- getXglmnet(x=process$x, clusters=process$clusters,
+                               type="protolasso", prototypes=process$prototypes)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_true(nrow(res) == 15)
+  # Each column of res should be one of the prototypes. Features 9 - 11 are
+  # in clusters by themselves and are therefore their own prototypes.
+  testthat::expect_true(ncol(res) == 5)
+  for(i in 1:length(good_clusters)){
+    proto_i_found <- FALSE
+    cluster_i <- good_clusters[[i]]
+    for(j in 1:length(cluster_i)){
+      proto_i_found <- proto_i_found | all(abs(res[, i] - x[, cluster_i[j]]) <
+                                             10^(-9))
+    }
+    testthat::expect_true(proto_i_found)
+  }
+  testthat::expect_true(all(abs(res[, 3] - x[, 9]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 4] - x[, 10]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 5] - x[, 11]) < 10^(-9)))
+  
+  res <- getXglmnet(x=process$x, clusters=process$clusters,
+                    type="clusterRepLasso", prototypes=process$prototypes)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_true(nrow(res) == 15)
+  # Each column of res should be one of the cluster representatives. Features 9
+  # - 11 are in clusters by themselves and are therefore their own cluster
+  # representatives.
+  testthat::expect_true(ncol(res) == 5)
+  for(i in 1:length(good_clusters)){
+    cluster_i <- good_clusters[[i]]
+    clus_rep_i <- rowMeans(x[, cluster_i])
+    testthat::expect_true(all(abs(res[, i] - clus_rep_i) <
+                                             10^(-9)))
+  }
+  testthat::expect_true(all(abs(res[, 3] - x[, 9]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 4] - x[, 10]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 5] - x[, 11]) < 10^(-9)))
+  
+  # X as a data.frame
+  X_df <- datasets::mtcars
+  res <- processClusterLassoInputs(X=X_df, y=stats::rnorm(nrow(X_df)),
+                                   clusters=1:3, nlambda=10)
+
+  ret_df <- getXglmnet(x=res$x, clusters=res$clusters, type="protolasso",
+                       prototypes=res$prototypes)
+  
+  X_df_model <- stats::model.matrix(~ ., X_df)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  
+  testthat::expect_true(is.matrix(ret_df))
+  testthat::expect_true(is.numeric(ret_df))
+  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_true(nrow(ret_df) == nrow(X_df))
+  # Each column of ret_df should be one of the prototypes.
+  testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
+
+  proto_found <- FALSE
+  for(j in 1:3){
+    proto_found <- proto_found | all(abs(ret_df[, 1] - X_df_model[, j]) < 10^(-9))
+  }
+  testthat::expect_true(proto_found)
+
+  for(j in 4:ncol(X_df_model)){
+    testthat::expect_true(all(abs(ret_df[, j - 2] - X_df_model[, j]) < 10^(-9)))
+  }
+  
+  ret_df <- getXglmnet(x=res$x, clusters=res$clusters, type="clusterRepLasso",
+                       prototypes=res$prototypes)
+  
+  testthat::expect_true(is.matrix(ret_df))
+  testthat::expect_true(is.numeric(ret_df))
+  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_true(nrow(ret_df) == nrow(X_df))
+  # Each column of ret_df should be one of the prototypes.
+  testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
+
+  proto_found <- FALSE
+  clus_rep <- rowMeans(X_df_model[, 1:3])
+  testthat::expect_true(all(abs(ret_df[, 1] - clus_rep) < 10^(-9)))
+
+  for(j in 4:ncol(X_df_model)){
+    testthat::expect_true(all(abs(ret_df[, j - 2] - X_df_model[, j]) < 10^(-9)))
+  }
+
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+
+  res <- processClusterLassoInputs(X=df2, y=stats::rnorm(nrow(df2)),
+                                   clusters=1:3, nlambda=10)
+  
+  ret_df <- getXglmnet(x=res$x, clusters=res$clusters, type="protolasso",
+                       prototypes=res$prototypes)
+  
+  X_df_model <- stats::model.matrix(~ ., df2)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  
+  testthat::expect_true(is.matrix(ret_df))
+  testthat::expect_true(is.numeric(ret_df))
+  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_true(nrow(ret_df) == nrow(X_df))
+  # Each column of ret_df should be one of the prototypes.
+  testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
+
+  proto_found <- FALSE
+  for(j in 1:3){
+    proto_found <- proto_found | all(abs(ret_df[, 1] - X_df_model[, j]) < 10^(-9))
+  }
+  testthat::expect_true(proto_found)
+
+  for(j in 4:ncol(X_df_model)){
+    testthat::expect_true(all(abs(ret_df[, j - 2] - X_df_model[, j]) < 10^(-9)))
+  }
+  
+  ret_df <- getXglmnet(x=res$x, clusters=res$clusters, type="clusterRepLasso",
+                       prototypes=res$prototypes)
+  
+  testthat::expect_true(is.matrix(ret_df))
+  testthat::expect_true(is.numeric(ret_df))
+  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_true(nrow(ret_df) == nrow(X_df))
+  # Each column of ret_df should be one of the prototypes.
+  testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
+
+  proto_found <- FALSE
+  clus_rep <- rowMeans(X_df_model[, 1:3])
+  testthat::expect_true(all(abs(ret_df[, 1] - clus_rep) < 10^(-9)))
+
+  for(j in 4:ncol(X_df_model)){
+    testthat::expect_true(all(abs(ret_df[, j - 2] - X_df_model[, j]) < 10^(-9)))
+  }
+
+  # X as a matrix with column names (returned X shouldn't have column names)
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+
+  process <- processClusterLassoInputs(X=x2, y=y, clusters=good_clusters,
+                                       nlambda=10)
+
+  res <- getXglmnet(x=process$x, clusters=process$clusters,
+                               type="protolasso", prototypes=process$prototypes)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_true(nrow(res) == 15)
+  # Each column of res should be one of the prototypes. Features 9 - 11 are
+  # in clusters by themselves and are therefore their own prototypes.
+  testthat::expect_true(ncol(res) == 5)
+  for(i in 1:length(good_clusters)){
+    proto_i_found <- FALSE
+    cluster_i <- good_clusters[[i]]
+    for(j in 1:length(cluster_i)){
+      proto_i_found <- proto_i_found | all(abs(res[, i] - x[, cluster_i[j]]) <
+                                             10^(-9))
+    }
+    testthat::expect_true(proto_i_found)
+  }
+  testthat::expect_true(all(abs(res[, 3] - x[, 9]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 4] - x[, 10]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 5] - x[, 11]) < 10^(-9)))
+  
+  res <- getXglmnet(x=process$x, clusters=process$clusters,
+                    type="clusterRepLasso", prototypes=process$prototypes)
+  
+  testthat::expect_true(is.matrix(res))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_true(nrow(res) == 15)
+  # Each column of res should be one of the cluster representatives. Features 9
+  # - 11 are in clusters by themselves and are therefore their own cluster
+  # representatives.
+  testthat::expect_true(ncol(res) == 5)
+  for(i in 1:length(good_clusters)){
+    cluster_i <- good_clusters[[i]]
+    clus_rep_i <- rowMeans(x[, cluster_i])
+    testthat::expect_true(all(abs(res[, i] - clus_rep_i) <
+                                             10^(-9)))
+  }
+  testthat::expect_true(all(abs(res[, 3] - x[, 9]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 4] - x[, 10]) < 10^(-9)))
+  testthat::expect_true(all(abs(res[, 5] - x[, 11]) < 10^(-9)))
+
+  # Bad prototype inputs
+  # Error has quotation marks
+  testthat::expect_error(getXglmnet(x=process$x, clusters=process$clusters,
+                                    type="clsterRepLasso",
+                                    prototypes=process$prototypes))
+
+  testthat::expect_error(getXglmnet(x=process$x, clusters=process$clusters,
+                                    type=c("clusterRepLasso", "protolasso"),
+                                    prototypes=process$prototypes),
+                         "length(type) == 1 is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(getXglmnet(x=process$x, clusters=process$clusters,
+                                    type=2, prototypes=process$prototypes),
+                         "is.character(type) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(getXglmnet(x=process$x, clusters=process$clusters,
+                                    type=as.character(NA),
+                                    prototypes=process$prototypes),
+                         "!is.na(type) is not TRUE",
+                         fixed=TRUE)
+  
+})
+```
+
 
 `getClusterSelsFromGlmnet()`:
 
@@ -10372,10 +10470,10 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
 #' containing the indices of the features in X that are in the cluster
 #' containing prototype selected_set[k].}
 #' @author Gregory Faletto, Jacob Bien
-getSelectedSets <- function(lasso_set, model_size, clusters, prototypes,
-    feat_names){
+getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     
     model_size <- length(lasso_set)
+    stopifnot(model_size > 0)
 
     stopifnot(length(unique(lasso_set)) == model_size)
     stopifnot(all(lasso_set <= length(clusters)))
@@ -10416,6 +10514,300 @@ getSelectedSets <- function(lasso_set, model_size, clusters, prototypes,
 ```
 
 Tests for `getSelectedSets()`:
+
+
+```{r}
+testthat::test_that("getSelectedSets works", {
+  set.seed(82612)
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+  
+  process <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters,
+                                       nlambda=100)
+
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="protolasso", prototypes=process$prototypes)
+  
+  fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[5]]
+  
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+  
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+  
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:11))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+  
+  # Try again with cluster representative lasso
+  
+  
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="clusterRepLasso", prototypes=process$prototypes)
+  
+  fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[5]]
+  
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+  
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+  
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:11))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+  
+
+  
+  
+  
+  # X as a data.frame
+  X_df <- datasets::mtcars
+
+  X_df_model <- stats::model.matrix(~ ., X_df)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  
+  process <- processClusterLassoInputs(X=X_df, y=rnorm(nrow(X_df)),
+                                       clusters=1:3, nlambda=100)
+
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="protolasso", prototypes=process$prototypes)
+  
+  fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(X_df)), family="gaussian",
+                        nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
+  
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+  
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+  
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+  
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+  
+  X_df_model <- stats::model.matrix(~ ., df2)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+
+  process <- processClusterLassoInputs(X=df2, y=rnorm(nrow(df2)),
+                                       clusters=1:3, nlambda=100)
+
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="clusterRepLasso", prototypes=process$prototypes)
+  
+  fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family="gaussian",
+                        nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
+  
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+  
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+  
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+
+
+  
+  
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+
+  X_df_model <- stats::model.matrix(~ ., df2)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+
+  process <- processClusterLassoInputs(X=df2, y=rnorm(nrow(df2)),
+                                       clusters=1:3, nlambda=100)
+
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="clusterRepLasso", prototypes=process$prototypes)
+
+  fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family="gaussian",
+                        nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
+
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+
+  
+  
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+
+  process <- processClusterLassoInputs(X=x2, y=y,
+                                       clusters=good_clusters, nlambda=100)
+
+  X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
+                         type="protolasso", prototypes=process$prototypes)
+  
+  fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian",
+                        nlambda=100)
+  lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  # Pick an arbitrary lasso set
+  lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
+  
+  res <- getSelectedSets(lasso_set, process$clusters, process$prototypes,
+                         process$var_names)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_set",
+                                           "selected_clusts_list"))
+  
+  # selected_set
+  testthat::expect_true(is.integer(res$selected_set))
+  testthat::expect_true(all(!is.na(res$selected_set)))
+  testthat::expect_true(all(res$selected_set %in% process$prototypes))
+  
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  testthat::expect_equal(length(res$selected_set),
+                         length(res$selected_clusts_list))
+  sel_feats <- unlist(res$selected_clusts_list)
+  testthat::expect_true(all(sel_feats %in% 1:11))
+  n_clusts <- length(res$selected_clusts_list)
+  for(i in 1:n_clusts){
+    clust_i_found <- FALSE
+    clust_i <- res$selected_clusts_list[[i]]
+    for(j in 1:length(process$clusters)){
+      clust_i_found <- clust_i_found | identical(clust_i, process$clusters[[j]])
+    }
+    testthat::expect_true(clust_i_found)
+  }
+  
+})
+```
 
 Tests for `getClusterSelsFromGlmnet()`
 
