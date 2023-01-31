@@ -34,29 +34,25 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
     n <- nrow(x)
     p <- ncol(x)
 
-    # if(n_clusters > 0){
     for(i in 1:length(clusters)){
         cluster_i <- clusters[[i]]
-        
-        if(type == "protolasso"){
-            if(length(cluster_i) > 1){
+
+        if(length(cluster_i) == 1){
+            X_glmnet_i <- x[, cluster_i]
+        } else{
+            stopifnot(length(cluster_i) > 1)
+            
+            if(type == "protolasso"){
                 prototype_ind_i <- which(prototypes %in% cluster_i)
                 stopifnot(length(prototype_ind_i) == 1)
                 prototype_i <- prototypes[prototype_ind_i]
-            } else{
-                prototype_i <- cluster_i
-            }
-            
-            X_glmnet_i <- x[, prototype_i]
-        } else {
-            stopifnot(type == "clusterRepLasso")
-            if(length(cluster_i) > 1){
+                X_glmnet_i <- x[, prototype_i]
+            } else {
+                stopifnot(type == "clusterRepLasso")
                 X_glmnet_i <- rowMeans(x[, cluster_i])
-            } else{
-                X_glmnet_i <- x[, cluster_i]
-            }    
+            }
         }
-
+        
         stopifnot(length(X_glmnet_i) == n)
         
         if(i == 1){
@@ -65,6 +61,8 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
             X_glmnet <- cbind(X_glmnet, X_glmnet_i)
         }
     }
+    
+    stopifnot(ncol(X_glmnet) == length(clusters))
     stopifnot(ncol(X_glmnet) == length(clusters))
     colnames(X_glmnet) <- character()
 

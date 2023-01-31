@@ -88,6 +88,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
     stopifnot(length(nlambda) == 1)
     stopifnot(!is.na(nlambda))
     stopifnot(nlambda >= 2)
+    stopifnot(nlambda == round(nlambda))
 
     return(list(x=X, clusters=clusters, prototypes=prototypes,
         var_names=feat_names))

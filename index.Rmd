@@ -9695,6 +9695,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
     stopifnot(length(nlambda) == 1)
     stopifnot(!is.na(nlambda))
     stopifnot(nlambda >= 2)
+    stopifnot(nlambda == round(nlambda))
 
     return(list(x=X, clusters=clusters, prototypes=prototypes,
         var_names=feat_names))
@@ -9732,249 +9733,185 @@ testthat::test_that("processClusterLassoInputs works", {
   testthat::expect_equal(5, length(names(ret$clusters)))
   testthat::expect_equal(5, length(unique(names(ret$clusters))))
   testthat::expect_true("red_cluster" %in% names(ret$clusters))
-  # testthat::expect_true("green_cluster" %in% names(ret$clusters))
+  testthat::expect_true("green_cluster" %in% names(ret$clusters))
   testthat::expect_true(all(!is.na(names(ret$clusters))))
   testthat::expect_true(all(!is.null(names(ret$clusters))))
   testthat::expect_true(all(names(ret$clusters) != ""))
 
-  # clust_feats <- integer()
-  # true_list <- list(1:3, 5:8, 4, 9, 10)
-  # for(i in 1:length(ret$clusters)){
-  #   testthat::expect_true(is.integer(ret$clusters[[i]]))
-  #   testthat::expect_equal(length(intersect(clust_feats, ret$clusters[[i]])), 0)
-  #   testthat::expect_true(all(ret$clusters[[i]] %in% 1:10))
-  #   testthat::expect_equal(length(ret$clusters[[i]]),
-  #                          length(unique(ret$clusters[[i]])))
-  #   testthat::expect_true(all(ret$clusters[[i]] == true_list[[i]]))
-  #   clust_feats <- c(clust_feats, ret$clusters[[i]])
-  # }
-  # 
-  # testthat::expect_equal(length(clust_feats), 10)
-  # testthat::expect_equal(10, length(unique(clust_feats)))
-  # testthat::expect_equal(10, length(intersect(clust_feats, 1:10)))
+  clust_feats <- integer()
+  true_list <- list(1:4, 5:8, 9, 10, 11)
+  for(i in 1:length(ret$clusters)){
+    testthat::expect_true(is.integer(ret$clusters[[i]]))
+    testthat::expect_equal(length(intersect(clust_feats, ret$clusters[[i]])), 0)
+    testthat::expect_true(all(ret$clusters[[i]] %in% 1:11))
+    testthat::expect_equal(length(ret$clusters[[i]]),
+                           length(unique(ret$clusters[[i]])))
+    testthat::expect_true(all(ret$clusters[[i]] == true_list[[i]]))
+    clust_feats <- c(clust_feats, ret$clusters[[i]])
+  }
+
+  testthat::expect_equal(length(clust_feats), 11)
+  testthat::expect_equal(11, length(unique(clust_feats)))
+  testthat::expect_equal(11, length(intersect(clust_feats, 1:11)))
   
-  # # prototypes
-  # testthat::expect_true(is.integer(ret$prototypes))
-  # testthat::expect_identical(ret$prototypes, 1:p)
-  # 
-  # testthat::expect_equal(formatClusters(clusters=1:p, p=p,
-  #                                             get_prototypes=TRUE, x=X,
-  #                                             y=y)$prototypes, p)
-  #   
-  # testthat::expect_identical(formatClusters(clusters=list(1L, 2L:p), p=p,
-  #                                             get_prototypes=TRUE, x=X,
-  #                                             y=y)$prototypes,
-  #                              as.integer(c(1, p)))
-  #   
-  # testthat::expect_identical(formatClusters(clusters=3L:p, p=p,
-  #                                             get_prototypes=TRUE, x=X,
-  #                                             y=y)$prototypes,
-  #                              as.integer(c(p, 1, 2)))
+  # prototypes
+  testthat::expect_true(is.integer(ret$prototypes))
+  testthat::expect_true(all(ret$prototypes %in% 1:11))
+  testthat::expect_equal(length(ret$prototypes), 5)
+  testthat::expect_true(ret$prototypes[1] %in% 1:4)
+  testthat::expect_true(ret$prototypes[2] %in% 5:8)
+  testthat::expect_equal(ret$prototypes[3], 9)
+  testthat::expect_equal(ret$prototypes[4], 10)
+  testthat::expect_equal(ret$prototypes[5], 11)
+
+  # var_names
+  testthat::expect_equal(length(ret$var_names), 1)
+  testthat::expect_true(is.na(ret$var_names))
+  
+  # X as a data.frame
+  X_df <- datasets::mtcars
+  res <- processClusterLassoInputs(X=X_df, y=stats::rnorm(nrow(X_df)),
+                                   clusters=1:3, nlambda=10)
+  
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
+                                           "var_names"))
+  
+  X_df_model <- stats::model.matrix(~ ., X_df)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  
+  # X
+  testthat::expect_true(is.matrix(res$x))
+  testthat::expect_true(all(!is.na(res$x)))
+  testthat::expect_true(is.numeric(res$x))
+  testthat::expect_equal(ncol(res$x), ncol(X_df_model))
+  testthat::expect_equal(nrow(res$x), nrow(X_df))
+  testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
   
   # var_names
+  testthat::expect_equal(length(res$var_names), ncol(X_df_model))
+  testthat::expect_true(is.character(res$var_names))
+  testthat::expect_identical(res$var_names, colnames(X_df_model))
+
+
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+
+  res <- processClusterLassoInputs(X=df2, y=stats::rnorm(nrow(df2)),
+                                   clusters=1:3, nlambda=10)
   
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
+                                           "var_names"))
   
+  X_df_model <- stats::model.matrix(~ ., df2)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
   
-  # # X as a data.frame
-  # X_df <- datasets::mtcars
-  # res_fitfun <- css(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
-  # testthat::expect_identical(class(res_fitfun), "cssr")
-  # 
-  # # X as a dataframe with factors (number of columns of final design matrix
-  # # after one-hot encoding factors won't match number of columns of df2)
-  # df2 <- X_df
-  # df2$cyl <- as.factor(df2$cyl)
-  # df2$vs <- as.factor(df2$vs)
-  # df2$am <- as.factor(df2$am)
-  # df2$gear <- as.factor(df2$gear)
-  # df2$carb <- as.factor(df2$carb)
-  # 
-  # res_fitfun <- css(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
-  # testthat::expect_identical(class(res_fitfun), "cssr")
-  # 
-  # # X as a matrix with column names
-  # x2 <- x
-  # colnames(x2) <- LETTERS[1:11]
-  # res_names <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
-  # testthat::expect_identical(class(res_names), "cssr")
-  # testthat::expect_identical(colnames(x2), colnames(res_names$X))
-  # testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
+  # X
+  testthat::expect_true(is.matrix(res$x))
+  testthat::expect_true(all(!is.na(res$x)))
+  testthat::expect_true(is.numeric(res$x))
+  testthat::expect_equal(ncol(res$x), ncol(X_df_model))
+  testthat::expect_equal(nrow(res$x), nrow(X_df))
+  testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
   
-  # # sig_clusters
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters="2", rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=4, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters <= n_clusters is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=-1, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters >= 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=.6, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters == round(sig_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # 
-  # # n_clusters
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5,
-  #                                                 n_clusters="3",
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3.2,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "n_clusters == round(n_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=0,
-  #                                                 sig_clusters=0, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "n_clusters >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=.3, n_clusters=3,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "cluster_size >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=16, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "p >= n_clusters * cluster_size + k_unclustered is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "abs(rho) <= abs(var) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "rho != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=-1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "var > 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=0,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "beta_latent != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=0, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "beta_unclustered != 0 is not TRUE", fixed=TRUE)
-  # 
-  # # k_unclustered
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered="2",
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=-2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "k_unclustered >= 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=.2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "k_unclustered == round(k_unclustered) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=NA,
-  #                                                 sigma_eps_sq=NA),
-  #                        "Must specify one of snr or sigma_eps_sq", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=-.2,
-  #                                                 sigma_eps_sq=NA),
-  #                        "snr > 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=NA,
-  #                                                 sigma_eps_sq=-.3),
-  #                        "sigma_eps_sq > 0 is not TRUE", fixed=TRUE)
-  # 
+  # var_names
+  testthat::expect_equal(length(res$var_names), ncol(X_df_model))
+  testthat::expect_true(is.character(res$var_names))
+  testthat::expect_identical(res$var_names, colnames(X_df_model))
+
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+
+  ret <- processClusterLassoInputs(X=x2, y=y, clusters=good_clusters, nlambda=10)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
+                                           "var_names"))
+
+  # X
+  testthat::expect_true(is.matrix(ret$x))
+  testthat::expect_true(all(!is.na(ret$x)))
+  testthat::expect_true(is.numeric(ret$x))
+  testthat::expect_equal(ncol(ret$x), 11)
+  testthat::expect_equal(nrow(ret$x), 15)
+  testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
+
+  # var_names
+  testthat::expect_equal(length(ret$var_names), ncol(x2))
+  testthat::expect_true(is.character(ret$var_names))
+  testthat::expect_identical(ret$var_names, LETTERS[1:11])
+  
+  # Bad inputs
+  testthat::expect_error(processClusterLassoInputs(X="x", y=y[1:10],
+                                                   clusters=good_clusters,
+                                                   nlambda=10),
+                         "is.matrix(X) | is.data.frame(X) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y[1:10],
+                                                   clusters=good_clusters,
+                                                   nlambda=10),
+                         "n == length(y) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(1:4, 4:6),
+                                                   nlambda=10),
+                         "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(2:3, 2:3),
+                                                   nlambda=10),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(1:4,
+                                                                 as.integer(NA)),
+                                                   nlambda=10),
+                         "!is.na(clusters) are not all TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(2:3,
+                                                                 c(4, 4, 5)),
+                                                   nlambda=10),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=good_clusters,
+                                                   nlambda=1),
+                         "nlambda >= 2 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=good_clusters,
+                                                   nlambda=x),
+                         "length(nlambda) == 1 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=good_clusters,
+                                                   nlambda="nlambda"),
+                         "is.numeric(nlambda) | is.integer(nlambda) is not TRUE",
+                         fixed=TRUE)
+  
+  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+                                                   clusters=good_clusters,
+                                                   nlambda=10.5),
+                         "nlambda == round(nlambda) is not TRUE",
+                         fixed=TRUE)
+  
 })
 ```
-
 
 `getXglmnet()`:
 
@@ -10013,29 +9950,25 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
     n <- nrow(x)
     p <- ncol(x)
 
-    # if(n_clusters > 0){
     for(i in 1:length(clusters)){
         cluster_i <- clusters[[i]]
-        
-        if(type == "protolasso"){
-            if(length(cluster_i) > 1){
+
+        if(length(cluster_i) == 1){
+            X_glmnet_i <- x[, cluster_i]
+        } else{
+            stopifnot(length(cluster_i) > 1)
+            
+            if(type == "protolasso"){
                 prototype_ind_i <- which(prototypes %in% cluster_i)
                 stopifnot(length(prototype_ind_i) == 1)
                 prototype_i <- prototypes[prototype_ind_i]
-            } else{
-                prototype_i <- cluster_i
-            }
-            
-            X_glmnet_i <- x[, prototype_i]
-        } else {
-            stopifnot(type == "clusterRepLasso")
-            if(length(cluster_i) > 1){
+                X_glmnet_i <- x[, prototype_i]
+            } else {
+                stopifnot(type == "clusterRepLasso")
                 X_glmnet_i <- rowMeans(x[, cluster_i])
-            } else{
-                X_glmnet_i <- x[, cluster_i]
-            }    
+            }
         }
-
+        
         stopifnot(length(X_glmnet_i) == n)
         
         if(i == 1){
@@ -10044,6 +9977,8 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
             X_glmnet <- cbind(X_glmnet, X_glmnet_i)
         }
     }
+    
+    stopifnot(ncol(X_glmnet) == length(clusters))
     stopifnot(ncol(X_glmnet) == length(clusters))
     colnames(X_glmnet) <- character()
 
@@ -10107,6 +10042,225 @@ checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
 ```
 
 Tests for `checkGetXglmnetInputs()`:
+
+
+```{r}
+testthat::test_that("checkGetXglmnetInputs works", {
+  set.seed(82612)
+  
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+  
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+  
+  process <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters,
+                                       nlambda=10)
+
+  checkGetXglmnetInputs(x=process$x, clusters=process$clusters,
+                               type="protolasso", prototypes=process$prototypes)
+  
+  checkGetXglmnetInputs(x=process$x, clusters=process$clusters,
+                               type="clusterRepLasso",
+                        prototypes=process$prototypes)
+
+  # testthat::expect_true(is.list(ret))
+  # testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
+  #                                          "var_names"))
+  # 
+  # # X
+  # testthat::expect_true(is.matrix(ret$x))
+  # testthat::expect_true(all(!is.na(ret$x)))
+  # testthat::expect_true(is.numeric(ret$x))
+  # testthat::expect_equal(ncol(ret$x), 11)
+  # testthat::expect_equal(nrow(ret$x), 15)
+  # testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
+  # 
+  # # clusters
+  # testthat::expect_true(is.list(ret$clusters))
+  # testthat::expect_equal(length(ret$clusters), 5)
+  # testthat::expect_equal(5, length(names(ret$clusters)))
+  # testthat::expect_equal(5, length(unique(names(ret$clusters))))
+  # testthat::expect_true("red_cluster" %in% names(ret$clusters))
+  # testthat::expect_true("green_cluster" %in% names(ret$clusters))
+  # testthat::expect_true(all(!is.na(names(ret$clusters))))
+  # testthat::expect_true(all(!is.null(names(ret$clusters))))
+  # testthat::expect_true(all(names(ret$clusters) != ""))
+  # 
+  # clust_feats <- integer()
+  # true_list <- list(1:4, 5:8, 9, 10, 11)
+  # for(i in 1:length(ret$clusters)){
+  #   testthat::expect_true(is.integer(ret$clusters[[i]]))
+  #   testthat::expect_equal(length(intersect(clust_feats, ret$clusters[[i]])), 0)
+  #   testthat::expect_true(all(ret$clusters[[i]] %in% 1:11))
+  #   testthat::expect_equal(length(ret$clusters[[i]]),
+  #                          length(unique(ret$clusters[[i]])))
+  #   testthat::expect_true(all(ret$clusters[[i]] == true_list[[i]]))
+  #   clust_feats <- c(clust_feats, ret$clusters[[i]])
+  # }
+  # 
+  # testthat::expect_equal(length(clust_feats), 11)
+  # testthat::expect_equal(11, length(unique(clust_feats)))
+  # testthat::expect_equal(11, length(intersect(clust_feats, 1:11)))
+  # 
+  # # prototypes
+  # testthat::expect_true(is.integer(ret$prototypes))
+  # testthat::expect_true(all(ret$prototypes %in% 1:11))
+  # testthat::expect_equal(length(ret$prototypes), 5)
+  # testthat::expect_true(ret$prototypes[1] %in% 1:4)
+  # testthat::expect_true(ret$prototypes[2] %in% 5:8)
+  # testthat::expect_equal(ret$prototypes[3], 9)
+  # testthat::expect_equal(ret$prototypes[4], 10)
+  # testthat::expect_equal(ret$prototypes[5], 11)
+  # 
+  # # var_names
+  # testthat::expect_equal(length(ret$var_names), 1)
+  # testthat::expect_true(is.na(ret$var_names))
+  # 
+  # # X as a data.frame
+  # X_df <- datasets::mtcars
+  # res <- checkGetXglmnetInputs(X=X_df, y=stats::rnorm(nrow(X_df)),
+  #                                  clusters=1:3, nlambda=10)
+  # 
+  # testthat::expect_true(is.list(res))
+  # testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
+  #                                          "var_names"))
+  # 
+  # X_df_model <- stats::model.matrix(~ ., X_df)
+  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  # 
+  # # X
+  # testthat::expect_true(is.matrix(res$x))
+  # testthat::expect_true(all(!is.na(res$x)))
+  # testthat::expect_true(is.numeric(res$x))
+  # testthat::expect_equal(ncol(res$x), ncol(X_df_model))
+  # testthat::expect_equal(nrow(res$x), nrow(X_df))
+  # testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
+  # 
+  # # var_names
+  # testthat::expect_equal(length(res$var_names), ncol(X_df_model))
+  # testthat::expect_true(is.character(res$var_names))
+  # testthat::expect_identical(res$var_names, colnames(X_df_model))
+  # 
+  # 
+  # # X as a dataframe with factors (number of columns of final design matrix
+  # # after one-hot encoding factors won't match number of columns of df2)
+  # df2 <- X_df
+  # df2$cyl <- as.factor(df2$cyl)
+  # df2$vs <- as.factor(df2$vs)
+  # df2$am <- as.factor(df2$am)
+  # df2$gear <- as.factor(df2$gear)
+  # df2$carb <- as.factor(df2$carb)
+  # 
+  # res <- checkGetXglmnetInputs(X=df2, y=stats::rnorm(nrow(df2)),
+  #                                  clusters=1:3, nlambda=10)
+  # 
+  # testthat::expect_true(is.list(res))
+  # testthat::expect_identical(names(res), c("x", "clusters", "prototypes",
+  #                                          "var_names"))
+  # 
+  # X_df_model <- stats::model.matrix(~ ., df2)
+  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  # 
+  # # X
+  # testthat::expect_true(is.matrix(res$x))
+  # testthat::expect_true(all(!is.na(res$x)))
+  # testthat::expect_true(is.numeric(res$x))
+  # testthat::expect_equal(ncol(res$x), ncol(X_df_model))
+  # testthat::expect_equal(nrow(res$x), nrow(X_df))
+  # testthat::expect_true(all(abs(res$x - X_df_model) < 10^(-9)))
+  # 
+  # # var_names
+  # testthat::expect_equal(length(res$var_names), ncol(X_df_model))
+  # testthat::expect_true(is.character(res$var_names))
+  # testthat::expect_identical(res$var_names, colnames(X_df_model))
+  # 
+  # # X as a matrix with column names
+  # x2 <- x
+  # colnames(x2) <- LETTERS[1:11]
+  # 
+  # ret <- checkGetXglmnetInputs(X=x2, y=y, clusters=good_clusters, nlambda=10)
+  # 
+  # testthat::expect_true(is.list(ret))
+  # testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
+  #                                          "var_names"))
+  # 
+  # # X
+  # testthat::expect_true(is.matrix(ret$x))
+  # testthat::expect_true(all(!is.na(ret$x)))
+  # testthat::expect_true(is.numeric(ret$x))
+  # testthat::expect_equal(ncol(ret$x), 11)
+  # testthat::expect_equal(nrow(ret$x), 15)
+  # testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
+  # 
+  # # var_names
+  # testthat::expect_equal(length(ret$var_names), ncol(x2))
+  # testthat::expect_true(is.character(ret$var_names))
+  # testthat::expect_identical(ret$var_names, LETTERS[1:11])
+  # 
+  # # Bad inputs
+  # testthat::expect_error(checkGetXglmnetInputs(X="x", y=y[1:10],
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda=10),
+  #                        "is.matrix(X) | is.data.frame(X) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y[1:10],
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda=10),
+  #                        "n == length(y) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=list(1:4, 4:6),
+  #                                                  nlambda=10),
+  #                        "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=list(2:3, 2:3),
+  #                                                  nlambda=10),
+  #                        "length(clusters) == length(unique(clusters)) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=list(1:4,
+  #                                                                as.integer(NA)),
+  #                                                  nlambda=10),
+  #                        "!is.na(clusters) are not all TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=list(2:3,
+  #                                                                c(4, 4, 5)),
+  #                                                  nlambda=10),
+  #                        "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda=1),
+  #                        "nlambda >= 2 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda=x),
+  #                        "length(nlambda) == 1 is not TRUE", fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda="nlambda"),
+  #                        "is.numeric(nlambda) | is.integer(nlambda) is not TRUE",
+  #                        fixed=TRUE)
+  # 
+  # testthat::expect_error(checkGetXglmnetInputs(X=x, y=y,
+  #                                                  clusters=good_clusters,
+  #                                                  nlambda=10.5),
+  #                        "nlambda == round(nlambda) is not TRUE",
+  #                        fixed=TRUE)
+  
+})
+```
+
 
 Tests for `getXglmnet()`:
 
