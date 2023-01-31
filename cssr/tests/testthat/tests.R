@@ -5090,6 +5090,87 @@ testthat::test_that("processClusterLassoInputs works", {
   testthat::expect_identical(names(ret), c("x", "clusters", "prototypes",
                                            "var_names"))
   
+  # X
+  testthat::expect_true(is.matrix(ret$x))
+  testthat::expect_true(all(!is.na(ret$x)))
+  testthat::expect_true(is.numeric(ret$x))
+  testthat::expect_equal(ncol(ret$x), 11)
+  testthat::expect_equal(nrow(ret$x), 15)
+  testthat::expect_true(all(abs(ret$x - x) < 10^(-9)))
+  
+  # clusters
+  testthat::expect_true(is.list(ret$clusters))
+  testthat::expect_equal(length(ret$clusters), 5)
+  testthat::expect_equal(5, length(names(ret$clusters)))
+  testthat::expect_equal(5, length(unique(names(ret$clusters))))
+  testthat::expect_true("red_cluster" %in% names(ret$clusters))
+  # testthat::expect_true("green_cluster" %in% names(ret$clusters))
+  testthat::expect_true(all(!is.na(names(ret$clusters))))
+  testthat::expect_true(all(!is.null(names(ret$clusters))))
+  testthat::expect_true(all(names(ret$clusters) != ""))
+
+  # clust_feats <- integer()
+  # true_list <- list(1:3, 5:8, 4, 9, 10)
+  # for(i in 1:length(ret$clusters)){
+  #   testthat::expect_true(is.integer(ret$clusters[[i]]))
+  #   testthat::expect_equal(length(intersect(clust_feats, ret$clusters[[i]])), 0)
+  #   testthat::expect_true(all(ret$clusters[[i]] %in% 1:10))
+  #   testthat::expect_equal(length(ret$clusters[[i]]),
+  #                          length(unique(ret$clusters[[i]])))
+  #   testthat::expect_true(all(ret$clusters[[i]] == true_list[[i]]))
+  #   clust_feats <- c(clust_feats, ret$clusters[[i]])
+  # }
+  # 
+  # testthat::expect_equal(length(clust_feats), 10)
+  # testthat::expect_equal(10, length(unique(clust_feats)))
+  # testthat::expect_equal(10, length(intersect(clust_feats, 1:10)))
+  
+  # # prototypes
+  # testthat::expect_true(is.integer(ret$prototypes))
+  # testthat::expect_identical(ret$prototypes, 1:p)
+  # 
+  # testthat::expect_equal(formatClusters(clusters=1:p, p=p,
+  #                                             get_prototypes=TRUE, x=X,
+  #                                             y=y)$prototypes, p)
+  #   
+  # testthat::expect_identical(formatClusters(clusters=list(1L, 2L:p), p=p,
+  #                                             get_prototypes=TRUE, x=X,
+  #                                             y=y)$prototypes,
+  #                              as.integer(c(1, p)))
+  #   
+  # testthat::expect_identical(formatClusters(clusters=3L:p, p=p,
+  #                                             get_prototypes=TRUE, x=X,
+  #                                             y=y)$prototypes,
+  #                              as.integer(c(p, 1, 2)))
+  
+  # var_names
+  
+  
+  
+  # # X as a data.frame
+  # X_df <- datasets::mtcars
+  # res_fitfun <- css(X=X_df, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  # testthat::expect_identical(class(res_fitfun), "cssr")
+  # 
+  # # X as a dataframe with factors (number of columns of final design matrix
+  # # after one-hot encoding factors won't match number of columns of df2)
+  # df2 <- X_df
+  # df2$cyl <- as.factor(df2$cyl)
+  # df2$vs <- as.factor(df2$vs)
+  # df2$am <- as.factor(df2$am)
+  # df2$gear <- as.factor(df2$gear)
+  # df2$carb <- as.factor(df2$carb)
+  # 
+  # res_fitfun <- css(X=df2, y=stats::rnorm(nrow(X_df)), lambda=0.01, B = 10)
+  # testthat::expect_identical(class(res_fitfun), "cssr")
+  # 
+  # # X as a matrix with column names
+  # x2 <- x
+  # colnames(x2) <- LETTERS[1:11]
+  # res_names <- css(X=x2, y=y, lambda=0.01, clusters=good_clusters, B = 13)
+  # testthat::expect_identical(class(res_names), "cssr")
+  # testthat::expect_identical(colnames(x2), colnames(res_names$X))
+  # testthat::expect_identical(colnames(x2), colnames(res_names$feat_sel_mat))
   
   # # sig_clusters
   # testthat::expect_error(processClusterLassoInputs(p=19, k_unclustered=2,
