@@ -27,6 +27,7 @@
 getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     
     model_size <- length(lasso_set)
+    stopifnot(model_size > 0)
 
     stopifnot(length(unique(lasso_set)) == model_size)
     stopifnot(all(lasso_set <= length(clusters)))
