@@ -23,7 +23,7 @@
 <meta name="author" content="Gregory Faletto" />
 
 
-<meta name="date" content="2023-01-31" />
+<meta name="date" content="2023-02-01" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1018,58 +1018,59 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb175-22"><a href="competitor-methods.html#cb175-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; from a cluster selected by either the protolasso or the cluster</span></span>
 <span id="cb175-23"><a href="competitor-methods.html#cb175-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; representative lasso (the prototype from that cluster--the cluster member</span></span>
 <span id="cb175-24"><a href="competitor-methods.html#cb175-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; most highly correlated with y). (If no set of size k was selected, entry k</span></span>
-<span id="cb175-25"><a href="competitor-methods.html#cb175-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; will be empty.)} \item{selected_clusts_list}{A list of lists; entry k of this</span></span>
+<span id="cb175-25"><a href="competitor-methods.html#cb175-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; will be NULL.)} \item{selected_clusts_list}{A list of lists; entry k of this</span></span>
 <span id="cb175-26"><a href="competitor-methods.html#cb175-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; list is a list of length k of clusters (the clusters that were selected by</span></span>
-<span id="cb175-27"><a href="competitor-methods.html#cb175-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; the cluster representative lasso).}</span></span>
-<span id="cb175-28"><a href="competitor-methods.html#cb175-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb175-29"><a href="competitor-methods.html#cb175-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb175-30"><a href="competitor-methods.html#cb175-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb175-31"><a href="competitor-methods.html#cb175-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}. \cr Bühlmann, P.,</span></span>
-<span id="cb175-32"><a href="competitor-methods.html#cb175-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Rütimann, P., van de Geer, S., &amp; Zhang, C. H. (2013). Correlated variables in</span></span>
-<span id="cb175-33"><a href="competitor-methods.html#cb175-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; regression: Clustering and sparse estimation.</span></span>
-<span id="cb175-34"><a href="competitor-methods.html#cb175-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
-<span id="cb175-35"><a href="competitor-methods.html#cb175-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}.</span></span>
-<span id="cb175-36"><a href="competitor-methods.html#cb175-36" aria-hidden="true" tabindex="-1"></a><span id='getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_sets, clusters, prototypes,</span>
-<span id="cb175-37"><a href="competitor-methods.html#cb175-37" aria-hidden="true" tabindex="-1"></a>    feat_names){</span>
-<span id="cb175-38"><a href="competitor-methods.html#cb175-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-39"><a href="competitor-methods.html#cb175-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb175-40"><a href="competitor-methods.html#cb175-40" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names)))</span>
-<span id="cb175-41"><a href="competitor-methods.html#cb175-41" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb175-42"><a href="competitor-methods.html#cb175-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-43"><a href="competitor-methods.html#cb175-43" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
-<span id="cb175-44"><a href="competitor-methods.html#cb175-44" aria-hidden="true" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">vapply</span>(lasso_sets, length, <span class="fu">integer</span>(<span class="dv">1</span>)))</span>
-<span id="cb175-45"><a href="competitor-methods.html#cb175-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-46"><a href="competitor-methods.html#cb175-46" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Preparing lists to store </span></span>
-<span id="cb175-47"><a href="competitor-methods.html#cb175-47" aria-hidden="true" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb175-48"><a href="competitor-methods.html#cb175-48" aria-hidden="true" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb175-49"><a href="competitor-methods.html#cb175-49" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb175-50"><a href="competitor-methods.html#cb175-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_length){</span>
-<span id="cb175-51"><a href="competitor-methods.html#cb175-51" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
-<span id="cb175-52"><a href="competitor-methods.html#cb175-52" aria-hidden="true" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[<span class="fu">lapply</span>(lasso_sets, length) <span class="sc">==</span> j]</span>
-<span id="cb175-53"><a href="competitor-methods.html#cb175-53" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
-<span id="cb175-54"><a href="competitor-methods.html#cb175-54" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
-<span id="cb175-55"><a href="competitor-methods.html#cb175-55" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb175-56"><a href="competitor-methods.html#cb175-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-57"><a href="competitor-methods.html#cb175-57" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
-<span id="cb175-58"><a href="competitor-methods.html#cb175-58" aria-hidden="true" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
-<span id="cb175-59"><a href="competitor-methods.html#cb175-59" aria-hidden="true" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
-<span id="cb175-60"><a href="competitor-methods.html#cb175-60" aria-hidden="true" tabindex="-1"></a>            </span>
-<span id="cb175-61"><a href="competitor-methods.html#cb175-61" aria-hidden="true" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#getSelectedSets'>getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
-<span id="cb175-62"><a href="competitor-methods.html#cb175-62" aria-hidden="true" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
-<span id="cb175-63"><a href="competitor-methods.html#cb175-63" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-64"><a href="competitor-methods.html#cb175-64" aria-hidden="true" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
-<span id="cb175-65"><a href="competitor-methods.html#cb175-65" aria-hidden="true" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
-<span id="cb175-66"><a href="competitor-methods.html#cb175-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-67"><a href="competitor-methods.html#cb175-67" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
-<span id="cb175-68"><a href="competitor-methods.html#cb175-68" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb175-69"><a href="competitor-methods.html#cb175-69" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb175-70"><a href="competitor-methods.html#cb175-70" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-71"><a href="competitor-methods.html#cb175-71" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb175-72"><a href="competitor-methods.html#cb175-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb175-73"><a href="competitor-methods.html#cb175-73" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb175-74"><a href="competitor-methods.html#cb175-74" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
-<span id="cb175-75"><a href="competitor-methods.html#cb175-75" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
-<span id="cb175-76"><a href="competitor-methods.html#cb175-76" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb175-27"><a href="competitor-methods.html#cb175-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; the cluster representative lasso). Again, if no set of size k was selected,</span></span>
+<span id="cb175-28"><a href="competitor-methods.html#cb175-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; entry k will be NULL.}</span></span>
+<span id="cb175-29"><a href="competitor-methods.html#cb175-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb175-30"><a href="competitor-methods.html#cb175-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb175-31"><a href="competitor-methods.html#cb175-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb175-32"><a href="competitor-methods.html#cb175-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}. \cr Bühlmann, P.,</span></span>
+<span id="cb175-33"><a href="competitor-methods.html#cb175-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Rütimann, P., van de Geer, S., &amp; Zhang, C. H. (2013). Correlated variables in</span></span>
+<span id="cb175-34"><a href="competitor-methods.html#cb175-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; regression: Clustering and sparse estimation.</span></span>
+<span id="cb175-35"><a href="competitor-methods.html#cb175-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
+<span id="cb175-36"><a href="competitor-methods.html#cb175-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}.</span></span>
+<span id="cb175-37"><a href="competitor-methods.html#cb175-37" aria-hidden="true" tabindex="-1"></a><span id='getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_sets, clusters, prototypes,</span>
+<span id="cb175-38"><a href="competitor-methods.html#cb175-38" aria-hidden="true" tabindex="-1"></a>    feat_names){</span>
+<span id="cb175-39"><a href="competitor-methods.html#cb175-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-40"><a href="competitor-methods.html#cb175-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb175-41"><a href="competitor-methods.html#cb175-41" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names)))</span>
+<span id="cb175-42"><a href="competitor-methods.html#cb175-42" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb175-43"><a href="competitor-methods.html#cb175-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-44"><a href="competitor-methods.html#cb175-44" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
+<span id="cb175-45"><a href="competitor-methods.html#cb175-45" aria-hidden="true" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">vapply</span>(lasso_sets, length, <span class="fu">integer</span>(<span class="dv">1</span>)))</span>
+<span id="cb175-46"><a href="competitor-methods.html#cb175-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-47"><a href="competitor-methods.html#cb175-47" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Preparing lists to store </span></span>
+<span id="cb175-48"><a href="competitor-methods.html#cb175-48" aria-hidden="true" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb175-49"><a href="competitor-methods.html#cb175-49" aria-hidden="true" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb175-50"><a href="competitor-methods.html#cb175-50" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb175-51"><a href="competitor-methods.html#cb175-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_length){</span>
+<span id="cb175-52"><a href="competitor-methods.html#cb175-52" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
+<span id="cb175-53"><a href="competitor-methods.html#cb175-53" aria-hidden="true" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[<span class="fu">lapply</span>(lasso_sets, length) <span class="sc">==</span> j]</span>
+<span id="cb175-54"><a href="competitor-methods.html#cb175-54" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
+<span id="cb175-55"><a href="competitor-methods.html#cb175-55" aria-hidden="true" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
+<span id="cb175-56"><a href="competitor-methods.html#cb175-56" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb175-57"><a href="competitor-methods.html#cb175-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-58"><a href="competitor-methods.html#cb175-58" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
+<span id="cb175-59"><a href="competitor-methods.html#cb175-59" aria-hidden="true" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
+<span id="cb175-60"><a href="competitor-methods.html#cb175-60" aria-hidden="true" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
+<span id="cb175-61"><a href="competitor-methods.html#cb175-61" aria-hidden="true" tabindex="-1"></a>            </span>
+<span id="cb175-62"><a href="competitor-methods.html#cb175-62" aria-hidden="true" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#getSelectedSets'>getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
+<span id="cb175-63"><a href="competitor-methods.html#cb175-63" aria-hidden="true" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
+<span id="cb175-64"><a href="competitor-methods.html#cb175-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-65"><a href="competitor-methods.html#cb175-65" aria-hidden="true" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
+<span id="cb175-66"><a href="competitor-methods.html#cb175-66" aria-hidden="true" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
+<span id="cb175-67"><a href="competitor-methods.html#cb175-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-68"><a href="competitor-methods.html#cb175-68" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
+<span id="cb175-69"><a href="competitor-methods.html#cb175-69" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb175-70"><a href="competitor-methods.html#cb175-70" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb175-71"><a href="competitor-methods.html#cb175-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-72"><a href="competitor-methods.html#cb175-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb175-73"><a href="competitor-methods.html#cb175-73" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb175-74"><a href="competitor-methods.html#cb175-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb175-75"><a href="competitor-methods.html#cb175-75" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
+<span id="cb175-76"><a href="competitor-methods.html#cb175-76" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
+<span id="cb175-77"><a href="competitor-methods.html#cb175-77" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href='competitor-methods.html#getSelectedSets'>getSelectedSets</a>()</code>:</p>
 <div class="sourceCode" id="cb176"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb176-1"><a href="competitor-methods.html#cb176-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Converts a selected set from X_glmnet to selected sets and selected clusters</span></span>
 <span id="cb176-2"><a href="competitor-methods.html#cb176-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; from the original feature space of X.</span></span>
@@ -1463,7 +1464,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb179-32"><a href="competitor-methods.html#cb179-32" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
 <span id="cb179-33"><a href="competitor-methods.html#cb179-33" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
 <span id="cb179-34"><a href="competitor-methods.html#cb179-34" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_sets[[i]] <span class="sc">%in%</span> process<span class="sc">$</span>prototypes))</span>
-<span id="cb179-35"><a href="competitor-methods.html#cb179-35" aria-hidden="true" tabindex="-1"></a>      <span class="co"># testthat::expect_equal(length(res$selected_sets[[i]]), i)</span></span>
+<span id="cb179-35"><a href="competitor-methods.html#cb179-35" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
 <span id="cb179-36"><a href="competitor-methods.html#cb179-36" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
 <span id="cb179-37"><a href="competitor-methods.html#cb179-37" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
 <span id="cb179-38"><a href="competitor-methods.html#cb179-38" aria-hidden="true" tabindex="-1"></a>    }</span>
@@ -1481,11 +1482,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb179-50"><a href="competitor-methods.html#cb179-50" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
 <span id="cb179-51"><a href="competitor-methods.html#cb179-51" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
 <span id="cb179-52"><a href="competitor-methods.html#cb179-52" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
-<span id="cb179-53"><a href="competitor-methods.html#cb179-53" aria-hidden="true" tabindex="-1"></a>      <span class="co"># testthat::expect_equal(res$selected_clusts_list[[k]], k)</span></span>
+<span id="cb179-53"><a href="competitor-methods.html#cb179-53" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
 <span id="cb179-54"><a href="competitor-methods.html#cb179-54" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
 <span id="cb179-55"><a href="competitor-methods.html#cb179-55" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
 <span id="cb179-56"><a href="competitor-methods.html#cb179-56" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
-<span id="cb179-57"><a href="competitor-methods.html#cb179-57" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb179-57"><a href="competitor-methods.html#cb179-57" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
 <span id="cb179-58"><a href="competitor-methods.html#cb179-58" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusts){</span>
 <span id="cb179-59"><a href="competitor-methods.html#cb179-59" aria-hidden="true" tabindex="-1"></a>        clust_i_found <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
 <span id="cb179-60"><a href="competitor-methods.html#cb179-60" aria-hidden="true" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts_list[[k]][[i]]</span>
@@ -1525,7 +1526,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb179-94"><a href="competitor-methods.html#cb179-94" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
 <span id="cb179-95"><a href="competitor-methods.html#cb179-95" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
 <span id="cb179-96"><a href="competitor-methods.html#cb179-96" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_sets[[i]] <span class="sc">%in%</span> process<span class="sc">$</span>prototypes))</span>
-<span id="cb179-97"><a href="competitor-methods.html#cb179-97" aria-hidden="true" tabindex="-1"></a>      <span class="co"># testthat::expect_equal(length(res$selected_sets[[i]]), i)</span></span>
+<span id="cb179-97"><a href="competitor-methods.html#cb179-97" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
 <span id="cb179-98"><a href="competitor-methods.html#cb179-98" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
 <span id="cb179-99"><a href="competitor-methods.html#cb179-99" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
 <span id="cb179-100"><a href="competitor-methods.html#cb179-100" aria-hidden="true" tabindex="-1"></a>    }</span>
@@ -1543,11 +1544,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb179-112"><a href="competitor-methods.html#cb179-112" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
 <span id="cb179-113"><a href="competitor-methods.html#cb179-113" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
 <span id="cb179-114"><a href="competitor-methods.html#cb179-114" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
-<span id="cb179-115"><a href="competitor-methods.html#cb179-115" aria-hidden="true" tabindex="-1"></a>      <span class="co"># testthat::expect_equal(res$selected_clusts_list[[k]], k)</span></span>
+<span id="cb179-115"><a href="competitor-methods.html#cb179-115" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
 <span id="cb179-116"><a href="competitor-methods.html#cb179-116" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
 <span id="cb179-117"><a href="competitor-methods.html#cb179-117" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
 <span id="cb179-118"><a href="competitor-methods.html#cb179-118" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
-<span id="cb179-119"><a href="competitor-methods.html#cb179-119" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb179-119"><a href="competitor-methods.html#cb179-119" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
 <span id="cb179-120"><a href="competitor-methods.html#cb179-120" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusts){</span>
 <span id="cb179-121"><a href="competitor-methods.html#cb179-121" aria-hidden="true" tabindex="-1"></a>        clust_i_found <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
 <span id="cb179-122"><a href="competitor-methods.html#cb179-122" aria-hidden="true" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts_list[[k]][[i]]</span>
@@ -1566,291 +1567,585 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb179-135"><a href="competitor-methods.html#cb179-135" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb179-136"><a href="competitor-methods.html#cb179-136" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb179-137"><a href="competitor-methods.html#cb179-137" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb179-138"><a href="competitor-methods.html#cb179-138" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a data.frame</span></span>
-<span id="cb179-139"><a href="competitor-methods.html#cb179-139" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df &lt;- datasets::mtcars</span></span>
-<span id="cb179-140"><a href="competitor-methods.html#cb179-140" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-141"><a href="competitor-methods.html#cb179-141" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- stats::model.matrix(~ ., X_df)</span></span>
-<span id="cb179-142"><a href="competitor-methods.html#cb179-142" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- X_df_model[, colnames(X_df_model) != &quot;(Intercept)&quot;]</span></span>
-<span id="cb179-143"><a href="competitor-methods.html#cb179-143" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-144"><a href="competitor-methods.html#cb179-144" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=X_df, y=rnorm(nrow(X_df)),</span></span>
-<span id="cb179-145"><a href="competitor-methods.html#cb179-145" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=1:3, nlambda=100)</span></span>
-<span id="cb179-146"><a href="competitor-methods.html#cb179-146" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-147"><a href="competitor-methods.html#cb179-147" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
-<span id="cb179-148"><a href="competitor-methods.html#cb179-148" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;protolasso&quot;, prototypes=process$prototypes)</span></span>
+<span id="cb179-138"><a href="competitor-methods.html#cb179-138" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a data.frame</span></span>
+<span id="cb179-139"><a href="competitor-methods.html#cb179-139" aria-hidden="true" tabindex="-1"></a>  X_df <span class="ot">&lt;-</span> datasets<span class="sc">::</span>mtcars</span>
+<span id="cb179-140"><a href="competitor-methods.html#cb179-140" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-141"><a href="competitor-methods.html#cb179-141" aria-hidden="true" tabindex="-1"></a>  X_df_model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., X_df)</span>
+<span id="cb179-142"><a href="competitor-methods.html#cb179-142" aria-hidden="true" tabindex="-1"></a>  X_df_model <span class="ot">&lt;-</span> X_df_model[, <span class="fu">colnames</span>(X_df_model) <span class="sc">!=</span> <span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb179-143"><a href="competitor-methods.html#cb179-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-144"><a href="competitor-methods.html#cb179-144" aria-hidden="true" tabindex="-1"></a>  process <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(<span class="at">X=</span>X_df, <span class="at">y=</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)),</span>
+<span id="cb179-145"><a href="competitor-methods.html#cb179-145" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-146"><a href="competitor-methods.html#cb179-146" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-147"><a href="competitor-methods.html#cb179-147" aria-hidden="true" tabindex="-1"></a>  X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(<span class="at">x=</span>process<span class="sc">$</span>x, <span class="at">clusters=</span>process<span class="sc">$</span>clusters,</span>
+<span id="cb179-148"><a href="competitor-methods.html#cb179-148" aria-hidden="true" tabindex="-1"></a>                         <span class="at">type=</span><span class="st">&quot;protolasso&quot;</span>, <span class="at">prototypes=</span>process<span class="sc">$</span>prototypes)</span>
 <span id="cb179-149"><a href="competitor-methods.html#cb179-149" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb179-150"><a href="competitor-methods.html#cb179-150" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=y, family=&quot;gaussian&quot;, nlambda=100)</span></span>
-<span id="cb179-151"><a href="competitor-methods.html#cb179-151" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
-<span id="cb179-152"><a href="competitor-methods.html#cb179-152" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-153"><a href="competitor-methods.html#cb179-153" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, process$clusters,</span></span>
-<span id="cb179-154"><a href="competitor-methods.html#cb179-154" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                 process$prototypes, process$var_names)</span></span>
-<span id="cb179-155"><a href="competitor-methods.html#cb179-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb179-156"><a href="competitor-methods.html#cb179-156" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
-<span id="cb179-157"><a href="competitor-methods.html#cb179-157" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_sets&quot;,</span></span>
-<span id="cb179-158"><a href="competitor-methods.html#cb179-158" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
-<span id="cb179-159"><a href="competitor-methods.html#cb179-159" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb179-160"><a href="competitor-methods.html#cb179-160" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_sets</span></span>
-<span id="cb179-161"><a href="competitor-methods.html#cb179-161" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_sets))</span></span>
-<span id="cb179-162"><a href="competitor-methods.html#cb179-162" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
-<span id="cb179-163"><a href="competitor-methods.html#cb179-163" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_sets),</span></span>
-<span id="cb179-164"><a href="competitor-methods.html#cb179-164" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_sets)))</span></span>
-<span id="cb179-165"><a href="competitor-methods.html#cb179-165" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:length(res$selected_sets)){</span></span>
-<span id="cb179-166"><a href="competitor-methods.html#cb179-166" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(is.integer(res$selected_sets[[i]]))</span></span>
-<span id="cb179-167"><a href="competitor-methods.html#cb179-167" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(all(!is.na(res$selected_sets[[i]])))</span></span>
-<span id="cb179-168"><a href="competitor-methods.html#cb179-168" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))</span></span>
-<span id="cb179-169"><a href="competitor-methods.html#cb179-169" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
-<span id="cb179-170"><a href="competitor-methods.html#cb179-170" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-171"><a href="competitor-methods.html#cb179-171" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-172"><a href="competitor-methods.html#cb179-172" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
-<span id="cb179-173"><a href="competitor-methods.html#cb179-173" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
-<span id="cb179-174"><a href="competitor-methods.html#cb179-174" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
-<span id="cb179-175"><a href="competitor-methods.html#cb179-175" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_clusts_list),</span></span>
-<span id="cb179-176"><a href="competitor-methods.html#cb179-176" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_clusts_list)))</span></span>
-<span id="cb179-177"><a href="competitor-methods.html#cb179-177" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-178"><a href="competitor-methods.html#cb179-178" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(k in 1:length(res$selected_clusts_list)){</span></span>
-<span id="cb179-179"><a href="competitor-methods.html#cb179-179" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(is.list(res$selected_clusts_list[[k]]))</span></span>
-<span id="cb179-180"><a href="competitor-methods.html#cb179-180" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_equal(length(res$selected_sets[[k]]),</span></span>
-<span id="cb179-181"><a href="competitor-methods.html#cb179-181" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                          length(res$selected_clusts_list[[k]]))</span></span>
-<span id="cb179-182"><a href="competitor-methods.html#cb179-182" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   sel_feats &lt;- unlist(res$selected_clusts_list[[k]])</span></span>
-<span id="cb179-183"><a href="competitor-methods.html#cb179-183" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))</span></span>
-<span id="cb179-184"><a href="competitor-methods.html#cb179-184" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))</span></span>
-<span id="cb179-185"><a href="competitor-methods.html#cb179-185" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   n_clusts &lt;- length(res$selected_clusts_list[[k]])</span></span>
-<span id="cb179-186"><a href="competitor-methods.html#cb179-186" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   for(i in 1:n_clusts){</span></span>
-<span id="cb179-187"><a href="competitor-methods.html#cb179-187" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     clust_i_found &lt;- FALSE</span></span>
-<span id="cb179-188"><a href="competitor-methods.html#cb179-188" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     clust_i &lt;- res$selected_clusts_list[[k]][[i]]</span></span>
-<span id="cb179-189"><a href="competitor-methods.html#cb179-189" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     for(j in 1:length(process$clusters)){</span></span>
-<span id="cb179-190"><a href="competitor-methods.html#cb179-190" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i_found &lt;- clust_i_found | identical(clust_i,</span></span>
-<span id="cb179-191"><a href="competitor-methods.html#cb179-191" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                                  process$clusters[[j]])</span></span>
-<span id="cb179-192"><a href="competitor-methods.html#cb179-192" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     }</span></span>
-<span id="cb179-193"><a href="competitor-methods.html#cb179-193" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(clust_i_found)</span></span>
-<span id="cb179-194"><a href="competitor-methods.html#cb179-194" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
-<span id="cb179-195"><a href="competitor-methods.html#cb179-195" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
-<span id="cb179-196"><a href="competitor-methods.html#cb179-196" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb179-197"><a href="competitor-methods.html#cb179-197" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a dataframe with factors (number of columns of final design matrix</span></span>
-<span id="cb179-198"><a href="competitor-methods.html#cb179-198" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # after one-hot encoding factors won&#39;t match number of columns of df2)</span></span>
-<span id="cb179-199"><a href="competitor-methods.html#cb179-199" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2 &lt;- X_df</span></span>
-<span id="cb179-200"><a href="competitor-methods.html#cb179-200" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$cyl &lt;- as.factor(df2$cyl)</span></span>
-<span id="cb179-201"><a href="competitor-methods.html#cb179-201" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$vs &lt;- as.factor(df2$vs)</span></span>
-<span id="cb179-202"><a href="competitor-methods.html#cb179-202" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$am &lt;- as.factor(df2$am)</span></span>
-<span id="cb179-203"><a href="competitor-methods.html#cb179-203" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$gear &lt;- as.factor(df2$gear)</span></span>
-<span id="cb179-204"><a href="competitor-methods.html#cb179-204" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$carb &lt;- as.factor(df2$carb)</span></span>
-<span id="cb179-205"><a href="competitor-methods.html#cb179-205" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-206"><a href="competitor-methods.html#cb179-206" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- stats::model.matrix(~ ., df2)</span></span>
-<span id="cb179-207"><a href="competitor-methods.html#cb179-207" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- X_df_model[, colnames(X_df_model) != &quot;(Intercept)&quot;]</span></span>
-<span id="cb179-208"><a href="competitor-methods.html#cb179-208" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-209"><a href="competitor-methods.html#cb179-209" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=df2, y=rnorm(nrow(df2)),</span></span>
-<span id="cb179-210"><a href="competitor-methods.html#cb179-210" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=1:3, nlambda=100)</span></span>
-<span id="cb179-211"><a href="competitor-methods.html#cb179-211" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-212"><a href="competitor-methods.html#cb179-212" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
-<span id="cb179-213"><a href="competitor-methods.html#cb179-213" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;clusterRepLasso&quot;, prototypes=process$prototypes)</span></span>
-<span id="cb179-214"><a href="competitor-methods.html#cb179-214" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-215"><a href="competitor-methods.html#cb179-215" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family=&quot;gaussian&quot;,</span></span>
-<span id="cb179-216"><a href="competitor-methods.html#cb179-216" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
-<span id="cb179-217"><a href="competitor-methods.html#cb179-217" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
-<span id="cb179-218"><a href="competitor-methods.html#cb179-218" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Pick an arbitrary lasso set</span></span>
-<span id="cb179-219"><a href="competitor-methods.html#cb179-219" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_set &lt;- lasso_sets[[min(length(lasso_sets), 3)]]</span></span>
-<span id="cb179-220"><a href="competitor-methods.html#cb179-220" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-221"><a href="competitor-methods.html#cb179-221" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_set, process$clusters, process$prototypes,</span></span>
-<span id="cb179-222"><a href="competitor-methods.html#cb179-222" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        process$var_names)</span></span>
-<span id="cb179-223"><a href="competitor-methods.html#cb179-223" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-224"><a href="competitor-methods.html#cb179-224" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
-<span id="cb179-225"><a href="competitor-methods.html#cb179-225" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_set&quot;,</span></span>
-<span id="cb179-226"><a href="competitor-methods.html#cb179-226" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
-<span id="cb179-227"><a href="competitor-methods.html#cb179-227" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-228"><a href="competitor-methods.html#cb179-228" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_set</span></span>
-<span id="cb179-229"><a href="competitor-methods.html#cb179-229" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.integer(res$selected_set))</span></span>
-<span id="cb179-230"><a href="competitor-methods.html#cb179-230" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(!is.na(res$selected_set)))</span></span>
-<span id="cb179-231"><a href="competitor-methods.html#cb179-231" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(res$selected_set %in% process$prototypes))</span></span>
-<span id="cb179-232"><a href="competitor-methods.html#cb179-232" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-233"><a href="competitor-methods.html#cb179-233" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
-<span id="cb179-234"><a href="competitor-methods.html#cb179-234" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
-<span id="cb179-235"><a href="competitor-methods.html#cb179-235" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_equal(length(res$selected_set),</span></span>
-<span id="cb179-236"><a href="competitor-methods.html#cb179-236" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        length(res$selected_clusts_list))</span></span>
-<span id="cb179-237"><a href="competitor-methods.html#cb179-237" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sel_feats &lt;- unlist(res$selected_clusts_list)</span></span>
-<span id="cb179-238"><a href="competitor-methods.html#cb179-238" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))</span></span>
-<span id="cb179-239"><a href="competitor-methods.html#cb179-239" aria-hidden="true" tabindex="-1"></a>  <span class="co"># n_clusts &lt;- length(res$selected_clusts_list)</span></span>
-<span id="cb179-240"><a href="competitor-methods.html#cb179-240" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:n_clusts){</span></span>
-<span id="cb179-241"><a href="competitor-methods.html#cb179-241" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i_found &lt;- FALSE</span></span>
-<span id="cb179-242"><a href="competitor-methods.html#cb179-242" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i &lt;- res$selected_clusts_list[[i]]</span></span>
-<span id="cb179-243"><a href="competitor-methods.html#cb179-243" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   for(j in 1:length(process$clusters)){</span></span>
-<span id="cb179-244"><a href="competitor-methods.html#cb179-244" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     clust_i_found &lt;- clust_i_found | identical(clust_i, process$clusters[[j]])</span></span>
-<span id="cb179-245"><a href="competitor-methods.html#cb179-245" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
-<span id="cb179-246"><a href="competitor-methods.html#cb179-246" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(clust_i_found)</span></span>
-<span id="cb179-247"><a href="competitor-methods.html#cb179-247" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
-<span id="cb179-248"><a href="competitor-methods.html#cb179-248" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-249"><a href="competitor-methods.html#cb179-249" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-250"><a href="competitor-methods.html#cb179-250" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-251"><a href="competitor-methods.html#cb179-251" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-252"><a href="competitor-methods.html#cb179-252" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a dataframe with factors (number of columns of final design matrix</span></span>
-<span id="cb179-253"><a href="competitor-methods.html#cb179-253" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # after one-hot encoding factors won&#39;t match number of columns of df2)</span></span>
-<span id="cb179-254"><a href="competitor-methods.html#cb179-254" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2 &lt;- X_df</span></span>
-<span id="cb179-255"><a href="competitor-methods.html#cb179-255" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$cyl &lt;- as.factor(df2$cyl)</span></span>
-<span id="cb179-256"><a href="competitor-methods.html#cb179-256" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$vs &lt;- as.factor(df2$vs)</span></span>
-<span id="cb179-257"><a href="competitor-methods.html#cb179-257" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$am &lt;- as.factor(df2$am)</span></span>
-<span id="cb179-258"><a href="competitor-methods.html#cb179-258" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$gear &lt;- as.factor(df2$gear)</span></span>
-<span id="cb179-259"><a href="competitor-methods.html#cb179-259" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$carb &lt;- as.factor(df2$carb)</span></span>
-<span id="cb179-260"><a href="competitor-methods.html#cb179-260" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-261"><a href="competitor-methods.html#cb179-261" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- stats::model.matrix(~ ., df2)</span></span>
-<span id="cb179-262"><a href="competitor-methods.html#cb179-262" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- X_df_model[, colnames(X_df_model) != &quot;(Intercept)&quot;]</span></span>
-<span id="cb179-263"><a href="competitor-methods.html#cb179-263" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-264"><a href="competitor-methods.html#cb179-264" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=df2, y=rnorm(nrow(df2)),</span></span>
-<span id="cb179-265"><a href="competitor-methods.html#cb179-265" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=1:3, nlambda=100)</span></span>
-<span id="cb179-266"><a href="competitor-methods.html#cb179-266" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-267"><a href="competitor-methods.html#cb179-267" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
-<span id="cb179-268"><a href="competitor-methods.html#cb179-268" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;clusterRepLasso&quot;, prototypes=process$prototypes)</span></span>
-<span id="cb179-269"><a href="competitor-methods.html#cb179-269" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-270"><a href="competitor-methods.html#cb179-270" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family=&quot;gaussian&quot;,</span></span>
-<span id="cb179-271"><a href="competitor-methods.html#cb179-271" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
-<span id="cb179-272"><a href="competitor-methods.html#cb179-272" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
-<span id="cb179-273"><a href="competitor-methods.html#cb179-273" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Pick an arbitrary lasso set</span></span>
-<span id="cb179-274"><a href="competitor-methods.html#cb179-274" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_set &lt;- lasso_sets[[min(length(lasso_sets), 3)]]</span></span>
-<span id="cb179-275"><a href="competitor-methods.html#cb179-275" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-276"><a href="competitor-methods.html#cb179-276" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_set, process$clusters, process$prototypes,</span></span>
-<span id="cb179-277"><a href="competitor-methods.html#cb179-277" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        process$var_names)</span></span>
-<span id="cb179-278"><a href="competitor-methods.html#cb179-278" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-279"><a href="competitor-methods.html#cb179-279" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
-<span id="cb179-280"><a href="competitor-methods.html#cb179-280" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_set&quot;,</span></span>
-<span id="cb179-281"><a href="competitor-methods.html#cb179-281" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
-<span id="cb179-282"><a href="competitor-methods.html#cb179-282" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-283"><a href="competitor-methods.html#cb179-283" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_set</span></span>
-<span id="cb179-284"><a href="competitor-methods.html#cb179-284" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.integer(res$selected_set))</span></span>
-<span id="cb179-285"><a href="competitor-methods.html#cb179-285" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(!is.na(res$selected_set)))</span></span>
-<span id="cb179-286"><a href="competitor-methods.html#cb179-286" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(res$selected_set %in% process$prototypes))</span></span>
-<span id="cb179-287"><a href="competitor-methods.html#cb179-287" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-288"><a href="competitor-methods.html#cb179-288" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
-<span id="cb179-289"><a href="competitor-methods.html#cb179-289" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
-<span id="cb179-290"><a href="competitor-methods.html#cb179-290" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_equal(length(res$selected_set),</span></span>
-<span id="cb179-291"><a href="competitor-methods.html#cb179-291" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        length(res$selected_clusts_list))</span></span>
-<span id="cb179-292"><a href="competitor-methods.html#cb179-292" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sel_feats &lt;- unlist(res$selected_clusts_list)</span></span>
-<span id="cb179-293"><a href="competitor-methods.html#cb179-293" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))</span></span>
-<span id="cb179-294"><a href="competitor-methods.html#cb179-294" aria-hidden="true" tabindex="-1"></a>  <span class="co"># n_clusts &lt;- length(res$selected_clusts_list)</span></span>
-<span id="cb179-295"><a href="competitor-methods.html#cb179-295" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:n_clusts){</span></span>
-<span id="cb179-296"><a href="competitor-methods.html#cb179-296" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i_found &lt;- FALSE</span></span>
-<span id="cb179-297"><a href="competitor-methods.html#cb179-297" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i &lt;- res$selected_clusts_list[[i]]</span></span>
-<span id="cb179-298"><a href="competitor-methods.html#cb179-298" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   for(j in 1:length(process$clusters)){</span></span>
-<span id="cb179-299"><a href="competitor-methods.html#cb179-299" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     clust_i_found &lt;- clust_i_found | identical(clust_i, process$clusters[[j]])</span></span>
-<span id="cb179-300"><a href="competitor-methods.html#cb179-300" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
-<span id="cb179-301"><a href="competitor-methods.html#cb179-301" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(clust_i_found)</span></span>
-<span id="cb179-302"><a href="competitor-methods.html#cb179-302" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
-<span id="cb179-303"><a href="competitor-methods.html#cb179-303" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-304"><a href="competitor-methods.html#cb179-304" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-305"><a href="competitor-methods.html#cb179-305" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-306"><a href="competitor-methods.html#cb179-306" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a matrix with column names</span></span>
-<span id="cb179-307"><a href="competitor-methods.html#cb179-307" aria-hidden="true" tabindex="-1"></a>  <span class="co"># x2 &lt;- x</span></span>
-<span id="cb179-308"><a href="competitor-methods.html#cb179-308" aria-hidden="true" tabindex="-1"></a>  <span class="co"># colnames(x2) &lt;- LETTERS[1:11]</span></span>
-<span id="cb179-309"><a href="competitor-methods.html#cb179-309" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-310"><a href="competitor-methods.html#cb179-310" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=x2, y=y,</span></span>
-<span id="cb179-311"><a href="competitor-methods.html#cb179-311" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=good_clusters, nlambda=100)</span></span>
-<span id="cb179-312"><a href="competitor-methods.html#cb179-312" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-313"><a href="competitor-methods.html#cb179-313" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
-<span id="cb179-314"><a href="competitor-methods.html#cb179-314" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;protolasso&quot;, prototypes=process$prototypes)</span></span>
-<span id="cb179-315"><a href="competitor-methods.html#cb179-315" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-316"><a href="competitor-methods.html#cb179-316" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=y, family=&quot;gaussian&quot;,</span></span>
-<span id="cb179-317"><a href="competitor-methods.html#cb179-317" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
-<span id="cb179-318"><a href="competitor-methods.html#cb179-318" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
-<span id="cb179-319"><a href="competitor-methods.html#cb179-319" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Pick an arbitrary lasso set</span></span>
-<span id="cb179-320"><a href="competitor-methods.html#cb179-320" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_set &lt;- lasso_sets[[min(length(lasso_sets), 3)]]</span></span>
-<span id="cb179-321"><a href="competitor-methods.html#cb179-321" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-322"><a href="competitor-methods.html#cb179-322" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_set, process$clusters, process$prototypes,</span></span>
-<span id="cb179-323"><a href="competitor-methods.html#cb179-323" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        process$var_names)</span></span>
-<span id="cb179-324"><a href="competitor-methods.html#cb179-324" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-325"><a href="competitor-methods.html#cb179-325" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
-<span id="cb179-326"><a href="competitor-methods.html#cb179-326" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_set&quot;,</span></span>
-<span id="cb179-327"><a href="competitor-methods.html#cb179-327" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
-<span id="cb179-328"><a href="competitor-methods.html#cb179-328" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-329"><a href="competitor-methods.html#cb179-329" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_set</span></span>
-<span id="cb179-330"><a href="competitor-methods.html#cb179-330" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.integer(res$selected_set))</span></span>
-<span id="cb179-331"><a href="competitor-methods.html#cb179-331" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(!is.na(res$selected_set)))</span></span>
-<span id="cb179-332"><a href="competitor-methods.html#cb179-332" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(res$selected_set %in% process$prototypes))</span></span>
-<span id="cb179-333"><a href="competitor-methods.html#cb179-333" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
-<span id="cb179-334"><a href="competitor-methods.html#cb179-334" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
-<span id="cb179-335"><a href="competitor-methods.html#cb179-335" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
-<span id="cb179-336"><a href="competitor-methods.html#cb179-336" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_equal(length(res$selected_set),</span></span>
-<span id="cb179-337"><a href="competitor-methods.html#cb179-337" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        length(res$selected_clusts_list))</span></span>
-<span id="cb179-338"><a href="competitor-methods.html#cb179-338" aria-hidden="true" tabindex="-1"></a>  <span class="co"># sel_feats &lt;- unlist(res$selected_clusts_list)</span></span>
-<span id="cb179-339"><a href="competitor-methods.html#cb179-339" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(all(sel_feats %in% 1:11))</span></span>
-<span id="cb179-340"><a href="competitor-methods.html#cb179-340" aria-hidden="true" tabindex="-1"></a>  <span class="co"># n_clusts &lt;- length(res$selected_clusts_list)</span></span>
-<span id="cb179-341"><a href="competitor-methods.html#cb179-341" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:n_clusts){</span></span>
-<span id="cb179-342"><a href="competitor-methods.html#cb179-342" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i_found &lt;- FALSE</span></span>
-<span id="cb179-343"><a href="competitor-methods.html#cb179-343" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   clust_i &lt;- res$selected_clusts_list[[i]]</span></span>
-<span id="cb179-344"><a href="competitor-methods.html#cb179-344" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   for(j in 1:length(process$clusters)){</span></span>
-<span id="cb179-345"><a href="competitor-methods.html#cb179-345" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     clust_i_found &lt;- clust_i_found | identical(clust_i, process$clusters[[j]])</span></span>
-<span id="cb179-346"><a href="competitor-methods.html#cb179-346" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
-<span id="cb179-347"><a href="competitor-methods.html#cb179-347" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   testthat::expect_true(clust_i_found)</span></span>
-<span id="cb179-348"><a href="competitor-methods.html#cb179-348" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
-<span id="cb179-349"><a href="competitor-methods.html#cb179-349" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb179-350"><a href="competitor-methods.html#cb179-350" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed 🎉</code></pre>
+<span id="cb179-150"><a href="competitor-methods.html#cb179-150" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)), <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>,</span>
+<span id="cb179-151"><a href="competitor-methods.html#cb179-151" aria-hidden="true" tabindex="-1"></a>                        <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-152"><a href="competitor-methods.html#cb179-152" aria-hidden="true" tabindex="-1"></a>  lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
+<span id="cb179-153"><a href="competitor-methods.html#cb179-153" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-154"><a href="competitor-methods.html#cb179-154" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, process<span class="sc">$</span>clusters,</span>
+<span id="cb179-155"><a href="competitor-methods.html#cb179-155" aria-hidden="true" tabindex="-1"></a>                                  process<span class="sc">$</span>prototypes, process<span class="sc">$</span>var_names)</span>
+<span id="cb179-156"><a href="competitor-methods.html#cb179-156" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-157"><a href="competitor-methods.html#cb179-157" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb179-158"><a href="competitor-methods.html#cb179-158" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">&quot;selected_sets&quot;</span>,</span>
+<span id="cb179-159"><a href="competitor-methods.html#cb179-159" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">&quot;selected_clusts_list&quot;</span>))</span>
+<span id="cb179-160"><a href="competitor-methods.html#cb179-160" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb179-161"><a href="competitor-methods.html#cb179-161" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_sets</span></span>
+<span id="cb179-162"><a href="competitor-methods.html#cb179-162" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_sets))</span>
+<span id="cb179-163"><a href="competitor-methods.html#cb179-163" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-164"><a href="competitor-methods.html#cb179-164" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets),</span>
+<span id="cb179-165"><a href="competitor-methods.html#cb179-165" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets)))</span>
+<span id="cb179-166"><a href="competitor-methods.html#cb179-166" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_sets)){</span>
+<span id="cb179-167"><a href="competitor-methods.html#cb179-167" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]])){</span>
+<span id="cb179-168"><a href="competitor-methods.html#cb179-168" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-169"><a href="competitor-methods.html#cb179-169" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
+<span id="cb179-170"><a href="competitor-methods.html#cb179-170" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_sets[[i]] <span class="sc">%in%</span> process<span class="sc">$</span>prototypes))</span>
+<span id="cb179-171"><a href="competitor-methods.html#cb179-171" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
+<span id="cb179-172"><a href="competitor-methods.html#cb179-172" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-173"><a href="competitor-methods.html#cb179-173" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-174"><a href="competitor-methods.html#cb179-174" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-175"><a href="competitor-methods.html#cb179-175" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-176"><a href="competitor-methods.html#cb179-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-177"><a href="competitor-methods.html#cb179-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-178"><a href="competitor-methods.html#cb179-178" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_clusts_list</span></span>
+<span id="cb179-179"><a href="competitor-methods.html#cb179-179" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list))</span>
+<span id="cb179-180"><a href="competitor-methods.html#cb179-180" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-181"><a href="competitor-methods.html#cb179-181" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list),</span>
+<span id="cb179-182"><a href="competitor-methods.html#cb179-182" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list)))</span>
+<span id="cb179-183"><a href="competitor-methods.html#cb179-183" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-184"><a href="competitor-methods.html#cb179-184" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list)){</span>
+<span id="cb179-185"><a href="competitor-methods.html#cb179-185" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]])){</span>
+<span id="cb179-186"><a href="competitor-methods.html#cb179-186" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-187"><a href="competitor-methods.html#cb179-187" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
+<span id="cb179-188"><a href="competitor-methods.html#cb179-188" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-189"><a href="competitor-methods.html#cb179-189" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
+<span id="cb179-190"><a href="competitor-methods.html#cb179-190" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb179-191"><a href="competitor-methods.html#cb179-191" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df_model)))</span>
+<span id="cb179-192"><a href="competitor-methods.html#cb179-192" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
+<span id="cb179-193"><a href="competitor-methods.html#cb179-193" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
+<span id="cb179-194"><a href="competitor-methods.html#cb179-194" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusts){</span>
+<span id="cb179-195"><a href="competitor-methods.html#cb179-195" aria-hidden="true" tabindex="-1"></a>        clust_i_found <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb179-196"><a href="competitor-methods.html#cb179-196" aria-hidden="true" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts_list[[k]][[i]]</span>
+<span id="cb179-197"><a href="competitor-methods.html#cb179-197" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(process<span class="sc">$</span>clusters)){</span>
+<span id="cb179-198"><a href="competitor-methods.html#cb179-198" aria-hidden="true" tabindex="-1"></a>          clust_i_found <span class="ot">&lt;-</span> clust_i_found <span class="sc">|</span> <span class="fu">identical</span>(clust_i,</span>
+<span id="cb179-199"><a href="competitor-methods.html#cb179-199" aria-hidden="true" tabindex="-1"></a>                                                     process<span class="sc">$</span>clusters[[j]])</span>
+<span id="cb179-200"><a href="competitor-methods.html#cb179-200" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb179-201"><a href="competitor-methods.html#cb179-201" aria-hidden="true" tabindex="-1"></a>        testthat<span class="sc">::</span><span class="fu">expect_true</span>(clust_i_found)</span>
+<span id="cb179-202"><a href="competitor-methods.html#cb179-202" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb179-203"><a href="competitor-methods.html#cb179-203" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-204"><a href="competitor-methods.html#cb179-204" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-205"><a href="competitor-methods.html#cb179-205" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-206"><a href="competitor-methods.html#cb179-206" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-207"><a href="competitor-methods.html#cb179-207" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-208"><a href="competitor-methods.html#cb179-208" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a dataframe with factors (number of columns of final design matrix</span></span>
+<span id="cb179-209"><a href="competitor-methods.html#cb179-209" aria-hidden="true" tabindex="-1"></a>  <span class="co"># after one-hot encoding factors won&#39;t match number of columns of df2)</span></span>
+<span id="cb179-210"><a href="competitor-methods.html#cb179-210" aria-hidden="true" tabindex="-1"></a>  df2 <span class="ot">&lt;-</span> X_df</span>
+<span id="cb179-211"><a href="competitor-methods.html#cb179-211" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>cyl)</span>
+<span id="cb179-212"><a href="competitor-methods.html#cb179-212" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>vs)</span>
+<span id="cb179-213"><a href="competitor-methods.html#cb179-213" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>am)</span>
+<span id="cb179-214"><a href="competitor-methods.html#cb179-214" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>gear)</span>
+<span id="cb179-215"><a href="competitor-methods.html#cb179-215" aria-hidden="true" tabindex="-1"></a>  df2<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>carb)</span>
+<span id="cb179-216"><a href="competitor-methods.html#cb179-216" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-217"><a href="competitor-methods.html#cb179-217" aria-hidden="true" tabindex="-1"></a>  X_df_model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., df2)</span>
+<span id="cb179-218"><a href="competitor-methods.html#cb179-218" aria-hidden="true" tabindex="-1"></a>  X_df_model <span class="ot">&lt;-</span> X_df_model[, <span class="fu">colnames</span>(X_df_model) <span class="sc">!=</span> <span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb179-219"><a href="competitor-methods.html#cb179-219" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-220"><a href="competitor-methods.html#cb179-220" aria-hidden="true" tabindex="-1"></a>  process <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(<span class="at">X=</span>df2, <span class="at">y=</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(df2)),</span>
+<span id="cb179-221"><a href="competitor-methods.html#cb179-221" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-222"><a href="competitor-methods.html#cb179-222" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-223"><a href="competitor-methods.html#cb179-223" aria-hidden="true" tabindex="-1"></a>  X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(<span class="at">x=</span>process<span class="sc">$</span>x, <span class="at">clusters=</span>process<span class="sc">$</span>clusters,</span>
+<span id="cb179-224"><a href="competitor-methods.html#cb179-224" aria-hidden="true" tabindex="-1"></a>                         <span class="at">type=</span><span class="st">&quot;clusterRepLasso&quot;</span>, <span class="at">prototypes=</span>process<span class="sc">$</span>prototypes)</span>
+<span id="cb179-225"><a href="competitor-methods.html#cb179-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-226"><a href="competitor-methods.html#cb179-226" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(df2)), <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>,</span>
+<span id="cb179-227"><a href="competitor-methods.html#cb179-227" aria-hidden="true" tabindex="-1"></a>                        <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-228"><a href="competitor-methods.html#cb179-228" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb179-229"><a href="competitor-methods.html#cb179-229" aria-hidden="true" tabindex="-1"></a>  lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
+<span id="cb179-230"><a href="competitor-methods.html#cb179-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-231"><a href="competitor-methods.html#cb179-231" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, process<span class="sc">$</span>clusters,</span>
+<span id="cb179-232"><a href="competitor-methods.html#cb179-232" aria-hidden="true" tabindex="-1"></a>                                  process<span class="sc">$</span>prototypes, process<span class="sc">$</span>var_names)</span>
+<span id="cb179-233"><a href="competitor-methods.html#cb179-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-234"><a href="competitor-methods.html#cb179-234" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb179-235"><a href="competitor-methods.html#cb179-235" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">&quot;selected_sets&quot;</span>,</span>
+<span id="cb179-236"><a href="competitor-methods.html#cb179-236" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">&quot;selected_clusts_list&quot;</span>))</span>
+<span id="cb179-237"><a href="competitor-methods.html#cb179-237" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb179-238"><a href="competitor-methods.html#cb179-238" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_sets</span></span>
+<span id="cb179-239"><a href="competitor-methods.html#cb179-239" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_sets))</span>
+<span id="cb179-240"><a href="competitor-methods.html#cb179-240" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-241"><a href="competitor-methods.html#cb179-241" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets),</span>
+<span id="cb179-242"><a href="competitor-methods.html#cb179-242" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets)))</span>
+<span id="cb179-243"><a href="competitor-methods.html#cb179-243" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_sets)){</span>
+<span id="cb179-244"><a href="competitor-methods.html#cb179-244" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]])){</span>
+<span id="cb179-245"><a href="competitor-methods.html#cb179-245" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-246"><a href="competitor-methods.html#cb179-246" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
+<span id="cb179-247"><a href="competitor-methods.html#cb179-247" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_sets[[i]] <span class="sc">%in%</span> process<span class="sc">$</span>prototypes))</span>
+<span id="cb179-248"><a href="competitor-methods.html#cb179-248" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
+<span id="cb179-249"><a href="competitor-methods.html#cb179-249" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-250"><a href="competitor-methods.html#cb179-250" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-251"><a href="competitor-methods.html#cb179-251" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-252"><a href="competitor-methods.html#cb179-252" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-253"><a href="competitor-methods.html#cb179-253" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-254"><a href="competitor-methods.html#cb179-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-255"><a href="competitor-methods.html#cb179-255" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_clusts_list</span></span>
+<span id="cb179-256"><a href="competitor-methods.html#cb179-256" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list))</span>
+<span id="cb179-257"><a href="competitor-methods.html#cb179-257" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-258"><a href="competitor-methods.html#cb179-258" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list),</span>
+<span id="cb179-259"><a href="competitor-methods.html#cb179-259" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list)))</span>
+<span id="cb179-260"><a href="competitor-methods.html#cb179-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-261"><a href="competitor-methods.html#cb179-261" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list)){</span>
+<span id="cb179-262"><a href="competitor-methods.html#cb179-262" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]])){</span>
+<span id="cb179-263"><a href="competitor-methods.html#cb179-263" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-264"><a href="competitor-methods.html#cb179-264" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
+<span id="cb179-265"><a href="competitor-methods.html#cb179-265" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-266"><a href="competitor-methods.html#cb179-266" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
+<span id="cb179-267"><a href="competitor-methods.html#cb179-267" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb179-268"><a href="competitor-methods.html#cb179-268" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df_model)))</span>
+<span id="cb179-269"><a href="competitor-methods.html#cb179-269" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
+<span id="cb179-270"><a href="competitor-methods.html#cb179-270" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
+<span id="cb179-271"><a href="competitor-methods.html#cb179-271" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusts){</span>
+<span id="cb179-272"><a href="competitor-methods.html#cb179-272" aria-hidden="true" tabindex="-1"></a>        clust_i_found <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb179-273"><a href="competitor-methods.html#cb179-273" aria-hidden="true" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts_list[[k]][[i]]</span>
+<span id="cb179-274"><a href="competitor-methods.html#cb179-274" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(process<span class="sc">$</span>clusters)){</span>
+<span id="cb179-275"><a href="competitor-methods.html#cb179-275" aria-hidden="true" tabindex="-1"></a>          clust_i_found <span class="ot">&lt;-</span> clust_i_found <span class="sc">|</span> <span class="fu">identical</span>(clust_i,</span>
+<span id="cb179-276"><a href="competitor-methods.html#cb179-276" aria-hidden="true" tabindex="-1"></a>                                                     process<span class="sc">$</span>clusters[[j]])</span>
+<span id="cb179-277"><a href="competitor-methods.html#cb179-277" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb179-278"><a href="competitor-methods.html#cb179-278" aria-hidden="true" tabindex="-1"></a>        testthat<span class="sc">::</span><span class="fu">expect_true</span>(clust_i_found)</span>
+<span id="cb179-279"><a href="competitor-methods.html#cb179-279" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb179-280"><a href="competitor-methods.html#cb179-280" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-281"><a href="competitor-methods.html#cb179-281" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-282"><a href="competitor-methods.html#cb179-282" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-283"><a href="competitor-methods.html#cb179-283" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-284"><a href="competitor-methods.html#cb179-284" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-285"><a href="competitor-methods.html#cb179-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-286"><a href="competitor-methods.html#cb179-286" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-287"><a href="competitor-methods.html#cb179-287" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X as a matrix with column names</span></span>
+<span id="cb179-288"><a href="competitor-methods.html#cb179-288" aria-hidden="true" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> x</span>
+<span id="cb179-289"><a href="competitor-methods.html#cb179-289" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(x2) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>]</span>
+<span id="cb179-290"><a href="competitor-methods.html#cb179-290" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-291"><a href="competitor-methods.html#cb179-291" aria-hidden="true" tabindex="-1"></a>  process <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(<span class="at">X=</span>x2, <span class="at">y=</span>y,</span>
+<span id="cb179-292"><a href="competitor-methods.html#cb179-292" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">clusters=</span>good_clusters, <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-293"><a href="competitor-methods.html#cb179-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-294"><a href="competitor-methods.html#cb179-294" aria-hidden="true" tabindex="-1"></a>  X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(<span class="at">x=</span>process<span class="sc">$</span>x, <span class="at">clusters=</span>process<span class="sc">$</span>clusters,</span>
+<span id="cb179-295"><a href="competitor-methods.html#cb179-295" aria-hidden="true" tabindex="-1"></a>                         <span class="at">type=</span><span class="st">&quot;protolasso&quot;</span>, <span class="at">prototypes=</span>process<span class="sc">$</span>prototypes)</span>
+<span id="cb179-296"><a href="competitor-methods.html#cb179-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-297"><a href="competitor-methods.html#cb179-297" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>,</span>
+<span id="cb179-298"><a href="competitor-methods.html#cb179-298" aria-hidden="true" tabindex="-1"></a>                        <span class="at">nlambda=</span><span class="dv">100</span>)</span>
+<span id="cb179-299"><a href="competitor-methods.html#cb179-299" aria-hidden="true" tabindex="-1"></a>  lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
+<span id="cb179-300"><a href="competitor-methods.html#cb179-300" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-301"><a href="competitor-methods.html#cb179-301" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, process<span class="sc">$</span>clusters,</span>
+<span id="cb179-302"><a href="competitor-methods.html#cb179-302" aria-hidden="true" tabindex="-1"></a>                                  process<span class="sc">$</span>prototypes, process<span class="sc">$</span>var_names)</span>
+<span id="cb179-303"><a href="competitor-methods.html#cb179-303" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-304"><a href="competitor-methods.html#cb179-304" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb179-305"><a href="competitor-methods.html#cb179-305" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">&quot;selected_sets&quot;</span>,</span>
+<span id="cb179-306"><a href="competitor-methods.html#cb179-306" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">&quot;selected_clusts_list&quot;</span>))</span>
+<span id="cb179-307"><a href="competitor-methods.html#cb179-307" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb179-308"><a href="competitor-methods.html#cb179-308" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_sets</span></span>
+<span id="cb179-309"><a href="competitor-methods.html#cb179-309" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_sets))</span>
+<span id="cb179-310"><a href="competitor-methods.html#cb179-310" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-311"><a href="competitor-methods.html#cb179-311" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets),</span>
+<span id="cb179-312"><a href="competitor-methods.html#cb179-312" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets)))</span>
+<span id="cb179-313"><a href="competitor-methods.html#cb179-313" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_sets)){</span>
+<span id="cb179-314"><a href="competitor-methods.html#cb179-314" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]])){</span>
+<span id="cb179-315"><a href="competitor-methods.html#cb179-315" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-316"><a href="competitor-methods.html#cb179-316" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
+<span id="cb179-317"><a href="competitor-methods.html#cb179-317" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_sets[[i]] <span class="sc">%in%</span> process<span class="sc">$</span>prototypes))</span>
+<span id="cb179-318"><a href="competitor-methods.html#cb179-318" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
+<span id="cb179-319"><a href="competitor-methods.html#cb179-319" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-320"><a href="competitor-methods.html#cb179-320" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb179-321"><a href="competitor-methods.html#cb179-321" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-322"><a href="competitor-methods.html#cb179-322" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-323"><a href="competitor-methods.html#cb179-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-324"><a href="competitor-methods.html#cb179-324" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-325"><a href="competitor-methods.html#cb179-325" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_clusts_list</span></span>
+<span id="cb179-326"><a href="competitor-methods.html#cb179-326" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list))</span>
+<span id="cb179-327"><a href="competitor-methods.html#cb179-327" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb179-328"><a href="competitor-methods.html#cb179-328" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list),</span>
+<span id="cb179-329"><a href="competitor-methods.html#cb179-329" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list)))</span>
+<span id="cb179-330"><a href="competitor-methods.html#cb179-330" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb179-331"><a href="competitor-methods.html#cb179-331" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list)){</span>
+<span id="cb179-332"><a href="competitor-methods.html#cb179-332" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]])){</span>
+<span id="cb179-333"><a href="competitor-methods.html#cb179-333" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-334"><a href="competitor-methods.html#cb179-334" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
+<span id="cb179-335"><a href="competitor-methods.html#cb179-335" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-336"><a href="competitor-methods.html#cb179-336" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
+<span id="cb179-337"><a href="competitor-methods.html#cb179-337" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb179-338"><a href="competitor-methods.html#cb179-338" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
+<span id="cb179-339"><a href="competitor-methods.html#cb179-339" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
+<span id="cb179-340"><a href="competitor-methods.html#cb179-340" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
+<span id="cb179-341"><a href="competitor-methods.html#cb179-341" aria-hidden="true" tabindex="-1"></a>      <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusts){</span>
+<span id="cb179-342"><a href="competitor-methods.html#cb179-342" aria-hidden="true" tabindex="-1"></a>        clust_i_found <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb179-343"><a href="competitor-methods.html#cb179-343" aria-hidden="true" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts_list[[k]][[i]]</span>
+<span id="cb179-344"><a href="competitor-methods.html#cb179-344" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(process<span class="sc">$</span>clusters)){</span>
+<span id="cb179-345"><a href="competitor-methods.html#cb179-345" aria-hidden="true" tabindex="-1"></a>          clust_i_found <span class="ot">&lt;-</span> clust_i_found <span class="sc">|</span> <span class="fu">identical</span>(clust_i,</span>
+<span id="cb179-346"><a href="competitor-methods.html#cb179-346" aria-hidden="true" tabindex="-1"></a>                                                     process<span class="sc">$</span>clusters[[j]])</span>
+<span id="cb179-347"><a href="competitor-methods.html#cb179-347" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb179-348"><a href="competitor-methods.html#cb179-348" aria-hidden="true" tabindex="-1"></a>        testthat<span class="sc">::</span><span class="fu">expect_true</span>(clust_i_found)</span>
+<span id="cb179-349"><a href="competitor-methods.html#cb179-349" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb179-350"><a href="competitor-methods.html#cb179-350" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb179-351"><a href="competitor-methods.html#cb179-351" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb179-352"><a href="competitor-methods.html#cb179-352" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb179-353"><a href="competitor-methods.html#cb179-353" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb179-354"><a href="competitor-methods.html#cb179-354" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb179-355"><a href="competitor-methods.html#cb179-355" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 🥳</code></pre>
 <p>Finally, tests for <code><a href='competitor-methods.html#protolasso'>protolasso</a>()</code>:</p>
+<div class="sourceCode" id="cb181"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb181-1"><a href="competitor-methods.html#cb181-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;protolasso works&quot;</span>, {</span>
+<span id="cb181-2"><a href="competitor-methods.html#cb181-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">61282</span>)</span>
+<span id="cb181-3"><a href="competitor-methods.html#cb181-3" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-4"><a href="competitor-methods.html#cb181-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span><span class="sc">*</span><span class="dv">11</span>), <span class="at">nrow=</span><span class="dv">15</span>, <span class="at">ncol=</span><span class="dv">11</span>)</span>
+<span id="cb181-5"><a href="competitor-methods.html#cb181-5" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">15</span>)</span>
+<span id="cb181-6"><a href="competitor-methods.html#cb181-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-7"><a href="competitor-methods.html#cb181-7" aria-hidden="true" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span>1L<span class="sc">:</span>4L, <span class="at">green_cluster=</span>5L<span class="sc">:</span>8L)</span>
+<span id="cb181-8"><a href="competitor-methods.html#cb181-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-9"><a href="competitor-methods.html#cb181-9" aria-hidden="true" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href='competitor-methods.html#protolasso'>protolasso</a>(x, y, good_clusters)</span>
+<span id="cb181-10"><a href="competitor-methods.html#cb181-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-11"><a href="competitor-methods.html#cb181-11" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb181-12"><a href="competitor-methods.html#cb181-12" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">&quot;selected_sets&quot;</span>,</span>
+<span id="cb181-13"><a href="competitor-methods.html#cb181-13" aria-hidden="true" tabindex="-1"></a>                                           <span class="st">&quot;selected_clusts_list&quot;</span>, <span class="st">&quot;beta&quot;</span>))</span>
+<span id="cb181-14"><a href="competitor-methods.html#cb181-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-15"><a href="competitor-methods.html#cb181-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_sets</span></span>
+<span id="cb181-16"><a href="competitor-methods.html#cb181-16" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_sets))</span>
+<span id="cb181-17"><a href="competitor-methods.html#cb181-17" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb181-18"><a href="competitor-methods.html#cb181-18" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets),</span>
+<span id="cb181-19"><a href="competitor-methods.html#cb181-19" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_sets)))</span>
+<span id="cb181-20"><a href="competitor-methods.html#cb181-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_sets)){</span>
+<span id="cb181-21"><a href="competitor-methods.html#cb181-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]])){</span>
+<span id="cb181-22"><a href="competitor-methods.html#cb181-22" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb181-23"><a href="competitor-methods.html#cb181-23" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res<span class="sc">$</span>selected_sets[[i]])))</span>
+<span id="cb181-24"><a href="competitor-methods.html#cb181-24" aria-hidden="true" tabindex="-1"></a>      <span class="co"># testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))</span></span>
+<span id="cb181-25"><a href="competitor-methods.html#cb181-25" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[i]]), i)</span>
+<span id="cb181-26"><a href="competitor-methods.html#cb181-26" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb181-27"><a href="competitor-methods.html#cb181-27" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_sets[[i]]))</span>
+<span id="cb181-28"><a href="competitor-methods.html#cb181-28" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb181-29"><a href="competitor-methods.html#cb181-29" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb181-30"><a href="competitor-methods.html#cb181-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-31"><a href="competitor-methods.html#cb181-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-32"><a href="competitor-methods.html#cb181-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># selected_clusts_list</span></span>
+<span id="cb181-33"><a href="competitor-methods.html#cb181-33" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list))</span>
+<span id="cb181-34"><a href="competitor-methods.html#cb181-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Selected models should have one of each size without repetition</span></span>
+<span id="cb181-35"><a href="competitor-methods.html#cb181-35" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list),</span>
+<span id="cb181-36"><a href="competitor-methods.html#cb181-36" aria-hidden="true" tabindex="-1"></a>                         <span class="fu">unique</span>(<span class="fu">lengths</span>(res<span class="sc">$</span>selected_clusts_list)))</span>
+<span id="cb181-37"><a href="competitor-methods.html#cb181-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-38"><a href="competitor-methods.html#cb181-38" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list)){</span>
+<span id="cb181-39"><a href="competitor-methods.html#cb181-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]])){</span>
+<span id="cb181-40"><a href="competitor-methods.html#cb181-40" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb181-41"><a href="competitor-methods.html#cb181-41" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_sets[[k]]),</span>
+<span id="cb181-42"><a href="competitor-methods.html#cb181-42" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb181-43"><a href="competitor-methods.html#cb181-43" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts_list[[k]]), k)</span>
+<span id="cb181-44"><a href="competitor-methods.html#cb181-44" aria-hidden="true" tabindex="-1"></a>      sel_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(res<span class="sc">$</span>selected_clusts_list[[k]])</span>
+<span id="cb181-45"><a href="competitor-methods.html#cb181-45" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sel_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
+<span id="cb181-46"><a href="competitor-methods.html#cb181-46" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sel_feats), <span class="fu">length</span>(<span class="fu">unique</span>(sel_feats)))</span>
+<span id="cb181-47"><a href="competitor-methods.html#cb181-47" aria-hidden="true" tabindex="-1"></a>      n_clusts <span class="ot">&lt;-</span> k</span>
+<span id="cb181-48"><a href="competitor-methods.html#cb181-48" aria-hidden="true" tabindex="-1"></a>      <span class="co"># for(i in 1:n_clusts){</span></span>
+<span id="cb181-49"><a href="competitor-methods.html#cb181-49" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   clust_i_found &lt;- FALSE</span></span>
+<span id="cb181-50"><a href="competitor-methods.html#cb181-50" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   clust_i &lt;- res$selected_clusts_list[[k]][[i]]</span></span>
+<span id="cb181-51"><a href="competitor-methods.html#cb181-51" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   for(j in 1:length(process$clusters)){</span></span>
+<span id="cb181-52"><a href="competitor-methods.html#cb181-52" aria-hidden="true" tabindex="-1"></a>      <span class="co">#     clust_i_found &lt;- clust_i_found | identical(clust_i,</span></span>
+<span id="cb181-53"><a href="competitor-methods.html#cb181-53" aria-hidden="true" tabindex="-1"></a>      <span class="co">#                                                process$clusters[[j]])</span></span>
+<span id="cb181-54"><a href="competitor-methods.html#cb181-54" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   }</span></span>
+<span id="cb181-55"><a href="competitor-methods.html#cb181-55" aria-hidden="true" tabindex="-1"></a>      <span class="co">#   testthat::expect_true(clust_i_found)</span></span>
+<span id="cb181-56"><a href="competitor-methods.html#cb181-56" aria-hidden="true" tabindex="-1"></a>      <span class="co"># }</span></span>
+<span id="cb181-57"><a href="competitor-methods.html#cb181-57" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb181-58"><a href="competitor-methods.html#cb181-58" aria-hidden="true" tabindex="-1"></a>      testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.null</span>(res<span class="sc">$</span>selected_clusts_list[[k]]))</span>
+<span id="cb181-59"><a href="competitor-methods.html#cb181-59" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb181-60"><a href="competitor-methods.html#cb181-60" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb181-61"><a href="competitor-methods.html#cb181-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-62"><a href="competitor-methods.html#cb181-62" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-63"><a href="competitor-methods.html#cb181-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb181-64"><a href="competitor-methods.html#cb181-64" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-65"><a href="competitor-methods.html#cb181-65" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-66"><a href="competitor-methods.html#cb181-66" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-67"><a href="competitor-methods.html#cb181-67" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-68"><a href="competitor-methods.html#cb181-68" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a data.frame</span></span>
+<span id="cb181-69"><a href="competitor-methods.html#cb181-69" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df &lt;- datasets::mtcars</span></span>
+<span id="cb181-70"><a href="competitor-methods.html#cb181-70" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-71"><a href="competitor-methods.html#cb181-71" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- stats::model.matrix(~ ., X_df)</span></span>
+<span id="cb181-72"><a href="competitor-methods.html#cb181-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- X_df_model[, colnames(X_df_model) != &quot;(Intercept)&quot;]</span></span>
+<span id="cb181-73"><a href="competitor-methods.html#cb181-73" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-74"><a href="competitor-methods.html#cb181-74" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=X_df, y=rnorm(nrow(X_df)),</span></span>
+<span id="cb181-75"><a href="competitor-methods.html#cb181-75" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=1:3, nlambda=100)</span></span>
+<span id="cb181-76"><a href="competitor-methods.html#cb181-76" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-77"><a href="competitor-methods.html#cb181-77" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
+<span id="cb181-78"><a href="competitor-methods.html#cb181-78" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;protolasso&quot;, prototypes=process$prototypes)</span></span>
+<span id="cb181-79"><a href="competitor-methods.html#cb181-79" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-80"><a href="competitor-methods.html#cb181-80" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(X_df)), family=&quot;gaussian&quot;,</span></span>
+<span id="cb181-81"><a href="competitor-methods.html#cb181-81" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
+<span id="cb181-82"><a href="competitor-methods.html#cb181-82" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
+<span id="cb181-83"><a href="competitor-methods.html#cb181-83" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-84"><a href="competitor-methods.html#cb181-84" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#protolasso'>protolasso</a>(lasso_sets, process$clusters,</span></span>
+<span id="cb181-85"><a href="competitor-methods.html#cb181-85" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                 process$prototypes, process$var_names)</span></span>
+<span id="cb181-86"><a href="competitor-methods.html#cb181-86" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-87"><a href="competitor-methods.html#cb181-87" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
+<span id="cb181-88"><a href="competitor-methods.html#cb181-88" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_sets&quot;,</span></span>
+<span id="cb181-89"><a href="competitor-methods.html#cb181-89" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
+<span id="cb181-90"><a href="competitor-methods.html#cb181-90" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-91"><a href="competitor-methods.html#cb181-91" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_sets</span></span>
+<span id="cb181-92"><a href="competitor-methods.html#cb181-92" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_sets))</span></span>
+<span id="cb181-93"><a href="competitor-methods.html#cb181-93" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-94"><a href="competitor-methods.html#cb181-94" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_sets),</span></span>
+<span id="cb181-95"><a href="competitor-methods.html#cb181-95" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_sets)))</span></span>
+<span id="cb181-96"><a href="competitor-methods.html#cb181-96" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:length(res$selected_sets)){</span></span>
+<span id="cb181-97"><a href="competitor-methods.html#cb181-97" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_sets[[i]])){</span></span>
+<span id="cb181-98"><a href="competitor-methods.html#cb181-98" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.integer(res$selected_sets[[i]]))</span></span>
+<span id="cb181-99"><a href="competitor-methods.html#cb181-99" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))</span></span>
+<span id="cb181-100"><a href="competitor-methods.html#cb181-100" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))</span></span>
+<span id="cb181-101"><a href="competitor-methods.html#cb181-101" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[i]]), i)</span></span>
+<span id="cb181-102"><a href="competitor-methods.html#cb181-102" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-103"><a href="competitor-methods.html#cb181-103" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_sets[[i]]))</span></span>
+<span id="cb181-104"><a href="competitor-methods.html#cb181-104" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-105"><a href="competitor-methods.html#cb181-105" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-106"><a href="competitor-methods.html#cb181-106" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-107"><a href="competitor-methods.html#cb181-107" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-108"><a href="competitor-methods.html#cb181-108" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
+<span id="cb181-109"><a href="competitor-methods.html#cb181-109" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
+<span id="cb181-110"><a href="competitor-methods.html#cb181-110" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-111"><a href="competitor-methods.html#cb181-111" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_clusts_list),</span></span>
+<span id="cb181-112"><a href="competitor-methods.html#cb181-112" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_clusts_list)))</span></span>
+<span id="cb181-113"><a href="competitor-methods.html#cb181-113" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-114"><a href="competitor-methods.html#cb181-114" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(k in 1:length(res$selected_clusts_list)){</span></span>
+<span id="cb181-115"><a href="competitor-methods.html#cb181-115" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_clusts_list[[k]])){</span></span>
+<span id="cb181-116"><a href="competitor-methods.html#cb181-116" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-117"><a href="competitor-methods.html#cb181-117" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[k]]),</span></span>
+<span id="cb181-118"><a href="competitor-methods.html#cb181-118" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                            length(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-119"><a href="competitor-methods.html#cb181-119" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)</span></span>
+<span id="cb181-120"><a href="competitor-methods.html#cb181-120" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     sel_feats &lt;- unlist(res$selected_clusts_list[[k]])</span></span>
+<span id="cb181-121"><a href="competitor-methods.html#cb181-121" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))</span></span>
+<span id="cb181-122"><a href="competitor-methods.html#cb181-122" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))</span></span>
+<span id="cb181-123"><a href="competitor-methods.html#cb181-123" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     n_clusts &lt;- k</span></span>
+<span id="cb181-124"><a href="competitor-methods.html#cb181-124" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     for(i in 1:n_clusts){</span></span>
+<span id="cb181-125"><a href="competitor-methods.html#cb181-125" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i_found &lt;- FALSE</span></span>
+<span id="cb181-126"><a href="competitor-methods.html#cb181-126" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i &lt;- res$selected_clusts_list[[k]][[i]]</span></span>
+<span id="cb181-127"><a href="competitor-methods.html#cb181-127" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       for(j in 1:length(process$clusters)){</span></span>
+<span id="cb181-128"><a href="competitor-methods.html#cb181-128" aria-hidden="true" tabindex="-1"></a>  <span class="co">#         clust_i_found &lt;- clust_i_found | identical(clust_i,</span></span>
+<span id="cb181-129"><a href="competitor-methods.html#cb181-129" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                                    process$clusters[[j]])</span></span>
+<span id="cb181-130"><a href="competitor-methods.html#cb181-130" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       }</span></span>
+<span id="cb181-131"><a href="competitor-methods.html#cb181-131" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       testthat::expect_true(clust_i_found)</span></span>
+<span id="cb181-132"><a href="competitor-methods.html#cb181-132" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     }</span></span>
+<span id="cb181-133"><a href="competitor-methods.html#cb181-133" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-134"><a href="competitor-methods.html#cb181-134" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-135"><a href="competitor-methods.html#cb181-135" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-136"><a href="competitor-methods.html#cb181-136" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-137"><a href="competitor-methods.html#cb181-137" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-138"><a href="competitor-methods.html#cb181-138" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a dataframe with factors (number of columns of final design matrix</span></span>
+<span id="cb181-139"><a href="competitor-methods.html#cb181-139" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # after one-hot encoding factors won&#39;t match number of columns of df2)</span></span>
+<span id="cb181-140"><a href="competitor-methods.html#cb181-140" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2 &lt;- X_df</span></span>
+<span id="cb181-141"><a href="competitor-methods.html#cb181-141" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$cyl &lt;- as.factor(df2$cyl)</span></span>
+<span id="cb181-142"><a href="competitor-methods.html#cb181-142" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$vs &lt;- as.factor(df2$vs)</span></span>
+<span id="cb181-143"><a href="competitor-methods.html#cb181-143" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$am &lt;- as.factor(df2$am)</span></span>
+<span id="cb181-144"><a href="competitor-methods.html#cb181-144" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$gear &lt;- as.factor(df2$gear)</span></span>
+<span id="cb181-145"><a href="competitor-methods.html#cb181-145" aria-hidden="true" tabindex="-1"></a>  <span class="co"># df2$carb &lt;- as.factor(df2$carb)</span></span>
+<span id="cb181-146"><a href="competitor-methods.html#cb181-146" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-147"><a href="competitor-methods.html#cb181-147" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- stats::model.matrix(~ ., df2)</span></span>
+<span id="cb181-148"><a href="competitor-methods.html#cb181-148" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_df_model &lt;- X_df_model[, colnames(X_df_model) != &quot;(Intercept)&quot;]</span></span>
+<span id="cb181-149"><a href="competitor-methods.html#cb181-149" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-150"><a href="competitor-methods.html#cb181-150" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=df2, y=rnorm(nrow(df2)),</span></span>
+<span id="cb181-151"><a href="competitor-methods.html#cb181-151" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=1:3, nlambda=100)</span></span>
+<span id="cb181-152"><a href="competitor-methods.html#cb181-152" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-153"><a href="competitor-methods.html#cb181-153" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
+<span id="cb181-154"><a href="competitor-methods.html#cb181-154" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;clusterRepLasso&quot;, prototypes=process$prototypes)</span></span>
+<span id="cb181-155"><a href="competitor-methods.html#cb181-155" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-156"><a href="competitor-methods.html#cb181-156" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family=&quot;gaussian&quot;,</span></span>
+<span id="cb181-157"><a href="competitor-methods.html#cb181-157" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
+<span id="cb181-158"><a href="competitor-methods.html#cb181-158" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-159"><a href="competitor-methods.html#cb181-159" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
+<span id="cb181-160"><a href="competitor-methods.html#cb181-160" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-161"><a href="competitor-methods.html#cb181-161" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#protolasso'>protolasso</a>(lasso_sets, process$clusters,</span></span>
+<span id="cb181-162"><a href="competitor-methods.html#cb181-162" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                 process$prototypes, process$var_names)</span></span>
+<span id="cb181-163"><a href="competitor-methods.html#cb181-163" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-164"><a href="competitor-methods.html#cb181-164" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
+<span id="cb181-165"><a href="competitor-methods.html#cb181-165" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_sets&quot;,</span></span>
+<span id="cb181-166"><a href="competitor-methods.html#cb181-166" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
+<span id="cb181-167"><a href="competitor-methods.html#cb181-167" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-168"><a href="competitor-methods.html#cb181-168" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_sets</span></span>
+<span id="cb181-169"><a href="competitor-methods.html#cb181-169" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_sets))</span></span>
+<span id="cb181-170"><a href="competitor-methods.html#cb181-170" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-171"><a href="competitor-methods.html#cb181-171" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_sets),</span></span>
+<span id="cb181-172"><a href="competitor-methods.html#cb181-172" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_sets)))</span></span>
+<span id="cb181-173"><a href="competitor-methods.html#cb181-173" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:length(res$selected_sets)){</span></span>
+<span id="cb181-174"><a href="competitor-methods.html#cb181-174" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_sets[[i]])){</span></span>
+<span id="cb181-175"><a href="competitor-methods.html#cb181-175" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.integer(res$selected_sets[[i]]))</span></span>
+<span id="cb181-176"><a href="competitor-methods.html#cb181-176" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))</span></span>
+<span id="cb181-177"><a href="competitor-methods.html#cb181-177" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))</span></span>
+<span id="cb181-178"><a href="competitor-methods.html#cb181-178" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[i]]), i)</span></span>
+<span id="cb181-179"><a href="competitor-methods.html#cb181-179" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-180"><a href="competitor-methods.html#cb181-180" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_sets[[i]]))</span></span>
+<span id="cb181-181"><a href="competitor-methods.html#cb181-181" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-182"><a href="competitor-methods.html#cb181-182" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-183"><a href="competitor-methods.html#cb181-183" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-184"><a href="competitor-methods.html#cb181-184" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-185"><a href="competitor-methods.html#cb181-185" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
+<span id="cb181-186"><a href="competitor-methods.html#cb181-186" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
+<span id="cb181-187"><a href="competitor-methods.html#cb181-187" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-188"><a href="competitor-methods.html#cb181-188" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_clusts_list),</span></span>
+<span id="cb181-189"><a href="competitor-methods.html#cb181-189" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_clusts_list)))</span></span>
+<span id="cb181-190"><a href="competitor-methods.html#cb181-190" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-191"><a href="competitor-methods.html#cb181-191" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(k in 1:length(res$selected_clusts_list)){</span></span>
+<span id="cb181-192"><a href="competitor-methods.html#cb181-192" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_clusts_list[[k]])){</span></span>
+<span id="cb181-193"><a href="competitor-methods.html#cb181-193" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-194"><a href="competitor-methods.html#cb181-194" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[k]]),</span></span>
+<span id="cb181-195"><a href="competitor-methods.html#cb181-195" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                            length(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-196"><a href="competitor-methods.html#cb181-196" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)</span></span>
+<span id="cb181-197"><a href="competitor-methods.html#cb181-197" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     sel_feats &lt;- unlist(res$selected_clusts_list[[k]])</span></span>
+<span id="cb181-198"><a href="competitor-methods.html#cb181-198" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))</span></span>
+<span id="cb181-199"><a href="competitor-methods.html#cb181-199" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))</span></span>
+<span id="cb181-200"><a href="competitor-methods.html#cb181-200" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     n_clusts &lt;- k</span></span>
+<span id="cb181-201"><a href="competitor-methods.html#cb181-201" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     for(i in 1:n_clusts){</span></span>
+<span id="cb181-202"><a href="competitor-methods.html#cb181-202" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i_found &lt;- FALSE</span></span>
+<span id="cb181-203"><a href="competitor-methods.html#cb181-203" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i &lt;- res$selected_clusts_list[[k]][[i]]</span></span>
+<span id="cb181-204"><a href="competitor-methods.html#cb181-204" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       for(j in 1:length(process$clusters)){</span></span>
+<span id="cb181-205"><a href="competitor-methods.html#cb181-205" aria-hidden="true" tabindex="-1"></a>  <span class="co">#         clust_i_found &lt;- clust_i_found | identical(clust_i,</span></span>
+<span id="cb181-206"><a href="competitor-methods.html#cb181-206" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                                    process$clusters[[j]])</span></span>
+<span id="cb181-207"><a href="competitor-methods.html#cb181-207" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       }</span></span>
+<span id="cb181-208"><a href="competitor-methods.html#cb181-208" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       testthat::expect_true(clust_i_found)</span></span>
+<span id="cb181-209"><a href="competitor-methods.html#cb181-209" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     }</span></span>
+<span id="cb181-210"><a href="competitor-methods.html#cb181-210" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-211"><a href="competitor-methods.html#cb181-211" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-212"><a href="competitor-methods.html#cb181-212" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-213"><a href="competitor-methods.html#cb181-213" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-214"><a href="competitor-methods.html#cb181-214" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-215"><a href="competitor-methods.html#cb181-215" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-216"><a href="competitor-methods.html#cb181-216" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-217"><a href="competitor-methods.html#cb181-217" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # X as a matrix with column names</span></span>
+<span id="cb181-218"><a href="competitor-methods.html#cb181-218" aria-hidden="true" tabindex="-1"></a>  <span class="co"># x2 &lt;- x</span></span>
+<span id="cb181-219"><a href="competitor-methods.html#cb181-219" aria-hidden="true" tabindex="-1"></a>  <span class="co"># colnames(x2) &lt;- LETTERS[1:11]</span></span>
+<span id="cb181-220"><a href="competitor-methods.html#cb181-220" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-221"><a href="competitor-methods.html#cb181-221" aria-hidden="true" tabindex="-1"></a>  <span class="co"># process &lt;- <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X=x2, y=y,</span></span>
+<span id="cb181-222"><a href="competitor-methods.html#cb181-222" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                      clusters=good_clusters, nlambda=100)</span></span>
+<span id="cb181-223"><a href="competitor-methods.html#cb181-223" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-224"><a href="competitor-methods.html#cb181-224" aria-hidden="true" tabindex="-1"></a>  <span class="co"># X_glmnet &lt;- <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x=process$x, clusters=process$clusters,</span></span>
+<span id="cb181-225"><a href="competitor-methods.html#cb181-225" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        type=&quot;protolasso&quot;, prototypes=process$prototypes)</span></span>
+<span id="cb181-226"><a href="competitor-methods.html#cb181-226" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-227"><a href="competitor-methods.html#cb181-227" aria-hidden="true" tabindex="-1"></a>  <span class="co"># fit &lt;- glmnet::glmnet(x=X_glmnet, y=y, family=&quot;gaussian&quot;,</span></span>
+<span id="cb181-228"><a href="competitor-methods.html#cb181-228" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                       nlambda=100)</span></span>
+<span id="cb181-229"><a href="competitor-methods.html#cb181-229" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lasso_sets &lt;- unique(glmnet::predict.glmnet(fit, type=&quot;nonzero&quot;))</span></span>
+<span id="cb181-230"><a href="competitor-methods.html#cb181-230" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-231"><a href="competitor-methods.html#cb181-231" aria-hidden="true" tabindex="-1"></a>  <span class="co"># res &lt;- <a href='competitor-methods.html#protolasso'>protolasso</a>(lasso_sets, process$clusters,</span></span>
+<span id="cb181-232"><a href="competitor-methods.html#cb181-232" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                 process$prototypes, process$var_names)</span></span>
+<span id="cb181-233"><a href="competitor-methods.html#cb181-233" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-234"><a href="competitor-methods.html#cb181-234" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res))</span></span>
+<span id="cb181-235"><a href="competitor-methods.html#cb181-235" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(names(res), c(&quot;selected_sets&quot;,</span></span>
+<span id="cb181-236"><a href="competitor-methods.html#cb181-236" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                          &quot;selected_clusts_list&quot;))</span></span>
+<span id="cb181-237"><a href="competitor-methods.html#cb181-237" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-238"><a href="competitor-methods.html#cb181-238" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_sets</span></span>
+<span id="cb181-239"><a href="competitor-methods.html#cb181-239" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_sets))</span></span>
+<span id="cb181-240"><a href="competitor-methods.html#cb181-240" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-241"><a href="competitor-methods.html#cb181-241" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_sets),</span></span>
+<span id="cb181-242"><a href="competitor-methods.html#cb181-242" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_sets)))</span></span>
+<span id="cb181-243"><a href="competitor-methods.html#cb181-243" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(i in 1:length(res$selected_sets)){</span></span>
+<span id="cb181-244"><a href="competitor-methods.html#cb181-244" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_sets[[i]])){</span></span>
+<span id="cb181-245"><a href="competitor-methods.html#cb181-245" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.integer(res$selected_sets[[i]]))</span></span>
+<span id="cb181-246"><a href="competitor-methods.html#cb181-246" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))</span></span>
+<span id="cb181-247"><a href="competitor-methods.html#cb181-247" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))</span></span>
+<span id="cb181-248"><a href="competitor-methods.html#cb181-248" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[i]]), i)</span></span>
+<span id="cb181-249"><a href="competitor-methods.html#cb181-249" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-250"><a href="competitor-methods.html#cb181-250" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_sets[[i]]))</span></span>
+<span id="cb181-251"><a href="competitor-methods.html#cb181-251" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-252"><a href="competitor-methods.html#cb181-252" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-253"><a href="competitor-methods.html#cb181-253" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-254"><a href="competitor-methods.html#cb181-254" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-255"><a href="competitor-methods.html#cb181-255" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # selected_clusts_list</span></span>
+<span id="cb181-256"><a href="competitor-methods.html#cb181-256" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_true(is.list(res$selected_clusts_list))</span></span>
+<span id="cb181-257"><a href="competitor-methods.html#cb181-257" aria-hidden="true" tabindex="-1"></a>  <span class="co"># # Selected models should have one of each size without repetition</span></span>
+<span id="cb181-258"><a href="competitor-methods.html#cb181-258" aria-hidden="true" tabindex="-1"></a>  <span class="co"># testthat::expect_identical(lengths(res$selected_clusts_list),</span></span>
+<span id="cb181-259"><a href="competitor-methods.html#cb181-259" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                        unique(lengths(res$selected_clusts_list)))</span></span>
+<span id="cb181-260"><a href="competitor-methods.html#cb181-260" aria-hidden="true" tabindex="-1"></a>  <span class="co"># </span></span>
+<span id="cb181-261"><a href="competitor-methods.html#cb181-261" aria-hidden="true" tabindex="-1"></a>  <span class="co"># for(k in 1:length(res$selected_clusts_list)){</span></span>
+<span id="cb181-262"><a href="competitor-methods.html#cb181-262" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   if(!is.null(res$selected_clusts_list[[k]])){</span></span>
+<span id="cb181-263"><a href="competitor-methods.html#cb181-263" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-264"><a href="competitor-methods.html#cb181-264" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_sets[[k]]),</span></span>
+<span id="cb181-265"><a href="competitor-methods.html#cb181-265" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                            length(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-266"><a href="competitor-methods.html#cb181-266" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)</span></span>
+<span id="cb181-267"><a href="competitor-methods.html#cb181-267" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     sel_feats &lt;- unlist(res$selected_clusts_list[[k]])</span></span>
+<span id="cb181-268"><a href="competitor-methods.html#cb181-268" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(all(sel_feats %in% 1:11))</span></span>
+<span id="cb181-269"><a href="competitor-methods.html#cb181-269" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))</span></span>
+<span id="cb181-270"><a href="competitor-methods.html#cb181-270" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     n_clusts &lt;- k</span></span>
+<span id="cb181-271"><a href="competitor-methods.html#cb181-271" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     for(i in 1:n_clusts){</span></span>
+<span id="cb181-272"><a href="competitor-methods.html#cb181-272" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i_found &lt;- FALSE</span></span>
+<span id="cb181-273"><a href="competitor-methods.html#cb181-273" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       clust_i &lt;- res$selected_clusts_list[[k]][[i]]</span></span>
+<span id="cb181-274"><a href="competitor-methods.html#cb181-274" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       for(j in 1:length(process$clusters)){</span></span>
+<span id="cb181-275"><a href="competitor-methods.html#cb181-275" aria-hidden="true" tabindex="-1"></a>  <span class="co">#         clust_i_found &lt;- clust_i_found | identical(clust_i,</span></span>
+<span id="cb181-276"><a href="competitor-methods.html#cb181-276" aria-hidden="true" tabindex="-1"></a>  <span class="co">#                                                    process$clusters[[j]])</span></span>
+<span id="cb181-277"><a href="competitor-methods.html#cb181-277" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       }</span></span>
+<span id="cb181-278"><a href="competitor-methods.html#cb181-278" aria-hidden="true" tabindex="-1"></a>  <span class="co">#       testthat::expect_true(clust_i_found)</span></span>
+<span id="cb181-279"><a href="competitor-methods.html#cb181-279" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     }</span></span>
+<span id="cb181-280"><a href="competitor-methods.html#cb181-280" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   } else{</span></span>
+<span id="cb181-281"><a href="competitor-methods.html#cb181-281" aria-hidden="true" tabindex="-1"></a>  <span class="co">#     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))</span></span>
+<span id="cb181-282"><a href="competitor-methods.html#cb181-282" aria-hidden="true" tabindex="-1"></a>  <span class="co">#   }</span></span>
+<span id="cb181-283"><a href="competitor-methods.html#cb181-283" aria-hidden="true" tabindex="-1"></a>  <span class="co"># }</span></span>
+<span id="cb181-284"><a href="competitor-methods.html#cb181-284" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-285"><a href="competitor-methods.html#cb181-285" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-286"><a href="competitor-methods.html#cb181-286" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bad inputs</span></span>
+<span id="cb181-287"><a href="competitor-methods.html#cb181-287" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb181-288"><a href="competitor-methods.html#cb181-288" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed 🎉</code></pre>
 <p><code><a href='competitor-methods.html#clusterRepLasso'>clusterRepLasso</a>()</code>:</p>
-<div class="sourceCode" id="cb181"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb181-1"><a href="competitor-methods.html#cb181-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Select features via the cluster representative lasso (Bühlmann et. al. 2013)</span></span>
-<span id="cb181-2"><a href="competitor-methods.html#cb181-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;</span></span>
-<span id="cb181-3"><a href="competitor-methods.html#cb181-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb181-4"><a href="competitor-methods.html#cb181-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb181-5"><a href="competitor-methods.html#cb181-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; p &gt;= 2 features/predictors</span></span>
-<span id="cb181-6"><a href="competitor-methods.html#cb181-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
-<span id="cb181-7"><a href="competitor-methods.html#cb181-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param clusters A list of integer vectors; each vector should contain the </span></span>
-<span id="cb181-8"><a href="competitor-methods.html#cb181-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
-<span id="cb181-9"><a href="competitor-methods.html#cb181-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
-<span id="cb181-10"><a href="competitor-methods.html#cb181-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; All of the provided clusters must be non-overlapping. Every feature not</span></span>
-<span id="cb181-11"><a href="competitor-methods.html#cb181-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
-<span id="cb181-12"><a href="competitor-methods.html#cb181-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; will be treated as if they are in a &quot;cluster&quot; containing only themselves).</span></span>
-<span id="cb181-13"><a href="competitor-methods.html#cb181-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Default is list() (so no clusters are specified).</span></span>
-<span id="cb181-14"><a href="competitor-methods.html#cb181-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
-<span id="cb181-15"><a href="competitor-methods.html#cb181-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; for the cluster representative lasso. Default is 100 (following the default</span></span>
-<span id="cb181-16"><a href="competitor-methods.html#cb181-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; for glmnet). For now, nlambda must be at least 2 (using a single lambda is</span></span>
-<span id="cb181-17"><a href="competitor-methods.html#cb181-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; not supported).</span></span>
-<span id="cb181-18"><a href="competitor-methods.html#cb181-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
-<span id="cb181-19"><a href="competitor-methods.html#cb181-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
-<span id="cb181-20"><a href="competitor-methods.html#cb181-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; size k yielded by the lasso--each member of the set is the index of a single</span></span>
-<span id="cb181-21"><a href="competitor-methods.html#cb181-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; feature from a cluster selected by the cluster representative lasso (the</span></span>
-<span id="cb181-22"><a href="competitor-methods.html#cb181-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; prototype from that cluster--the cluster member most highly correlated with</span></span>
-<span id="cb181-23"><a href="competitor-methods.html#cb181-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; y). (If no set of size k was selected, entry k will be empty.)}</span></span>
-<span id="cb181-24"><a href="competitor-methods.html#cb181-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \item{selected_clusts_list}{A list; each element of the list is a named list</span></span>
-<span id="cb181-25"><a href="competitor-methods.html#cb181-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; of selected clusters. (That is, if a selected set of size k was yielded by</span></span>
-<span id="cb181-26"><a href="competitor-methods.html#cb181-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; the cluster representative lasso, then selected_clusts_list[[k]] is a named</span></span>
-<span id="cb181-27"><a href="competitor-methods.html#cb181-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; list of length k, where each member of the list is an integer vector</span></span>
-<span id="cb181-28"><a href="competitor-methods.html#cb181-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; of cluster members. Note that selected_clusts_lists[[k]][[j]] will be the</span></span>
-<span id="cb181-29"><a href="competitor-methods.html#cb181-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The beta</span></span>
-<span id="cb181-30"><a href="competitor-methods.html#cb181-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; output from glmnet when the lasso was estimated on a matrix of prototypes.</span></span>
-<span id="cb181-31"><a href="competitor-methods.html#cb181-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; (See documentation for the function glmnet from the glmnet package for</span></span>
-<span id="cb181-32"><a href="competitor-methods.html#cb181-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; details.)}</span></span>
-<span id="cb181-33"><a href="competitor-methods.html#cb181-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Bühlmann, P., Rütimann, P., van de Geer, S., &amp; Zhang, C. H.</span></span>
-<span id="cb181-34"><a href="competitor-methods.html#cb181-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; (2013). Correlated variables in regression: Clustering and sparse estimation.</span></span>
-<span id="cb181-35"><a href="competitor-methods.html#cb181-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
-<span id="cb181-36"><a href="competitor-methods.html#cb181-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor</span></span>
-<span id="cb181-37"><a href="competitor-methods.html#cb181-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear</span></span>
-<span id="cb181-38"><a href="competitor-methods.html#cb181-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)</span></span>
-<span id="cb181-39"><a href="competitor-methods.html#cb181-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; &#39; 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb181-40"><a href="competitor-methods.html#cb181-40" aria-hidden="true" tabindex="-1"></a><span id='clusterRepLasso'>clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
-<span id="cb181-41"><a href="competitor-methods.html#cb181-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-42"><a href="competitor-methods.html#cb181-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
-<span id="cb181-43"><a href="competitor-methods.html#cb181-43" aria-hidden="true" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
-<span id="cb181-44"><a href="competitor-methods.html#cb181-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-45"><a href="competitor-methods.html#cb181-45" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
-<span id="cb181-46"><a href="competitor-methods.html#cb181-46" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
-<span id="cb181-47"><a href="competitor-methods.html#cb181-47" aria-hidden="true" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
-<span id="cb181-48"><a href="competitor-methods.html#cb181-48" aria-hidden="true" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
-<span id="cb181-49"><a href="competitor-methods.html#cb181-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-50"><a href="competitor-methods.html#cb181-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
-<span id="cb181-51"><a href="competitor-methods.html#cb181-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-52"><a href="competitor-methods.html#cb181-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the cluster</span></span>
-<span id="cb181-53"><a href="competitor-methods.html#cb181-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># representative lasso procedure</span></span>
-<span id="cb181-54"><a href="competitor-methods.html#cb181-54" aria-hidden="true" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x, clusters, <span class="at">type=</span><span class="st">&quot;clusterRepLasso&quot;</span>)</span>
-<span id="cb181-55"><a href="competitor-methods.html#cb181-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-56"><a href="competitor-methods.html#cb181-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster representatives</span></span>
-<span id="cb181-57"><a href="competitor-methods.html#cb181-57" aria-hidden="true" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nlambda=</span>nlambda)</span>
-<span id="cb181-58"><a href="competitor-methods.html#cb181-58" aria-hidden="true" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
-<span id="cb181-59"><a href="competitor-methods.html#cb181-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-60"><a href="competitor-methods.html#cb181-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Finally, extract the desired information from the lasso fit--all the</span></span>
-<span id="cb181-61"><a href="competitor-methods.html#cb181-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sets of selected clusters (one for each observed model size), and</span></span>
-<span id="cb181-62"><a href="competitor-methods.html#cb181-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># corresponding sets of selected features</span></span>
-<span id="cb181-63"><a href="competitor-methods.html#cb181-63" aria-hidden="true" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
-<span id="cb181-64"><a href="competitor-methods.html#cb181-64" aria-hidden="true" tabindex="-1"></a>        prototypes, feat_names)</span>
-<span id="cb181-65"><a href="competitor-methods.html#cb181-65" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb181-66"><a href="competitor-methods.html#cb181-66" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
-<span id="cb181-67"><a href="competitor-methods.html#cb181-67" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
-<span id="cb181-68"><a href="competitor-methods.html#cb181-68" aria-hidden="true" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
-<span id="cb181-69"><a href="competitor-methods.html#cb181-69" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb183"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb183-1"><a href="competitor-methods.html#cb183-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Select features via the cluster representative lasso (Bühlmann et. al. 2013)</span></span>
+<span id="cb183-2"><a href="competitor-methods.html#cb183-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;</span></span>
+<span id="cb183-3"><a href="competitor-methods.html#cb183-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb183-4"><a href="competitor-methods.html#cb183-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb183-5"><a href="competitor-methods.html#cb183-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; p &gt;= 2 features/predictors</span></span>
+<span id="cb183-6"><a href="competitor-methods.html#cb183-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
+<span id="cb183-7"><a href="competitor-methods.html#cb183-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param clusters A list of integer vectors; each vector should contain the </span></span>
+<span id="cb183-8"><a href="competitor-methods.html#cb183-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
+<span id="cb183-9"><a href="competitor-methods.html#cb183-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
+<span id="cb183-10"><a href="competitor-methods.html#cb183-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; All of the provided clusters must be non-overlapping. Every feature not</span></span>
+<span id="cb183-11"><a href="competitor-methods.html#cb183-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
+<span id="cb183-12"><a href="competitor-methods.html#cb183-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; will be treated as if they are in a &quot;cluster&quot; containing only themselves).</span></span>
+<span id="cb183-13"><a href="competitor-methods.html#cb183-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Default is list() (so no clusters are specified).</span></span>
+<span id="cb183-14"><a href="competitor-methods.html#cb183-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
+<span id="cb183-15"><a href="competitor-methods.html#cb183-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; for the cluster representative lasso. Default is 100 (following the default</span></span>
+<span id="cb183-16"><a href="competitor-methods.html#cb183-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; for glmnet). For now, nlambda must be at least 2 (using a single lambda is</span></span>
+<span id="cb183-17"><a href="competitor-methods.html#cb183-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; not supported).</span></span>
+<span id="cb183-18"><a href="competitor-methods.html#cb183-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
+<span id="cb183-19"><a href="competitor-methods.html#cb183-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
+<span id="cb183-20"><a href="competitor-methods.html#cb183-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; size k yielded by the lasso--each member of the set is the index of a single</span></span>
+<span id="cb183-21"><a href="competitor-methods.html#cb183-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; feature from a cluster selected by the cluster representative lasso (the</span></span>
+<span id="cb183-22"><a href="competitor-methods.html#cb183-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; prototype from that cluster--the cluster member most highly correlated with</span></span>
+<span id="cb183-23"><a href="competitor-methods.html#cb183-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; y). (If no set of size k was selected, entry k will be empty.)}</span></span>
+<span id="cb183-24"><a href="competitor-methods.html#cb183-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \item{selected_clusts_list}{A list; each element of the list is a named list</span></span>
+<span id="cb183-25"><a href="competitor-methods.html#cb183-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; of selected clusters. (That is, if a selected set of size k was yielded by</span></span>
+<span id="cb183-26"><a href="competitor-methods.html#cb183-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; the cluster representative lasso, then selected_clusts_list[[k]] is a named</span></span>
+<span id="cb183-27"><a href="competitor-methods.html#cb183-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; list of length k, where each member of the list is an integer vector</span></span>
+<span id="cb183-28"><a href="competitor-methods.html#cb183-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; of cluster members. Note that selected_clusts_lists[[k]][[j]] will be the</span></span>
+<span id="cb183-29"><a href="competitor-methods.html#cb183-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The beta</span></span>
+<span id="cb183-30"><a href="competitor-methods.html#cb183-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; output from glmnet when the lasso was estimated on a matrix of prototypes.</span></span>
+<span id="cb183-31"><a href="competitor-methods.html#cb183-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; (See documentation for the function glmnet from the glmnet package for</span></span>
+<span id="cb183-32"><a href="competitor-methods.html#cb183-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; details.)}</span></span>
+<span id="cb183-33"><a href="competitor-methods.html#cb183-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Bühlmann, P., Rütimann, P., van de Geer, S., &amp; Zhang, C. H.</span></span>
+<span id="cb183-34"><a href="competitor-methods.html#cb183-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; (2013). Correlated variables in regression: Clustering and sparse estimation.</span></span>
+<span id="cb183-35"><a href="competitor-methods.html#cb183-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
+<span id="cb183-36"><a href="competitor-methods.html#cb183-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor</span></span>
+<span id="cb183-37"><a href="competitor-methods.html#cb183-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear</span></span>
+<span id="cb183-38"><a href="competitor-methods.html#cb183-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)</span></span>
+<span id="cb183-39"><a href="competitor-methods.html#cb183-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; &#39; 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
+<span id="cb183-40"><a href="competitor-methods.html#cb183-40" aria-hidden="true" tabindex="-1"></a><span id='clusterRepLasso'>clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
+<span id="cb183-41"><a href="competitor-methods.html#cb183-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-42"><a href="competitor-methods.html#cb183-42" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
+<span id="cb183-43"><a href="competitor-methods.html#cb183-43" aria-hidden="true" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
+<span id="cb183-44"><a href="competitor-methods.html#cb183-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-45"><a href="competitor-methods.html#cb183-45" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
+<span id="cb183-46"><a href="competitor-methods.html#cb183-46" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
+<span id="cb183-47"><a href="competitor-methods.html#cb183-47" aria-hidden="true" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
+<span id="cb183-48"><a href="competitor-methods.html#cb183-48" aria-hidden="true" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
+<span id="cb183-49"><a href="competitor-methods.html#cb183-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-50"><a href="competitor-methods.html#cb183-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
+<span id="cb183-51"><a href="competitor-methods.html#cb183-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-52"><a href="competitor-methods.html#cb183-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the cluster</span></span>
+<span id="cb183-53"><a href="competitor-methods.html#cb183-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># representative lasso procedure</span></span>
+<span id="cb183-54"><a href="competitor-methods.html#cb183-54" aria-hidden="true" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x, clusters, <span class="at">type=</span><span class="st">&quot;clusterRepLasso&quot;</span>)</span>
+<span id="cb183-55"><a href="competitor-methods.html#cb183-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-56"><a href="competitor-methods.html#cb183-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster representatives</span></span>
+<span id="cb183-57"><a href="competitor-methods.html#cb183-57" aria-hidden="true" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nlambda=</span>nlambda)</span>
+<span id="cb183-58"><a href="competitor-methods.html#cb183-58" aria-hidden="true" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
+<span id="cb183-59"><a href="competitor-methods.html#cb183-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-60"><a href="competitor-methods.html#cb183-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Finally, extract the desired information from the lasso fit--all the</span></span>
+<span id="cb183-61"><a href="competitor-methods.html#cb183-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sets of selected clusters (one for each observed model size), and</span></span>
+<span id="cb183-62"><a href="competitor-methods.html#cb183-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># corresponding sets of selected features</span></span>
+<span id="cb183-63"><a href="competitor-methods.html#cb183-63" aria-hidden="true" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
+<span id="cb183-64"><a href="competitor-methods.html#cb183-64" aria-hidden="true" tabindex="-1"></a>        prototypes, feat_names)</span>
+<span id="cb183-65"><a href="competitor-methods.html#cb183-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb183-66"><a href="competitor-methods.html#cb183-66" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
+<span id="cb183-67"><a href="competitor-methods.html#cb183-67" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
+<span id="cb183-68"><a href="competitor-methods.html#cb183-68" aria-hidden="true" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
+<span id="cb183-69"><a href="competitor-methods.html#cb183-69" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href='competitor-methods.html#clusterRepLasso'>clusterRepLasso</a>()</code>:</p>
 </div>
             </section>

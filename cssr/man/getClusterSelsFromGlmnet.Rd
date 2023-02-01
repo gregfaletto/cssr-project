@@ -34,9 +34,10 @@ yielded by glmnet--each member of the set is the index of a single feature
 from a cluster selected by either the protolasso or the cluster
 representative lasso (the prototype from that cluster--the cluster member
 most highly correlated with y). (If no set of size k was selected, entry k
-will be empty.)} \item{selected_clusts_list}{A list of lists; entry k of this
+will be NULL.)} \item{selected_clusts_list}{A list of lists; entry k of this
 list is a list of length k of clusters (the clusters that were selected by
-the cluster representative lasso).}
+the cluster representative lasso). Again, if no set of size k was selected,
+entry k will be NULL.}
 }
 \description{
 Extracts selected clusters and cluster prototypes from the glmnet lasso
