@@ -6249,6 +6249,14 @@ testthat::test_that("protolasso works", {
   
   good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
   
+  # Get properly formatted clusters and prototypes for testing
+  format_clust_res <- formatClusters(clusters=good_clusters, p=11,
+                                     clust_names=names(good_clusters),
+                                     get_prototypes=TRUE, x=x, y=y)
+  
+  prototypes <- format_clust_res$prototypes
+  clus_formatted <- format_clust_res$clusters
+  
   res <- protolasso(x, y, good_clusters)
 
   testthat::expect_true(is.list(res))
@@ -6264,7 +6272,7 @@ testthat::test_that("protolasso works", {
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
       testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
-      # testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))
+      testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
       testthat::expect_equal(length(res$selected_sets[[i]]), i)
     } else{
       testthat::expect_true(is.null(res$selected_sets[[i]]))
@@ -6288,15 +6296,15 @@ testthat::test_that("protolasso works", {
       testthat::expect_true(all(sel_feats %in% 1:11))
       testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
       n_clusts <- k
-      # for(i in 1:n_clusts){
-      #   clust_i_found <- FALSE
-      #   clust_i <- res$selected_clusts_list[[k]][[i]]
-      #   for(j in 1:length(process$clusters)){
-      #     clust_i_found <- clust_i_found | identical(clust_i,
-      #                                                process$clusters[[j]])
-      #   }
-      #   testthat::expect_true(clust_i_found)
-      # }
+      for(i in 1:n_clusts){
+        clust_i_found <- FALSE
+        clust_i <- res$selected_clusts_list[[k]][[i]]
+        for(j in 1:length(clus_formatted)){
+          clust_i_found <- clust_i_found | identical(clust_i,
+                                                     clus_formatted[[j]])
+        }
+        testthat::expect_true(clust_i_found)
+      }
     } else{
       testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
     }
@@ -6308,46 +6316,118 @@ testthat::test_that("protolasso works", {
   
   
   
-  # # X as a data.frame
-  # X_df <- datasets::mtcars
-  # 
-  # X_df_model <- stats::model.matrix(~ ., X_df)
-  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
-  # 
-  # process <- processClusterLassoInputs(X=X_df, y=rnorm(nrow(X_df)),
-  #                                      clusters=1:3, nlambda=100)
-  # 
-  # X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
-  #                        type="protolasso", prototypes=process$prototypes)
-  # 
-  # fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(X_df)), family="gaussian",
-  #                       nlambda=100)
-  # lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
-  # 
-  # res <- protolasso(lasso_sets, process$clusters,
-  #                                 process$prototypes, process$var_names)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("selected_sets",
-  #                                          "selected_clusts_list"))
-  # 
-  # # selected_sets
-  # testthat::expect_true(is.list(res$selected_sets))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_sets),
-  #                        unique(lengths(res$selected_sets)))
-  # for(i in 1:length(res$selected_sets)){
-  #   if(!is.null(res$selected_sets[[i]])){
-  #     testthat::expect_true(is.integer(res$selected_sets[[i]]))
-  #     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
-  #     testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))
-  #     testthat::expect_equal(length(res$selected_sets[[i]]), i)
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_sets[[i]]))
-  #   }
-  # }
-  # 
-  # 
+  # X as a data.frame
+  X_df <- datasets::mtcars
+
+  X_df_model <- stats::model.matrix(~ ., X_df)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+  
+  y_df <- rnorm(nrow(X_df))
+  
+  # Get properly formatted clusters and prototypes for testing
+  format_clust_res <- formatClusters(clusters=1:3, p=ncol(X_df_model),
+                                     get_prototypes=TRUE, x=X_df_model, y=y_df)
+  
+  prototypes <- format_clust_res$prototypes
+  clus_formatted <- format_clust_res$clusters
+  
+  res <- protolasso(X_df, y_df, 1:3)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_sets",
+                                           "selected_clusts_list", "beta"))
+
+  # selected_sets
+  testthat::expect_true(is.list(res$selected_sets))
+  # Selected models should have one of each size without repetition
+  testthat::expect_identical(lengths(res$selected_sets),
+                         unique(lengths(res$selected_sets)))
+  for(i in 1:length(res$selected_sets)){
+    if(!is.null(res$selected_sets[[i]])){
+      testthat::expect_true(is.integer(res$selected_sets[[i]]))
+      testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
+      testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
+      testthat::expect_equal(length(res$selected_sets[[i]]), i)
+    } else{
+      testthat::expect_true(is.null(res$selected_sets[[i]]))
+    }
+  }
+
+
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  # Selected models should have one of each size without repetition
+  testthat::expect_identical(lengths(res$selected_clusts_list),
+                         unique(lengths(res$selected_clusts_list)))
+
+  for(k in 1:length(res$selected_clusts_list)){
+    if(!is.null(res$selected_clusts_list[[k]])){
+      testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_sets[[k]]),
+                             length(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
+      sel_feats <- unlist(res$selected_clusts_list[[k]])
+      testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
+      testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
+      n_clusts <- k
+      for(i in 1:n_clusts){
+        clust_i_found <- FALSE
+        clust_i <- res$selected_clusts_list[[k]][[i]]
+        for(j in 1:length(clus_formatted)){
+          clust_i_found <- clust_i_found | identical(clust_i,
+                                                     clus_formatted[[j]])
+        }
+        testthat::expect_true(clust_i_found)
+      }
+    } else{
+      testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
+    }
+  }
+
+  # X as a dataframe with factors (number of columns of final design matrix
+  # after one-hot encoding factors won't match number of columns of df2)
+  df2 <- X_df
+  df2$cyl <- as.factor(df2$cyl)
+  df2$vs <- as.factor(df2$vs)
+  df2$am <- as.factor(df2$am)
+  df2$gear <- as.factor(df2$gear)
+  df2$carb <- as.factor(df2$carb)
+
+  X_df_model <- stats::model.matrix(~ ., df2)
+  X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
+
+
+  # Get properly formatted clusters and prototypes for testing
+  format_clust_res <- formatClusters(clusters=1:3, p=ncol(X_df_model),
+                                     get_prototypes=TRUE, x=X_df_model, y=y_df)
+
+  prototypes <- format_clust_res$prototypes
+  clus_formatted <- format_clust_res$clusters
+
+  res <- protolasso(X_df, y_df, 1:3)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_sets",
+                                           "selected_clusts_list", "beta"))
+
+
+  # selected_sets
+  testthat::expect_true(is.list(res$selected_sets))
+  # Selected models should have one of each size without repetition
+  testthat::expect_identical(lengths(res$selected_sets),
+                         unique(lengths(res$selected_sets)))
+  for(i in 1:length(res$selected_sets)){
+    if(!is.null(res$selected_sets[[i]])){
+      testthat::expect_true(is.integer(res$selected_sets[[i]]))
+      testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
+      # testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
+      # testthat::expect_equal(length(res$selected_sets[[i]]), i)
+    } else{
+      testthat::expect_true(is.null(res$selected_sets[[i]]))
+    }
+  }
+
+
   # # selected_clusts_list
   # testthat::expect_true(is.list(res$selected_clusts_list))
   # # Selected models should have one of each size without repetition
@@ -6367,86 +6447,9 @@ testthat::test_that("protolasso works", {
   #     for(i in 1:n_clusts){
   #       clust_i_found <- FALSE
   #       clust_i <- res$selected_clusts_list[[k]][[i]]
-  #       for(j in 1:length(process$clusters)){
+  #       for(j in 1:length(clus_formatted)){
   #         clust_i_found <- clust_i_found | identical(clust_i,
-  #                                                    process$clusters[[j]])
-  #       }
-  #       testthat::expect_true(clust_i_found)
-  #     }
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
-  #   }
-  # }
-  # 
-  # # X as a dataframe with factors (number of columns of final design matrix
-  # # after one-hot encoding factors won't match number of columns of df2)
-  # df2 <- X_df
-  # df2$cyl <- as.factor(df2$cyl)
-  # df2$vs <- as.factor(df2$vs)
-  # df2$am <- as.factor(df2$am)
-  # df2$gear <- as.factor(df2$gear)
-  # df2$carb <- as.factor(df2$carb)
-  # 
-  # X_df_model <- stats::model.matrix(~ ., df2)
-  # X_df_model <- X_df_model[, colnames(X_df_model) != "(Intercept)"]
-  # 
-  # process <- processClusterLassoInputs(X=df2, y=rnorm(nrow(df2)),
-  #                                      clusters=1:3, nlambda=100)
-  # 
-  # X_glmnet <- getXglmnet(x=process$x, clusters=process$clusters,
-  #                        type="clusterRepLasso", prototypes=process$prototypes)
-  # 
-  # fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family="gaussian",
-  #                       nlambda=100)
-  # 
-  # lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
-  # 
-  # res <- protolasso(lasso_sets, process$clusters,
-  #                                 process$prototypes, process$var_names)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("selected_sets",
-  #                                          "selected_clusts_list"))
-  # 
-  # # selected_sets
-  # testthat::expect_true(is.list(res$selected_sets))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_sets),
-  #                        unique(lengths(res$selected_sets)))
-  # for(i in 1:length(res$selected_sets)){
-  #   if(!is.null(res$selected_sets[[i]])){
-  #     testthat::expect_true(is.integer(res$selected_sets[[i]]))
-  #     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
-  #     testthat::expect_true(all(res$selected_sets[[i]] %in% process$prototypes))
-  #     testthat::expect_equal(length(res$selected_sets[[i]]), i)
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_sets[[i]]))
-  #   }
-  # }
-  # 
-  # 
-  # # selected_clusts_list
-  # testthat::expect_true(is.list(res$selected_clusts_list))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_clusts_list),
-  #                        unique(lengths(res$selected_clusts_list)))
-  # 
-  # for(k in 1:length(res$selected_clusts_list)){
-  #   if(!is.null(res$selected_clusts_list[[k]])){
-  #     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_sets[[k]]),
-  #                            length(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
-  #     sel_feats <- unlist(res$selected_clusts_list[[k]])
-  #     testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
-  #     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
-  #     n_clusts <- k
-  #     for(i in 1:n_clusts){
-  #       clust_i_found <- FALSE
-  #       clust_i <- res$selected_clusts_list[[k]][[i]]
-  #       for(j in 1:length(process$clusters)){
-  #         clust_i_found <- clust_i_found | identical(clust_i,
-  #                                                    process$clusters[[j]])
+  #                                                    clus_formatted[[j]])
   #       }
   #       testthat::expect_true(clust_i_found)
   #     }
@@ -6525,6 +6528,10 @@ testthat::test_that("protolasso works", {
   #   }
   # }
   
+  
+  
+  
+  # Test for names of features, clusters
   
   # Bad inputs
   

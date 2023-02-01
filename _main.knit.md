@@ -1,7 +1,7 @@
 ---
-title: "Creating the ``r params$package_name`` R package"
+title: "Creating the `cssr` R package"
 author: "Gregory Faletto"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+date: "February 01, 2023"
 site: bookdown::bookdown_site
 knit: litr::render
 output: litr::litr_gitbook
@@ -18,13 +18,15 @@ documentclass: book
 
 Cluster stability selection is a feature selection method designed to allow stability selection to work effectively in the presence of highly correlated features.  It was proposed in [this paper](https://arxiv.org/abs/2201.00494):
 
-```{r faletto2022}
+
+```r
+###"faletto2022"###
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
 ```
 
-This bookdown uses [literate programming](https://jacobbien.github.io/litr-project/) to define the ``r params$package_name`` R package, which implements the procedures described in the paper.  For a light introduction demonstrating how to use ``r params$package_name``, please see the package's vignette [here]().
+This bookdown uses [literate programming](https://jacobbien.github.io/litr-project/) to define the `cssr` R package, which implements the procedures described in the paper.  For a light introduction demonstrating how to use `cssr`, please see the package's vignette [here]().
 
 TODO: CREATE VIGNETTE FOR PACKAGE AND PKGDOWN SITE FOR PACKAGE AND THEN LINK IN THE ABOVE TO THE VIGNETTE THAT APPEARS IN THE PKGDOWN SITE.
 
@@ -36,7 +38,9 @@ TODO: CREATE VIGNETTE FOR PACKAGE AND PKGDOWN SITE FOR PACKAGE AND THEN LINK IN 
 
 The following paper introduces complementary pairs subsampling:
 
-```{r shah2013}
+
+```r
+###"shah2013"###
 #' Shah, R. D., & Samworth, R. J.
 #' (2013). Variable selection with error control: Another look at stability
 #' selection. \emph{Journal of the Royal Statistical Society. Series B:
@@ -104,7 +108,8 @@ We will define the functions in this package in steps.
 
 Before proceeding to the actual functionality of the package, we start by specifying the information needed in the DESCRIPTION file of the R package.
 
-```{r package-setup, message=FALSE, results='hide'}
+
+```r
 usethis::create_package(
   path = ".",
   fields = list(
@@ -130,7 +135,8 @@ usethis::use_mit_license(copyright_holder = "F. Last")
 
 We also define the package-level documentation that shows up when someone types `package?cssr` in the console:
 
-```{package_doc}
+
+```package_doc
 #' Cluster Stability Selection
 #'
 #' DESCRIBE PACKAGE HERE AND PERHAPS POINT USER TO PKGDOWN WEBSITE ONCE 
@@ -148,7 +154,9 @@ The main inputs that `css()` accepts are the following:
 * a response `y`
 * a selection method `fitfun` with specified tuning parameter `lambda`.  This specifies $\hat{S}^\lambda(A)$.  In particular:
 
-```{r param-fitfun}
+
+```r
+###"param-fitfun"###
 #' @param fitfun A function; the feature selection function used on each
 #' subsample by cluster stability selection. This can be any feature selection
 #' method; the only requirement is that it accepts the arguments (and only the
@@ -163,7 +171,9 @@ The main inputs that `css()` accepts are the following:
 
 and
 
-```{r param-lambda}
+
+```r
+###"param-lambda"###
 #' @param lambda A tuning parameter or set of tuning parameters that may be used
 #' by the feature selection method `fitfun`. In the default case when
 #' `fitfun = cssLasso`, lambda should be a numeric: the penalty to use for each
@@ -174,7 +184,9 @@ and
 
 * a specification of which features belong together in highly correlated clusters. This specifies the clusters $C_1,\ldots, C_K$. In particular:
 
-```{r param-clusters}
+
+```r
+###"param-clusters"###
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
@@ -191,7 +203,9 @@ and
 
 * and a specification of the type of subsamples.  For now we only consider the [complementary subsets sampling of Shah and Samworth](#cpss).  However, we have included an option for Meinshausen-Buhlmann sampling which we may add later:
 
-```{r param-sampling_type}
+
+```r
+###"param-sampling_type"###
 #' @param sampling_type A character vector; either "SS" or "MB". For "MB",
 #' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
@@ -201,7 +215,9 @@ and
 
 The number of subsamples is also up to the user:
 
-```{r param-B}
+
+```r
+###"param-B"###
 #' @param B Integer or numeric; the number of subsamples. Note: For
 #' `sampling_type=="MB"` the total number of subsamples will be `B`; for
 #' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
@@ -218,7 +234,8 @@ In this section, we will build the function `css()` step-by-step.
 
 The function `css()` is specified below. (There are some extra details that I omitted in the above description for brevity; you can read the full details below.)
 
-```{r}
+
+```r
 #' Cluster Stability Selection
 #'
 #' Executes cluster stability selection algorithm. Takes subsamples of data,
@@ -364,7 +381,8 @@ Tests for `css()` and the other functions in this section are located at the end
 
 The function `createSubsamples()` is responsible for generating the subsamples $A_b$, where $b$ ranges from 1 to $B$ or 1 to $2B$ depending on the type of subsampling:
 
-```{r}
+
+```r
 #' Creates lists of subsamples for stability selection.
 #'
 #' @param n Integer or numeric; sample size of the data set.
@@ -453,7 +471,8 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 
 Notice that `createSubsamples()` calls some helper functions to check the inputs (again, these are specified later in the helper functions section). `createSubsamples()` also calls the workhorse function `getSubsamps()` to generate a list of subsamples.
 
-```{r}
+
+```r
 #' Generate list of subsamples
 #'
 #` Generate list of `B` (or `2*B` for sampling_type="SS") subsamples of size
@@ -511,7 +530,8 @@ getSubsamps <- function(n, B, sampling_type){
 
 The next function called in the body of `css()` is `getSelMatrix()`, which records for each feature $j$ and subsample $b$ whether $j\in \hat S^\lambda(A_b)$:
 
-```{r}
+
+```r
 #' Generates matrix of selection indicators from stability selection.
 #'
 #' @param x an n x p numeric matrix or a data.frame containing the predictors.
@@ -620,13 +640,20 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 Again, `getSelMatrix()` uses some helper functions to check the inputs for safety. `getSelMatrix()` leverages the function `parallel::mclapply()` package, in order to allow for parallel processing if the user has set this up. This requires a helper function `cssLoop()`, which is also specified in the later section for helper functions. 
 We add the `parallel` package to the DESCRIPTION file:
 
-```{r}
+
+```r
 usethis::use_package("parallel")
+```
+
+```
+## ✔ Adding 'parallel' to Imports field in DESCRIPTION
+## • Refer to functions with `parallel::fun()`
 ```
 
 `getSelMatrix()` also uses a feature selection function `fitfun` as an input. `fitfun` can be provided by the user as an input to `css()`. We provide one default `fitfun`, `cssLasso()`, which works on a real-valued response y given a specified penalty parameter lambda > 0. Both for its own importance and to show an example of a valid `fitfun`, we show `cssLasso()` here.
 
-```{r}
+
+```r
 #' Provided fitfun implementing the lasso
 #'
 #' Function used to select features with the lasso on each subsample in cluster
@@ -701,15 +728,22 @@ Notice that `cssLasso()` depends on the package `glmnet`, and calls the function
 
 We add `glmnet` to the DESCRIPTION file as well:
 
-```{r}
+
+```r
 usethis::use_package("glmnet")
+```
+
+```
+## ✔ Adding 'glmnet' to Imports field in DESCRIPTION
+## • Refer to functions with `glmnet::fun()`
 ```
 
 
 
 Finally, `getClusterSelMatrix()` is the last significant function called within `css()`.  It takes the information from `getSelMatrix()`, i.e. whether feature $j\in\hat S^\lambda(A_b)$, and outputs for every cluster $C$ whether $C\cap S^\lambda(A_b)\neq\emptyset$.
 
-```{r}
+
+```r
 #' Get cluster selection matrix
 #'
 #' Given a matrix of feature selection indicator variables and a list of
@@ -794,7 +828,8 @@ Tests are written for all of these functions and appear as early as possible aft
 
 `checkCssInputs()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that inputs to the function `css()` are as expected,
 #' and modify inputs if needed
 #'
@@ -946,7 +981,8 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
 checkCssClustersInput:
 
-```{r}
+
+```r
 #' Helper function to confirm that clusters input to css is as expected
 #'
 <<param-clusters>>
@@ -999,7 +1035,8 @@ checkCssClustersInput <- function(clusters){
 
 tests for checkCssClustersInput:
 
-```{r}
+
+```r
 testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
@@ -1070,10 +1107,15 @@ testthat::test_that("checkCssClustersInput works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 
 `formatClusters()`:
 
-```{r}
+
+```r
 #' Formats clusters in standardized way, optionally estimating cluster
 #' prototypes
 #'
@@ -1207,7 +1249,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
 
 `checkFormatClustersInput()`:
 
-```{r}
+
+```r
 #' Helper function to ensure that the inputs to formatClusters are as expected
 #'
 #' @param clusters Either an integer vector of a list of integer vectors; each
@@ -1349,7 +1392,8 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
 
 `checkY()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument y to several functions is
 #' as expected
 #'
@@ -1371,7 +1415,8 @@ checkY <- function(y, n){
 
 Tests for `checkY()`:
 
-```{r}
+
+```r
 testthat::test_that("checkY works", {
   testthat::expect_null(checkY(as.numeric(1:20)*.1, 20))
   testthat::expect_null(checkY(1L:15L, 15))
@@ -1388,9 +1433,14 @@ testthat::test_that("checkY works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 Tests for `checkFormatClustersInput()`:
 
-```{r}
+
+```r
 testthat::test_that("checkFormatClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
@@ -1479,10 +1529,15 @@ testthat::test_that("checkFormatClustersInput works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 
 `checkClusters()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument clusters to several functions is
 #' as expected
 #'
@@ -1524,7 +1579,8 @@ checkClusters <- function(clusters, p){
 
 Tests for `checkClusters()`:
 
-```{r}
+
+```r
 testthat::test_that("checkClusters works", {
   good_clusters <- list(c1=1L:5L, c2=6L:8L, c3=9L)
   
@@ -1553,10 +1609,15 @@ testthat::test_that("checkClusters works", {
 })
 ```
 
+```
+## Test passed 🎉
+```
+
 
 `getPrototypes()`:
 
-```{r}
+
+```r
 #' Estimate prototypes from a list of clusters
 #'
 #' Takes in list of clusters, x, and y and returns an integer vector (of length
@@ -1628,7 +1689,8 @@ getPrototypes <- function(clusters, x, y){
 
 `identifyPrototype()`:
 
-```{r}
+
+```r
 #' Estimate prototypes from a single cluster
 #'
 #' Takes in a single cluster, x, and y and returns an integer of the index of
@@ -1681,7 +1743,8 @@ identifyPrototype <- function(cluster_members_i, x, y){
 
 `corFunction()`:
 
-```{r}
+
+```r
 #' Absolute value of sample correlation between two vectors
 #'
 #' Calculates the absolute value of correlation of t and y. If either input has
@@ -1711,7 +1774,8 @@ corFunction <- function(t, y){
 
 Tests for `corFunction()`
 
-```{r}
+
+```r
 testthat::test_that("corFunction works", {
   testthat::expect_identical(corFunction(rep(1, 10), 1:10), 0)
   testthat::expect_identical(corFunction(rep(1.2, 5), 1:5), 0)
@@ -1736,9 +1800,14 @@ testthat::test_that("corFunction works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 Tests for `identifyPrototype()` (requires `corFunction()`):
 
-```{r}
+
+```r
 testthat::test_that("identifyPrototype works", {
   testthat::expect_identical(identifyPrototype(10L, "a", 5), 10L)
   n <- 10
@@ -1768,9 +1837,14 @@ testthat::test_that("identifyPrototype works", {
 })
 ```
 
+```
+## Test passed 🎊
+```
+
 Tests for `getPrototypes()`
 
-```{r}
+
+```r
 testthat::test_that("getPrototypes works", {
   n <- 10
   p <- 5
@@ -1813,10 +1887,15 @@ testthat::test_that("getPrototypes works", {
 })
 ```
 
+```
+## Test passed 🎊
+```
+
 Finally, tests for `formatClusters()`:
 
 
-```{r}
+
+```r
 testthat::test_that("formatClusters works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
@@ -1947,9 +2026,14 @@ testthat::test_that("formatClusters works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `checkSamplingType()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument sampling_type to several 
 #' functions is as expected
 #'
@@ -1969,7 +2053,8 @@ checkSamplingType <- function(sampling_type){
 
 Tests for `checkSamplingType()`:
 
-```{r}
+
+```r
 testthat::test_that("checkSamplingType works", {
   testthat::expect_null(checkSamplingType("SS"))
   testthat::expect_error(checkSamplingType("MB"),
@@ -1984,10 +2069,15 @@ testthat::test_that("checkSamplingType works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 
 `checkB()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument B to several functions is as
 #' expected
 #'
@@ -2011,7 +2101,8 @@ checkB <- function(B){
 
 Tests for `checkB()`:
 
-```{r}
+
+```r
 testthat::test_that("checkB works", {
   testthat::expect_null(checkB(1500))
   testthat::expect_null(checkB(15))
@@ -2035,10 +2126,15 @@ testthat::test_that("checkB works", {
 })
 ```
 
+```
+## Test passed 🎉
+```
+
 
 `checkPropFeatsRemove()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument prop_feats_remove to several 
 #' functions is as expected
 #'
@@ -2061,7 +2157,8 @@ checkPropFeatsRemove <- function(prop_feats_remove, p){
 
 Tests for `checkPropFeatsRemove()`:
 
-```{r}
+
+```r
 testthat::test_that("checkPropFeatsRemove works", {
   testthat::expect_null(checkPropFeatsRemove(0, 5))
   testthat::expect_null(checkPropFeatsRemove(.3, 10))
@@ -2083,9 +2180,14 @@ testthat::test_that("checkPropFeatsRemove works", {
 })
 ```
 
+```
+## Test passed 🎉
+```
+
 Finally, tests for `checkCssInputs()`:
 
-```{r}
+
+```r
 testthat::test_that("checkCssInputs works", {
   set.seed(80526)
   
@@ -2240,10 +2342,15 @@ testthat::test_that("checkCssInputs works", {
 })
 ```
 
+```
+## Test passed 🥳
+```
+
 
 `cssLoop()`:
 
-```{r}
+
+```r
 #' Helper function run on each subsample
 #' 
 #' Runs provided feature selection method `fitfun` on each subsample for cluster
@@ -2316,7 +2423,8 @@ cssLoop <- function(input, x, y, lambda, fitfun){
 
 `checkCssLoopOutput()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the outputs of the provided feature selection
 #' method are as required. 
 #'
@@ -2368,7 +2476,8 @@ checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
 
 Tests for `checkCssLoopOutput()`:
 
-```{r}
+
+```r
 testthat::test_that("checkCssLoopOutput works", {
   testthat::expect_null(checkCssLoopOutput(selected=1:5, p=6,
                                            feats_on_subsamp=1:6))
@@ -2416,12 +2525,17 @@ testthat::test_that("checkCssLoopOutput works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 
 
 
 `checkCssLassoInputs()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the inputs to `cssLasso()` are as expected. 
 #'
 #' @param X A design matrix containing the predictors. (Note that we don't need
@@ -2467,7 +2581,8 @@ checkCssLassoInputs <- function(X, y, lambda){
 
 Tests for `checkCssLassoInputs()`:
 
-```{r}
+
+```r
 testthat::test_that("checkCssLassoInputs works", {
   set.seed(761)
   
@@ -2515,10 +2630,15 @@ testthat::test_that("checkCssLassoInputs works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 
 Tests for `cssLoop()` (had to define `checkCssLassoInputs()` first):
 
-```{r}
+
+```r
 testthat::test_that("cssLoop works", {
   set.seed(89134)
 
@@ -2603,10 +2723,15 @@ testthat::test_that("cssLoop works", {
 })
 ```
 
+```
+## Test passed 🎊
+```
+
 
 `checkGetClusterSelMatrixInput()`:
 
-```{r}
+
+```r
 #' Helper function to check inputs to getClusterSelMatrix function
 #'
 #' @param clusters A named list where each entry is an integer vector of indices
@@ -2633,7 +2758,8 @@ checkGetClusterSelMatrixInput <- function(clusters, res){
 
 Tests for `checkGetClusterSelMatrixInput()`:
 
-```{r}
+
+```r
 testthat::test_that("checkGetClusterSelMatrixInput works", {
   
   good_clusters <- list(happy=1L:8L, sad=9L:10L, med=11L)
@@ -2688,13 +2814,18 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
 })
 ```
 
-# Tests for main functions in ``r params$package_name``
+```
+## Test passed 🎉
+```
+
+# Tests for main functions in `cssr`
 
 Now that the helper functions have been defined, we move on to tests for the main functions in the package.
 
 Tests for `createSubsamples()`:
 
-```{r}
+
+```r
 testthat::test_that("createSubsamples works", {
   res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
                           prop_feats_remove=0)
@@ -2750,9 +2881,14 @@ testthat::test_that("createSubsamples works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 Tests for `getSubsamps()`:
 
-```{r}
+
+```r
 testthat::test_that("getSubsamps works", {
   res <- getSubsamps(n=18L, B=21L, sampling_type="SS")
   
@@ -2770,9 +2906,14 @@ testthat::test_that("getSubsamps works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 Tests for `getSelMatrix()`:
 
-```{r}
+
+```r
 testthat::test_that("getSelMatrix works", {
   set.seed(98623)
   x <- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
@@ -2834,9 +2975,14 @@ testthat::test_that("getSelMatrix works", {
 })
 ```
 
+```
+## Test passed 🎉
+```
+
 Tests for `cssLasso()`:
 
-```{r}
+
+```r
 testthat::test_that("cssLasso works", {
   set.seed(24509)
   x <- matrix(stats::rnorm(15*4), nrow=15, ncol=4)
@@ -2861,9 +3007,14 @@ testthat::test_that("cssLasso works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 Tests for `getClusterSelMatrix()`:
 
-```{r}
+
+```r
 testthat::test_that("getClusterSelMatrix works", {
   good_clusters <- list(red_cluster=1L:5L,
                         green_cluster=6L:8L, blue_clust=9L)
@@ -2914,9 +3065,14 @@ testthat::test_that("getClusterSelMatrix works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 Finally, tests for `css()` itself!
 
-```{r}
+
+```r
 testthat::test_that("css works", {
   set.seed(8712)
   
@@ -3096,6 +3252,10 @@ testthat::test_that("css works", {
 })
 ```
 
+```
+## Test passed 🥳
+```
+
 # Selection and prediction functions {#sel-and-pred}
 
 Now that `css()` has been defined and tested, we write functions to work with the output of `css()`. The output of these functions will be of more direct interest for most end users than the output of `css()`. These functions are defined separately from `css()` because the most computationally intensive steps happen within `css()`. `css()` can be called only once on a data set, and then the functions that follow can be explored relatively quickly (one can try different parameters, etc.).
@@ -3126,7 +3286,8 @@ As in the previous section, we first define each function and then define the he
 
 `getCssSelections()`: 
 
-```{r}
+
+```r
 #' Obtain a selected set of clusters and features
 #'
 #' Generate sets of selected clusters and features from cluster stability
@@ -3210,7 +3371,8 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 
 `checkCutoff()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument cutoff to several functions is
 #' as expected
 #'
@@ -3229,7 +3391,8 @@ checkCutoff <- function(cutoff){
 
 Tests for `checkCutoff()`:
 
-```{r}
+
+```r
 testthat::test_that("checkCutoff works", {
   testthat::expect_null(checkCutoff(0))
   testthat::expect_null(checkCutoff(0.2))
@@ -3250,9 +3413,14 @@ testthat::test_that("checkCutoff works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `checkWeighting()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument weighting to several 
 #' functions is as expected
 #'
@@ -3275,7 +3443,8 @@ checkWeighting <- function(weighting){
 
 Tests for `checkWeighting()`:
 
-```{r}
+
+```r
 testthat::test_that("checkWeighting works", {
   testthat::expect_null(checkWeighting("sparse"))
   testthat::expect_null(checkWeighting("simple_avg"))
@@ -3293,9 +3462,14 @@ testthat::test_that("checkWeighting works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 `checkMinNumClusts()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument min_num_clusts to several 
 #' functions is as expected
 #'
@@ -3321,7 +3495,8 @@ checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
 
 Tests for `checkMinNumClusts()`:
 
-```{r}
+
+```r
 testthat::test_that("checkMinNumClusts works", {
   testthat::expect_null(checkMinNumClusts(1, 5, 4))
   testthat::expect_null(checkMinNumClusts(6, 6, 6))
@@ -3349,9 +3524,14 @@ testthat::test_that("checkMinNumClusts works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 `checkMaxNumClusts()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that the argument max_num_clusts to several 
 #' functions is as expected
 #'
@@ -3388,7 +3568,8 @@ checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
 
 Tests for `checkMaxNumClusts()`:
 
-```{r}
+
+```r
 testthat::test_that("checkMaxNumClusts works", {
   testthat::expect_equal(checkMaxNumClusts(max_num_clusts=4, min_num_clusts=1,
                                            p=5, n_clusters=4), 4)
@@ -3438,9 +3619,14 @@ testthat::test_that("checkMaxNumClusts works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `getSelectedClusters()`:
 
-```{r}
+
+```r
 #' From css output, obtain names of selected clusters and selection proportions,
 #' indices of all selected features, and weights of individual cluster members
 #'
@@ -3572,7 +3758,8 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
 `checkSelectedClusters()`:
 
-```{r}
+
+```r
 #' Helper function to check operations within getSelectedClusters function
 #'
 #' @param n_sel_clusts The number of selected clusters; should be constrained
@@ -3622,7 +3809,8 @@ checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
 
 Test for `checkSelectedClusters()`:
 
-```{r}
+
+```r
 testthat::test_that("checkSelectedClusters works", {
   testthat::expect_null(checkSelectedClusters(n_sel_clusts=5, min_num_clusts=1,
                                               max_num_clusts=NA, max_sel_prop=.8))
@@ -3654,9 +3842,14 @@ testthat::test_that("checkSelectedClusters works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 `getAllClustWeights()`:
 
-```{r}
+
+```r
 #' Calculate weights for each cluster member of all of the selected clusters.
 #' 
 #' @param css_results An object of class "cssr" (the output of the function
@@ -3733,7 +3926,8 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
 
 `getClustWeights()`:
 
-```{r}
+
+```r
 #' Calculate weights for members of a cluster using selection proportions
 #'
 #' Given a cluster of features, the selection proportions for each cluster
@@ -3820,7 +4014,8 @@ getClustWeights <- function(cluster_i, weighting, feat_sel_props){
 
 Tests for `getClustWeights()`:
 
-```{r}
+
+```r
 testthat::test_that("getClustWeights works", {
   sel_props <- c(0.1, 0.3, 0.5, 0.7, 0.9)
   
@@ -3847,10 +4042,15 @@ testthat::test_that("getClustWeights works", {
 })
 ```
 
+```
+## Test passed 🥳
+```
+
 
 Tests for `getAllClustWeights()`:
 
-```{r}
+
+```r
 testthat::test_that("getAllClustWeights works", {
   
   set.seed(1872)
@@ -3954,9 +4154,14 @@ testthat::test_that("getAllClustWeights works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 `checkGetSelectedClustersOutput()`:
 
-```{r}
+
+```r
 #' Helper function to check that output of getSelectedClusters is as expected
 #'
 #' @param selected_clusts A named numeric vector containing the selection
@@ -3997,7 +4202,8 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
 
 Tests for `checkGetSelectedClustersOutput()`:
 
-```{r}
+
+```r
 testthat::test_that("checkGetSelectedClustersOutput works", {
   
   sel_clusts <- 0.1*(1:9)
@@ -4119,9 +4325,14 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 Tests for `getSelectedClusters()`
 
-```{r}
+
+```r
 testthat::test_that("getSelectedClusters works", {
   set.seed(26717)
   
@@ -4258,9 +4469,14 @@ testthat::test_that("getSelectedClusters works", {
 })
 ```
 
+```
+## Test passed 🎊
+```
+
 Finally, tests for `getCssSelections()`
 
-```{r}
+
+```r
 testthat::test_that("getCssSelections works", {
 
   set.seed(26717)
@@ -4371,9 +4587,14 @@ testthat::test_that("getCssSelections works", {
 })
 ```
 
+```
+## Test passed 🥳
+```
+
 `getCssDesign()`
 
-```{r}
+
+```r
 #' Obtain a design matrix of cluster representatives
 #'
 #' Takes a matrix of observations from the original feature space and returns
@@ -4471,7 +4692,8 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 
 `checkNewXProvided()`
 
-```{r}
+
+```r
 #' Helper function to confirm that the new X matrix provided to getCssDesign or
 #' getCssPreds matches the characteristics of the X that was provided to css.
 #'
@@ -4517,7 +4739,8 @@ checkNewXProvided <- function(trainX, css_results){
 
 `checkXInputResults()`
 
-```{r}
+
+```r
 #' Helper function to confirm that inputs to several functions are as expected,
 #' and modify inputs if needed
 #'
@@ -4590,7 +4813,8 @@ checkXInputResults <- function(newx, css_X){
 
 Tests for `checkXInputResults()`
 
-```{r}
+
+```r
 testthat::test_that("checkXInputResults works", {
   set.seed(72617)
 
@@ -4700,9 +4924,14 @@ testthat::test_that("checkXInputResults works", {
 })
 ```
 
+```
+## Test passed 🌈
+```
+
 Tests for `checkNewXProvided()`
 
-```{r}
+
+```r
 testthat::test_that("checkNewXProvided works", {
   set.seed(2673)
 
@@ -4847,9 +5076,14 @@ testthat::test_that("checkNewXProvided works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `formCssDesign()`:
 
-```{r}
+
+```r
 #' Create design matrix of cluster representatives from matrix of raw features
 #' using results of css function
 #'
@@ -4961,7 +5195,8 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
 `checkFormCssDesignInputs()`:
 
-```{r}
+
+```r
 #' Helper function to check that the inputs to formCssDesign are as expected
 #'
 #' @param css_results An object of class "cssr" (the output of the function
@@ -5041,7 +5276,8 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 
 Tests for `checkFormCssDesignInputs()`
 
-```{r}
+
+```r
 testthat::test_that("checkFormCssDesignInputs works", {
   set.seed(72617)
 
@@ -5334,10 +5570,15 @@ testthat::test_that("checkFormCssDesignInputs works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 Tests for `formCssDesign()`
 
 
-```{r}
+
+```r
 testthat::test_that("formCssDesign works", {
   set.seed(17230)
 
@@ -5543,11 +5784,16 @@ testthat::test_that("formCssDesign works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 Finally, tests for `getCssDesign()`
 
 
 
-```{r}
+
+```r
 testthat::test_that("getCssDesign works", {
   set.seed(23170)
 
@@ -5750,9 +5996,70 @@ testthat::test_that("getCssDesign works", {
 })
 ```
 
+```
+## ── Warning ('<text>:63'): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. testthat::expect_warning(...)
+##  7. litr (local) getCssDesign(...)
+##  8. litr (local) checkXInputResults(newX, css_results$X)
+## 
+## ── Warning ('<text>:63'): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##   1. testthat::expect_warning(...)
+##   7. litr (local) getCssDesign(...)
+##   8. litr (local) formCssDesign(...)
+##   9. litr (local) checkFormCssDesignInputs(...)
+##  10. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:80'): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) checkXInputResults(newX, css_results$X)
+## 
+## ── Warning ('<text>:80'): getCssDesign works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) formCssDesign(...)
+##  3. litr (local) checkFormCssDesignInputs(...)
+##  4. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:101'): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) checkXInputResults(newX, css_results$X)
+## 
+## ── Warning ('<text>:101'): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) formCssDesign(...)
+##  3. litr (local) checkFormCssDesignInputs(...)
+##  4. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:121'): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) checkXInputResults(newX, css_results$X)
+## 
+## ── Warning ('<text>:121'): getCssDesign works ──────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssDesign(...)
+##  2. litr (local) formCssDesign(...)
+##  3. litr (local) checkFormCssDesignInputs(...)
+##  4. litr (local) checkXInputResults(newx, css_results$X)
+```
+
 `getCssPreds()`
 
-```{r}
+
+```r
 #' Fit model and generate predictions from new data
 #'
 #' Generate predictions on test data using cluster stability-selected model.
@@ -5900,7 +6207,8 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 
 `checkGetCssPredsInputs()`:
 
-```{r}
+
+```r
 #' Helper function to confirm that inputs to the function getCssPreds are as
 #' expected, and modify inputs if needed.
 #'
@@ -6044,7 +6352,8 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 Tests for `checkGetCssPredsInputs()`
 
 
-```{r}
+
+```r
 testthat::test_that("checkGetCssPredsInputs works", {
   set.seed(17081)
 
@@ -6438,9 +6747,29 @@ testthat::test_that("checkGetCssPredsInputs works", {
 })
 ```
 
+```
+## ── Warning ('<text>:251'): checkGetCssPredsInputs works ────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. testthat::expect_warning(...)
+##  7. litr (local) checkGetCssPredsInputs(...)
+##  8. litr (local) checkXInputResults(testX, css_results$X)
+## 
+## ── Warning ('<text>:278'): checkGetCssPredsInputs works ────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+## Backtrace:
+##  1. litr (local) checkGetCssPredsInputs(...)
+## 
+## ── Warning ('<text>:357'): checkGetCssPredsInputs works ────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+## Backtrace:
+##  1. litr (local) checkGetCssPredsInputs(...)
+```
+
 Finally, tests for `getCssPreds()`
 
-```{r}
+
+```r
 testthat::test_that("getCssPreds works", {
   set.seed(70811)
 
@@ -6638,6 +6967,68 @@ testthat::test_that("getCssPreds works", {
 })
 ```
 
+```
+## ── Warning ('<text>:122'): getCssPreds works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. testthat::expect_warning(...)
+##  7. litr (local) getCssPreds(...)
+##  8. litr (local) checkGetCssPredsInputs(...)
+##  9. litr (local) checkXInputResults(testX, css_results$X)
+## 
+## ── Warning ('<text>:122'): getCssPreds works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##   1. testthat::expect_warning(...)
+##   7. litr (local) getCssPreds(...)
+##   8. litr (local) formCssDesign(...)
+##   9. litr (local) checkFormCssDesignInputs(...)
+##  10. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:122'): getCssPreds works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##   1. testthat::expect_warning(...)
+##   7. litr (local) getCssPreds(...)
+##   8. litr (local) formCssDesign(...)
+##   9. litr (local) checkFormCssDesignInputs(...)
+##  10. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:143'): getCssPreds works ───────────────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+## Backtrace:
+##  1. litr (local) getCssPreds(...)
+##  2. litr (local) checkGetCssPredsInputs(...)
+## 
+## ── Warning ('<text>:143'): getCssPreds works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssPreds(...)
+##  2. litr (local) formCssDesign(...)
+##  3. litr (local) checkFormCssDesignInputs(...)
+##  4. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:181'): getCssPreds works ───────────────────────────────────
+## Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
+## Backtrace:
+##  1. litr (local) getCssPreds(...)
+##  2. litr (local) checkGetCssPredsInputs(...)
+## 
+## ── Warning ('<text>:181'): getCssPreds works ───────────────────────────────────
+## New X provided had no variable names (column names) even though the X provided to css did.
+## Backtrace:
+##  1. litr (local) getCssPreds(...)
+##  2. litr (local) formCssDesign(...)
+##  3. litr (local) checkFormCssDesignInputs(...)
+##  4. litr (local) checkXInputResults(newx, css_results$X)
+## 
+## ── Warning ('<text>:181'): getCssPreds works ───────────────────────────────────
+## prediction from a rank-deficient fit may be misleading
+## Backtrace:
+##  1. litr (local) getCssPreds(...)
+##  2. stats::predict.lm(model, newdata = df_test)
+```
+
 # Other useful functions {#other-useful}
 
 The following are some other functions that are useful for specific tasks.
@@ -6661,7 +7052,8 @@ The following are some other functions that are useful for specific tasks.
 
 `genClusteredData()`
 
-```{r}
+
+```r
 #' Generate randomly sampled data including noisy observations of latent
 #' variables
 #'
@@ -6767,7 +7159,8 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 
 `checkGenClusteredDataInputs()` ## NEED TO START WITH ROXYGEN FORMATTING
 
-```{r}
+
+```r
 #' TODO(gregfaletto) fix this description!!!
 #' Check inputs to genClusteredData
 #'
@@ -6878,7 +7271,8 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
 
 Tests for `checkGenClusteredDataInputs()`
 
-```{r}
+
+```r
 testthat::test_that("checkGenClusteredDataInputs works", {
   set.seed(7612)
 
@@ -7066,9 +7460,14 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `makeCovarianceMatrix()`
 
-```{r}
+
+```r
 #' Generate covariance matrix for simulated clustered data
 #'
 #' @param p Integer or numeric; the total number of features in the covariance
@@ -7133,7 +7532,8 @@ makeCovarianceMatrix <- function(p, nblocks, block_size, rho, var) {
 
 Tests for `makeCovarianceMatrix()`
 
-```{r}
+
+```r
 testthat::test_that("makeCovarianceMatrix works", {
   set.seed(7612)
 
@@ -7183,9 +7583,14 @@ testthat::test_that("makeCovarianceMatrix works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `makeCoefficients()`:
 
-```{r}
+
+```r
 #' Generated coefficients for y in latent variable model
 #'
 #' @param p Integer or numeric; the number of features that will be observed in
@@ -7308,7 +7713,8 @@ makeCoefficients <- function(p, k_unblocked, beta_low, beta_high, nblocks,
 
 Tests for `makeCoefficients()`
 
-```{r}
+
+```r
 testthat::test_that("makeCoefficients works", {
   set.seed(5722)
 
@@ -7363,9 +7769,14 @@ testthat::test_that("makeCoefficients works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 `genMuXZSd()`
 
-```{r}
+
+```r
 #' Generate observed and latent variables along with conditional mean
 #'
 #' @param n Integer or numeric; the number of observations to generate. (The
@@ -7485,7 +7896,8 @@ genMuXZSd <- function(n, p, beta, Sigma, blocked_dgp_vars,
 
 Tests for `genMuXZSd()`
 
-```{r}
+
+```r
 testthat::test_that("genMuXZSd works", {
   set.seed(61232)
   
@@ -7668,9 +8080,14 @@ testthat::test_that("genMuXZSd works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 Finally, tests for `genClusteredData()`
 
-```{r}
+
+```r
 testthat::test_that("genClusteredData works", {
   set.seed(23478)
 
@@ -7926,9 +8343,14 @@ testthat::test_that("genClusteredData works", {
 })
 ```
 
+```
+## Test passed 😀
+```
+
 `getLassoLambda()`:
 
-```{r}
+
+```r
 #' Get lambda value for lasso
 #'
 #' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
@@ -8006,7 +8428,8 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10){
 
 Tests for `getLassoLambda()`:
 
-```{r}
+
+```r
 testthat::test_that("getLassoLambda works", {
   set.seed(7252)
   
@@ -8066,9 +8489,26 @@ testthat::test_that("getLassoLambda works", {
 })
 ```
 
+```
+## ── Warning ('<text>:7'): getLassoLambda works ──────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getLassoLambda(X = x, y = y, lambda_choice = "1se", nfolds = 4)
+##  2. glmnet::cv.glmnet(...)
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:14'): getLassoLambda works ─────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getLassoLambda(X = x, y = y, lambda_choice = "min", nfolds = 5)
+##  2. glmnet::cv.glmnet(...)
+##  3. glmnet:::cv.glmnet.raw(...)
+```
+
 `getModelSize()`:
 
-```{r}
+
+```r
 #' Automated estimation of model size
 #'
 #' This function is uses the lasso with cross-validation to estimate the
@@ -8171,7 +8611,8 @@ getModelSize <- function(X, y, clusters){
 
 Tests for `getModelSize()`:
 
-```{r}
+
+```r
 testthat::test_that("getModelSize works", {
   set.seed(1723)
   
@@ -8281,9 +8722,40 @@ testthat::test_that("getModelSize works", {
 })
 ```
 
+```
+## ── Warning ('<text>:12'): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getModelSize(X = x, y = y, clusters = good_clusters)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:27'): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getModelSize(X = x, y = y, clusters = unnamed_clusters)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:39'): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getModelSize(X = x, y = y, clusters = 2:5)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:54'): getModelSize works ───────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) getModelSize(X = x, y = y, clusters = good_clusters)
+##  2. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  3. glmnet:::cv.glmnet.raw(...)
+```
+
 `printCssDf()`:
 
-```{r}
+
+```r
 #' Prepares a data.frame summarazing cluster stability selection output to print
 #'
 #' Print a summary of the information from the css function.
@@ -8374,7 +8846,8 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
 
 `getSelectionPrototypes()`
 
-```{r}
+
+```r
 #' Identify selection prototypes from selected clusters
 #'
 #' Takes in list of selected clusters and returns an integer vector of the
@@ -8432,7 +8905,8 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 
 Tests for `getSelectionPrototypes()`:
 
-```{r}
+
+```r
 testthat::test_that("getSelectionPrototypes works", {
   set.seed(67234)
   
@@ -8497,9 +8971,14 @@ testthat::test_that("getSelectionPrototypes works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 Tests for `printCssDf()`:
 
-```{r}
+
+```r
 testthat::test_that("printCssDf works", {
   set.seed(67234)
   
@@ -8754,9 +9233,14 @@ testthat::test_that("printCssDf works", {
 })
 ```
 
+```
+## Test passed 🎉
+```
+
 `print.cssr()`
 
-```{r}
+
+```r
 #' Print cluster stability selection output
 #'
 #' Print a summary of the information from the css function (using output from
@@ -8808,7 +9292,8 @@ The two main disadvantages of these functions are flexibility and computational 
 
 `cssSelect()`:
 
-```{r}
+
+```r
 #' Obtain a selected set of clusters and features using cluster stability
 #' selection
 #'
@@ -8917,7 +9402,8 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 
 Tests for `cssSelect()`:
 
-```{r}
+
+```r
 testthat::test_that("cssSelect works", {
   set.seed(73212)
   
@@ -9228,9 +9714,152 @@ testthat::test_that("cssSelect works", {
 })
 ```
 
+```
+## ── Warning ('<text>:14'): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:14'): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters)
+##  2. litr (local) getModelSize(X, y, css_results$clusters)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:58'): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:58'): cssSelect works ──────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y)
+##  2. litr (local) getModelSize(X, y, css_results$clusters)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:105'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = X_df, y = stats::rnorm(nrow(X_df)), clusters = 1:3)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:105'): cssSelect works ─────────────────────────────────────
+## Returning more than max_num_clusts = 1 clusters because increasing the cutoff any further would require returning 0 clusters
+## Backtrace:
+##  1. litr (local) cssSelect(X = X_df, y = stats::rnorm(nrow(X_df)), clusters = 1:3)
+##  2. litr (local) getCssSelections(...)
+##  3. litr (local) getSelectedClusters(...)
+##  4. litr (local) checkSelectedClusters(...)
+## 
+## ── Warning ('<text>:156'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = df2, y = stats::rnorm(nrow(X_df)), clusters = 1:3)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:207'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x2, y = y, clusters = good_clusters)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:207'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x2, y = y, clusters = good_clusters)
+##  2. litr (local) getModelSize(X, y, css_results$clusters)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:250'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters, lambda = 0.01)
+##  2. litr (local) getModelSize(X, y, css_results$clusters)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:256'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters, cutoff = 0.6)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:262'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters, max_num_clusts = 6)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:269'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssSelect(X = x, y = y, clusters = good_clusters, auto_select_size = FALSE)
+##  2. litr (local) getLassoLambda(X, y)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:285'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssSelect(X = x, y = matrix(1:15, 5, 3))
+##   8. litr (local) getLassoLambda(X, y)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:292'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssSelect(X = x, y = y, clusters = "clusters")
+##   8. litr (local) getLassoLambda(X, y)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:300'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssSelect(X = x, y = y, cutoff = 1.1)
+##   8. litr (local) getLassoLambda(X, y)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:303'): cssSelect works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssSelect(X = x, y = y, max_num_clusts = 1000)
+##   8. litr (local) getLassoLambda(X, y)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+```
+
 `cssPredict()`:
 
-```{r}
+
+```r
 #' Wrapper function to generate predictions from cluster stability selected
 #' model in one step
 #'
@@ -9360,7 +9989,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 
 Tests for `cssPredict()`:
 
-```{r}
+
+```r
 testthat::test_that("cssPredict works", {
   set.seed(84231)
   
@@ -9526,6 +10156,181 @@ testthat::test_that("cssPredict works", {
 })
 ```
 
+```
+## ── Warning ('<text>:17'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:17'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:26'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(X_train_selec = x, y_train_selec = y, X_test = test_x)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:26'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(X_train_selec = x, y_train_selec = y, X_test = test_x)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:34'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:34'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:52'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:52'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:69'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:69'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:83'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:83'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:91'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getModelSize(...)
+##  3. glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:98'): cssPredict works ─────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:104'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:111'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##  1. litr (local) cssPredict(...)
+##  2. litr (local) getLassoLambda(...)
+##  3. glmnet::cv.glmnet(...)
+##  4. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:119'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssPredict(X_train_selec = x[1:10, ], y_train_selec = y, X_test = test_x)
+##   8. litr (local) getLassoLambda(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:128'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssPredict(...)
+##   8. litr (local) getLassoLambda(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:140'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssPredict(...)
+##   8. litr (local) getLassoLambda(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:150'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssPredict(...)
+##   8. litr (local) getLassoLambda(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning ('<text>:154'): cssPredict works ────────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+## Backtrace:
+##   1. testthat::expect_error(...)
+##   7. litr (local) cssPredict(...)
+##   8. litr (local) getLassoLambda(...)
+##   9. glmnet::cv.glmnet(...)
+##  10. glmnet:::cv.glmnet.raw(...)
+```
+
 # Competitor Methods
 
 We also provide implementations of some competitor feature selection methods. We used these in the simulation studies in our paper to compare cluster stability selection to the protolasso (Redi and Tibshirani, 2016) and the cluster representative lasso (Bühlmann et. al. 2013), two other feature selection methods that are designed for data with clustered features. These feature selection methods are in some ways closely related, so their implementations share helper functions.
@@ -9540,7 +10345,8 @@ We also provide implementations of some competitor feature selection methods. We
 
 `protolasso()`:
 
-```{r}
+
+```r
 #' Select features via the protolasso (Reid and Tibshirani 2016)
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
@@ -9606,7 +10412,8 @@ protolasso <- function(X, y, clusters, nlambda=100){
 
 `processClusterLassoInputs()`:
 
-```{r}
+
+```r
 #' Check the inputs to protolasso and clusterRepLasso, format clusters, and
 #' identify prototypes for each cluster
 #'
@@ -9704,7 +10511,8 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
 
 Tests for `processClusterLassoInputs()`:
 
-```{r}
+
+```r
 testthat::test_that("processClusterLassoInputs works", {
   set.seed(82612)
   
@@ -9913,9 +10721,14 @@ testthat::test_that("processClusterLassoInputs works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 `getXglmnet()`:
 
-```{r}
+
+```r
 #' Converts the provided design matrix to an appropriate format for either the
 #' protolasso or the cluster representative lasso.
 #'
@@ -9994,7 +10807,8 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
 
 `checkGetXglmnetInputs()`:
 
-```{r}
+
+```r
 #' Verifies the inputs for getXglmnet.
 #'
 #' @param x A numeric matrix; the provided matrix with n observations and p
@@ -10044,7 +10858,8 @@ checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
 Tests for `checkGetXglmnetInputs()`:
 
 
-```{r}
+
+```r
 testthat::test_that("checkGetXglmnetInputs works", {
   set.seed(82612)
   
@@ -10127,9 +10942,14 @@ testthat::test_that("checkGetXglmnetInputs works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 Tests for `getXglmnet()`:
 
-```{r}
+
+```r
 testthat::test_that("getXglmnet works", {
   set.seed(82612)
   
@@ -10361,10 +11181,15 @@ testthat::test_that("getXglmnet works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 
 `getClusterSelsFromGlmnet()`:
 
-```{r}
+
+```r
 #' Extracts selected clusters and cluster prototypes from the glmnet lasso
 #' output
 #'
@@ -10446,7 +11271,8 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
 
 `getSelectedSets()`:
 
-```{r}
+
+```r
 #' Converts a selected set from X_glmnet to selected sets and selected clusters
 #' from the original feature space of X.
 #'
@@ -10516,7 +11342,8 @@ getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
 
 Tests for `getSelectedSets()`:
 
-```{r}
+
+```r
 testthat::test_that("getSelectedSets works", {
   set.seed(82612)
   
@@ -10809,9 +11636,14 @@ testthat::test_that("getSelectedSets works", {
 })
 ```
 
+```
+## Test passed 😸
+```
+
 Tests for `getClusterSelsFromGlmnet()`:
 
-```{r}
+
+```r
 testthat::test_that("getClusterSelsFromGlmnet works", {
   set.seed(61282)
   
@@ -11169,10 +12001,15 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
 })
 ```
 
+```
+## Test passed 🥳
+```
+
 Finally, tests for `protolasso()`:
 
 
-```{r}
+
+```r
 testthat::test_that("protolasso works", {
   set.seed(61282)
   
@@ -11462,7 +12299,6 @@ testthat::test_that("protolasso works", {
   
   
   
-  # Add tests for beta
   
   # Test for names of features, clusters
   
@@ -11471,10 +12307,15 @@ testthat::test_that("protolasso works", {
 })
 ```
 
+```
+## Test passed 🥇
+```
+
 
 `clusterRepLasso()`:
 
-```{r}
+
+```r
 #' Select features via the cluster representative lasso (Bühlmann et. al. 2013)
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
@@ -11552,13 +12393,90 @@ Tests for `clusterRepLasso()`:
 
 We finish by running commands that will document, build, and install the package.  It may also be a good idea to check the package from within this file.
 
-```{r}
+
+```r
 litr::document() # <-- use instead of devtools::document()
+```
+
+```
+## ℹ Updating cssr documentation
+## ℹ Loading cssr
+## Writing ']8;;file:///Users/gregfaletto/Documents/GitHub/cssr-project/cssr/NAMESPACENAMESPACE]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkB')checkB.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkClusters')checkClusters.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkCssClustersInput')checkCssClustersInput.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkCssInputs')checkCssInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkCssLassoInputs')checkCssLassoInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkCssLoopOutput')checkCssLoopOutput.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkCutoff')checkCutoff.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkFormCssDesignInputs')checkFormCssDesignInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkFormatClustersInput')checkFormatClustersInput.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkGenClusteredDataInputs')checkGenClusteredDataInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkGetClusterSelMatrixInput')checkGetClusterSelMatrixInput.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkGetCssPredsInputs')checkGetCssPredsInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkGetSelectedClustersOutput')checkGetSelectedClustersOutput.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkGetXglmnetInputs')checkGetXglmnetInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkMaxNumClusts')checkMaxNumClusts.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkMinNumClusts')checkMinNumClusts.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkNewXProvided')checkNewXProvided.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkPropFeatsRemove')checkPropFeatsRemove.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkSamplingType')checkSamplingType.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkSelectedClusters')checkSelectedClusters.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkWeighting')checkWeighting.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkXInputResults')checkXInputResults.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('checkY')checkY.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('clusterRepLasso')clusterRepLasso.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('corFunction')corFunction.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('createSubsamples')createSubsamples.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('css')css.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('cssLasso')cssLasso.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('cssLoop')cssLoop.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('cssPredict')cssPredict.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('cssSelect')cssSelect.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('cssr-package')cssr-package.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('formCssDesign')formCssDesign.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('formatClusters')formatClusters.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('genClusteredData')genClusteredData.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('genMuXZSd')genMuXZSd.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getAllClustWeights')getAllClustWeights.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getClustWeights')getClustWeights.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getClusterSelMatrix')getClusterSelMatrix.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getClusterSelsFromGlmnet')getClusterSelsFromGlmnet.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getCssDesign')getCssDesign.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getCssPreds')getCssPreds.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getCssSelections')getCssSelections.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getLassoLambda')getLassoLambda.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getModelSize')getModelSize.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getPrototypes')getPrototypes.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getSelMatrix')getSelMatrix.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getSelectedClusters')getSelectedClusters.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getSelectedSets')getSelectedSets.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getSelectionPrototypes')getSelectionPrototypes.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getSubsamps')getSubsamps.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('getXglmnet')getXglmnet.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('identifyPrototype')identifyPrototype.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('makeCoefficients')makeCoefficients.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('makeCovarianceMatrix')makeCovarianceMatrix.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('print.cssr')print.cssr.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('printCssDf')printCssDf.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('processClusterLassoInputs')processClusterLassoInputs.Rd]8;;'
+## Writing ']8;;ide:run:pkgload::dev_help('protolasso')protolasso.Rd]8;;'
 ```
 
 ## Add README
 
-```{r}
+
+```r
 litr::add_readme("../source-files/README.Rmd")
 ```
+
+```
+## ✔ Writing 'README.Rmd'
+## ✔ Adding '^README\\.Rmd$' to '.Rbuildignore'
+## ✔ Creating '.git/hooks/'
+## ✔ Writing '.git/hooks/pre-commit'
+```
+
+
+<!--chapter:end:index.Rmd-->
 
