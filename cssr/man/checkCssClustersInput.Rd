@@ -17,8 +17,15 @@ clusters is a list of length 0 (or a list only containing clusters of length
 1), then \code{css()} returns the same results as stability selection (so the
 returned \code{feat_sel_mat} will be identical to \code{clus_sel_mat}). Names for the
 clusters will be needed later; any clusters that are not given names in the
-provided list will be given names automatically by \code{css()}. Default is
-\code{list()} (so no clusters are specified).}
+provided list will be given names automatically by \code{css()}. #' CAUTION: if
+the provided X is a data.frame that contains a categorical feature with more
+than two levels, then the resulting matrix made from model.matrix will have a
+different number of columns than the provided data.frame, some of the feature
+numbers will change, and the clusters argument will not work properly (in the
+current version of the package). To get correct results in this case, please
+use model.matrix to convert the data.frame to a numeric matrix on your own,
+then provide this matrix and cluster assignments with respect to this matrix.
+Default is \code{list()} (so no clusters are specified).}
 }
 \value{
 Same as the input, but all of the clusters will be coerced to

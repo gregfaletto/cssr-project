@@ -30,17 +30,14 @@ checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
     stopifnot(!is.na(type))
     stopifnot(type %in% c("protolasso", "clusterRepLasso"))
 
-    if(type=="protolasso"){
-        stopifnot(!is.na(prototypes))
-        stopifnot(is.integer(prototypes))
-        stopifnot(all(!is.na(prototypes)))
-        stopifnot(length(prototypes) == length(unique(prototypes)))
-        stopifnot(all(prototypes %in% 1:ncol(x)))
-    }
+    stopifnot(!is.na(prototypes))
+    stopifnot(is.integer(prototypes))
+    stopifnot(all(!is.na(prototypes)))
+    stopifnot(length(prototypes) == length(unique(prototypes)))
+    stopifnot(all(prototypes %in% 1:ncol(x)))
+    
     for(i in 1:length(clusters)){
         cluster_i <- clusters[[i]]
-        if(length(cluster_i) > 1){
-            stopifnot(sum(prototypes %in% cluster_i) == 1)
-        }
+        stopifnot(sum(prototypes %in% cluster_i) == 1)
     }
 }

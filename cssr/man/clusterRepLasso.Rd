@@ -19,7 +19,15 @@ cluster, clusters can either be a list of length 1 or an integer vector.)
 All of the provided clusters must be non-overlapping. Every feature not
 appearing in any cluster will be assumed to be unclustered (that is, they
 will be treated as if they are in a "cluster" containing only themselves).
-Default is list() (so no clusters are specified).}
+CAUTION: if the provided X is a data.frame that contains a categorical
+feature with more than two levels, then the resulting matrix made from
+model.matrix will have a different number of columns than the provided
+data.frame, some of the feature numbers will change, and the clusters
+argument will not work properly (in the current version of the package).
+To get correct results in this case, please use model.matrix to convert
+the data.frame to a numeric matrix on your own, then provide this matrix
+and cluster assignments with respect to this matrix. Default is list() (so no
+clusters are specified).}
 
 \item{nlambda}{Integer; the number of lambda values to use in the lasso fit
 for the cluster representative lasso. Default is 100 (following the default

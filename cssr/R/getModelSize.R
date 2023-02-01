@@ -20,7 +20,14 @@
 #' (The length of list clusters is equal to the number of clusters.) All
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
-#' "cluster" of size 1).
+#' "cluster" of size 1). CAUTION: if the provided X is a data.frame that
+#' contains a categorical feature with more than two levels, then the resulting
+#' matrix made from model.matrix will have a different number of columns than
+#' the provided data.frame, some of the feature numbers will change, and the
+#' clusters argument will not work properly (in the current version of the
+#' package). To get correct results in this case, please use model.matrix to
+#' convert the data.frame to a numeric matrix on your own, then provide this
+#' matrix and cluster assignments with respect to this matrix.
 #' @return An integer; the estimated size of the model. The minimum returned
 #' value is 1, even if the lasso with cross-validation chose no features.
 #' @author Gregory Faletto, Jacob Bien
