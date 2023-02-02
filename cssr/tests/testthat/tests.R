@@ -5912,8 +5912,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -5929,8 +5930,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -5974,8 +5976,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -5991,8 +5994,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6048,8 +6052,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6065,8 +6070,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6125,8 +6131,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6142,8 +6149,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6195,8 +6203,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6212,8 +6221,9 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6269,8 +6279,9 @@ testthat::test_that("protolasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6287,8 +6298,9 @@ testthat::test_that("protolasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6316,7 +6328,7 @@ testthat::test_that("protolasso works", {
 
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == 11 - 7 + 2)
+  testthat::expect_true(nrow(res$beta) == 11 - 8 + 2)
   testthat::expect_true(ncol(res$beta) <= 60)
 
   
@@ -6344,8 +6356,9 @@ testthat::test_that("protolasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6363,8 +6376,9 @@ testthat::test_that("protolasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6392,7 +6406,7 @@ testthat::test_that("protolasso works", {
   
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
+  testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
   testthat::expect_true(ncol(res$beta) <= 80)
 
   # X as a dataframe with factors (number of columns of final design matrix
@@ -6425,8 +6439,9 @@ testthat::test_that("protolasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6444,8 +6459,9 @@ testthat::test_that("protolasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6473,7 +6489,7 @@ testthat::test_that("protolasso works", {
   
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
+  testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
   testthat::expect_true(ncol(res$beta) <= 70)
 
 
@@ -6500,8 +6516,9 @@ testthat::test_that("protolasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6519,8 +6536,9 @@ testthat::test_that("protolasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6548,7 +6566,7 @@ testthat::test_that("protolasso works", {
   
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == 11 - 7 + 2)
+  testthat::expect_true(nrow(res$beta) == 11 - 8 + 2)
   testthat::expect_true(ncol(res$beta) <= 50)
   
   # Bad inputs
@@ -6628,8 +6646,9 @@ testthat::test_that("clusterRepLasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6646,8 +6665,9 @@ testthat::test_that("clusterRepLasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6675,7 +6695,7 @@ testthat::test_that("clusterRepLasso works", {
 
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == 11 - 7 + 2)
+  testthat::expect_true(nrow(res$beta) == 11 - 8 + 2)
   testthat::expect_true(ncol(res$beta) <= 60)
 
 
@@ -6703,8 +6723,9 @@ testthat::test_that("clusterRepLasso works", {
   # selected_sets
   testthat::expect_true(is.list(res$selected_sets))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_sets),
-                         unique(lengths(res$selected_sets)))
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
   for(i in 1:length(res$selected_sets)){
     if(!is.null(res$selected_sets[[i]])){
       testthat::expect_true(is.integer(res$selected_sets[[i]]))
@@ -6722,8 +6743,9 @@ testthat::test_that("clusterRepLasso works", {
   # selected_clusts_list
   testthat::expect_true(is.list(res$selected_clusts_list))
   # Selected models should have one of each size without repetition
-  testthat::expect_identical(lengths(res$selected_clusts_list),
-                         unique(lengths(res$selected_clusts_list)))
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
 
   for(k in 1:length(res$selected_clusts_list)){
     if(!is.null(res$selected_clusts_list[[k]])){
@@ -6751,7 +6773,7 @@ testthat::test_that("clusterRepLasso works", {
 
   # beta
   testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
+  testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
   testthat::expect_true(ncol(res$beta) <= 80)
 
   # X as a dataframe with factors (number of columns of final design matrix
@@ -6776,186 +6798,189 @@ testthat::test_that("clusterRepLasso works", {
 
   res <- clusterRepLasso(X_df_model, y_df, 4:6, nlambda=70)
 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("selected_sets",
-  #                                          "selected_clusts_list", "beta"))
-  # 
-  # 
-  # # selected_sets
-  # testthat::expect_true(is.list(res$selected_sets))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_sets),
-  #                        unique(lengths(res$selected_sets)))
-  # for(i in 1:length(res$selected_sets)){
-  #   if(!is.null(res$selected_sets[[i]])){
-  #     testthat::expect_true(is.integer(res$selected_sets[[i]]))
-  #     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
-  #     testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
-  #     testthat::expect_equal(length(res$selected_sets[[i]]), i)
-  #     testthat::expect_true(all(names(res$selected_sets[[i]]) %in%
-  #                                 colnames(X_df_model)))
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_sets[[i]]))
-  #   }
-  # }
-  # 
-  # 
-  # # selected_clusts_list
-  # testthat::expect_true(is.list(res$selected_clusts_list))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_clusts_list),
-  #                        unique(lengths(res$selected_clusts_list)))
-  # 
-  # for(k in 1:length(res$selected_clusts_list)){
-  #   if(!is.null(res$selected_clusts_list[[k]])){
-  #     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_sets[[k]]),
-  #                            length(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
-  #     sel_feats <- unlist(res$selected_clusts_list[[k]])
-  #     testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
-  #     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
-  #     n_clusts <- k
-  #     for(i in 1:n_clusts){
-  #       clust_i_found <- FALSE
-  #       clust_i <- res$selected_clusts_list[[k]][[i]]
-  #       for(j in 1:length(clus_formatted)){
-  #         clust_i_found <- clust_i_found | identical(clust_i,
-  #                                                    clus_formatted[[j]])
-  #       }
-  #       testthat::expect_true(clust_i_found)
-  #     }
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
-  #   }
-  # }
-  # 
-  # # beta
-  # testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
-  # testthat::expect_true(ncol(res$beta) <= 70)
-  # 
-  # 
-  # 
-  # # X as a matrix with column names
-  # x2 <- x
-  # colnames(x2) <- LETTERS[1:11]
-  # 
-  # 
-  # # Get properly formatted clusters and prototypes for testing
-  # format_clust_res <- formatClusters(clusters=good_clusters, p=11,
-  #                                    clust_names=names(good_clusters),
-  #                                    get_prototypes=TRUE, x=x2, y=y)
-  # 
-  # prototypes <- format_clust_res$prototypes
-  # clus_formatted <- format_clust_res$clusters
-  # 
-  # res <- clusterRepLasso(x2, y, good_clusters, nlambda=50)
-  # 
-  # testthat::expect_true(is.list(res))
-  # testthat::expect_identical(names(res), c("selected_sets",
-  #                                          "selected_clusts_list", "beta"))
-  # 
-  # # selected_sets
-  # testthat::expect_true(is.list(res$selected_sets))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_sets),
-  #                        unique(lengths(res$selected_sets)))
-  # for(i in 1:length(res$selected_sets)){
-  #   if(!is.null(res$selected_sets[[i]])){
-  #     testthat::expect_true(is.integer(res$selected_sets[[i]]))
-  #     testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
-  #     testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
-  #     testthat::expect_equal(length(res$selected_sets[[i]]), i)
-  #     testthat::expect_true(all(names(res$selected_sets[[i]]) %in%
-  #                                 LETTERS[1:11]))
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_sets[[i]]))
-  #   }
-  # }
-  # 
-  # 
-  # # selected_clusts_list
-  # testthat::expect_true(is.list(res$selected_clusts_list))
-  # # Selected models should have one of each size without repetition
-  # testthat::expect_identical(lengths(res$selected_clusts_list),
-  #                        unique(lengths(res$selected_clusts_list)))
-  # 
-  # for(k in 1:length(res$selected_clusts_list)){
-  #   if(!is.null(res$selected_clusts_list[[k]])){
-  #     testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_sets[[k]]),
-  #                            length(res$selected_clusts_list[[k]]))
-  #     testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
-  #     sel_feats <- unlist(res$selected_clusts_list[[k]])
-  #     testthat::expect_true(all(sel_feats %in% 1:11))
-  #     testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
-  #     n_clusts <- k
-  #     for(i in 1:n_clusts){
-  #       clust_i_found <- FALSE
-  #       clust_i <- res$selected_clusts_list[[k]][[i]]
-  #       for(j in 1:length(clus_formatted)){
-  #         clust_i_found <- clust_i_found | identical(clust_i,
-  #                                                    clus_formatted[[j]])
-  #       }
-  #       testthat::expect_true(clust_i_found)
-  #     }
-  #   } else{
-  #     testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
-  #   }
-  # }
-  # 
-  # # beta
-  # testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
-  # testthat::expect_true(nrow(res$beta) == 11 - 7 + 2)
-  # testthat::expect_true(ncol(res$beta) <= 50)
-  # 
-  # # Bad inputs
-  # testthat::expect_error(clusterRepLasso(X="x", y=y[1:10], clusters=good_clusters,
-  #                                   nlambda=10),
-  #                        "is.matrix(X) | is.data.frame(X) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y[1:10], clusters=good_clusters,
-  #                                   nlambda=10),
-  #                        "n == length(y) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(1:4, 4:6),
-  #                                   nlambda=10),
-  #                        "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3),
-  #                                   nlambda=10),
-  #                        "length(clusters) == length(unique(clusters)) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y,
-  #                                   clusters=list(1:4, as.integer(NA)),
-  #                                   nlambda=10),
-  #                        "!is.na(clusters) are not all TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, c(4, 4, 5)),
-  #                                   nlambda=10),
-  #                        "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
-  #                                   nlambda=1), "nlambda >= 2 is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
-  #                                   nlambda=x),
-  #                        "length(nlambda) == 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
-  #                                   nlambda="nlambda"),
-  #                        "is.numeric(nlambda) | is.integer(nlambda) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
-  #                                   nlambda=10.5),
-  #                        "nlambda == round(nlambda) is not TRUE",
-  #                        fixed=TRUE)
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_sets",
+                                           "selected_clusts_list", "beta"))
+
+
+  # selected_sets
+  testthat::expect_true(is.list(res$selected_sets))
+  # Selected models should have one of each size without repetition
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
+  for(i in 1:length(res$selected_sets)){
+    if(!is.null(res$selected_sets[[i]])){
+      testthat::expect_true(is.integer(res$selected_sets[[i]]))
+      testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
+      testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
+      testthat::expect_equal(length(res$selected_sets[[i]]), i)
+      testthat::expect_true(all(names(res$selected_sets[[i]]) %in%
+                                  colnames(X_df_model)))
+    } else{
+      testthat::expect_true(is.null(res$selected_sets[[i]]))
+    }
+  }
+
+
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  # Selected models should have one of each size without repetition
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
+  for(k in 1:length(res$selected_clusts_list)){
+    if(!is.null(res$selected_clusts_list[[k]])){
+      testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_sets[[k]]),
+                             length(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
+      sel_feats <- unlist(res$selected_clusts_list[[k]])
+      testthat::expect_true(all(sel_feats %in% 1:ncol(X_df_model)))
+      testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
+      n_clusts <- k
+      for(i in 1:n_clusts){
+        clust_i_found <- FALSE
+        clust_i <- res$selected_clusts_list[[k]][[i]]
+        for(j in 1:length(clus_formatted)){
+          clust_i_found <- clust_i_found | identical(clust_i,
+                                                     clus_formatted[[j]])
+        }
+        testthat::expect_true(clust_i_found)
+      }
+    } else{
+      testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
+    }
+  }
+
+  # beta
+  testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
+  testthat::expect_true(nrow(res$beta) == ncol(X_df_model) - 3 + 1)
+  testthat::expect_true(ncol(res$beta) <= 70)
+
+
+
+  # X as a matrix with column names
+  x2 <- x
+  colnames(x2) <- LETTERS[1:11]
+
+
+  # Get properly formatted clusters and prototypes for testing
+  format_clust_res <- formatClusters(clusters=good_clusters, p=11,
+                                     clust_names=names(good_clusters),
+                                     get_prototypes=TRUE, x=x2, y=y)
+
+  prototypes <- format_clust_res$prototypes
+  clus_formatted <- format_clust_res$clusters
+
+  res <- clusterRepLasso(x2, y, good_clusters, nlambda=50)
+
+  testthat::expect_true(is.list(res))
+  testthat::expect_identical(names(res), c("selected_sets",
+                                           "selected_clusts_list", "beta"))
+
+  # selected_sets
+  testthat::expect_true(is.list(res$selected_sets))
+  # Selected models should have one of each size without repetition
+  lengths <- lengths(res$selected_sets)
+  lengths <- lengths[lengths != 0]
+  testthat::expect_identical(lengths, unique(lengths))
+  for(i in 1:length(res$selected_sets)){
+    if(!is.null(res$selected_sets[[i]])){
+      testthat::expect_true(is.integer(res$selected_sets[[i]]))
+      testthat::expect_true(all(!is.na(res$selected_sets[[i]])))
+      testthat::expect_true(all(res$selected_sets[[i]] %in% prototypes))
+      testthat::expect_equal(length(res$selected_sets[[i]]), i)
+      testthat::expect_true(all(names(res$selected_sets[[i]]) %in%
+                                  LETTERS[1:11]))
+    } else{
+      testthat::expect_true(is.null(res$selected_sets[[i]]))
+    }
+  }
+
+
+  # selected_clusts_list
+  testthat::expect_true(is.list(res$selected_clusts_list))
+  # Selected models should have one of each size without repetition
+  clust_lengths <- lengths(res$selected_clusts_list)
+  clust_lengths <- clust_lengths[clust_lengths != 0]
+  testthat::expect_identical(clust_lengths, unique(clust_lengths))
+
+  for(k in 1:length(res$selected_clusts_list)){
+    if(!is.null(res$selected_clusts_list[[k]])){
+      testthat::expect_true(is.list(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_sets[[k]]),
+                             length(res$selected_clusts_list[[k]]))
+      testthat::expect_equal(length(res$selected_clusts_list[[k]]), k)
+      sel_feats <- unlist(res$selected_clusts_list[[k]])
+      testthat::expect_true(all(sel_feats %in% 1:11))
+      testthat::expect_equal(length(sel_feats), length(unique(sel_feats)))
+      n_clusts <- k
+      for(i in 1:n_clusts){
+        clust_i_found <- FALSE
+        clust_i <- res$selected_clusts_list[[k]][[i]]
+        for(j in 1:length(clus_formatted)){
+          clust_i_found <- clust_i_found | identical(clust_i,
+                                                     clus_formatted[[j]])
+        }
+        testthat::expect_true(clust_i_found)
+      }
+    } else{
+      testthat::expect_true(is.null(res$selected_clusts_list[[k]]))
+    }
+  }
+
+  # beta
+  testthat::expect_true(grepl("dgCMatrix", class(res$beta)))
+  testthat::expect_true(nrow(res$beta) == 11 - 8 + 2)
+  testthat::expect_true(ncol(res$beta) <= 50)
+
+  # Bad inputs
+  testthat::expect_error(clusterRepLasso(X="x", y=y[1:10], clusters=good_clusters,
+                                    nlambda=10),
+                         "is.matrix(X) | is.data.frame(X) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y[1:10], clusters=good_clusters,
+                                    nlambda=10),
+                         "n == length(y) is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(1:4, 4:6),
+                                    nlambda=10),
+                         "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3),
+                                    nlambda=10),
+                         "length(clusters) == length(unique(clusters)) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y,
+                                    clusters=list(1:4, as.integer(NA)),
+                                    nlambda=10),
+                         "!is.na(clusters) are not all TRUE", fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, c(4, 4, 5)),
+                                    nlambda=10),
+                         "length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
+                                    nlambda=1), "nlambda >= 2 is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
+                                    nlambda=x),
+                         "length(nlambda) == 1 is not TRUE", fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
+                                    nlambda="nlambda"),
+                         "is.numeric(nlambda) | is.integer(nlambda) is not TRUE",
+                         fixed=TRUE)
+
+  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=good_clusters,
+                                    nlambda=10.5),
+                         "nlambda == round(nlambda) is not TRUE",
+                         fixed=TRUE)
   
 })
 
