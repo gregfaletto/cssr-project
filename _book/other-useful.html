@@ -23,7 +23,7 @@
 <meta name="author" content="Gregory Faletto" />
 
 
-<meta name="date" content="2023-02-02" />
+<meta name="date" content="2023-02-03" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1616,75 +1616,82 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb149-34"><a href="other-useful.html#cb149-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
 <span id="cb149-35"><a href="other-useful.html#cb149-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
 <span id="cb149-36"><a href="other-useful.html#cb149-36" aria-hidden="true" tabindex="-1"></a><span id='getModelSize'>getModelSize</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters){</span>
-<span id="cb149-37"><a href="other-useful.html#cb149-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
-<span id="cb149-38"><a href="other-useful.html#cb149-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-39"><a href="other-useful.html#cb149-39" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it&#39;s a data.frame, convert to matrix.</span></span>
-<span id="cb149-40"><a href="other-useful.html#cb149-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(X)){</span>
-<span id="cb149-41"><a href="other-useful.html#cb149-41" aria-hidden="true" tabindex="-1"></a>        X <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., X)</span>
-<span id="cb149-42"><a href="other-useful.html#cb149-42" aria-hidden="true" tabindex="-1"></a>        X <span class="ot">&lt;-</span> X[, <span class="fu">colnames</span>(X) <span class="sc">!=</span> <span class="st">&quot;(Intercept)&quot;</span>]</span>
-<span id="cb149-43"><a href="other-useful.html#cb149-43" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb149-44"><a href="other-useful.html#cb149-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-45"><a href="other-useful.html#cb149-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb149-46"><a href="other-useful.html#cb149-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(X)))</span>
-<span id="cb149-47"><a href="other-useful.html#cb149-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
-<span id="cb149-48"><a href="other-useful.html#cb149-48" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb149-49"><a href="other-useful.html#cb149-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-50"><a href="other-useful.html#cb149-50" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Since the model size will be determined by cross-validation, the provided</span></span>
-<span id="cb149-51"><a href="other-useful.html#cb149-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># y must be real-valued (this should be checked internally in other</span></span>
-<span id="cb149-52"><a href="other-useful.html#cb149-52" aria-hidden="true" tabindex="-1"></a>    <span class="co"># functions before getModelSize is called, but this check is here just in</span></span>
-<span id="cb149-53"><a href="other-useful.html#cb149-53" aria-hidden="true" tabindex="-1"></a>    <span class="co"># case).</span></span>
-<span id="cb149-54"><a href="other-useful.html#cb149-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
-<span id="cb149-55"><a href="other-useful.html#cb149-55" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">&quot;getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.&quot;</span>)</span>
-<span id="cb149-56"><a href="other-useful.html#cb149-56" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb149-57"><a href="other-useful.html#cb149-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
-<span id="cb149-58"><a href="other-useful.html#cb149-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-59"><a href="other-useful.html#cb149-59" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
-<span id="cb149-60"><a href="other-useful.html#cb149-60" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href='css.html#checkCssClustersInput'>checkCssClustersInput</a>(clusters)</span>
-<span id="cb149-61"><a href="other-useful.html#cb149-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-62"><a href="other-useful.html#cb149-62" aria-hidden="true" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
-<span id="cb149-63"><a href="other-useful.html#cb149-63" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own &quot;cluster&quot; of size</span></span>
-<span id="cb149-64"><a href="other-useful.html#cb149-64" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1).</span></span>
-<span id="cb149-65"><a href="other-useful.html#cb149-65" aria-hidden="true" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb149-66"><a href="other-useful.html#cb149-66" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
-<span id="cb149-67"><a href="other-useful.html#cb149-67" aria-hidden="true" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb149-68"><a href="other-useful.html#cb149-68" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb149-69"><a href="other-useful.html#cb149-69" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-70"><a href="other-useful.html#cb149-70" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href='css.html#formatClusters'>formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
-<span id="cb149-71"><a href="other-useful.html#cb149-71" aria-hidden="true" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
-<span id="cb149-72"><a href="other-useful.html#cb149-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-73"><a href="other-useful.html#cb149-73" aria-hidden="true" tabindex="-1"></a>    X_size <span class="ot">&lt;-</span> X</span>
-<span id="cb149-74"><a href="other-useful.html#cb149-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-75"><a href="other-useful.html#cb149-75" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb149-76"><a href="other-useful.html#cb149-76" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create modified design matrix by dropping all but one feature from</span></span>
-<span id="cb149-77"><a href="other-useful.html#cb149-77" aria-hidden="true" tabindex="-1"></a>        <span class="co"># each cluster</span></span>
-<span id="cb149-78"><a href="other-useful.html#cb149-78" aria-hidden="true" tabindex="-1"></a>        feats_to_drop <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb149-79"><a href="other-useful.html#cb149-79" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
-<span id="cb149-80"><a href="other-useful.html#cb149-80" aria-hidden="true" tabindex="-1"></a>            cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
-<span id="cb149-81"><a href="other-useful.html#cb149-81" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb149-82"><a href="other-useful.html#cb149-82" aria-hidden="true" tabindex="-1"></a>                feat_to_keep <span class="ot">&lt;-</span> <a href='css.html#identifyPrototype'>identifyPrototype</a>(cluster_i, X, y)</span>
-<span id="cb149-83"><a href="other-useful.html#cb149-83" aria-hidden="true" tabindex="-1"></a>                feats_to_drop <span class="ot">&lt;-</span> <span class="fu">c</span>(feats_to_drop, <span class="fu">setdiff</span>(cluster_i,</span>
-<span id="cb149-84"><a href="other-useful.html#cb149-84" aria-hidden="true" tabindex="-1"></a>                    feat_to_keep))</span>
-<span id="cb149-85"><a href="other-useful.html#cb149-85" aria-hidden="true" tabindex="-1"></a>            }</span>
-<span id="cb149-86"><a href="other-useful.html#cb149-86" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb149-87"><a href="other-useful.html#cb149-87" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(feats_to_drop) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb149-88"><a href="other-useful.html#cb149-88" aria-hidden="true" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop]</span>
-<span id="cb149-89"><a href="other-useful.html#cb149-89" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb149-90"><a href="other-useful.html#cb149-90" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb149-91"><a href="other-useful.html#cb149-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-92"><a href="other-useful.html#cb149-92" aria-hidden="true" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>)</span>
-<span id="cb149-93"><a href="other-useful.html#cb149-93" aria-hidden="true" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">&quot;lambda.1se&quot;</span>))</span>
-<span id="cb149-94"><a href="other-useful.html#cb149-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-95"><a href="other-useful.html#cb149-95" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
-<span id="cb149-96"><a href="other-useful.html#cb149-96" aria-hidden="true" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
-<span id="cb149-97"><a href="other-useful.html#cb149-97" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-98"><a href="other-useful.html#cb149-98" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb149-99"><a href="other-useful.html#cb149-99" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
-<span id="cb149-100"><a href="other-useful.html#cb149-100" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
-<span id="cb149-101"><a href="other-useful.html#cb149-101" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb149-102"><a href="other-useful.html#cb149-102" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
-<span id="cb149-103"><a href="other-useful.html#cb149-103" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb149-104"><a href="other-useful.html#cb149-104" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
-<span id="cb149-105"><a href="other-useful.html#cb149-105" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb149-37"><a href="other-useful.html#cb149-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-38"><a href="other-useful.html#cb149-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
+<span id="cb149-39"><a href="other-useful.html#cb149-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-40"><a href="other-useful.html#cb149-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it&#39;s a data.frame, convert to matrix.</span></span>
+<span id="cb149-41"><a href="other-useful.html#cb149-41" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(X)){</span>
+<span id="cb149-42"><a href="other-useful.html#cb149-42" aria-hidden="true" tabindex="-1"></a>        p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb149-43"><a href="other-useful.html#cb149-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-44"><a href="other-useful.html#cb149-44" aria-hidden="true" tabindex="-1"></a>        X <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., X)</span>
+<span id="cb149-45"><a href="other-useful.html#cb149-45" aria-hidden="true" tabindex="-1"></a>        X <span class="ot">&lt;-</span> X[, <span class="fu">colnames</span>(X) <span class="sc">!=</span> <span class="st">&quot;(Intercept)&quot;</span>]</span>
+<span id="cb149-46"><a href="other-useful.html#cb149-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-47"><a href="other-useful.html#cb149-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> (p <span class="sc">!=</span> <span class="fu">ncol</span>(X))){</span>
+<span id="cb149-48"><a href="other-useful.html#cb149-48" aria-hidden="true" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">&quot;When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.&quot;</span>)</span>
+<span id="cb149-49"><a href="other-useful.html#cb149-49" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb149-50"><a href="other-useful.html#cb149-50" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb149-51"><a href="other-useful.html#cb149-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-52"><a href="other-useful.html#cb149-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb149-53"><a href="other-useful.html#cb149-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(X)))</span>
+<span id="cb149-54"><a href="other-useful.html#cb149-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
+<span id="cb149-55"><a href="other-useful.html#cb149-55" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb149-56"><a href="other-useful.html#cb149-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-57"><a href="other-useful.html#cb149-57" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Since the model size will be determined by cross-validation, the provided</span></span>
+<span id="cb149-58"><a href="other-useful.html#cb149-58" aria-hidden="true" tabindex="-1"></a>    <span class="co"># y must be real-valued (this should be checked internally in other</span></span>
+<span id="cb149-59"><a href="other-useful.html#cb149-59" aria-hidden="true" tabindex="-1"></a>    <span class="co"># functions before getModelSize is called, but this check is here just in</span></span>
+<span id="cb149-60"><a href="other-useful.html#cb149-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># case).</span></span>
+<span id="cb149-61"><a href="other-useful.html#cb149-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
+<span id="cb149-62"><a href="other-useful.html#cb149-62" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">&quot;getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.&quot;</span>)</span>
+<span id="cb149-63"><a href="other-useful.html#cb149-63" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb149-64"><a href="other-useful.html#cb149-64" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
+<span id="cb149-65"><a href="other-useful.html#cb149-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-66"><a href="other-useful.html#cb149-66" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
+<span id="cb149-67"><a href="other-useful.html#cb149-67" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href='css.html#checkCssClustersInput'>checkCssClustersInput</a>(clusters)</span>
+<span id="cb149-68"><a href="other-useful.html#cb149-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-69"><a href="other-useful.html#cb149-69" aria-hidden="true" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
+<span id="cb149-70"><a href="other-useful.html#cb149-70" aria-hidden="true" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own &quot;cluster&quot; of size</span></span>
+<span id="cb149-71"><a href="other-useful.html#cb149-71" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1).</span></span>
+<span id="cb149-72"><a href="other-useful.html#cb149-72" aria-hidden="true" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb149-73"><a href="other-useful.html#cb149-73" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
+<span id="cb149-74"><a href="other-useful.html#cb149-74" aria-hidden="true" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb149-75"><a href="other-useful.html#cb149-75" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb149-76"><a href="other-useful.html#cb149-76" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-77"><a href="other-useful.html#cb149-77" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href='css.html#formatClusters'>formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
+<span id="cb149-78"><a href="other-useful.html#cb149-78" aria-hidden="true" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
+<span id="cb149-79"><a href="other-useful.html#cb149-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-80"><a href="other-useful.html#cb149-80" aria-hidden="true" tabindex="-1"></a>    X_size <span class="ot">&lt;-</span> X</span>
+<span id="cb149-81"><a href="other-useful.html#cb149-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-82"><a href="other-useful.html#cb149-82" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb149-83"><a href="other-useful.html#cb149-83" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Create modified design matrix by dropping all but one feature from</span></span>
+<span id="cb149-84"><a href="other-useful.html#cb149-84" aria-hidden="true" tabindex="-1"></a>        <span class="co"># each cluster</span></span>
+<span id="cb149-85"><a href="other-useful.html#cb149-85" aria-hidden="true" tabindex="-1"></a>        feats_to_drop <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb149-86"><a href="other-useful.html#cb149-86" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
+<span id="cb149-87"><a href="other-useful.html#cb149-87" aria-hidden="true" tabindex="-1"></a>            cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
+<span id="cb149-88"><a href="other-useful.html#cb149-88" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb149-89"><a href="other-useful.html#cb149-89" aria-hidden="true" tabindex="-1"></a>                feat_to_keep <span class="ot">&lt;-</span> <a href='css.html#identifyPrototype'>identifyPrototype</a>(cluster_i, X, y)</span>
+<span id="cb149-90"><a href="other-useful.html#cb149-90" aria-hidden="true" tabindex="-1"></a>                feats_to_drop <span class="ot">&lt;-</span> <span class="fu">c</span>(feats_to_drop, <span class="fu">setdiff</span>(cluster_i,</span>
+<span id="cb149-91"><a href="other-useful.html#cb149-91" aria-hidden="true" tabindex="-1"></a>                    feat_to_keep))</span>
+<span id="cb149-92"><a href="other-useful.html#cb149-92" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb149-93"><a href="other-useful.html#cb149-93" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb149-94"><a href="other-useful.html#cb149-94" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(feats_to_drop) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb149-95"><a href="other-useful.html#cb149-95" aria-hidden="true" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop]</span>
+<span id="cb149-96"><a href="other-useful.html#cb149-96" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb149-97"><a href="other-useful.html#cb149-97" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb149-98"><a href="other-useful.html#cb149-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-99"><a href="other-useful.html#cb149-99" aria-hidden="true" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>)</span>
+<span id="cb149-100"><a href="other-useful.html#cb149-100" aria-hidden="true" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">&quot;lambda.1se&quot;</span>))</span>
+<span id="cb149-101"><a href="other-useful.html#cb149-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-102"><a href="other-useful.html#cb149-102" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
+<span id="cb149-103"><a href="other-useful.html#cb149-103" aria-hidden="true" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb149-104"><a href="other-useful.html#cb149-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-105"><a href="other-useful.html#cb149-105" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb149-106"><a href="other-useful.html#cb149-106" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
+<span id="cb149-107"><a href="other-useful.html#cb149-107" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
+<span id="cb149-108"><a href="other-useful.html#cb149-108" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb149-109"><a href="other-useful.html#cb149-109" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
+<span id="cb149-110"><a href="other-useful.html#cb149-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-111"><a href="other-useful.html#cb149-111" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
+<span id="cb149-112"><a href="other-useful.html#cb149-112" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href='other-useful.html#getModelSize'>getModelSize</a>()</code>:</p>
 <div class="sourceCode" id="cb150"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb150-1"><a href="other-useful.html#cb150-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;getModelSize works&quot;</span>, {</span>
 <span id="cb150-2"><a href="other-useful.html#cb150-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">1723</span>)</span>

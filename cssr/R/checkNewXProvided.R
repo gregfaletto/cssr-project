@@ -23,8 +23,7 @@ checkNewXProvided <- function(trainX, css_results){
 
     if(all(!is.na(trainX)) & length(trainX) > 1){
         newXProvided <- TRUE
-        trainX <- checkXInputResults(trainX, css_results$X,
-            css_results$clusters)$newx
+        trainX <- checkXInputResults(trainX, css_results$X)$newx
         
         n_train <- nrow(trainX)
         stopifnot(n_train > 1)
