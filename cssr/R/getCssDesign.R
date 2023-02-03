@@ -64,7 +64,7 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 
     n_train <- nrow(newX)
 
-    results <- checkXInputResults(newX, css_results$X)
+    results <- checkXInputResults(newX, css_results$X, css_results$clusters)
 
     newX <- results$newx
     feat_names <- results$feat_names
