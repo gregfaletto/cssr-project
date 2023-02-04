@@ -1,10 +1,15 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# cssr-project
+# Cluster Stability Selection
 
 <!-- badges: start -->
 <!-- badges: end -->
+
+The cssr package implements [cluster stability selection (Faletto and
+Bien 2022)](https://arxiv.org/abs/2201.00494), a feature selection
+method designed to allow stability selection to work effectively in the
+presence of highly correlated features.
 
 ## Installing the cssr Package
 
@@ -14,10 +19,10 @@ You can install the cssr package using the following command:
 remotes::install_github("gregfaletto/cssr-project", subdir = "cssr")
 ```
 
-The cssr package implements [cluster stability selection (Faletto and
-Bien 2022)](https://arxiv.org/abs/2201.00494), a feature selection
-method. Given data $(X, y)$, cluster stability selection selects the
-variables in $X$ that are useful for predicting $y$.
+## An Introduction to the Package
+
+Given data $(X, y)$, cluster stability selection selects the variables
+in $X$ that are useful for predicting $y$.
 
 ``` r
 library(cssr)
@@ -86,7 +91,7 @@ variance) feature selection procedure because we average over many
 subsamples. The price we pay is that each selected set is estimated
 using a sample of size $n/2$ rather than $n$.
 
-# Why Cluster Stability Selection?
+## Why Cluster Stability Selection?
 
 **Stability selection doesn’t do well when features are highly
 correlated.** The problem is that if there are clusters of highly
