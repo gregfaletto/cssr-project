@@ -81,7 +81,7 @@ procedure, and a selected set is chosen by choosing all features with
 selection proportions larger than a predetermined $\tau$.
 
 ![Stability Selection Flowchart
-Figure](../source-files/stability-selection-diagram.png "Stability Selection")
+Figure](man/figures/stability-selection-diagram.png "Stability Selection")
 
 In the classic framework of [bias/variance
 tradeoff](https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff),
@@ -119,7 +119,7 @@ selection for proxies for $Z$, “weak signal” features, and “noise”
 features that are unrelated to $y$.
 
 ![Selection
-Proportions](../source-files/sel_props.png "Proxy Selection Proportions")
+Proportions](man/figures/sel_props.png "Proxy Selection Proportions")
 
 ## How does cluster stability selection fix this?
 

@@ -6,11 +6,14 @@
 \alias{cssr-package}
 \title{Cluster Stability Selection}
 \description{
-DESCRIBE PACKAGE HERE AND PERHAPS POINT USER TO PKGDOWN WEBSITE ONCE
-IT EXISTS.
+Cluster stability selection is a feature selection method designed to allow
+stability selection to work effectively in the presence of highly correlated
+features.  It was proposed in \url{https://arxiv.org/abs/2201.00494}.  To learn
+more about this package, please visit its website
+\url{https://gregfaletto.github.io/cssr-project/}.
 }
 \seealso{
-\code{\link{css}}
+\code{\link{css}} \code{\link{cssSelect}}
 }
 \author{
 \strong{Maintainer}: Gregory Faletto \email{gregory.faletto@marshall.usc.edu}
