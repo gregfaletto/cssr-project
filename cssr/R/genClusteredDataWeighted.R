@@ -1,17 +1,14 @@
 # Generated from _main.Rmd: do not edit by hand
 
 #' Generate randomly sampled data including noisy observations of latent
-#' variables
+#' variables, where proxies differ in their relevance (noise level)
 #'
-#' TODO(gregfaletto) change cluster_size into a vector of sizes (maybe also
-#' deprecate n_clusters as an input, since this would be inferred by the length
-#' of cluster_sizes?)
 #' Generate a data set including latent features Z, observed features X (which
 #' may include noisy or noiseless observations of the latent features in Z),
 #' an observed response y which is a linear model of features from Z and X as
 #' well as independent mean zero noise, and mu (the responses from y without
 #' the added noise). Data is generated in the same way as in the simulations
-#' from Example 1 and Sections 5.1 and 5.2 of Faletto and Bien (2022).
+#' from Section 5.3 of Faletto and Bien (2022).
 #' @param n Integer or numeric; the number of observations to generate. (The
 #' generated X and Z will have n rows, and the generated y and mu will have
 #' length n.)
@@ -25,6 +22,10 @@
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
 #' the latent variable.
+#' @param n_strong_cluster_vars Integer or numeric; among the cluster_size
+#' proxies in each cluster, n_strong_cluster_vars will have a high covariance
+#' (rho_high) with the latent variable and cluster_size - n_strong_cluster_vars
+#' will have a low covariance (rho_low) with the latent variable.
 #' @param n_clusters Integer or numeric; the number of latent variables to
 #' generate, each of which will be associated with an observed cluster in X.
 #' Must be at least 1. Default is 1.
@@ -32,9 +33,16 @@
 #' features that will have nonzero coefficients in the true model for y (all of
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
-#' @param rho Integer or numeric; the covariance of the proxies in each cluster
-#' with the latent variable (and each other). Note that the correlation between
-#' the features in the cluster will be rho/var. Can't equal 0. Default is 0.9.
+#' @param rho_high Integer or numeric; the covariance of the "strong proxies" in
+#' each cluster with the latent variable (and each other). Note that the
+#' correlation between the "strong proxy" features in the cluster will be
+#' rho_high/var. rho_high cannot equal 0 and must be at least as large as
+#' rho_low. Default is 0.9.
+#' @param rho_low Integer or numeric; the covariance of the "weak proxies" in
+#' each cluster with the latent variable (and each other). Note that the
+#' correlation between the "weak proxy" features in the cluster will be
+#' rho_low/var. rho_low cannot equal 0 and must be no larger than rho_high.
+#' Default is 0.5.
 #' @param var Integer or numeric; the variance of all of the observed features
 #' in X (both the proxies for the latent variables and the k_unclustered other
 #' features). Can't equal 0. Default is 1.
@@ -70,19 +78,22 @@
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
 #' @export
-genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
-    sig_clusters=1, rho=0.9, var=1, beta_latent=1.5, beta_unclustered=1,
+genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
+    n_strong_cluster_vars, n_clusters=1,  sig_clusters=1, rho_high=0.9,
+    rho_low=0.5, var=1, beta_latent=1.5, beta_unclustered=1,
     snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
 
     # Check inputs
-    checkGenClusteredDataInputs(p, k_unclustered, cluster_size, n_clusters,
-        sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
-        sigma_eps_sq)
+    checkGenClusteredDataWeightedInputs(p, k_unclustered, cluster_size,
+        n_strong_cluster_vars, n_clusters,  sig_clusters, rho_high, rho_low,
+        var, beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
     # Generate covariance matrix (latent features are mixed in matrix, so each
     # cluster will be of size cluster_size + 1)
-    Sigma <- makeCovarianceMatrix(p=p + n_clusters, nblocks=n_clusters,
-        block_size=cluster_size + 1, rho=rho, var=var)
+    Sigma <- makeCovarianceMatrixWeighted(p=p + n_clusters, nblocks=n_clusters,
+        block_size=cluster_size + 1,
+        n_strong_block_vars=n_strong_cluster_vars + 1, rho_high=rho_high,
+        rho_low=rho_low, var=var)
 
     # Generate coefficients
     # Note that beta has length p + sig_clusters

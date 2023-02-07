@@ -2,8 +2,7 @@
 % Please edit documentation in _main.Rmd.
 \name{checkGenClusteredDataInputs}
 \alias{checkGenClusteredDataInputs}
-\title{TODO(gregfaletto) fix this description!!!
-Check inputs to genClusteredData}
+\title{Check inputs to genClusteredData}
 \usage{
 checkGenClusteredDataInputs(
   p,
@@ -83,12 +82,7 @@ item{mu}{A length \code{n} numeric vector; the expected response given X, Z, and
 the true coefficient vector (equal to y minus the added noise).}
 }
 \description{
-Generate a data set including latent features Z, observed features X (which
-may include noisy or noiseless observations of the latent features in Z),
-an observed response y which is a linear model of features from Z and X as
-well as independent mean zero noise, and mu (the responses from y without
-the added noise). Data is generated in the same way as in the simulations
-from Faletto and Bien (2022).
+Check inputs to genClusteredData
 }
 \author{
 Gregory Faletto, Jacob Bien

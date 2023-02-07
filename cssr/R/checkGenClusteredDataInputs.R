@@ -1,14 +1,7 @@
 # Generated from _main.Rmd: do not edit by hand
 
-#' TODO(gregfaletto) fix this description!!!
 #' Check inputs to genClusteredData
 #'
-#' Generate a data set including latent features Z, observed features X (which
-#' may include noisy or noiseless observations of the latent features in Z),
-#' an observed response y which is a linear model of features from Z and X as
-#' well as independent mean zero noise, and mu (the responses from y without
-#' the added noise). Data is generated in the same way as in the simulations
-#' from Faletto and Bien (2022).
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that

@@ -6793,15 +6793,8 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 `checkGenClusteredDataInputs()`
 
 ```{r}
-#' TODO(gregfaletto) fix this description!!!
 #' Check inputs to genClusteredData
 #'
-#' Generate a data set including latent features Z, observed features X (which
-#' may include noisy or noiseless observations of the latent features in Z),
-#' an observed response y which is a linear model of features from Z and X as
-#' well as independent mean zero noise, and mu (the responses from y without
-#' the added noise). Data is generated in the same way as in the simulations
-#' from Faletto and Bien (2022).
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
@@ -8036,9 +8029,9 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
     snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
 
     # Check inputs
-    checkGenClusteredDataInputs(p, k_unclustered, cluster_size, n_clusters,
-        sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
-        sigma_eps_sq)
+    checkGenClusteredDataWeightedInputs(p, k_unclustered, cluster_size,
+        n_strong_cluster_vars, n_clusters,  sig_clusters, rho_high, rho_low,
+        var, beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
     # Generate covariance matrix (latent features are mixed in matrix, so each
     # cluster will be of size cluster_size + 1)
@@ -8068,6 +8061,135 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
 }
 ```
 
+`checkGenClusteredDataWeightedInputs()`
+
+```{r}
+#' Check inputs to genClusteredDataWeighted
+#'
+#' @param n Integer or numeric; the number of observations to generate. (The
+#' generated X and Z will have n rows, and the generated y and mu will have
+#' length n.)
+#' @param p Integer or numeric; the number of features to generate. The
+#' generated X will have p columns.
+#' @param k_unclustered Integer or numeric; the number of features in X that
+#' will have nonzero coefficients in the true model for y among those features 
+#' not generated from the n_clusters latent variables (called "weak signal" 
+#' features in the simulations from Faletto and Bien 2022). The coefficients on
+#' these features will be determined by beta_unclustered.
+#' @param cluster_size Integer or numeric; for each of the n_clusters latent
+#' variables, X will contain cluster_size noisy proxies that are correlated with
+#' the latent variable.
+#' @param n_strong_cluster_vars Integer or numeric; among the cluster_size
+#' proxies in each cluster, n_strong_cluster_vars will have a high covariance
+#' (rho_high) with the latent variable and cluster_size - n_strong_cluster_vars
+#' will have a low covariance (rho_low) with the latent variable.
+#' @param n_clusters Integer or numeric; the number of latent variables to
+#' generate, each of which will be associated with an observed cluster in X.
+#' Must be at least 1. Default is 1.
+#' @param sig_clusters Integer or numeric; the number of generated latent
+#' features that will have nonzero coefficients in the true model for y (all of
+#' them will have coefficient beta_latent). Must be less than or equal to
+#' n_clusters. Default is 1.
+#' @param rho_high Integer or numeric; the covariance of the "strong proxies" in
+#' each cluster with the latent variable (and each other). Note that the
+#' correlation between the "strong proxy" features in the cluster will be
+#' rho_high/var. rho_high cannot equal 0 and must be at least as large as
+#' rho_low. Default is 0.9.
+#' @param rho_low Integer or numeric; the covariance of the "weak proxies" in
+#' each cluster with the latent variable (and each other). Note that the
+#' correlation between the "weak proxy" features in the cluster will be
+#' rho_low/var. rho_low cannot equal 0 and must be no larger than rho_high.
+#' Default is 0.5.
+#' @param var Integer or numeric; the variance of all of the observed features
+#' in X (both the proxies for the latent variables and the k_unclustered other
+#' features). Can't equal 0. Default is 1.
+#' @param beta_latent Integer or numeric; the coefficient used for all
+#' sig_clusters latent variables that have nonzero coefficients in the true
+#' model for y. Can't equal 0. Default is 1.5.
+#' @param beta_unclustered Integer or numeric; the maximum coefficient in the
+#' model for y among the k_unclustered features in X not generated from the
+#' latent variables. The coefficients of the features will be
+#' beta_unclustered/sqrt(1:k_unclustered). Can't equal 0. Default is 1.
+#' @param snr Integer or numeric; the signal-to-noise ratio of the response
+#' y. If sigma_eps_sq is not specified, the variance of the noise in y will be
+#' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
+#' snr and sigma_eps_sq must be specified. Default is NA.
+#' @param sigma_eps_sq Integer or numeric; the variance on the noise added
+#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' @return A list of the following elements. \item{X}{An n x p numeric matrix of
+#' n observations from a p-dimensional multivariate normal distribution
+#' generated using the specified parameters. The first n_clusters times
+#' cluster_size features will be the clusters of features correlated with the
+#' n_clusters latent variables. The next k_unclustered features will be the
+#' "weak signal" features, and the remaining p - n_clusters*cluster_size -
+#' k_unclustered features will be the unclustered noise features.} \item{y}{A
+#' length n numeric vector; the response generated from X, the latent features
+#' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
+#' latent features; either a numeric vector (if n_clusters > 1) or a numeric
+#' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' the true coefficient vector (equal to y minus the added noise).}
+#' @author Gregory Faletto, Jacob Bien
+checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
+        n_strong_cluster_vars, n_clusters, sig_clusters, rho_high, rho_low,
+        var, beta_latent, beta_unclustered, snr, sigma_eps_sq){
+
+    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
+    stopifnot(sig_clusters <= n_clusters)
+    stopifnot(sig_clusters >= 0)
+    stopifnot(sig_clusters == round(sig_clusters))
+    
+    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
+    stopifnot(n_clusters == round(n_clusters))
+    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
+    # at least 1 (so that it's possible to generate data with no latent 
+    # features)? If so, should only check that cluster_size >= 1 if n_clusters
+    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
+    # rather than 2.
+    stopifnot(n_clusters >= 1)
+
+    stopifnot(cluster_size >= 1)
+
+    stopifnot(is.integer(n_strong_cluster_vars) |
+        is.numeric(n_strong_cluster_vars))
+    stopifnot(!is.na(n_strong_cluster_vars))
+    stopifnot(length(n_strong_cluster_vars) == 1)
+    stopifnot(n_strong_cluster_vars == round(n_strong_cluster_vars))
+    stopifnot(n_strong_cluster_vars >= 0)
+    stopifnot(n_strong_cluster_vars <= cluster_size)
+
+    stopifnot(abs(rho_high) <= abs(var))
+    stopifnot(rho_high != 0)
+    stopifnot(rho_low != 0)
+    stopifnot(abs(rho_high) >= abs(rho_low))
+    stopifnot(var > 0)
+
+    stopifnot(beta_latent != 0)
+    stopifnot(beta_unclustered != 0)
+
+    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
+    stopifnot(k_unclustered >= 0)
+    stopifnot(k_unclustered == round(k_unclustered))
+    
+    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
+
+    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
+    # of weak signal features is beta_unclustered/sqrt(i) in order to have
+    # a definitive ranking of weak signal features.
+    if(is.na(snr) & is.na(sigma_eps_sq)){
+        stop("Must specify one of snr or sigma_eps_sq")
+    }
+    
+    if(!is.na(snr)){
+        stopifnot(snr > 0)
+    }
+    if(!is.na(sigma_eps_sq)){
+        stopifnot(sigma_eps_sq > 0)
+    }
+}
+```
+
+No tests for `checkGenClusteredDataWeightedInputs()`
 
 `makeCovarianceMatrixWeighted()`
 
@@ -8164,49 +8286,29 @@ Tests for `makeCovarianceMatrixWeighted()`
 testthat::test_that("makeCovarianceMatrixWeighted works", {
   set.seed(7612)
 
-  # ret <- makeCovarianceMatrixWeighted(p=8, nblocks=2, block_size=3, rho=0.8, var=2)
-  # 
-  # testthat::expect_true(is.numeric(ret))
-  # testthat::expect_true(is.matrix(ret))
-  # testthat::expect_equal(nrow(ret), 8)
-  # testthat::expect_equal(ncol(ret), 8)
-  # testthat::expect_true(all(ret == t(ret)))
-  # # Test on-diagonal and off-diagonal entries to see if they are as expected
-  # # (only need to check top half of matrix; we already confirmed the matrix is
-  # # symmetric)
-  # testthat::expect_true(all(diag(ret) == 2))
-  # testthat::expect_equal(ret[1, 2], 0.8)
-  # testthat::expect_equal(ret[1, 3], 0.8)
-  # testthat::expect_equal(ret[2, 3], 0.8)
-  # testthat::expect_equal(ret[4, 5], 0.8)
-  # testthat::expect_equal(ret[4, 6], 0.8)
-  # testthat::expect_equal(ret[5, 6], 0.8)
-  # testthat::expect_true(all(ret[1:3, 4:8] == 0))
-  # testthat::expect_true(all(ret[4:6, c(1:3, 7:8)] == 0))
-  # testthat::expect_true(all(ret[7, c(1:6, 8)] == 0))
-  # testthat::expect_true(all(ret[8, 1:7] == 0))
-  # 
-  # # Bad inputs
-  # testthat::expect_error(makeCovarianceMatrixWeighted(p=8, nblocks=2, block_size=3,
-  #                                             rho=0.8, var=.2),
-  #                        "abs(rho) <= abs(var) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(makeCovarianceMatrixWeighted(p=8, nblocks=-2, block_size=3,
-  #                                             rho=0.8, var=2),
-  #                        "nblocks >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(makeCovarianceMatrixWeighted(p=8, nblocks=2, block_size=3,
-  #                                             rho=0, var=2),
-  #                        "rho != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(makeCovarianceMatrixWeighted(p=8, nblocks=2, block_size=3,
-  #                                             rho=0.9, var=0),
-  #                        "var != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(makeCovarianceMatrixWeighted(p=5, nblocks=2, block_size=3,
-  #                                             rho=0.8, var=2),
-  #                        "p >= nblocks * block_size is not TRUE",
-  #                        fixed=TRUE)
+  ret <- makeCovarianceMatrixWeighted(p=8, nblocks=2, block_size=3,
+                                      n_strong_block_vars=2, rho_high=0.8,
+                                      rho_low=0.2, var=2)
+
+  testthat::expect_true(is.numeric(ret))
+  testthat::expect_true(is.matrix(ret))
+  testthat::expect_equal(nrow(ret), 8)
+  testthat::expect_equal(ncol(ret), 8)
+  testthat::expect_true(all(ret == t(ret)))
+  # Test on-diagonal and off-diagonal entries to see if they are as expected
+  # (only need to check top half of matrix; we already confirmed the matrix is
+  # symmetric)
+  testthat::expect_true(all(diag(ret) == 2))
+  testthat::expect_equal(ret[1, 2], 0.8)
+  testthat::expect_equal(ret[1, 3], 0.2)
+  testthat::expect_equal(ret[2, 3], 0.2)
+  testthat::expect_equal(ret[4, 5], 0.8)
+  testthat::expect_equal(ret[4, 6], 0.2)
+  testthat::expect_equal(ret[5, 6], 0.2)
+  testthat::expect_true(all(ret[1:3, 4:8] == 0))
+  testthat::expect_true(all(ret[4:6, c(1:3, 7:8)] == 0))
+  testthat::expect_true(all(ret[7, c(1:6, 8)] == 0))
+  testthat::expect_true(all(ret[8, 1:7] == 0))
 })
 ```
 
@@ -8214,260 +8316,96 @@ Tests for `genClusteredDataWeighted()`
 
 ```{r}
 testthat::test_that("genClusteredDataWeighted works", {
-  # set.seed(23478)
-  # 
-  # ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
-  #               sig_clusters=2, rho=3.99, var=4, beta_latent=1.5,
-  #               beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-  # 
-  # testthat::expect_true(is.numeric(ret$X))
-  # testthat::expect_true(is.matrix(ret$X))
-  # testthat::expect_equal(ncol(ret$X), 19)
-  # testthat::expect_equal(nrow(ret$X), 25)
-  # # X is Gaussian with mean 0 and variance 4; expect all observations to lie
-  # # within 5 standard deviations of mean
-  # testthat::expect_true(all(abs(ret$X) < 5*2))
-  # # Test that clusters are correlated--within-cluster correlation should be
-  # # high, correlation with other features should be low
-  # testthat::expect_true(min(cor(ret$X[, 1:5])) > .9)
-  # testthat::expect_true(max(abs(cor(ret$X[, 1:5], ret$X[, 6:19]))) < .6)
-  # 
-  # testthat::expect_true(min(cor(ret$X[, 6:10])) > .9)
-  # testthat::expect_true(max(abs(cor(ret$X[, 6:10],
-  #                                   ret$X[, c(1:5, 11:19)]))) < .6)
-  # 
-  # testthat::expect_true(min(cor(ret$X[, 11:15])) > .9)
-  # testthat::expect_true(max(abs(cor(ret$X[, 11:15],
-  #                                   ret$X[, c(1:10, 16:19)]))) < .6)
-  # 
-  # cor_indeps <- cor(ret$X[, 16:19])
-  # testthat::expect_true(max(abs(cor_indeps[lower.tri(cor_indeps)])) < .6)
-  # 
-  # testthat::expect_true(is.numeric(ret$y))
-  # testthat::expect_equal(length(ret$y), 25)
-  # 
-  # testthat::expect_true(is.numeric(ret$Z))
-  # testthat::expect_true(is.matrix(ret$Z))
-  # testthat::expect_equal(nrow(ret$Z), 25)
-  # testthat::expect_equal(ncol(ret$Z), 3)
-  # 
-  # testthat::expect_true(is.numeric(ret$mu))
-  # testthat::expect_equal(length(ret$mu), 25)
-  # # Because y is Gaussian with mean mu and standard deviation .5 conditional on
-  # # mu, expect all observations to lie within 5 sds of mu
-  # testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.5))
-  # 
-  # # Specify SNR instead of sigma_eps_sq
-  # ret <- genClusteredDataWeighted(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
-  #                      sig_clusters=2, rho=.8, var=1.1, beta_latent=1.5,
-  #                      beta_unclustered=-2, snr=1, sigma_eps_sq=NA)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-  # 
-  # # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
-  # # implies a very large noise variance to test this)
-  # ret <- genClusteredDataWeighted(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
-  #               sig_clusters=2, rho=.8, var=4, beta_latent=1.5,
-  #               beta_unclustered=-2, snr=.01, sigma_eps_sq=.25)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-  # 
-  # # Because y is Gaussian with mean mu and standard deviation .5 conditional on
-  # # mu, expect all observations to lie within 5 sds of mu
-  # testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.25))
-  # 
-  # # Try a single latent variable (z should be a one-column matrix)
-  # ret <- genClusteredDataWeighted(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=1,
-  #               sig_clusters=1, rho=.8, var=4, beta_latent=1.5,
-  #               beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
-  # 
-  # testthat::expect_true(is.list(ret))
-  # testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-  # 
-  # testthat::expect_true(is.numeric(ret$Z))
-  # testthat::expect_true(is.matrix(ret$Z))
-  # testthat::expect_equal(nrow(ret$Z), 5)
-  # testthat::expect_equal(ncol(ret$Z), 1)
-  # 
-  # # Bad inputs
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                      cluster_size=5, n_clusters=3,
-  #                                      sig_clusters="2", rho=.8, var=1.1,
-  #                                      beta_latent=1.5, beta_unclustered=-2,
-  #                                      snr=1, sigma_eps_sq=NA),
-  #                        "is.numeric(sig_clusters) | is.integer(sig_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=4, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters <= n_clusters is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=-1, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters >= 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=.6, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "sig_clusters == round(sig_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # 
-  # # n_clusters
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5,
-  #                                                 n_clusters="3",
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "is.numeric(n_clusters) | is.integer(n_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3.2,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "n_clusters == round(n_clusters) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=0,
-  #                                                 sig_clusters=0, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "n_clusters >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=.3, n_clusters=3,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "cluster_size >= 1 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(p=16, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "p >= n_clusters * cluster_size + k_unclustered is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "abs(rho) <= abs(var) is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "rho != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=-1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "var > 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=0,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "beta_latent != 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=0, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "beta_unclustered != 0 is not TRUE", fixed=TRUE)
-  # 
-  # # k_unclustered
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered="2",
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=-2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "k_unclustered >= 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=.2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=1,
-  #                                                 sigma_eps_sq=NA),
-  #                        "k_unclustered == round(k_unclustered) is not TRUE",
-  #                        fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=NA,
-  #                                                 sigma_eps_sq=NA),
-  #                        "Must specify one of snr or sigma_eps_sq", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=-.2,
-  #                                                 sigma_eps_sq=NA),
-  #                        "snr > 0 is not TRUE", fixed=TRUE)
-  # 
-  # testthat::expect_error(genClusteredDataWeighted(n=5, p=19, k_unclustered=2,
-  #                                                 cluster_size=5, n_clusters=3,
-  #                                                 sig_clusters=2, rho=0.8,
-  #                                                 var=1.1, beta_latent=1.5,
-  #                                                 beta_unclustered=-2, snr=NA,
-  #                                                 sigma_eps_sq=-.3),
-  #                        "sigma_eps_sq > 0 is not TRUE", fixed=TRUE)
+  set.seed(23478)
+
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=3,
+                                  sig_clusters=2, rho_high=3.99, rho_low=2,
+                                  var=4, beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(ncol(ret$X), 19)
+  testthat::expect_equal(nrow(ret$X), 25)
+  # X is Gaussian with mean 0 and variance 4; expect all observations to lie
+  # within 5 standard deviations of mean
+  testthat::expect_true(all(abs(ret$X) < 5*2))
+  # Test that clusters are correlated--within-cluster correlation should be
+  # high, correlation with other features should be low
+  testthat::expect_true(min(cor(ret$X[, 1:3])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 1:5], ret$X[, 6:19]))) < .6)
+
+  testthat::expect_true(min(cor(ret$X[, 6:8])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 6:10],
+                                    ret$X[, c(1:5, 11:19)]))) < .6)
+
+  testthat::expect_true(min(cor(ret$X[, 11:13])) > .9)
+  testthat::expect_true(max(abs(cor(ret$X[, 11:15],
+                                    ret$X[, c(1:10, 16:19)]))) < .6)
+
+  cor_indeps <- cor(ret$X[, 16:19])
+  testthat::expect_true(max(abs(cor_indeps[lower.tri(cor_indeps)])) < .6)
+
+  testthat::expect_true(is.numeric(ret$y))
+  testthat::expect_equal(length(ret$y), 25)
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 25)
+  testthat::expect_equal(ncol(ret$Z), 3)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 25)
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.5))
+
+  # Specify SNR instead of sigma_eps_sq
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=3,
+                                  sig_clusters=2, rho_high=3.99, rho_low=2,
+                                  var=4, beta_latent=1.5, beta_unclustered=-2,
+                                  snr=1, sigma_eps_sq=NA)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
+  # implies a very large noise variance to test this)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=3,
+                                  sig_clusters=2, rho_high=3.99, rho_low=2,
+                                  var=4, beta_latent=1.5, beta_unclustered=-2,
+                                  snr=.01, sigma_eps_sq=.25)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*sqrt(.25)))
+
+  # Try a single latent variable (z should be a one-column matrix)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=1,
+                                  sig_clusters=1, rho_high=3.99, rho_low=2,
+                                  var=4, beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 25)
+  testthat::expect_equal(ncol(ret$Z), 1)
 
 })
 ```
-
 
 `getLassoLambda()`:
 
