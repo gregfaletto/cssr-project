@@ -23,7 +23,7 @@
 <meta name="author" content="Gregory Faletto" />
 
 
-<meta name="date" content="2023-02-06" />
+<meta name="date" content="2023-02-07" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2258,37 +2258,38 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb190-45"><a href="competitor-methods.html#cb190-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear</span></span>
 <span id="cb190-46"><a href="competitor-methods.html#cb190-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)</span></span>
 <span id="cb190-47"><a href="competitor-methods.html#cb190-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; &#39; 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb190-48"><a href="competitor-methods.html#cb190-48" aria-hidden="true" tabindex="-1"></a><span id='clusterRepLasso'>clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
-<span id="cb190-49"><a href="competitor-methods.html#cb190-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-50"><a href="competitor-methods.html#cb190-50" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
-<span id="cb190-51"><a href="competitor-methods.html#cb190-51" aria-hidden="true" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
-<span id="cb190-52"><a href="competitor-methods.html#cb190-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-53"><a href="competitor-methods.html#cb190-53" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
-<span id="cb190-54"><a href="competitor-methods.html#cb190-54" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
-<span id="cb190-55"><a href="competitor-methods.html#cb190-55" aria-hidden="true" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
-<span id="cb190-56"><a href="competitor-methods.html#cb190-56" aria-hidden="true" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
-<span id="cb190-57"><a href="competitor-methods.html#cb190-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-58"><a href="competitor-methods.html#cb190-58" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
-<span id="cb190-59"><a href="competitor-methods.html#cb190-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-60"><a href="competitor-methods.html#cb190-60" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the cluster</span></span>
-<span id="cb190-61"><a href="competitor-methods.html#cb190-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># representative lasso procedure</span></span>
-<span id="cb190-62"><a href="competitor-methods.html#cb190-62" aria-hidden="true" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x, clusters, <span class="at">type=</span><span class="st">&quot;clusterRepLasso&quot;</span>,</span>
-<span id="cb190-63"><a href="competitor-methods.html#cb190-63" aria-hidden="true" tabindex="-1"></a>        <span class="at">prototypes=</span>prototypes)</span>
-<span id="cb190-64"><a href="competitor-methods.html#cb190-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-65"><a href="competitor-methods.html#cb190-65" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster representatives</span></span>
-<span id="cb190-66"><a href="competitor-methods.html#cb190-66" aria-hidden="true" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nlambda=</span>nlambda)</span>
-<span id="cb190-67"><a href="competitor-methods.html#cb190-67" aria-hidden="true" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
-<span id="cb190-68"><a href="competitor-methods.html#cb190-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-69"><a href="competitor-methods.html#cb190-69" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Finally, extract the desired information from the lasso fit--all the</span></span>
-<span id="cb190-70"><a href="competitor-methods.html#cb190-70" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sets of selected clusters (one for each observed model size), and</span></span>
-<span id="cb190-71"><a href="competitor-methods.html#cb190-71" aria-hidden="true" tabindex="-1"></a>    <span class="co"># corresponding sets of selected features</span></span>
-<span id="cb190-72"><a href="competitor-methods.html#cb190-72" aria-hidden="true" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
-<span id="cb190-73"><a href="competitor-methods.html#cb190-73" aria-hidden="true" tabindex="-1"></a>        prototypes, feat_names)</span>
-<span id="cb190-74"><a href="competitor-methods.html#cb190-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb190-75"><a href="competitor-methods.html#cb190-75" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
-<span id="cb190-76"><a href="competitor-methods.html#cb190-76" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
-<span id="cb190-77"><a href="competitor-methods.html#cb190-77" aria-hidden="true" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
-<span id="cb190-78"><a href="competitor-methods.html#cb190-78" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb190-48"><a href="competitor-methods.html#cb190-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb190-49"><a href="competitor-methods.html#cb190-49" aria-hidden="true" tabindex="-1"></a><span id='clusterRepLasso'>clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
+<span id="cb190-50"><a href="competitor-methods.html#cb190-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-51"><a href="competitor-methods.html#cb190-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
+<span id="cb190-52"><a href="competitor-methods.html#cb190-52" aria-hidden="true" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href='competitor-methods.html#processClusterLassoInputs'>processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
+<span id="cb190-53"><a href="competitor-methods.html#cb190-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-54"><a href="competitor-methods.html#cb190-54" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
+<span id="cb190-55"><a href="competitor-methods.html#cb190-55" aria-hidden="true" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
+<span id="cb190-56"><a href="competitor-methods.html#cb190-56" aria-hidden="true" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
+<span id="cb190-57"><a href="competitor-methods.html#cb190-57" aria-hidden="true" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
+<span id="cb190-58"><a href="competitor-methods.html#cb190-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-59"><a href="competitor-methods.html#cb190-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
+<span id="cb190-60"><a href="competitor-methods.html#cb190-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-61"><a href="competitor-methods.html#cb190-61" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the cluster</span></span>
+<span id="cb190-62"><a href="competitor-methods.html#cb190-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># representative lasso procedure</span></span>
+<span id="cb190-63"><a href="competitor-methods.html#cb190-63" aria-hidden="true" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href='competitor-methods.html#getXglmnet'>getXglmnet</a>(x, clusters, <span class="at">type=</span><span class="st">&quot;clusterRepLasso&quot;</span>,</span>
+<span id="cb190-64"><a href="competitor-methods.html#cb190-64" aria-hidden="true" tabindex="-1"></a>        <span class="at">prototypes=</span>prototypes)</span>
+<span id="cb190-65"><a href="competitor-methods.html#cb190-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-66"><a href="competitor-methods.html#cb190-66" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster representatives</span></span>
+<span id="cb190-67"><a href="competitor-methods.html#cb190-67" aria-hidden="true" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nlambda=</span>nlambda)</span>
+<span id="cb190-68"><a href="competitor-methods.html#cb190-68" aria-hidden="true" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">&quot;nonzero&quot;</span>))</span>
+<span id="cb190-69"><a href="competitor-methods.html#cb190-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-70"><a href="competitor-methods.html#cb190-70" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Finally, extract the desired information from the lasso fit--all the</span></span>
+<span id="cb190-71"><a href="competitor-methods.html#cb190-71" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sets of selected clusters (one for each observed model size), and</span></span>
+<span id="cb190-72"><a href="competitor-methods.html#cb190-72" aria-hidden="true" tabindex="-1"></a>    <span class="co"># corresponding sets of selected features</span></span>
+<span id="cb190-73"><a href="competitor-methods.html#cb190-73" aria-hidden="true" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href='competitor-methods.html#getClusterSelsFromGlmnet'>getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
+<span id="cb190-74"><a href="competitor-methods.html#cb190-74" aria-hidden="true" tabindex="-1"></a>        prototypes, feat_names)</span>
+<span id="cb190-75"><a href="competitor-methods.html#cb190-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb190-76"><a href="competitor-methods.html#cb190-76" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
+<span id="cb190-77"><a href="competitor-methods.html#cb190-77" aria-hidden="true" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
+<span id="cb190-78"><a href="competitor-methods.html#cb190-78" aria-hidden="true" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
+<span id="cb190-79"><a href="competitor-methods.html#cb190-79" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href='competitor-methods.html#clusterRepLasso'>clusterRepLasso</a>()</code>:</p>
 <div class="sourceCode" id="cb191"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb191-1"><a href="competitor-methods.html#cb191-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">(gregfaletto): deal with the fact that clusters argument doesn&#39;t work</span></span>
 <span id="cb191-2"><a href="competitor-methods.html#cb191-2" aria-hidden="true" tabindex="-1"></a><span class="co"># for a data.frame input that has a categorical random variable with more than</span></span>
