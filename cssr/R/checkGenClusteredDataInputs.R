@@ -22,9 +22,6 @@
 #' @param rho Integer or numeric; the covariance of the proxies in each cluster
 #' with the latent variable (and each other). Note that the correlation between
 #' the features in the cluster will be rho/var. Can't equal 0. Default is 0.9.
-#' @param var Integer or numeric; the variance of all of the observed features
-#' in X (both the proxies for the latent variables and the k_unclustered other
-#' features). Can't equal 0. Default is 1.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.
@@ -53,7 +50,7 @@
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
-    n_clusters, sig_clusters, rho, var, beta_latent, beta_unclustered, snr,
+    n_clusters, sig_clusters, rho, beta_latent, beta_unclustered, snr,
     sigma_eps_sq){
 
     stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
@@ -70,19 +67,17 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     # rather than 2.
     stopifnot(n_clusters >= 1)
 
-    stopifnot(cluster_size >= 1)
+    stopifnot(cluster_size >= 2)
 
-    stopifnot(abs(rho) <= abs(var))
-    stopifnot(rho != 0)
-    stopifnot(var > 0)
+    stopifnot(rho > 0)
 
     stopifnot(beta_latent != 0)
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 0)
+    stopifnot(k_unclustered >= 2)
     stopifnot(k_unclustered == round(k_unclustered))
-    
+
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
 
     # Same as make_sparse_blocked_linear_model_random, but ith coefficient
@@ -91,11 +86,15 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     if(is.na(snr) & is.na(sigma_eps_sq)){
         stop("Must specify one of snr or sigma_eps_sq")
     }
-    
-    if(!is.na(snr)){
+
+    if(is.na(snr)){
+        stopifnot(all(!is.na(sigma_eps_sq)))
+        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
+        stopifnot(length(sigma_eps_sq) == 1)
+        stopifnot(sigma_eps_sq >= 0)
+    } else{
+        stopifnot(is.numeric(snr) | is.integer(snr))
+        stopifnot(length(snr) == 1)
         stopifnot(snr > 0)
-    }
-    if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq > 0)
     }
 }

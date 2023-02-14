@@ -36,9 +36,6 @@
 #' correlation between the "weak proxy" features in the cluster will be
 #' rho_low/var. rho_low cannot equal 0 and must be no larger than rho_high.
 #' Default is 0.5.
-#' @param var Integer or numeric; the variance of all of the observed features
-#' in X (both the proxies for the latent variables and the k_unclustered other
-#' features). Can't equal 0. Default is 1.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.
@@ -68,7 +65,7 @@
 #' @author Gregory Faletto, Jacob Bien
 checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
         n_strong_cluster_vars, n_clusters, sig_clusters, rho_high, rho_low,
-        var, beta_latent, beta_unclustered, snr, sigma_eps_sq){
+        beta_latent, beta_unclustered, snr, sigma_eps_sq){
 
     stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
     stopifnot(sig_clusters <= n_clusters)
@@ -84,27 +81,26 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     # rather than 2.
     stopifnot(n_clusters >= 1)
 
-    stopifnot(cluster_size >= 1)
+    stopifnot(cluster_size >= 2)
 
     stopifnot(is.integer(n_strong_cluster_vars) |
         is.numeric(n_strong_cluster_vars))
     stopifnot(!is.na(n_strong_cluster_vars))
     stopifnot(length(n_strong_cluster_vars) == 1)
     stopifnot(n_strong_cluster_vars == round(n_strong_cluster_vars))
-    stopifnot(n_strong_cluster_vars >= 0)
-    stopifnot(n_strong_cluster_vars <= cluster_size)
+    stopifnot(n_strong_cluster_vars >= 1)
+    stopifnot(n_strong_cluster_vars < cluster_size)
 
-    stopifnot(abs(rho_high) <= abs(var))
-    stopifnot(rho_high != 0)
-    stopifnot(rho_low != 0)
-    stopifnot(abs(rho_high) >= abs(rho_low))
-    stopifnot(var > 0)
+    stopifnot(rho_high <= 1)
+    stopifnot(rho_high > 0)
+    stopifnot(rho_low > 0)
+    stopifnot(rho_high >= rho_low)
 
     stopifnot(beta_latent != 0)
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 0)
+    stopifnot(k_unclustered >= 2)
     stopifnot(k_unclustered == round(k_unclustered))
     
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)

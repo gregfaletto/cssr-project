@@ -79,38 +79,55 @@
 #' \url{https://arxiv.org/abs/2201.00494}.
 #' @export
 genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
-    n_strong_cluster_vars, n_clusters=1,  sig_clusters=1, rho_high=0.9,
-    rho_low=0.5, var=1, beta_latent=1.5, beta_unclustered=1,
-    snr=as.numeric(NA), sigma_eps_sq=as.numeric(NA)){
+    n_strong_cluster_vars, n_clusters=1, sig_clusters=1, rho_high=0.9,
+    rho_low=0.5, beta_latent=1.5, beta_unclustered=1, snr=as.numeric(NA),
+    sigma_eps_sq=as.numeric(NA)){
 
     # Check inputs
     checkGenClusteredDataWeightedInputs(p, k_unclustered, cluster_size,
         n_strong_cluster_vars, n_clusters,  sig_clusters, rho_high, rho_low,
-        var, beta_latent, beta_unclustered, snr, sigma_eps_sq)
+        beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    # Generate covariance matrix (latent features are mixed in matrix, so each
-    # cluster will be of size cluster_size + 1)
-    Sigma <- makeCovarianceMatrixWeighted(p=p + n_clusters, nblocks=n_clusters,
-        block_size=cluster_size + 1,
-        n_strong_block_vars=n_strong_cluster_vars + 1, rho_high=rho_high,
-        rho_low=rho_low, var=var)
+    ret <- genZmuY(n=n, p=p, k_unclustered=k_unclustered,
+        cluster_size=cluster_size, n_clusters=n_clusters,
+        sig_clusters=sig_clusters, beta_latent=beta_latent,
+        beta_unclustered=beta_unclustered, snr=snr, sigma_eps_sq=sigma_eps_sq)
 
-    # Generate coefficients
-    # Note that beta has length p + sig_clusters
-    coefs <- makeCoefficients(p=p + n_clusters, k_unblocked=k_unclustered,
-        beta_low=beta_unclustered, beta_high=beta_latent, nblocks=n_clusters,
-        sig_blocks=sig_clusters, block_size=cluster_size + 1)
+    Z <- ret$Z
+    y <- ret$y
+    mu <- ret$mu
+    other_X <- ret$other_X
 
-    # Generate mu, X, z, sd, y
-    gen_mu_x_z_sd_res <- genMuXZSd(n=n, p=p, beta=coefs$beta, Sigma=Sigma,
-        blocked_dgp_vars=coefs$blocked_dgp_vars, latent_vars=coefs$latent_vars, 
-        block_size=cluster_size, n_blocks=n_clusters, snr=snr,
-        sigma_eps_sq=sigma_eps_sq)
+    # Finally, generate clusters of proxies to complete X.
+    noise_var_high <- getNoiseVar(rho_high)
+    noise_var_low <- getNoiseVar(rho_low)
 
-    mu <- gen_mu_x_z_sd_res$mu
-    sd <- gen_mu_x_z_sd_res$sd
+    # Create matrix of proxies
+    Z <- as.matrix(Z)
+    proxy_mat <- matrix(as.numeric(NA), n, n_clusters*cluster_size)
+    for(i in 1:n_clusters){
+        for(j in 1:n_strong_cluster_vars){
+            proxy_mat[, (i - 1)*cluster_size + j] <- Z[, i] + rnorm(n,
+                mean=0, sd=sqrt(noise_var_high))
+        }
+        for(j in (n_strong_cluster_vars + 1):cluster_size){
+            proxy_mat[, (i - 1)*cluster_size + j] <- Z[, i] + rnorm(n,
+                mean=0, sd=sqrt(noise_var_low))
+        }
+    }
 
-    y <- mu + sd * stats::rnorm(n)
+    X <- cbind(proxy_mat, other_X)
+    
+    # Check output
+    stopifnot(length(mu) == n)
 
-    return(list(X=gen_mu_x_z_sd_res$X, y=y, Z=gen_mu_x_z_sd_res$z, mu=mu))
+    stopifnot(nrow(X) == n)
+    stopifnot(ncol(X) == p)
+
+    if(any(!is.na(Z))){
+        stopifnot(nrow(Z) == n)
+        stopifnot(ncol(Z) == n_clusters)
+    }
+
+    return(list(X=X, y=y, Z=Z, mu=mu))
 }

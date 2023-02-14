@@ -13,7 +13,6 @@ genClusteredData(
   n_clusters = 1,
   sig_clusters = 1,
   rho = 0.9,
-  var = 1,
   beta_latent = 1.5,
   beta_unclustered = 1,
   snr = as.numeric(NA),
@@ -32,11 +31,11 @@ generated X will have p columns.}
 will have nonzero coefficients in the true model for y among those features
 not generated from the n_clusters latent variables (called "weak signal"
 features in the simulations from Faletto and Bien 2022). The coefficients on
-these features will be determined by beta_unclustered.}
+these features will be determined by beta_unclustered. Must be at least 1.}
 
 \item{cluster_size}{Integer or numeric; for each of the n_clusters latent
 variables, X will contain cluster_size noisy proxies that are correlated with
-the latent variable.}
+the latent variable. Must be at least 2.}
 
 \item{n_clusters}{Integer or numeric; the number of latent variables to
 generate, each of which will be associated with an observed cluster in X.
@@ -47,13 +46,8 @@ features that will have nonzero coefficients in the true model for y (all of
 them will have coefficient beta_latent). Must be less than or equal to
 n_clusters. Default is 1.}
 
-\item{rho}{Integer or numeric; the covariance of the proxies in each cluster
-with the latent variable (and each other). Note that the correlation between
-the features in the cluster will be rho/var. Can't equal 0. Default is 0.9.}
-
-\item{var}{Integer or numeric; the variance of all of the observed features
-in X (both the proxies for the latent variables and the k_unclustered other
-features). Can't equal 0. Default is 1.}
+\item{rho}{Integer or numeric; the correlation of the proxies in each cluster
+with the latent variable. Must be greater than 0. Default is 0.9.}
 
 \item{beta_latent}{Integer or numeric; the coefficient used for all
 sig_clusters latent variables that have nonzero coefficients in the true
@@ -84,19 +78,16 @@ length n numeric vector; the response generated from X, the latent features
 from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
 latent features; either a numeric vector (if n_clusters > 1) or a numeric
 matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-\item{mu}{A length \code{n} numeric vector; the expected response given X, Z, and
+item{mu}{A length \code{n} numeric vector; the expected response given X, Z, and
 the true coefficient vector (equal to y minus the added noise).}
 }
 \description{
-TODO(gregfaletto) change cluster_size into a vector of sizes (maybe also
-deprecate n_clusters as an input, since this would be inferred by the length
-of cluster_sizes?)
 Generate a data set including latent features Z, observed features X (which
 may include noisy or noiseless observations of the latent features in Z),
 an observed response y which is a linear model of features from Z and X as
 well as independent mean zero noise, and mu (the responses from y without
 the added noise). Data is generated in the same way as in the simulations
-from Example 1 and Sections 5.1 and 5.2 of Faletto and Bien (2022).
+from Faletto and Bien (2022).
 }
 \references{
 Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
