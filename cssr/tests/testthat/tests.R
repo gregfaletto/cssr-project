@@ -3906,6 +3906,97 @@ testthat::test_that("genClusteredDataWeighted works", {
 
 })
 
+testthat::test_that("genClusteredDataWeightedRandom works", {
+  set.seed(23478)
+
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_clusters=3,
+                                  sig_clusters=2, rho_high=1, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  testthat::expect_true(is.numeric(ret$X))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(ncol(ret$X), 19)
+  testthat::expect_equal(nrow(ret$X), 25)
+  # X is Gaussian with mean 0 and variance 4; expect all observations to lie
+  # within 5 standard deviations of mean
+  testthat::expect_true(all(abs(ret$X) < 5*2))
+  # Test that clusters are correlated--within-cluster correlation should be
+  # high, correlation with other features should be low
+  testthat::expect_true(min(cor(ret$X[, 1:3])) > .4)
+  testthat::expect_true(max(abs(cor(ret$X[, 1:5], ret$X[, 6:19]))) < .6)
+
+  testthat::expect_true(min(cor(ret$X[, 6:8])) > .4)
+  testthat::expect_true(max(abs(cor(ret$X[, 6:10],
+                                    ret$X[, c(1:5, 11:19)]))) < .6)
+
+  testthat::expect_true(min(cor(ret$X[, 11:13])) > .4)
+  testthat::expect_true(max(abs(cor(ret$X[, 11:15],
+                                    ret$X[, c(1:10, 16:19)]))) < .7)
+
+  cor_indeps <- cor(ret$X[, 16:19])
+  testthat::expect_true(max(abs(cor_indeps[lower.tri(cor_indeps)])) < .6)
+
+  testthat::expect_true(is.numeric(ret$y))
+  testthat::expect_equal(length(ret$y), 25)
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 25)
+  testthat::expect_equal(ncol(ret$Z), 3)
+
+  testthat::expect_true(is.numeric(ret$mu))
+  testthat::expect_equal(length(ret$mu), 25)
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.5))
+
+  # Specify SNR instead of sigma_eps_sq
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_clusters=3,
+                                  sig_clusters=2, rho_high=1, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=1, sigma_eps_sq=NA)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
+  # implies a very large noise variance to test this)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_clusters=3,
+                                  sig_clusters=2, rho_high=.99, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=.01, sigma_eps_sq=.25)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
+  # mu, expect all observations to lie within 5 sds of mu
+  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*sqrt(.25)))
+
+  # Try a single latent variable (z should be a one-column matrix)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_clusters=1,
+                                  sig_clusters=1, rho_high=1, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+
+  testthat::expect_true(is.numeric(ret$Z))
+  testthat::expect_true(is.matrix(ret$Z))
+  testthat::expect_equal(nrow(ret$Z), 25)
+  testthat::expect_equal(ncol(ret$Z), 1)
+
+})
+
 testthat::test_that("getLassoLambda works", {
   set.seed(7252)
   
