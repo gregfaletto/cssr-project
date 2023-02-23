@@ -3927,14 +3927,14 @@ testthat::test_that("genClusteredDataWeightedRandom works", {
   testthat::expect_true(all(abs(ret$X) < 5*2))
   # Test that clusters are correlated--within-cluster correlation should be
   # high, correlation with other features should be low
-  testthat::expect_true(min(cor(ret$X[, 1:3])) > .4)
+  testthat::expect_true(min(cor(ret$X[, 1:3])) > .2)
   testthat::expect_true(max(abs(cor(ret$X[, 1:5], ret$X[, 6:19]))) < .6)
 
-  testthat::expect_true(min(cor(ret$X[, 6:8])) > .4)
+  testthat::expect_true(min(cor(ret$X[, 6:8])) > .2)
   testthat::expect_true(max(abs(cor(ret$X[, 6:10],
                                     ret$X[, c(1:5, 11:19)]))) < .6)
 
-  testthat::expect_true(min(cor(ret$X[, 11:13])) > .4)
+  testthat::expect_true(min(cor(ret$X[, 11:13])) > .2)
   testthat::expect_true(max(abs(cor(ret$X[, 11:15],
                                     ret$X[, c(1:10, 16:19)]))) < .7)
 

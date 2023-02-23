@@ -3,13 +3,13 @@
 \name{getNoiseVar}
 \alias{getNoiseVar}
 \title{Get variance of noise to add to Z in order to yield proxies X with desired
-correlations between the proxies}
+correlations with Z}
 \usage{
 getNoiseVar(cor)
 }
 \arguments{
 \item{cor}{A numeric vector of desired correlations for each proxy to have
-with the other proxies in the cluster. Note: correlations must be positive.}
+with Z. Note: correlations must be positive.}
 }
 \value{
 A vector of variances of independent Gaussian random variables to add
@@ -17,7 +17,7 @@ to Z in order to yield proxies with the desired correlations with Z.
 }
 \description{
 Get variance of noise to add to Z in order to yield proxies X with desired
-correlations between the proxies
+correlations with Z
 }
 \author{
 Gregory Faletto, Jacob Bien

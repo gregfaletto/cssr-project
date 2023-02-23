@@ -23,7 +23,7 @@
 <meta name="author" content="Gregory Faletto" />
 
 
-<meta name="date" content="2023-02-16" />
+<meta name="date" content="2023-02-22" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -696,32 +696,32 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>No tests for <code><a href='other-useful.html#genZmuY'>genZmuY</a>()</code>.</p>
 <p><code><a href='other-useful.html#getNoiseVar'>getNoiseVar</a>()</code>:</p>
 <div class="sourceCode" id="cb136"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb136-1"><a href="other-useful.html#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Get variance of noise to add to Z in order to yield proxies X with desired</span></span>
-<span id="cb136-2"><a href="other-useful.html#cb136-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; correlations between the proxies</span></span>
+<span id="cb136-2"><a href="other-useful.html#cb136-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; correlations with Z</span></span>
 <span id="cb136-3"><a href="other-useful.html#cb136-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39;</span></span>
 <span id="cb136-4"><a href="other-useful.html#cb136-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param cor A numeric vector of desired correlations for each proxy to have</span></span>
-<span id="cb136-5"><a href="other-useful.html#cb136-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; with the other proxies in the cluster. Note: correlations must be positive.</span></span>
+<span id="cb136-5"><a href="other-useful.html#cb136-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; with Z. Note: correlations must be positive.</span></span>
 <span id="cb136-6"><a href="other-useful.html#cb136-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @return A vector of variances of independent Gaussian random variables to add</span></span>
 <span id="cb136-7"><a href="other-useful.html#cb136-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; to Z in order to yield proxies with the desired correlations with Z.</span></span>
 <span id="cb136-8"><a href="other-useful.html#cb136-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb136-9"><a href="other-useful.html#cb136-9" aria-hidden="true" tabindex="-1"></a><span id='getNoiseVar'>getNoiseVar</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(cor){</span>
-<span id="cb136-10"><a href="other-useful.html#cb136-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Correlation between X_1 = Z + epsilon_1 and X_2 = Z + epsilon_2 where</span></span>
-<span id="cb136-11"><a href="other-useful.html#cb136-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Z is standard normal and epsilon_i are both normal, independent of Z,</span></span>
-<span id="cb136-12"><a href="other-useful.html#cb136-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># and have mean 0 and variance sig_eps_sq:</span></span>
+<span id="cb136-9"><a href="other-useful.html#cb136-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb136-10"><a href="other-useful.html#cb136-10" aria-hidden="true" tabindex="-1"></a><span id='getNoiseVar'>getNoiseVar</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(cor){</span>
+<span id="cb136-11"><a href="other-useful.html#cb136-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Correlation between standard normal Z and X = Z + epsilon where epsilon</span></span>
+<span id="cb136-12"><a href="other-useful.html#cb136-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># is normal, independent of Z, and has mean 0 and variance sig_eps_sq:</span></span>
 <span id="cb136-13"><a href="other-useful.html#cb136-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># </span></span>
-<span id="cb136-14"><a href="other-useful.html#cb136-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   E[X_1 X_2]/sqrt{Var(X_1) Var(X_2)}</span></span>
-<span id="cb136-15"><a href="other-useful.html#cb136-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># = (E[Z^2] + E[Z*epsilon_1] + E[Z*epsilon_2] + E[epsilon_1*epsilon_2])/</span></span>
-<span id="cb136-16"><a href="other-useful.html#cb136-16" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   sqrt{(1 + sig_eps_sq)^2}</span></span>
-<span id="cb136-17"><a href="other-useful.html#cb136-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># = (1 + 0 + 0 + 0)/(1 + sig_eps_sq)</span></span>
-<span id="cb136-18"><a href="other-useful.html#cb136-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb136-19"><a href="other-useful.html#cb136-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># So we have</span></span>
-<span id="cb136-20"><a href="other-useful.html#cb136-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">#             cor = 1/(1 + sig_eps_sq)</span></span>
-<span id="cb136-21"><a href="other-useful.html#cb136-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># \iff sig_eps_sq = 1/cor - 1</span></span>
+<span id="cb136-14"><a href="other-useful.html#cb136-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   E[Z X]/sqrt{Var(Z) Var(X)}</span></span>
+<span id="cb136-15"><a href="other-useful.html#cb136-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># = (E[Z^2] + E[Z*epsilon])/sqrt{1*(1 + sig_eps_sq)}</span></span>
+<span id="cb136-16"><a href="other-useful.html#cb136-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># = (1 + 0)/sqrt{1 + sig_eps_sq}</span></span>
+<span id="cb136-17"><a href="other-useful.html#cb136-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb136-18"><a href="other-useful.html#cb136-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># So we have</span></span>
+<span id="cb136-19"><a href="other-useful.html#cb136-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">#                 cor = 1/sqrt{1 + sig_eps_sq}</span></span>
+<span id="cb136-20"><a href="other-useful.html#cb136-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># \iff 1 + sig_eps_sq = 1/cor^2</span></span>
+<span id="cb136-21"><a href="other-useful.html#cb136-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># \iff     sig_eps_sq = 1/cor^2 - 1</span></span>
 <span id="cb136-22"><a href="other-useful.html#cb136-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(cor) <span class="sc">|</span> <span class="fu">is.integer</span>(cor))</span>
 <span id="cb136-23"><a href="other-useful.html#cb136-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(cor)))</span>
 <span id="cb136-24"><a href="other-useful.html#cb136-24" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(cor) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
 <span id="cb136-25"><a href="other-useful.html#cb136-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(cor <span class="sc">&gt;</span> <span class="dv">0</span>))</span>
 <span id="cb136-26"><a href="other-useful.html#cb136-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(cor <span class="sc">&lt;=</span> <span class="dv">1</span>))</span>
-<span id="cb136-27"><a href="other-useful.html#cb136-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="dv">1</span><span class="sc">/</span>cor <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb136-27"><a href="other-useful.html#cb136-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="dv">1</span><span class="sc">/</span>cor<span class="sc">^</span><span class="dv">2</span> <span class="sc">-</span> <span class="dv">1</span>)</span>
 <span id="cb136-28"><a href="other-useful.html#cb136-28" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>No tests for <code><a href='other-useful.html#getNoiseVar'>getNoiseVar</a>()</code>.</p>
 <p>Finally, tests for <code><a href='other-useful.html#genClusteredData'>genClusteredData</a>()</code></p>
@@ -1544,14 +1544,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb145-19"><a href="other-useful.html#cb145-19" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">abs</span>(ret<span class="sc">$</span>X) <span class="sc">&lt;</span> <span class="dv">5</span><span class="sc">*</span><span class="dv">2</span>))</span>
 <span id="cb145-20"><a href="other-useful.html#cb145-20" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Test that clusters are correlated--within-cluster correlation should be</span></span>
 <span id="cb145-21"><a href="other-useful.html#cb145-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># high, correlation with other features should be low</span></span>
-<span id="cb145-22"><a href="other-useful.html#cb145-22" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])) <span class="sc">&gt;</span> .<span class="dv">4</span>)</span>
+<span id="cb145-22"><a href="other-useful.html#cb145-22" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>])) <span class="sc">&gt;</span> .<span class="dv">2</span>)</span>
 <span id="cb145-23"><a href="other-useful.html#cb145-23" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">max</span>(<span class="fu">abs</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], ret<span class="sc">$</span>X[, <span class="dv">6</span><span class="sc">:</span><span class="dv">19</span>]))) <span class="sc">&lt;</span> .<span class="dv">6</span>)</span>
 <span id="cb145-24"><a href="other-useful.html#cb145-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-25"><a href="other-useful.html#cb145-25" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">6</span><span class="sc">:</span><span class="dv">8</span>])) <span class="sc">&gt;</span> .<span class="dv">4</span>)</span>
+<span id="cb145-25"><a href="other-useful.html#cb145-25" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">6</span><span class="sc">:</span><span class="dv">8</span>])) <span class="sc">&gt;</span> .<span class="dv">2</span>)</span>
 <span id="cb145-26"><a href="other-useful.html#cb145-26" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">max</span>(<span class="fu">abs</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>],</span>
 <span id="cb145-27"><a href="other-useful.html#cb145-27" aria-hidden="true" tabindex="-1"></a>                                    ret<span class="sc">$</span>X[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">11</span><span class="sc">:</span><span class="dv">19</span>)]))) <span class="sc">&lt;</span> .<span class="dv">6</span>)</span>
 <span id="cb145-28"><a href="other-useful.html#cb145-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb145-29"><a href="other-useful.html#cb145-29" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>])) <span class="sc">&gt;</span> .<span class="dv">4</span>)</span>
+<span id="cb145-29"><a href="other-useful.html#cb145-29" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">min</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">11</span><span class="sc">:</span><span class="dv">13</span>])) <span class="sc">&gt;</span> .<span class="dv">2</span>)</span>
 <span id="cb145-30"><a href="other-useful.html#cb145-30" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">max</span>(<span class="fu">abs</span>(<span class="fu">cor</span>(ret<span class="sc">$</span>X[, <span class="dv">11</span><span class="sc">:</span><span class="dv">15</span>],</span>
 <span id="cb145-31"><a href="other-useful.html#cb145-31" aria-hidden="true" tabindex="-1"></a>                                    ret<span class="sc">$</span>X[, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="dv">16</span><span class="sc">:</span><span class="dv">19</span>)]))) <span class="sc">&lt;</span> .<span class="dv">7</span>)</span>
 <span id="cb145-32"><a href="other-useful.html#cb145-32" aria-hidden="true" tabindex="-1"></a></span>
