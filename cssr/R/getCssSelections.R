@@ -36,7 +36,10 @@
 #' integer vectors; each vector contains the indices of the features in one of
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
 #' indices of the features with nonzero weights from all of the selected
-#' clusters.}
+#' clusters.} \item{weights}{A named list of the same length as selected_clusts.
+#' Each list element weights[[j]] is a numeric vector of the weights to use for
+#' the jth selected cluster, and it has the same name as the cluster it
+#' corresponds to.}
 #' @author Gregory Faletto, Jacob Bien
 #' @references 
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
@@ -79,5 +82,6 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     # sel_results$selected_feats is guaranteed to have length at least as long
     # as sel_results$selected_clusts by getSelectedClusters
     return(list(selected_clusts=sel_clusts,
-        selected_feats=sel_results$selected_feats))
+        selected_feats=sel_results$selected_feats, weights=sel_results$weights))
 }
+

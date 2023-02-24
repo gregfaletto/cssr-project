@@ -1670,7 +1670,7 @@ testthat::test_that("getSelectedClusters works", {
   for(i in 1:length(res$weights)){
     weights_i <- res$weights[[i]]
     num_nonzero_weights <- sum(weights_i > 0)
-    # For "sparse" weighting, tither there should only be one nonzero weight and
+    # For "sparse" weighting, either there should only be one nonzero weight and
     # it should equal 1 (if there were no ties in selection proportions among
     # cluster members) or the nonzero weights should all be
     # 1/num_nonzero_weights
@@ -1777,8 +1777,9 @@ testthat::test_that("getCssSelections works", {
   res <- getCssSelections(css_res)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   testthat::expect_true(length(res$selected_clusts) <=
                           length(res$selected_feats))
 
@@ -1810,6 +1811,17 @@ testthat::test_that("getCssSelections works", {
   testthat::expect_true(all(res$selected_feats <= 7))
   testthat::expect_equal(length(res$selected_feats),
                              length(unique(res$selected_feats)))
+  
+  testthat::expect_equal(length(res$selected_clusts), length(res$weights))
+  for(i in 1:length(res$weights)){
+    weights_i <- res$weights[[i]]
+    num_nonzero_weights <- sum(weights_i > 0)
+    # For "sparse" weighting, either there should only be one nonzero weight and
+    # it should equal 1 (if there were no ties in selection proportions among
+    # cluster members) or the nonzero weights should all be
+    # 1/num_nonzero_weights
+    testthat::expect_true(all(weights_i[weights_i > 0] == 1/num_nonzero_weights))
+  }
 
   # Test min_num_clusts (should be 5 clusters--3 named ones, plus last two get
   # put in their own unnamed clusters automatically by css)
@@ -1843,8 +1855,9 @@ testthat::test_that("getCssSelections works", {
                              min_num_clusts=1, max_num_clusts=NA)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   testthat::expect_true(length(res$selected_clusts) <=
                           length(res$selected_feats))
 
@@ -4495,8 +4508,9 @@ testthat::test_that("cssSelect works", {
   res <- cssSelect(X=x, y=y, clusters=good_clusters)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   testthat::expect_true(!is.null(names(res$selected_clusts)))
   testthat::expect_true(is.character(names(res$selected_clusts)))
@@ -4539,8 +4553,9 @@ testthat::test_that("cssSelect works", {
   res <- cssSelect(X=x, y=y)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   testthat::expect_true(!is.null(names(res$selected_clusts)))
   testthat::expect_true(is.character(names(res$selected_clusts)))
@@ -4586,8 +4601,9 @@ testthat::test_that("cssSelect works", {
   res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   testthat::expect_true(!is.null(names(res$selected_clusts)))
   testthat::expect_true(is.character(names(res$selected_clusts)))
@@ -4649,8 +4665,9 @@ testthat::test_that("cssSelect works", {
   p <- ncol(X_df_mat)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   testthat::expect_true(!is.null(names(res$selected_clusts)))
   testthat::expect_true(is.character(names(res$selected_clusts)))
@@ -4696,8 +4713,9 @@ testthat::test_that("cssSelect works", {
   res <- cssSelect(X=x2, y=y, clusters=good_clusters)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   testthat::expect_true(!is.null(names(res$selected_clusts)))
   testthat::expect_true(is.character(names(res$selected_clusts)))
@@ -4739,27 +4757,31 @@ testthat::test_that("cssSelect works", {
   res <- cssSelect(X=x, y=y, clusters=good_clusters, lambda=0.01)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   res <- cssSelect(X=x, y=y, clusters=good_clusters, cutoff=0.6)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   
   res <- cssSelect(X=x, y=y, clusters=good_clusters, max_num_clusts=6)
   
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   testthat::expect_true(length(res$selected_clusts) <= 6)
   
   res <- cssSelect(X=x, y=y, clusters=good_clusters, auto_select_size=FALSE)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_equal(length(res), 2)
-  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats"))
+  testthat::expect_equal(length(res), 3)
+  testthat::expect_identical(names(res), c("selected_clusts", "selected_feats",
+                                           "weights"))
   # Total of 11 - 2*(3 - 1) = 7 clusters
   testthat::expect_equal(length(res$selected_clusts), 7)
   
