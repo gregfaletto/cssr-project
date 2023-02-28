@@ -4030,6 +4030,15 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_equal(length(ret), 1)
   testthat::expect_true(ret >= 0)
   
+  # Different mixing parameter
+  
+   ret <- getLassoLambda(X=x, y=y, lambda_choice="min", nfolds=5, alpha=0.5)
+  
+  testthat::expect_true(is.numeric(ret) | is.integer(ret))
+  testthat::expect_true(!is.na(ret))
+  testthat::expect_equal(length(ret), 1)
+  testthat::expect_true(ret >= 0)
+  
   # Bad inputs
   testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
                          fixed=TRUE)
@@ -4065,6 +4074,9 @@ testthat::test_that("getLassoLambda works", {
   
   testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=3),
                          "nfolds > 3 is not TRUE", fixed=TRUE)
+  
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=4, alpha=1.2),
+                         "alpha <= 1 is not TRUE", fixed=TRUE)
 
 })
 

@@ -23,7 +23,7 @@
 <meta name="author" content="Gregory Faletto" />
 
 
-<meta name="date" content="2023-02-23" />
+<meta name="date" content="2023-02-28" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -1635,59 +1635,67 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb147-18"><a href="other-useful.html#cb147-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Bühlmann and van de Geer 2011, Section 2.5.1.). Default is &quot;1se&quot;.</span></span>
 <span id="cb147-19"><a href="other-useful.html#cb147-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param nfolds Numeric or integer; the number of folds for cross-validation.</span></span>
 <span id="cb147-20"><a href="other-useful.html#cb147-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Must be at least 4 (as specified by cv.glmnet). Default is 10.</span></span>
-<span id="cb147-21"><a href="other-useful.html#cb147-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @return A numeric; the selected value of lambda.</span></span>
-<span id="cb147-22"><a href="other-useful.html#cb147-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb147-23"><a href="other-useful.html#cb147-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Bühlmann, P., &amp; Meinshausen, N. (2006). High-Dimensional Graphs</span></span>
-<span id="cb147-24"><a href="other-useful.html#cb147-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; and Variable Selection With the Lasso. \emph{The Annals of Statistics},</span></span>
-<span id="cb147-25"><a href="other-useful.html#cb147-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; 34(3), 1436–1462. \url{https://doi.org/10.1214/009053606000000281}.</span></span>
-<span id="cb147-26"><a href="other-useful.html#cb147-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \cr Peter Bühlmann and Sara van de Geer. Statistics for High-Dimensional</span></span>
-<span id="cb147-27"><a href="other-useful.html#cb147-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Data. \emph{Springer Series in Statistics}. Springer, Heidelberg, 2011. ISBN</span></span>
-<span id="cb147-28"><a href="other-useful.html#cb147-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; 978-3-642-20191-2. \url{http://dx.doi.org/10.1007/978-3-642-20192-9}. \cr</span></span>
-<span id="cb147-29"><a href="other-useful.html#cb147-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization</span></span>
-<span id="cb147-30"><a href="other-useful.html#cb147-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of</span></span>
-<span id="cb147-31"><a href="other-useful.html#cb147-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb147-32"><a href="other-useful.html#cb147-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
-<span id="cb147-33"><a href="other-useful.html#cb147-33" aria-hidden="true" tabindex="-1"></a><span id='getLassoLambda'>getLassoLambda</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">lambda_choice=</span><span class="st">&quot;1se&quot;</span>, <span class="at">nfolds=</span><span class="dv">10</span>){</span>
-<span id="cb147-34"><a href="other-useful.html#cb147-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.character</span>(lambda_choice))</span>
-<span id="cb147-35"><a href="other-useful.html#cb147-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_choice) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb147-36"><a href="other-useful.html#cb147-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(lambda_choice))</span>
-<span id="cb147-37"><a href="other-useful.html#cb147-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_choice <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;min&quot;</span>, <span class="st">&quot;1se&quot;</span>))</span>
-<span id="cb147-38"><a href="other-useful.html#cb147-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-39"><a href="other-useful.html#cb147-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb147-40"><a href="other-useful.html#cb147-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
-<span id="cb147-41"><a href="other-useful.html#cb147-41" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb147-42"><a href="other-useful.html#cb147-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-43"><a href="other-useful.html#cb147-43" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(nfolds) <span class="sc">|</span> <span class="fu">is.integer</span>(nfolds))</span>
-<span id="cb147-44"><a href="other-useful.html#cb147-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(nfolds) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb147-45"><a href="other-useful.html#cb147-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nfolds <span class="sc">==</span> <span class="fu">round</span>(nfolds))</span>
-<span id="cb147-46"><a href="other-useful.html#cb147-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nfolds <span class="sc">&gt;</span> <span class="dv">3</span>)</span>
-<span id="cb147-47"><a href="other-useful.html#cb147-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-48"><a href="other-useful.html#cb147-48" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Since we are using the lasso, we require y to be a real-valued response</span></span>
-<span id="cb147-49"><a href="other-useful.html#cb147-49" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (unlike for the general cluster stability selection procedure, where y</span></span>
-<span id="cb147-50"><a href="other-useful.html#cb147-50" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can have a more general format as long as a suitable feature selection</span></span>
-<span id="cb147-51"><a href="other-useful.html#cb147-51" aria-hidden="true" tabindex="-1"></a>    <span class="co"># function is provided by the user)</span></span>
-<span id="cb147-52"><a href="other-useful.html#cb147-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(y) <span class="sc">|</span> <span class="fu">is.integer</span>(y))</span>
-<span id="cb147-53"><a href="other-useful.html#cb147-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">==</span> <span class="fu">length</span>(y))</span>
-<span id="cb147-54"><a href="other-useful.html#cb147-54" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-55"><a href="other-useful.html#cb147-55" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),</span></span>
-<span id="cb147-56"><a href="other-useful.html#cb147-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># so that each individual lasso fit is of size floor(n/2)</span></span>
-<span id="cb147-57"><a href="other-useful.html#cb147-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-58"><a href="other-useful.html#cb147-58" aria-hidden="true" tabindex="-1"></a>    n_sample <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span><span class="sc">*</span>nfolds<span class="sc">/</span>(nfolds <span class="sc">-</span> <span class="dv">1</span>)), n)</span>
-<span id="cb147-59"><a href="other-useful.html#cb147-59" aria-hidden="true" tabindex="-1"></a>    nfolds <span class="ot">&lt;-</span> <span class="fu">min</span>(nfolds, n_sample)</span>
-<span id="cb147-60"><a href="other-useful.html#cb147-60" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-61"><a href="other-useful.html#cb147-61" aria-hidden="true" tabindex="-1"></a>    inds_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, n_sample)</span>
-<span id="cb147-62"><a href="other-useful.html#cb147-62" aria-hidden="true" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
-<span id="cb147-63"><a href="other-useful.html#cb147-63" aria-hidden="true" tabindex="-1"></a>        <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nfolds=</span>nfolds)</span>
-<span id="cb147-64"><a href="other-useful.html#cb147-64" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-65"><a href="other-useful.html#cb147-65" aria-hidden="true" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">&quot;lambda.&quot;</span>, lambda_choice, <span class="at">sep=</span><span class="st">&quot;&quot;</span>)]]</span>
-<span id="cb147-66"><a href="other-useful.html#cb147-66" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-67"><a href="other-useful.html#cb147-67" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb147-68"><a href="other-useful.html#cb147-68" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb147-69"><a href="other-useful.html#cb147-69" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
-<span id="cb147-70"><a href="other-useful.html#cb147-70" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb147-71"><a href="other-useful.html#cb147-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb147-72"><a href="other-useful.html#cb147-72" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
-<span id="cb147-73"><a href="other-useful.html#cb147-73" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb147-21"><a href="other-useful.html#cb147-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @param alpha Numeric; the elastic net mixing parameter. Default is 1 (in</span></span>
+<span id="cb147-22"><a href="other-useful.html#cb147-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; which case the penalty is for lasso)</span></span>
+<span id="cb147-23"><a href="other-useful.html#cb147-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @return A numeric; the selected value of lambda.</span></span>
+<span id="cb147-24"><a href="other-useful.html#cb147-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb147-25"><a href="other-useful.html#cb147-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @references Bühlmann, P., &amp; Meinshausen, N. (2006). High-Dimensional Graphs</span></span>
+<span id="cb147-26"><a href="other-useful.html#cb147-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; and Variable Selection With the Lasso. \emph{The Annals of Statistics},</span></span>
+<span id="cb147-27"><a href="other-useful.html#cb147-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; 34(3), 1436–1462. \url{https://doi.org/10.1214/009053606000000281}.</span></span>
+<span id="cb147-28"><a href="other-useful.html#cb147-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; \cr Peter Bühlmann and Sara van de Geer. Statistics for High-Dimensional</span></span>
+<span id="cb147-29"><a href="other-useful.html#cb147-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Data. \emph{Springer Series in Statistics}. Springer, Heidelberg, 2011. ISBN</span></span>
+<span id="cb147-30"><a href="other-useful.html#cb147-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; 978-3-642-20191-2. \url{http://dx.doi.org/10.1007/978-3-642-20192-9}. \cr</span></span>
+<span id="cb147-31"><a href="other-useful.html#cb147-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization</span></span>
+<span id="cb147-32"><a href="other-useful.html#cb147-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of</span></span>
+<span id="cb147-33"><a href="other-useful.html#cb147-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
+<span id="cb147-34"><a href="other-useful.html#cb147-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&#39; @export</span></span>
+<span id="cb147-35"><a href="other-useful.html#cb147-35" aria-hidden="true" tabindex="-1"></a><span id='getLassoLambda'>getLassoLambda</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">lambda_choice=</span><span class="st">&quot;1se&quot;</span>, <span class="at">nfolds=</span><span class="dv">10</span>, <span class="at">alpha=</span><span class="dv">1</span>){</span>
+<span id="cb147-36"><a href="other-useful.html#cb147-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.character</span>(lambda_choice))</span>
+<span id="cb147-37"><a href="other-useful.html#cb147-37" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_choice) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb147-38"><a href="other-useful.html#cb147-38" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(lambda_choice))</span>
+<span id="cb147-39"><a href="other-useful.html#cb147-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_choice <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;min&quot;</span>, <span class="st">&quot;1se&quot;</span>))</span>
+<span id="cb147-40"><a href="other-useful.html#cb147-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-41"><a href="other-useful.html#cb147-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb147-42"><a href="other-useful.html#cb147-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
+<span id="cb147-43"><a href="other-useful.html#cb147-43" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb147-44"><a href="other-useful.html#cb147-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-45"><a href="other-useful.html#cb147-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(nfolds) <span class="sc">|</span> <span class="fu">is.integer</span>(nfolds))</span>
+<span id="cb147-46"><a href="other-useful.html#cb147-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(nfolds) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb147-47"><a href="other-useful.html#cb147-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nfolds <span class="sc">==</span> <span class="fu">round</span>(nfolds))</span>
+<span id="cb147-48"><a href="other-useful.html#cb147-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nfolds <span class="sc">&gt;</span> <span class="dv">3</span>)</span>
+<span id="cb147-49"><a href="other-useful.html#cb147-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-50"><a href="other-useful.html#cb147-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(alpha) <span class="sc">|</span> <span class="fu">is.integer</span>(alpha))</span>
+<span id="cb147-51"><a href="other-useful.html#cb147-51" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(alpha) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb147-52"><a href="other-useful.html#cb147-52" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(alpha))</span>
+<span id="cb147-53"><a href="other-useful.html#cb147-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(alpha <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb147-54"><a href="other-useful.html#cb147-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(alpha <span class="sc">&lt;=</span> <span class="dv">1</span>)</span>
+<span id="cb147-55"><a href="other-useful.html#cb147-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-56"><a href="other-useful.html#cb147-56" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Since we are using the lasso, we require y to be a real-valued response</span></span>
+<span id="cb147-57"><a href="other-useful.html#cb147-57" aria-hidden="true" tabindex="-1"></a>    <span class="co"># (unlike for the general cluster stability selection procedure, where y</span></span>
+<span id="cb147-58"><a href="other-useful.html#cb147-58" aria-hidden="true" tabindex="-1"></a>    <span class="co"># can have a more general format as long as a suitable feature selection</span></span>
+<span id="cb147-59"><a href="other-useful.html#cb147-59" aria-hidden="true" tabindex="-1"></a>    <span class="co"># function is provided by the user)</span></span>
+<span id="cb147-60"><a href="other-useful.html#cb147-60" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(y) <span class="sc">|</span> <span class="fu">is.integer</span>(y))</span>
+<span id="cb147-61"><a href="other-useful.html#cb147-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">==</span> <span class="fu">length</span>(y))</span>
+<span id="cb147-62"><a href="other-useful.html#cb147-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-63"><a href="other-useful.html#cb147-63" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),</span></span>
+<span id="cb147-64"><a href="other-useful.html#cb147-64" aria-hidden="true" tabindex="-1"></a>    <span class="co"># so that each individual lasso fit is of size floor(n/2)</span></span>
+<span id="cb147-65"><a href="other-useful.html#cb147-65" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-66"><a href="other-useful.html#cb147-66" aria-hidden="true" tabindex="-1"></a>    n_sample <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span><span class="sc">*</span>nfolds<span class="sc">/</span>(nfolds <span class="sc">-</span> <span class="dv">1</span>)), n)</span>
+<span id="cb147-67"><a href="other-useful.html#cb147-67" aria-hidden="true" tabindex="-1"></a>    nfolds <span class="ot">&lt;-</span> <span class="fu">min</span>(nfolds, n_sample)</span>
+<span id="cb147-68"><a href="other-useful.html#cb147-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-69"><a href="other-useful.html#cb147-69" aria-hidden="true" tabindex="-1"></a>    inds_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, n_sample)</span>
+<span id="cb147-70"><a href="other-useful.html#cb147-70" aria-hidden="true" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
+<span id="cb147-71"><a href="other-useful.html#cb147-71" aria-hidden="true" tabindex="-1"></a>        <span class="at">family=</span><span class="st">&quot;gaussian&quot;</span>, <span class="at">nfolds=</span>nfolds, <span class="at">alpha=</span>alpha)</span>
+<span id="cb147-72"><a href="other-useful.html#cb147-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-73"><a href="other-useful.html#cb147-73" aria-hidden="true" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">&quot;lambda.&quot;</span>, lambda_choice, <span class="at">sep=</span><span class="st">&quot;&quot;</span>)]]</span>
+<span id="cb147-74"><a href="other-useful.html#cb147-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-75"><a href="other-useful.html#cb147-75" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb147-76"><a href="other-useful.html#cb147-76" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb147-77"><a href="other-useful.html#cb147-77" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
+<span id="cb147-78"><a href="other-useful.html#cb147-78" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb147-79"><a href="other-useful.html#cb147-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-80"><a href="other-useful.html#cb147-80" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
+<span id="cb147-81"><a href="other-useful.html#cb147-81" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href='other-useful.html#getLassoLambda'>getLassoLambda</a>()</code>:</p>
 <div class="sourceCode" id="cb148"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb148-1"><a href="other-useful.html#cb148-1" aria-hidden="true" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;getLassoLambda works&quot;</span>, {</span>
 <span id="cb148-2"><a href="other-useful.html#cb148-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">7252</span>)</span>
@@ -1709,43 +1717,55 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb148-18"><a href="other-useful.html#cb148-18" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(ret), <span class="dv">1</span>)</span>
 <span id="cb148-19"><a href="other-useful.html#cb148-19" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
 <span id="cb148-20"><a href="other-useful.html#cb148-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-21"><a href="other-useful.html#cb148-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bad inputs</span></span>
-<span id="cb148-22"><a href="other-useful.html#cb148-22" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span><span class="st">&quot;x&quot;</span>, <span class="at">y=</span>y), <span class="st">&quot;is.matrix(X) is not TRUE&quot;</span>,</span>
-<span id="cb148-23"><a href="other-useful.html#cb148-23" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-21"><a href="other-useful.html#cb148-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Different mixing parameter</span></span>
+<span id="cb148-22"><a href="other-useful.html#cb148-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-23"><a href="other-useful.html#cb148-23" aria-hidden="true" tabindex="-1"></a>   ret <span class="ot">&lt;-</span> <a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda_choice=</span><span class="st">&quot;min&quot;</span>, <span class="at">nfolds=</span><span class="dv">5</span>, <span class="at">alpha=</span><span class="fl">0.5</span>)</span>
 <span id="cb148-24"><a href="other-useful.html#cb148-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-25"><a href="other-useful.html#cb148-25" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>, ], <span class="at">y=</span>y),</span>
-<span id="cb148-26"><a href="other-useful.html#cb148-26" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;n == length(y) is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-27"><a href="other-useful.html#cb148-27" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-28"><a href="other-useful.html#cb148-28" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="cn">TRUE</span>),</span>
-<span id="cb148-29"><a href="other-useful.html#cb148-29" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.numeric(y) | is.integer(y) is not TRUE&quot;</span>,</span>
-<span id="cb148-30"><a href="other-useful.html#cb148-30" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-31"><a href="other-useful.html#cb148-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb148-32"><a href="other-useful.html#cb148-32" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Error has quotation marks in it</span></span>
-<span id="cb148-33"><a href="other-useful.html#cb148-33" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda_choice=</span><span class="st">&quot;mni&quot;</span>))</span>
-<span id="cb148-34"><a href="other-useful.html#cb148-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb148-35"><a href="other-useful.html#cb148-35" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb148-36"><a href="other-useful.html#cb148-36" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">lambda_choice=</span><span class="fu">c</span>(<span class="st">&quot;min&quot;</span>, <span class="st">&quot;1se&quot;</span>)),</span>
-<span id="cb148-37"><a href="other-useful.html#cb148-37" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(lambda_choice) == 1 is not TRUE&quot;</span>,</span>
-<span id="cb148-38"><a href="other-useful.html#cb148-38" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-39"><a href="other-useful.html#cb148-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb148-40"><a href="other-useful.html#cb148-40" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda_choice=</span><span class="dv">1</span>),</span>
-<span id="cb148-41"><a href="other-useful.html#cb148-41" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.character(lambda_choice) is not TRUE&quot;</span>,</span>
-<span id="cb148-42"><a href="other-useful.html#cb148-42" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-43"><a href="other-useful.html#cb148-43" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-44"><a href="other-useful.html#cb148-44" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="st">&quot;5&quot;</span>),</span>
-<span id="cb148-45"><a href="other-useful.html#cb148-45" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.numeric(nfolds) | is.integer(nfolds) is not TRUE&quot;</span>,</span>
-<span id="cb148-46"><a href="other-useful.html#cb148-46" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-47"><a href="other-useful.html#cb148-47" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-48"><a href="other-useful.html#cb148-48" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>),</span>
-<span id="cb148-49"><a href="other-useful.html#cb148-49" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(nfolds) == 1 is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-50"><a href="other-useful.html#cb148-50" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-51"><a href="other-useful.html#cb148-51" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="fl">3.2</span>),</span>
-<span id="cb148-52"><a href="other-useful.html#cb148-52" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;nfolds == round(nfolds) is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-53"><a href="other-useful.html#cb148-53" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb148-54"><a href="other-useful.html#cb148-54" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="dv">3</span>),</span>
-<span id="cb148-55"><a href="other-useful.html#cb148-55" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;nfolds &gt; 3 is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb148-56"><a href="other-useful.html#cb148-56" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb148-57"><a href="other-useful.html#cb148-57" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<span id="cb148-25"><a href="other-useful.html#cb148-25" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(ret) <span class="sc">|</span> <span class="fu">is.integer</span>(ret))</span>
+<span id="cb148-26"><a href="other-useful.html#cb148-26" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(ret))</span>
+<span id="cb148-27"><a href="other-useful.html#cb148-27" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(ret), <span class="dv">1</span>)</span>
+<span id="cb148-28"><a href="other-useful.html#cb148-28" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb148-29"><a href="other-useful.html#cb148-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-30"><a href="other-useful.html#cb148-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Bad inputs</span></span>
+<span id="cb148-31"><a href="other-useful.html#cb148-31" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span><span class="st">&quot;x&quot;</span>, <span class="at">y=</span>y), <span class="st">&quot;is.matrix(X) is not TRUE&quot;</span>,</span>
+<span id="cb148-32"><a href="other-useful.html#cb148-32" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-33"><a href="other-useful.html#cb148-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-34"><a href="other-useful.html#cb148-34" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>, ], <span class="at">y=</span>y),</span>
+<span id="cb148-35"><a href="other-useful.html#cb148-35" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;n == length(y) is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-36"><a href="other-useful.html#cb148-36" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-37"><a href="other-useful.html#cb148-37" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="cn">TRUE</span>),</span>
+<span id="cb148-38"><a href="other-useful.html#cb148-38" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.numeric(y) | is.integer(y) is not TRUE&quot;</span>,</span>
+<span id="cb148-39"><a href="other-useful.html#cb148-39" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-40"><a href="other-useful.html#cb148-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb148-41"><a href="other-useful.html#cb148-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Error has quotation marks in it</span></span>
+<span id="cb148-42"><a href="other-useful.html#cb148-42" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda_choice=</span><span class="st">&quot;mni&quot;</span>))</span>
+<span id="cb148-43"><a href="other-useful.html#cb148-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb148-44"><a href="other-useful.html#cb148-44" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb148-45"><a href="other-useful.html#cb148-45" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">lambda_choice=</span><span class="fu">c</span>(<span class="st">&quot;min&quot;</span>, <span class="st">&quot;1se&quot;</span>)),</span>
+<span id="cb148-46"><a href="other-useful.html#cb148-46" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(lambda_choice) == 1 is not TRUE&quot;</span>,</span>
+<span id="cb148-47"><a href="other-useful.html#cb148-47" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-48"><a href="other-useful.html#cb148-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb148-49"><a href="other-useful.html#cb148-49" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda_choice=</span><span class="dv">1</span>),</span>
+<span id="cb148-50"><a href="other-useful.html#cb148-50" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.character(lambda_choice) is not TRUE&quot;</span>,</span>
+<span id="cb148-51"><a href="other-useful.html#cb148-51" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-52"><a href="other-useful.html#cb148-52" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-53"><a href="other-useful.html#cb148-53" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="st">&quot;5&quot;</span>),</span>
+<span id="cb148-54"><a href="other-useful.html#cb148-54" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;is.numeric(nfolds) | is.integer(nfolds) is not TRUE&quot;</span>,</span>
+<span id="cb148-55"><a href="other-useful.html#cb148-55" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-56"><a href="other-useful.html#cb148-56" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-57"><a href="other-useful.html#cb148-57" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>),</span>
+<span id="cb148-58"><a href="other-useful.html#cb148-58" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;length(nfolds) == 1 is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-59"><a href="other-useful.html#cb148-59" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-60"><a href="other-useful.html#cb148-60" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="fl">3.2</span>),</span>
+<span id="cb148-61"><a href="other-useful.html#cb148-61" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;nfolds == round(nfolds) is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-62"><a href="other-useful.html#cb148-62" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-63"><a href="other-useful.html#cb148-63" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="dv">3</span>),</span>
+<span id="cb148-64"><a href="other-useful.html#cb148-64" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;nfolds &gt; 3 is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-65"><a href="other-useful.html#cb148-65" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb148-66"><a href="other-useful.html#cb148-66" aria-hidden="true" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">nfolds=</span><span class="dv">4</span>, <span class="at">alpha=</span><span class="fl">1.2</span>),</span>
+<span id="cb148-67"><a href="other-useful.html#cb148-67" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;alpha &lt;= 1 is not TRUE&quot;</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb148-68"><a href="other-useful.html#cb148-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb148-69"><a href="other-useful.html#cb148-69" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## ── Warning (&#39;&lt;text&gt;:7&#39;): getLassoLambda works ──────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
@@ -1757,6 +1777,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
 ##  1. litr (local) <a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(X = x, y = y, lambda_choice = &quot;min&quot;, nfolds = 5)
+##  2. glmnet::cv.glmnet(...)
+##  3. glmnet:::cv.glmnet.raw(...)
+## 
+## ── Warning (&#39;&lt;text&gt;:23&#39;): getLassoLambda works ─────────────────────────────────
+## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
+## Backtrace:
+##  1. litr (local) <a href='other-useful.html#getLassoLambda'>getLassoLambda</a>(...)
 ##  2. glmnet::cv.glmnet(...)
 ##  3. glmnet:::cv.glmnet.raw(...)</code></pre>
 <p><code><a href='other-useful.html#getModelSize'>getModelSize</a>()</code>:</p>

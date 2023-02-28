@@ -4,7 +4,7 @@
 \alias{getLassoLambda}
 \title{Get lambda value for lasso}
 \usage{
-getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10)
+getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
 }
 \arguments{
 \item{X}{An n x p numeric matrix (preferably) or a data.frame (which will
@@ -26,6 +26,9 @@ Bühlmann and van de Geer 2011, Section 2.5.1.). Default is "1se".}
 
 \item{nfolds}{Numeric or integer; the number of folds for cross-validation.
 Must be at least 4 (as specified by cv.glmnet). Default is 10.}
+
+\item{alpha}{Numeric; the elastic net mixing parameter. Default is 1 (in
+which case the penalty is for lasso)}
 }
 \value{
 A numeric; the selected value of lambda.
