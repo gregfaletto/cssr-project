@@ -230,72 +230,61 @@
 <span><span class="fu"><a href="reference/getCssSelections.html">getCssSelections</a></span><span class="op">(</span><span class="va">css_output</span>, cutoff<span class="op">=</span><span class="fl">0.99</span>, min_num_clusts<span class="op">=</span><span class="fl">12</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/getCssSelections.html">getCssSelections</a></span><span class="op">(</span><span class="va">css_output</span>, cutoff<span class="op">=</span><span class="fl">0.5</span>, min_num_clusts<span class="op">=</span><span class="fl">3</span>, max_num_clusts<span class="op">=</span><span class="fl">7</span><span class="op">)</span></span></code></pre></div>
-<p>vignette incomplete past this point…</p>
-<p>Here’s a brief summary of how cluster stability selection works: besides the data <span class="math inline">(<em>X</em>,<em>y</em>)</span>, cluster stability selection also requires a “base” feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number <span class="math inline"><em>B</em></span> of subsamples of size <span class="math inline"><em>n</em>/2</span> and runs the feature selection method on each subsample, yielding <span class="math inline"><em>B</em></span> selected sets.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">clusters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Z_clust"</span><span class="op">=</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="fl">36</span><span class="op">:</span><span class="fl">40</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Wrapper functions (easy!)</span></span>
-<span><span class="va">n_test</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
-<span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">80</span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fl">40</span></span>
-<span><span class="va">testx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>, nrow<span class="op">=</span><span class="va">n_test</span>, ncol<span class="op">=</span><span class="va">p</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/cssPredict.html">cssPredict</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">testx</span>, <span class="va">clusters</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Get a good lambda</span></span>
-<span><span class="va">lambda</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/getLassoLambda.html">getLassoLambda</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># clusters &lt;- list(1:10, 46:40)</span></span>
-<span><span class="co"># clusters &lt;- 1:10</span></span>
-<span></span>
-<span><span class="va">inds</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fl">40</span></span>
-<span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/css.html">css</a></span><span class="op">(</span>X<span class="op">=</span><span class="va">X</span>, y<span class="op">=</span><span class="va">y</span>, lambda<span class="op">=</span><span class="va">lambda</span></span>
-<span>               , clusters<span class="op">=</span><span class="va">clusters</span></span>
-<span>               <span class="co"># , clusters=list()</span></span>
-<span>               <span class="co"># , clusters=1:10</span></span>
-<span>               <span class="co"># , sampling.type = "SS"</span></span>
-<span>               <span class="co"># B = 100,</span></span>
-<span>               <span class="co"># , prop_feats_remove = .5</span></span>
-<span>               , train_inds <span class="op">=</span> <span class="va">inds</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">predictions</span> <span class="op">&lt;-</span> <span class="va">results</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/getCssPreds.html">getCssPreds</a></span><span class="op">(</span>testX <span class="op">=</span> <span class="va">testx</span>, weighting<span class="op">=</span><span class="st">"sparse"</span>,</span>
-<span>                                      cutoff<span class="op">=</span><span class="fl">0.3</span></span>
-<span>                                      , min_num_clusts<span class="op">=</span><span class="fl">1</span></span>
-<span>                                      , max_num_clusts<span class="op">=</span><span class="fl">3</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">predictions</span></span>
-<span></span>
-<span><span class="va">train_x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span><span class="op">*</span><span class="va">p</span><span class="op">)</span>, nrow<span class="op">=</span><span class="va">n_test</span>, ncol<span class="op">=</span><span class="va">p</span><span class="op">)</span></span>
-<span><span class="va">train_y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_test</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">preds2</span> <span class="op">&lt;-</span> <span class="va">results</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/getCssPreds.html">getCssPreds</a></span><span class="op">(</span>testX <span class="op">=</span> <span class="va">testx</span>, weighting<span class="op">=</span><span class="st">"sparse"</span>,</span>
-<span>                                 cutoff<span class="op">=</span><span class="fl">0.3</span>, min_num_clusts<span class="op">=</span><span class="fl">1</span>, max_num_clusts<span class="op">=</span><span class="fl">3</span>,</span>
-<span>                                 trainX<span class="op">=</span><span class="va">train_x</span></span>
-<span>                                 , trainY<span class="op">=</span><span class="va">train_y</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">preds2</span></span>
-<span></span>
-<span><span class="va">selections</span> <span class="op">&lt;-</span> <span class="va">results</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/getCssSelections.html">getCssSelections</a></span><span class="op">(</span>weighting<span class="op">=</span><span class="st">"sparse"</span>, cutoff<span class="op">=</span><span class="fl">0.3</span></span>
-<span>                                          <span class="co"># , min_num_clusts=1</span></span>
-<span>                                          <span class="co"># , max_num_clusts=3</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">selections</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">selections</span><span class="op">$</span><span class="va">selected_clusts</span></span>
-<span><span class="va">selections</span><span class="op">$</span><span class="va">selected_feats</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">results</span>, cutoff<span class="op">=</span><span class="fl">0.3</span>, max_num_clusts<span class="op">=</span><span class="fl">5</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">x_design</span> <span class="op">&lt;-</span> <span class="va">results</span> <span class="op">|&gt;</span> <span class="fu"><a href="reference/getCssDesign.html">getCssDesign</a></span><span class="op">(</span><span class="va">testx</span>, weighting<span class="op">=</span><span class="st">"weighted_avg"</span>, cutoff<span class="op">=</span><span class="fl">0.3</span>,</span>
-<span>  min_num_clusts<span class="op">=</span><span class="fl">1</span>, max_num_clusts<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">x_design</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level1">
+<h1 id="for-more-information">For more information…<a class="anchor" aria-label="anchor" href="#for-more-information"></a>
+</h1>
+<p>Thank you for reading this far! I intend to add more to the vigenette later. For now, you can learn more about the package by reading the bookdown that defines the package <a href="https://gregfaletto.github.io/cssr-project/create/" class="external-link">here</a>.</p>
+<!-- vignette incomplete past this point... -->
+<!-- Here's a brief summary of how cluster stability selection works: besides the data $(X, y)$, cluster stability selection also requires a "base" feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number $B$ of subsamples of size $n/2$ and runs the feature selection method on each subsample, yielding $B$ selected sets. -->
+<!-- ```{r} -->
+<!-- clusters <- list("Z_clust"=1:10, 36:40) -->
+<!-- # Wrapper functions (easy!) -->
+<!-- n_test <- 50 -->
+<!-- n <- 80 -->
+<!-- p <- 40 -->
+<!-- testx <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
+<!-- cssPredict(X, y, testx, clusters) -->
+<!-- # Get a good lambda -->
+<!-- lambda <- getLassoLambda(X, y) -->
+<!-- # clusters <- list(1:10, 46:40) -->
+<!-- # clusters <- 1:10 -->
+<!-- inds <- 1:40 -->
+<!-- results <- css(X=X, y=y, lambda=lambda -->
+<!--                , clusters=clusters -->
+<!--                # , clusters=list() -->
+<!--                # , clusters=1:10 -->
+<!--                # , sampling.type = "SS" -->
+<!--                # B = 100, -->
+<!--                # , prop_feats_remove = .5 -->
+<!--                , train_inds = inds -->
+<!-- ) -->
+<!-- str(results) -->
+<!-- predictions <- results |> getCssPreds(testX = testx, weighting="sparse", -->
+<!--                                       cutoff=0.3 -->
+<!--                                       , min_num_clusts=1 -->
+<!--                                       , max_num_clusts=3 -->
+<!-- ) -->
+<!-- predictions -->
+<!-- train_x <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
+<!-- train_y <- rnorm(n_test) -->
+<!-- preds2 <- results |> getCssPreds(testX = testx, weighting="sparse", -->
+<!--                                  cutoff=0.3, min_num_clusts=1, max_num_clusts=3, -->
+<!--                                  trainX=train_x -->
+<!--                                  , trainY=train_y) -->
+<!-- preds2 -->
+<!-- selections <- results |> getCssSelections(weighting="sparse", cutoff=0.3 -->
+<!--                                           # , min_num_clusts=1 -->
+<!--                                           # , max_num_clusts=3 -->
+<!-- ) -->
+<!-- str(selections) -->
+<!-- selections$selected_clusts -->
+<!-- selections$selected_feats -->
+<!-- print(results, cutoff=0.3, max_num_clusts=5) -->
+<!-- x_design <- results |> getCssDesign(testx, weighting="weighted_avg", cutoff=0.3, -->
+<!--   min_num_clusts=1, max_num_clusts=3) -->
+<!-- str(x_design) -->
+<!-- ``` -->
 </div>
 
   </main><aside class="col-md-3"><div class="links">
