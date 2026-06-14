@@ -379,8 +379,9 @@ The function `createSubsamples()` is responsible for generating the subsamples $
 #' @param p Integer or numeric; number of features.
 <<param-B>>
 <<param-sampling_type>>
-#' @param num_feats_remove Integer; number of features select automatically on
-#' every iteration. Determined earlier from input prop_feats_remove to css.
+#' @param prop_feats_remove Numeric; the proportion of features (between 0 and 1)
+#' that are dropped (and not provided to the feature selection method) on each
+#' subsample. Default is 0.
 #' @return A list of length `B` (or `2*B` for `sampling_type = "SS"`). If
 #' `prop_feats_remove = 0`, each list element is an integer vector of length
 #' `floor(n/2)` containing the indices of a subsample of `1:n`. (For
@@ -531,21 +532,23 @@ The next function called in the body of `css()` is `getSelMatrix()`, which recor
 <<param-B>>
 <<param-sampling_type>>
 #' @param subsamps_object A list of length `B` (or `2*B` if `sampling_type="SS"`),
-#' where each element is one of the following: \item{subsample}{An integer
-#' vector of size `n/2` containing the indices of the observations in the
-#' subsample.} \item{drop_var_input}{A named list containing two elements: one
-#' named "subsample", matching the previous description, and a logical vector
-#' named "feats_to_keep" containing the indices of the features to be
-#' automatically selected.} (The first object is the output of the function
-#' createSubsamples when the provided prop_feats_remove is 0, the default, and
-#' the second object is the output of createSubsamples when prop_feats_remove >
-#' 0.)
+#' where each element is one of the following:
+#'   - `subsample`: An integer vector of size `n/2` containing the indices of the
+#'   observations in the subsample.
+#'   - `drop_var_input`: A named list containing two elements: one named
+#'   "subsample", matching the previous description, and a logical vector named
+#'   "feats_to_keep" containing the indices of the features to be automatically
+#'   selected.
+#'
+#' (The first object is the output of the function `createSubsamples()` when the
+#' provided `prop_feats_remove` is 0, the default, and the second object is the
+#' output of `createSubsamples()` when `prop_feats_remove > 0`.)
 #' @param num_cores Optional; an integer. If using parallel processing, the
 #' number of cores to use for parallel processing (num_cores will be supplied
 #' internally as the mc.cores argument of parallel::mclapply).
 <<param-fitfun>>
 #' @return A binary integer matrix of dimension `B` x `p` (if sampling_type ==
-#' "MB") or `2*B` x `p` (if sampling_type == "SS"). res[i, j] = 1 if feature j
+#' "MB") or `2*B` x `p` (if sampling_type == "SS"). `res[i, j]` = 1 if feature j
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a
 #' selected set.)
 #' @author Gregory Faletto, Jacob Bien
@@ -729,7 +732,7 @@ Finally, `getClusterSelMatrix()` is the last significant function called within 
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
-#' @param res A binary integer matrix. es[i, j] = 1 if feature j was selected
+#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected
 #' on subsample i and equals 0 otherwise, as in the output of `getSelMatrix()`.
 #' (That is, each row is a selected set.)
 #' @return A binary integer matrix with the same number of rows
@@ -2262,15 +2265,17 @@ testthat::test_that("checkCssInputs works", {
 #' 
 #' Runs provided feature selection method `fitfun` on each subsample for cluster
 #' stability selection (this function is called within `mclapply`).
-#' @param input Could be one of two things: \item{subsample}{An integer vector
-#' of size `n/2` containing the indices of the observations in the subsample.}
-#' \item{drop_var_input}{A named list containing two elements: one named
-#' "subsample" and the same as the previous description, and a logical vector
-#' named "feats_to_keep" containing the indices of the features to be
-#' automatically selected.} (The first object is the output of the function
-#' `createSubsamples()` when the provided `prop_feats_remove` is 0, the default, and
-#' the second object is the output of `createSubsamples()` when `prop_feats_remove >
-#' 0`.)
+#' @param input Could be one of two things:
+#'   - `subsample`: An integer vector of size `n/2` containing the indices of the
+#'   observations in the subsample.
+#'   - `drop_var_input`: A named list containing two elements: one named
+#'   "subsample" and the same as the previous description, and a logical vector
+#'   named "feats_to_keep" containing the indices of the features to be
+#'   automatically selected.
+#'
+#' (The first object is the output of the function `createSubsamples()` when the
+#' provided `prop_feats_remove` is 0, the default, and the second object is the
+#' output of `createSubsamples()` when `prop_feats_remove > 0`.)
 #' @param x an n x p numeric matrix containing the predictors. (This should be
 #' the full design matrix provided to css.)
 #' @param y A response; can be any response that takes the form of a length n
@@ -2629,10 +2634,10 @@ testthat::test_that("cssLoop works", {
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
-#' @param res A binary integer matrix. res[i, j] = 1 if feature j was selected
+#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected
 #' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
 #' (That is, each row is a selected set.)
-#' @return The parameter B, corresponding to half of the subsamples for 
+#' @return The parameter B, corresponding to half of the subsamples for
 #' sampling_type "SS".
 #' @author Gregory Faletto, Jacob Bien
 checkGetClusterSelMatrixInput <- function(clusters, res){
@@ -3185,7 +3190,7 @@ As in the previous section, we first define each function and then define the he
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
 #' indices of the features with nonzero weights from all of the selected
 #' clusters.} \item{weights}{A named list of the same length as selected_clusts.
-#' Each list element weights[[j]] is a numeric vector of the weights to use for
+#' Each list element `weights[[j]]` is a numeric vector of the weights to use for
 #' the jth selected cluster, and it has the same name as the cluster it
 #' corresponds to.}
 #' @author Gregory Faletto, Jacob Bien
@@ -3514,7 +3519,7 @@ testthat::test_that("checkMaxNumClusts works", {
 #' \item{selected_feats}{A named integer vector; the indices of the features
 #' with nonzero weights from all of the selected clusters.} \item{weights}{A
 #' named list of the same length as the number of selected clusters. Each list
-#' element weights[[j]] is a numeric vector of the weights to use for the jth
+#' element `weights[[j]]` is a numeric vector of the weights to use for the jth
 #' selected cluster, and it has the same name as the cluster it corresponds
 #' to.}
 #' @author Gregory Faletto, Jacob Bien
@@ -3703,7 +3708,7 @@ testthat::test_that("checkSelectedClusters works", {
 #' each selected cluster will be returned.). See Faletto and Bien (2022) for
 #' details.
 #' @return A named list of the same length as sel_clusters of numeric vectors.
-#' weights[[j]] is the weights to use for the jth selected cluster, and it has
+#' `weights[[j]]` is the weights to use for the jth selected cluster, and it has
 #' the same name as the cluster it corresponds to.
 #' @author Gregory Faletto, Jacob Bien
 getAllClustWeights <- function(css_results, sel_clusters, weighting){
@@ -3991,7 +3996,7 @@ testthat::test_that("getAllClustWeights works", {
 #' @param selected_feats A named integer vector; the indices of the features
 #' with nonzero weights from all of the selected clusters.
 #' @param weights A named list of the same length as the number of selected
-#' clusters. Each list element weights[[j]] is a numeric vector of the weights
+#' clusters. Each list element `weights[[j]]` is a numeric vector of the weights
 #' to use for the jth selected cluster, and it has the same name as the cluster
 #' it corresponds to.
 #' @param n_clusters Integer; the number of clusters in the data (upper bound
@@ -6759,11 +6764,12 @@ The following are some other functions that are useful for specific tasks.
 #' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
+#' @importFrom stats rnorm runif
 #' @export
 genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     sig_clusters=1, rho=0.9, beta_latent=1.5, beta_unclustered=1,
@@ -6873,7 +6879,7 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
 #' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
@@ -7143,14 +7149,15 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 #' @return A list of the following elements. \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).} \item{y}{A
 #' length n numeric vector; the response generated from X, the latent features
-#' from Z, and the coefficient vector, along with additive noise.} 
+#' from Z, and the coefficient vector, along with additive noise.}
 #' \item{other_X}{A numeric matrix of n observations from a multivariate normal
 #' distribution generated using the specified parameters, containing the weak
 #' signal features and the noise features that will eventually be in X. (The
-#' only missing features are the proxies for the latent features Z.)
+#' only missing features are the proxies for the latent features Z.)}
+#'
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
@@ -7527,9 +7534,6 @@ testthat::test_that("genClusteredData works", {
 #' correlation between the "weak proxy" features in the cluster will be
 #' rho_low/var. rho_low cannot equal 0 and must be no larger than rho_high.
 #' Default is 0.5.
-#' @param var Integer or numeric; the variance of all of the observed features
-#' in X (both the proxies for the latent variables and the k_unclustered other
-#' features). Can't equal 0. Default is 1.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.
@@ -7620,9 +7624,6 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
 ```{r}
 #' Check inputs to genClusteredDataWeighted
 #'
-#' @param n Integer or numeric; the number of observations to generate. (The
-#' generated X and Z will have n rows, and the generated y and mu will have
-#' length n.)
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
@@ -7958,9 +7959,6 @@ genClusteredDataWeightedRandom <- function(n, p, k_unclustered, cluster_size,
 ```{r}
 #' Check inputs to genClusteredDataWeightedRandom
 #'
-#' @param n Integer or numeric; the number of observations to generate. (The
-#' generated X and Z will have n rows, and the generated y and mu will have
-#' length n.)
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
@@ -9890,10 +9888,10 @@ We also provide implementations of some competitor feature selection methods. We
 #' size k yielded by the protolasso (If no set of size k was selected, entry k
 #' will be empty.)} \item{selected_clusts_list}{A list; each element of the list
 #' is a named list of selected clusters. (That is, if a selected set of size k
-#' was yielded by the protolasso, then selected_clusts_list[[k]] is a named
+#' was yielded by the protolasso, then `selected_clusts_list[[k]]` is a named
 #' list of length k, where each member of the list is an integer vector
-#' of cluster members. In particular, selected_clusts_lists[[k]][[j]] will be
-#' the cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The
+#' of cluster members. In particular, `selected_clusts_lists[[k]][[j]]` will be
+#' the cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The
 #' beta output from glmnet when the lasso was estimated on a matrix of
 #' prototypes. (See documentation for the function glmnet from the glmnet
 #' package for details.)}
@@ -10805,9 +10803,9 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
 #' original X matrix. (Selections in lasso_set corresponding to a cluster will
 #' be replaced by the cluster's prototype from X.)}
 #' \item{selected_clusts_list}{A named list of integer vectors with length equal
-#' to selected_set. selected_clusts_list[[k]] will be an integer vector
+#' to selected_set. `selected_clusts_list[[k]]` will be an integer vector
 #' containing the indices of the features in X that are in the cluster
-#' containing prototype selected_set[k].}
+#' containing prototype `selected_set[k]`.}
 #' @author Gregory Faletto, Jacob Bien
 getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     
@@ -11952,10 +11950,10 @@ testthat::test_that("protolasso works", {
 #' y). (If no set of size k was selected, entry k will be empty.)}
 #' \item{selected_clusts_list}{A list; each element of the list is a named list
 #' of selected clusters. (That is, if a selected set of size k was yielded by
-#' the cluster representative lasso, then selected_clusts_list[[k]] is a named
+#' the cluster representative lasso, then `selected_clusts_list[[k]]` is a named
 #' list of length k, where each member of the list is an integer vector
-#' of cluster members. Note that selected_clusts_lists[[k]][[j]] will be the
-#' cluster that contains feature selected_sets[[k]][j].)} \item{beta}{The beta
+#' of cluster members. Note that `selected_clusts_lists[[k]][[j]]` will be the
+#' cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The beta
 #' output from glmnet when the lasso was estimated on a matrix of prototypes.
 #' (See documentation for the function glmnet from the glmnet package for
 #' details.)}

@@ -82,10 +82,6 @@ snr and sigma_eps_sq must be specified. Default is NA.}
 
 \item{sigma_eps_sq}{Integer or numeric; the variance on the noise added
 to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.}
-
-\item{var}{Integer or numeric; the variance of all of the observed features
-in X (both the proxies for the latent variables and the k_unclustered other
-features). Can't equal 0. Default is 1.}
 }
 \value{
 A list of the following elements. \item{X}{An n x p numeric matrix of

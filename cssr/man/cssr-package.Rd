@@ -20,6 +20,7 @@ more about this package, please visit its website
 
 Authors:
 \itemize{
+  \item Gregory Faletto \email{gregory.faletto@marshall.usc.edu}
   \item Jacob Bien \email{jbien@usc.edu}
 }
 

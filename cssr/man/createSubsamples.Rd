@@ -22,8 +22,9 @@ all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.}
 
-\item{num_feats_remove}{Integer; number of features select automatically on
-every iteration. Determined earlier from input prop_feats_remove to css.}
+\item{prop_feats_remove}{Numeric; the proportion of features (between 0 and 1)
+that are dropped (and not provided to the feature selection method) on each
+subsample. Default is 0.}
 }
 \value{
 A list of length \code{B} (or \code{2*B} for \code{sampling_type = "SS"}). If

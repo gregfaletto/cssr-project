@@ -55,13 +55,14 @@
 #' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
+#' @importFrom stats rnorm runif
 #' @export
 genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     sig_clusters=1, rho=0.9, beta_latent=1.5, beta_unclustered=1,

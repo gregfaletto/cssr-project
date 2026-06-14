@@ -37,7 +37,7 @@
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
 #' indices of the features with nonzero weights from all of the selected
 #' clusters.} \item{weights}{A named list of the same length as selected_clusts.
-#' Each list element weights[[j]] is a numeric vector of the weights to use for
+#' Each list element `weights[[j]]` is a numeric vector of the weights to use for
 #' the jth selected cluster, and it has the same name as the cluster it
 #' corresponds to.}
 #' @author Gregory Faletto, Jacob Bien

@@ -20,9 +20,9 @@
 #' original X matrix. (Selections in lasso_set corresponding to a cluster will
 #' be replaced by the cluster's prototype from X.)}
 #' \item{selected_clusts_list}{A named list of integer vectors with length equal
-#' to selected_set. selected_clusts_list[[k]] will be an integer vector
+#' to selected_set. `selected_clusts_list[[k]]` will be an integer vector
 #' containing the indices of the features in X that are in the cluster
-#' containing prototype selected_set[k].}
+#' containing prototype `selected_set[k]`.}
 #' @author Gregory Faletto, Jacob Bien
 getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     

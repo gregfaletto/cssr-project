@@ -42,15 +42,19 @@ subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.}
 
 \item{subsamps_object}{A list of length \code{B} (or \code{2*B} if \code{sampling_type="SS"}),
-where each element is one of the following: \item{subsample}{An integer
-vector of size \code{n/2} containing the indices of the observations in the
-subsample.} \item{drop_var_input}{A named list containing two elements: one
-named "subsample", matching the previous description, and a logical vector
-named "feats_to_keep" containing the indices of the features to be
-automatically selected.} (The first object is the output of the function
-createSubsamples when the provided prop_feats_remove is 0, the default, and
-the second object is the output of createSubsamples when prop_feats_remove >
-0.)}
+where each element is one of the following:
+\itemize{
+\item \code{subsample}: An integer vector of size \code{n/2} containing the indices of the
+observations in the subsample.
+\item \code{drop_var_input}: A named list containing two elements: one named
+"subsample", matching the previous description, and a logical vector named
+"feats_to_keep" containing the indices of the features to be automatically
+selected.
+}
+
+(The first object is the output of the function \code{createSubsamples()} when the
+provided \code{prop_feats_remove} is 0, the default, and the second object is the
+output of \code{createSubsamples()} when \code{prop_feats_remove > 0}.)}
 
 \item{num_cores}{Optional; an integer. If using parallel processing, the
 number of cores to use for parallel processing (num_cores will be supplied
@@ -69,7 +73,7 @@ positive numeric specifying the L1 penalty for the \code{lasso}.}
 }
 \value{
 A binary integer matrix of dimension \code{B} x \code{p} (if sampling_type ==
-"MB") or \code{2*B} x \code{p} (if sampling_type == "SS"). res\link{i, j} = 1 if feature j
+"MB") or \code{2*B} x \code{p} (if sampling_type == "SS"). \code{res[i, j]} = 1 if feature j
 was selected on subsample i and equals 0 otherwise. (That is, each row is a
 selected set.)
 }

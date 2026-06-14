@@ -30,7 +30,7 @@ details.}
 }
 \value{
 A named list of the same length as sel_clusters of numeric vectors.
-weights[\link{j}] is the weights to use for the jth selected cluster, and it has
+\code{weights[[j]]} is the weights to use for the jth selected cluster, and it has
 the same name as the cluster it corresponds to.
 }
 \description{

@@ -1,0 +1,47 @@
+# Helper function to confirm that the argument max_num_clusts to several functions is as expected
+
+Helper function to confirm that the argument max_num_clusts to several
+functions is as expected
+
+## Usage
+
+``` r
+checkMaxNumClusts(max_num_clusts, min_num_clusts, p, n_clusters)
+```
+
+## Arguments
+
+- max_num_clusts:
+
+  Integer or numeric; the maximum number of clusters to use regardless
+  of cutoff. (That is, if the chosen cutoff returns more than
+  max_num_clusts clusters, the cutoff will be decreased until at most
+  max_num_clusts clusters are selected.) Can be NA, in which case
+  max_num_clusts will be ignored.
+
+- min_num_clusts:
+
+  Integer or numeric; the minimum number of clusters to use regardless
+  of cutoff. (That is, if the chosen cutoff returns fewer than
+  min_num_clusts clusters, the cutoff will be increased until at least
+  min_num_clusts clusters are selected.) max_num_clusts must be at least
+  as large as min_num_clusts.
+
+- p:
+
+  The number of features; since this is an upper bound on the number of
+  clusters of features, it is also an upper bound on max_num_clusts.
+
+- n_clusters:
+
+  The number of clusters; note that this is an upper bound on
+  max_num_clusts
+
+## Value
+
+The provided max_num_clusts, coerced to an integer if needed, and
+coerced to be less than or equal to the total number of clusters.
+
+## Author
+
+Gregory Faletto, Jacob Bien

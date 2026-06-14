@@ -4,6 +4,7 @@
 # Cluster Stability Selection
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The cssr package implements [cluster stability selection (Faletto and
@@ -80,8 +81,13 @@ procedure. In the diagram, the lasso is the chosen feature selection
 procedure, and a selected set is chosen by choosing all features with
 selection proportions larger than a predetermined $\tau$.
 
-![Stability Selection Flowchart
-Figure](man/figures/stability-selection-diagram.png "Stability Selection")
+<figure>
+<img src="man/figures/stability-selection-diagram.png"
+title="Stability Selection"
+alt="Stability Selection Flowchart Figure" />
+<figcaption aria-hidden="true">Stability Selection Flowchart
+Figure</figcaption>
+</figure>
 
 In the classic framework of [bias/variance
 tradeoff](https://en.wikipedia.org/wiki/Bias%E2%80%93variance_tradeoff),
@@ -118,8 +124,11 @@ The below figure shows the selection proportions yielded by stability
 selection for proxies for $Z$, “weak signal” features, and “noise”
 features that are unrelated to $y$.
 
-![Selection
-Proportions](man/figures/sel_props.png "Proxy Selection Proportions")
+<figure>
+<img src="man/figures/sel_props.png" title="Proxy Selection Proportions"
+alt="Selection Proportions" />
+<figcaption aria-hidden="true">Selection Proportions</figcaption>
+</figure>
 
 ## How does cluster stability selection fix this?
 
@@ -322,52 +331,101 @@ bookdown that defines the package
 [here](https://gregfaletto.github.io/cssr-project/create/).
 
 <!-- vignette incomplete past this point... -->
+
 <!-- Here's a brief summary of how cluster stability selection works: besides the data $(X, y)$, cluster stability selection also requires a "base" feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number $B$ of subsamples of size $n/2$ and runs the feature selection method on each subsample, yielding $B$ selected sets. -->
+
 <!-- ```{r} -->
+
 <!-- clusters <- list("Z_clust"=1:10, 36:40) -->
+
 <!-- # Wrapper functions (easy!) -->
+
 <!-- n_test <- 50 -->
+
 <!-- n <- 80 -->
+
 <!-- p <- 40 -->
+
 <!-- testx <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
+
 <!-- cssPredict(X, y, testx, clusters) -->
+
 <!-- # Get a good lambda -->
+
 <!-- lambda <- getLassoLambda(X, y) -->
+
 <!-- # clusters <- list(1:10, 46:40) -->
+
 <!-- # clusters <- 1:10 -->
+
 <!-- inds <- 1:40 -->
+
 <!-- results <- css(X=X, y=y, lambda=lambda -->
+
 <!--                , clusters=clusters -->
+
 <!--                # , clusters=list() -->
+
 <!--                # , clusters=1:10 -->
+
 <!--                # , sampling.type = "SS" -->
+
 <!--                # B = 100, -->
+
 <!--                # , prop_feats_remove = .5 -->
+
 <!--                , train_inds = inds -->
+
 <!-- ) -->
+
 <!-- str(results) -->
+
 <!-- predictions <- results |> getCssPreds(testX = testx, weighting="sparse", -->
+
 <!--                                       cutoff=0.3 -->
+
 <!--                                       , min_num_clusts=1 -->
+
 <!--                                       , max_num_clusts=3 -->
+
 <!-- ) -->
+
 <!-- predictions -->
+
 <!-- train_x <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
+
 <!-- train_y <- rnorm(n_test) -->
+
 <!-- preds2 <- results |> getCssPreds(testX = testx, weighting="sparse", -->
+
 <!--                                  cutoff=0.3, min_num_clusts=1, max_num_clusts=3, -->
+
 <!--                                  trainX=train_x -->
+
 <!--                                  , trainY=train_y) -->
+
 <!-- preds2 -->
+
 <!-- selections <- results |> getCssSelections(weighting="sparse", cutoff=0.3 -->
+
 <!--                                           # , min_num_clusts=1 -->
+
 <!--                                           # , max_num_clusts=3 -->
+
 <!-- ) -->
+
 <!-- str(selections) -->
+
 <!-- selections$selected_clusts -->
+
 <!-- selections$selected_feats -->
+
 <!-- print(results, cutoff=0.3, max_num_clusts=5) -->
+
 <!-- x_design <- results |> getCssDesign(testx, weighting="weighted_avg", cutoff=0.3, -->
+
 <!--   min_num_clusts=1, max_num_clusts=3) -->
+
 <!-- str(x_design) -->
+
 <!-- ``` -->
