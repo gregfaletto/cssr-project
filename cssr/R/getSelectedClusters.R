@@ -59,15 +59,23 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
+    B <- nrow(css_results$feat_sel_mat)
+
+    # Selection proportions are multiples of 1/B, but `cutoff` is adjusted by
+    # repeated +/- 1/B in the loops below, which accumulates floating-point
+    # error. Compare against `cutoff` minus half a step so a cluster sitting
+    # exactly at the threshold is included robustly (snaps to the nearest
+    # count); otherwise a tie could be dropped and, e.g., the max_num_clusts
+    # loop could break early and return more clusters than max_num_clusts.
+    tol <- 1 / (2 * B)
 
     # Get selected clusters
-    selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
-    B <- nrow(css_results$feat_sel_mat)
+    selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
 
     # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
         cutoff <- cutoff - 1/B
-        selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+        selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
     }
 
     # Check that selected_clusts has length at most max_num_clusts
@@ -79,8 +87,8 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
                 break
             }
             # Make sure we don't reduce to a selected set of size 0
-            if(any(clus_sel_props >= cutoff)){
-                selected_clusts <- clus_sel_props[clus_sel_props >= cutoff]
+            if(any(clus_sel_props >= cutoff - tol)){
+                selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
             } else{
                 break
             }
