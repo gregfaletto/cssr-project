@@ -1724,6 +1724,32 @@ testthat::test_that("getSelectedClusters works", {
                              min_num_clusts=2, max_num_clusts=NA)
   testthat::expect_true(length(res3$selected_clusts) >= 2)
 
+  # Regression test (#10): the cutoff is adjusted by repeated +/- 1/B in the
+  # min/max loops, accumulating floating-point error, so a cluster sitting
+  # exactly at the threshold could be dropped -- breaking the max_num_clusts
+  # loop early and returning MORE clusters than max_num_clusts. With B=10 and
+  # cluster proportions (0, 0.3, 0.2), cutoff=0.1 / min=1 / max=1 must return a
+  # single cluster (the 0.3 one); pre-fix it returned two (0.3 was excluded by
+  # the float-accumulated cutoff 0.30000000000000004).
+  csm <- cbind(as.integer(rep(0, 10)),
+               as.integer(c(rep(1, 3), rep(0, 7))),
+               as.integer(c(rep(1, 2), rep(0, 8))))
+  clus_mat <- csm
+  colnames(clus_mat) <- c("c1", "c2", "c3")
+  feat_mat <- csm
+  colnames(feat_mat) <- c("f1", "f2", "f3")
+  mock_css <- list(feat_sel_mat=feat_mat, clus_sel_mat=clus_mat,
+                   X=matrix(stats::rnorm(30), nrow=10, ncol=3,
+                            dimnames=list(NULL, c("f1", "f2", "f3"))),
+                   y=stats::rnorm(10),
+                   clusters=list(c1=1L, c2=2L, c3=3L),
+                   train_inds=integer())
+  class(mock_css) <- "cssr"
+  res_tie <- getSelectedClusters(mock_css, weighting="simple_avg", cutoff=0.1,
+                                 min_num_clusts=1, max_num_clusts=1)
+  testthat::expect_true(length(res_tie$selected_clusts) <= 1)
+  testthat::expect_identical(names(res_tie$selected_clusts), "c2")
+
   # Test max_num_clusts
   # Ensure there is at least one relevant feature
   x2 <- x
