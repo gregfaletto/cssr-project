@@ -94,8 +94,14 @@ getModelSize <- function(X, y, clusters){
             }
         }
         if(length(feats_to_drop) > 0){
-            X_size <- X_size[, -1*feats_to_drop]
+            X_size <- X_size[, -1*feats_to_drop, drop=FALSE]
         }
+    }
+
+    # cv.glmnet requires at least two columns; if cluster reduction leaves a
+    # single feature, the only possible model size is 1.
+    if(ncol(X_size) < 2){
+        return(1L)
     }
 
     size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian")

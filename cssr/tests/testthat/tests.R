@@ -4138,8 +4138,15 @@ testthat::test_that("getModelSize works", {
   testthat::expect_true(ret >= 1)
   # 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8
   testthat::expect_true(ret <= 8)
-  
-  
+
+  # Regression test: when prototype reduction leaves a single column (all
+  # provided features in one cluster), getModelSize must return 1L rather than
+  # crashing in cv.glmnet. Previously X_size[, -feats_to_drop] dropped to a
+  # vector when one column remained.
+  testthat::expect_equal(getModelSize(X=x[, 1:3, drop=FALSE], y=y,
+                                      clusters=list(1:3)), 1L)
+
+
   # Intentionally don't provide clusters for all feature, mix up formatting,
   # etc.
   good_clusters <- list(red_cluster=1:3, 5:8)
