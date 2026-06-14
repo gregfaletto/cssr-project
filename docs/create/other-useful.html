@@ -1872,24 +1872,30 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb152-92"><a href="other-useful.html#cb152-92" tabindex="-1"></a>            }</span>
 <span id="cb152-93"><a href="other-useful.html#cb152-93" tabindex="-1"></a>        }</span>
 <span id="cb152-94"><a href="other-useful.html#cb152-94" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(feats_to_drop) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb152-95"><a href="other-useful.html#cb152-95" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop]</span>
+<span id="cb152-95"><a href="other-useful.html#cb152-95" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop, drop<span class="ot">=</span><span class="cn">FALSE</span>]</span>
 <span id="cb152-96"><a href="other-useful.html#cb152-96" tabindex="-1"></a>        }</span>
 <span id="cb152-97"><a href="other-useful.html#cb152-97" tabindex="-1"></a>    }</span>
 <span id="cb152-98"><a href="other-useful.html#cb152-98" tabindex="-1"></a></span>
-<span id="cb152-99"><a href="other-useful.html#cb152-99" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>)</span>
-<span id="cb152-100"><a href="other-useful.html#cb152-100" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
-<span id="cb152-101"><a href="other-useful.html#cb152-101" tabindex="-1"></a></span>
-<span id="cb152-102"><a href="other-useful.html#cb152-102" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
-<span id="cb152-103"><a href="other-useful.html#cb152-103" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb152-99"><a href="other-useful.html#cb152-99" tabindex="-1"></a>    <span class="co"># cv.glmnet requires at least two columns; if cluster reduction leaves a</span></span>
+<span id="cb152-100"><a href="other-useful.html#cb152-100" tabindex="-1"></a>    <span class="co"># single feature, the only possible model size is 1.</span></span>
+<span id="cb152-101"><a href="other-useful.html#cb152-101" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_size) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
+<span id="cb152-102"><a href="other-useful.html#cb152-102" tabindex="-1"></a>        <span class="fu">return</span>(<span class="dv">1</span><span class="dt">L</span>)</span>
+<span id="cb152-103"><a href="other-useful.html#cb152-103" tabindex="-1"></a>    }</span>
 <span id="cb152-104"><a href="other-useful.html#cb152-104" tabindex="-1"></a></span>
-<span id="cb152-105"><a href="other-useful.html#cb152-105" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb152-106"><a href="other-useful.html#cb152-106" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
-<span id="cb152-107"><a href="other-useful.html#cb152-107" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
-<span id="cb152-108"><a href="other-useful.html#cb152-108" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb152-109"><a href="other-useful.html#cb152-109" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
+<span id="cb152-105"><a href="other-useful.html#cb152-105" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>)</span>
+<span id="cb152-106"><a href="other-useful.html#cb152-106" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
+<span id="cb152-107"><a href="other-useful.html#cb152-107" tabindex="-1"></a></span>
+<span id="cb152-108"><a href="other-useful.html#cb152-108" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
+<span id="cb152-109"><a href="other-useful.html#cb152-109" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
 <span id="cb152-110"><a href="other-useful.html#cb152-110" tabindex="-1"></a></span>
-<span id="cb152-111"><a href="other-useful.html#cb152-111" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
-<span id="cb152-112"><a href="other-useful.html#cb152-112" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb152-111"><a href="other-useful.html#cb152-111" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb152-112"><a href="other-useful.html#cb152-112" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
+<span id="cb152-113"><a href="other-useful.html#cb152-113" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
+<span id="cb152-114"><a href="other-useful.html#cb152-114" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb152-115"><a href="other-useful.html#cb152-115" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
+<span id="cb152-116"><a href="other-useful.html#cb152-116" tabindex="-1"></a></span>
+<span id="cb152-117"><a href="other-useful.html#cb152-117" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
+<span id="cb152-118"><a href="other-useful.html#cb152-118" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="other-useful.html#getModelSize">getModelSize</a>()</code>:</p>
 <div class="sourceCode" id="cb153"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb153-1"><a href="other-useful.html#cb153-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"getModelSize works"</span>, {</span>
 <span id="cb153-2"><a href="other-useful.html#cb153-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">1723</span>)</span>
@@ -1938,66 +1944,73 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb153-45"><a href="other-useful.html#cb153-45" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
 <span id="cb153-46"><a href="other-useful.html#cb153-46" tabindex="-1"></a>  <span class="co"># 11 features, but 4 in one cluster, so maximum size should be 11 - 3 = 8</span></span>
 <span id="cb153-47"><a href="other-useful.html#cb153-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&lt;=</span> <span class="dv">8</span>)</span>
-<span id="cb153-48"><a href="other-useful.html#cb153-48" tabindex="-1"></a>  </span>
-<span id="cb153-49"><a href="other-useful.html#cb153-49" tabindex="-1"></a>  </span>
-<span id="cb153-50"><a href="other-useful.html#cb153-50" tabindex="-1"></a>  <span class="co"># Intentionally don't provide clusters for all feature, mix up formatting,</span></span>
-<span id="cb153-51"><a href="other-useful.html#cb153-51" tabindex="-1"></a>  <span class="co"># etc.</span></span>
-<span id="cb153-52"><a href="other-useful.html#cb153-52" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>)</span>
-<span id="cb153-53"><a href="other-useful.html#cb153-53" tabindex="-1"></a>  </span>
-<span id="cb153-54"><a href="other-useful.html#cb153-54" tabindex="-1"></a>  ret <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters)</span>
-<span id="cb153-55"><a href="other-useful.html#cb153-55" tabindex="-1"></a>  </span>
-<span id="cb153-56"><a href="other-useful.html#cb153-56" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(ret) <span class="sc">|</span> <span class="fu">is.integer</span>(ret))</span>
-<span id="cb153-57"><a href="other-useful.html#cb153-57" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(ret))</span>
-<span id="cb153-58"><a href="other-useful.html#cb153-58" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(ret), <span class="dv">1</span>)</span>
-<span id="cb153-59"><a href="other-useful.html#cb153-59" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(ret, <span class="fu">round</span>(ret))</span>
-<span id="cb153-60"><a href="other-useful.html#cb153-60" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb153-61"><a href="other-useful.html#cb153-61" tabindex="-1"></a>  <span class="co"># 11 features, but 3 in one cluster and 4 in another, so maximum size should</span></span>
-<span id="cb153-62"><a href="other-useful.html#cb153-62" tabindex="-1"></a>  <span class="co"># be 11 - 2 - 3 = 6</span></span>
-<span id="cb153-63"><a href="other-useful.html#cb153-63" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&lt;=</span> <span class="dv">6</span>)</span>
-<span id="cb153-64"><a href="other-useful.html#cb153-64" tabindex="-1"></a>  </span>
-<span id="cb153-65"><a href="other-useful.html#cb153-65" tabindex="-1"></a>  <span class="do">## Trying bad inputs</span></span>
-<span id="cb153-66"><a href="other-useful.html#cb153-66" tabindex="-1"></a>  </span>
-<span id="cb153-67"><a href="other-useful.html#cb153-67" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span><span class="st">"x"</span>, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters),</span>
-<span id="cb153-68"><a href="other-useful.html#cb153-68" tabindex="-1"></a>                         <span class="st">"is.matrix(X) | is.data.frame(X) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-69"><a href="other-useful.html#cb153-69" tabindex="-1"></a>  </span>
-<span id="cb153-70"><a href="other-useful.html#cb153-70" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ], <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters),</span>
-<span id="cb153-71"><a href="other-useful.html#cb153-71" tabindex="-1"></a>                         <span class="st">"length(y) == n is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-72"><a href="other-useful.html#cb153-72" tabindex="-1"></a></span>
-<span id="cb153-73"><a href="other-useful.html#cb153-73" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="cn">FALSE</span>, <span class="at">clusters=</span>good_clusters),</span>
-<span id="cb153-74"><a href="other-useful.html#cb153-74" tabindex="-1"></a>                         <span class="st">"getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued."</span>,</span>
-<span id="cb153-75"><a href="other-useful.html#cb153-75" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-76"><a href="other-useful.html#cb153-76" tabindex="-1"></a></span>
-<span id="cb153-77"><a href="other-useful.html#cb153-77" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">7</span>, <span class="dv">7</span><span class="sc">:</span><span class="dv">10</span>)),</span>
-<span id="cb153-78"><a href="other-useful.html#cb153-78" tabindex="-1"></a>                         <span class="st">"Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2."</span>,</span>
-<span id="cb153-79"><a href="other-useful.html#cb153-79" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-80"><a href="other-useful.html#cb153-80" tabindex="-1"></a>  </span>
-<span id="cb153-81"><a href="other-useful.html#cb153-81" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>, <span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>)),</span>
-<span id="cb153-82"><a href="other-useful.html#cb153-82" tabindex="-1"></a>                         <span class="st">"length(clusters) == length(unique(clusters)) is not TRUE"</span>,</span>
-<span id="cb153-83"><a href="other-useful.html#cb153-83" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-84"><a href="other-useful.html#cb153-84" tabindex="-1"></a></span>
-<span id="cb153-85"><a href="other-useful.html#cb153-85" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="dv">6</span><span class="sc">:</span><span class="dv">50</span>),</span>
-<span id="cb153-86"><a href="other-useful.html#cb153-86" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
-<span id="cb153-87"><a href="other-useful.html#cb153-87" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-88"><a href="other-useful.html#cb153-88" tabindex="-1"></a></span>
-<span id="cb153-89"><a href="other-useful.html#cb153-89" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb153-90"><a href="other-useful.html#cb153-90" tabindex="-1"></a>                                      <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="fu">as.integer</span>(<span class="cn">NA</span>))),</span>
-<span id="cb153-91"><a href="other-useful.html#cb153-91" tabindex="-1"></a>                         <span class="st">"!is.na(clusters) are not all TRUE"</span>,</span>
-<span id="cb153-92"><a href="other-useful.html#cb153-92" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-93"><a href="other-useful.html#cb153-93" tabindex="-1"></a></span>
-<span id="cb153-94"><a href="other-useful.html#cb153-94" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">5</span>))),</span>
-<span id="cb153-95"><a href="other-useful.html#cb153-95" tabindex="-1"></a>                         <span class="st">"length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE"</span>,</span>
-<span id="cb153-96"><a href="other-useful.html#cb153-96" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-97"><a href="other-useful.html#cb153-97" tabindex="-1"></a></span>
-<span id="cb153-98"><a href="other-useful.html#cb153-98" tabindex="-1"></a>   testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="sc">-</span><span class="dv">1</span>)),</span>
-<span id="cb153-99"><a href="other-useful.html#cb153-99" tabindex="-1"></a>                         <span class="st">"all(clusters[[i]] &gt;= 1) is not TRUE"</span>,</span>
-<span id="cb153-100"><a href="other-useful.html#cb153-100" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-101"><a href="other-useful.html#cb153-101" tabindex="-1"></a></span>
-<span id="cb153-102"><a href="other-useful.html#cb153-102" tabindex="-1"></a>   testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>,</span>
-<span id="cb153-103"><a href="other-useful.html#cb153-103" tabindex="-1"></a>                                                               <span class="fu">c</span>(<span class="fl">2.3</span>, <span class="fl">1.2</span>))),</span>
-<span id="cb153-104"><a href="other-useful.html#cb153-104" tabindex="-1"></a>                         <span class="st">"all(clusters[[i]] == round(clusters[[i]])) is not TRUE"</span>,</span>
-<span id="cb153-105"><a href="other-useful.html#cb153-105" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb153-106"><a href="other-useful.html#cb153-106" tabindex="-1"></a></span>
-<span id="cb153-107"><a href="other-useful.html#cb153-107" tabindex="-1"></a>})</span></code></pre></div>
+<span id="cb153-48"><a href="other-useful.html#cb153-48" tabindex="-1"></a></span>
+<span id="cb153-49"><a href="other-useful.html#cb153-49" tabindex="-1"></a>  <span class="co"># Regression test: when prototype reduction leaves a single column (all</span></span>
+<span id="cb153-50"><a href="other-useful.html#cb153-50" tabindex="-1"></a>  <span class="co"># provided features in one cluster), getModelSize must return 1L rather than</span></span>
+<span id="cb153-51"><a href="other-useful.html#cb153-51" tabindex="-1"></a>  <span class="co"># crashing in cv.glmnet. Previously X_size[, -feats_to_drop] dropped to a</span></span>
+<span id="cb153-52"><a href="other-useful.html#cb153-52" tabindex="-1"></a>  <span class="co"># vector when one column remained.</span></span>
+<span id="cb153-53"><a href="other-useful.html#cb153-53" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x[, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">drop=</span><span class="cn">FALSE</span>], <span class="at">y=</span>y,</span>
+<span id="cb153-54"><a href="other-useful.html#cb153-54" tabindex="-1"></a>                                      <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)), <span class="dv">1</span><span class="dt">L</span>)</span>
+<span id="cb153-55"><a href="other-useful.html#cb153-55" tabindex="-1"></a></span>
+<span id="cb153-56"><a href="other-useful.html#cb153-56" tabindex="-1"></a></span>
+<span id="cb153-57"><a href="other-useful.html#cb153-57" tabindex="-1"></a>  <span class="co"># Intentionally don't provide clusters for all feature, mix up formatting,</span></span>
+<span id="cb153-58"><a href="other-useful.html#cb153-58" tabindex="-1"></a>  <span class="co"># etc.</span></span>
+<span id="cb153-59"><a href="other-useful.html#cb153-59" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">red_cluster=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>)</span>
+<span id="cb153-60"><a href="other-useful.html#cb153-60" tabindex="-1"></a>  </span>
+<span id="cb153-61"><a href="other-useful.html#cb153-61" tabindex="-1"></a>  ret <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters)</span>
+<span id="cb153-62"><a href="other-useful.html#cb153-62" tabindex="-1"></a>  </span>
+<span id="cb153-63"><a href="other-useful.html#cb153-63" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(ret) <span class="sc">|</span> <span class="fu">is.integer</span>(ret))</span>
+<span id="cb153-64"><a href="other-useful.html#cb153-64" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(ret))</span>
+<span id="cb153-65"><a href="other-useful.html#cb153-65" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(ret), <span class="dv">1</span>)</span>
+<span id="cb153-66"><a href="other-useful.html#cb153-66" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(ret, <span class="fu">round</span>(ret))</span>
+<span id="cb153-67"><a href="other-useful.html#cb153-67" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb153-68"><a href="other-useful.html#cb153-68" tabindex="-1"></a>  <span class="co"># 11 features, but 3 in one cluster and 4 in another, so maximum size should</span></span>
+<span id="cb153-69"><a href="other-useful.html#cb153-69" tabindex="-1"></a>  <span class="co"># be 11 - 2 - 3 = 6</span></span>
+<span id="cb153-70"><a href="other-useful.html#cb153-70" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(ret <span class="sc">&lt;=</span> <span class="dv">6</span>)</span>
+<span id="cb153-71"><a href="other-useful.html#cb153-71" tabindex="-1"></a>  </span>
+<span id="cb153-72"><a href="other-useful.html#cb153-72" tabindex="-1"></a>  <span class="do">## Trying bad inputs</span></span>
+<span id="cb153-73"><a href="other-useful.html#cb153-73" tabindex="-1"></a>  </span>
+<span id="cb153-74"><a href="other-useful.html#cb153-74" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span><span class="st">"x"</span>, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters),</span>
+<span id="cb153-75"><a href="other-useful.html#cb153-75" tabindex="-1"></a>                         <span class="st">"is.matrix(X) | is.data.frame(X) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-76"><a href="other-useful.html#cb153-76" tabindex="-1"></a>  </span>
+<span id="cb153-77"><a href="other-useful.html#cb153-77" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, ], <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters),</span>
+<span id="cb153-78"><a href="other-useful.html#cb153-78" tabindex="-1"></a>                         <span class="st">"length(y) == n is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-79"><a href="other-useful.html#cb153-79" tabindex="-1"></a></span>
+<span id="cb153-80"><a href="other-useful.html#cb153-80" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="cn">FALSE</span>, <span class="at">clusters=</span>good_clusters),</span>
+<span id="cb153-81"><a href="other-useful.html#cb153-81" tabindex="-1"></a>                         <span class="st">"getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued."</span>,</span>
+<span id="cb153-82"><a href="other-useful.html#cb153-82" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-83"><a href="other-useful.html#cb153-83" tabindex="-1"></a></span>
+<span id="cb153-84"><a href="other-useful.html#cb153-84" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">3</span><span class="sc">:</span><span class="dv">7</span>, <span class="dv">7</span><span class="sc">:</span><span class="dv">10</span>)),</span>
+<span id="cb153-85"><a href="other-useful.html#cb153-85" tabindex="-1"></a>                         <span class="st">"Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2."</span>,</span>
+<span id="cb153-86"><a href="other-useful.html#cb153-86" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-87"><a href="other-useful.html#cb153-87" tabindex="-1"></a>  </span>
+<span id="cb153-88"><a href="other-useful.html#cb153-88" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>, <span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>)),</span>
+<span id="cb153-89"><a href="other-useful.html#cb153-89" tabindex="-1"></a>                         <span class="st">"length(clusters) == length(unique(clusters)) is not TRUE"</span>,</span>
+<span id="cb153-90"><a href="other-useful.html#cb153-90" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-91"><a href="other-useful.html#cb153-91" tabindex="-1"></a></span>
+<span id="cb153-92"><a href="other-useful.html#cb153-92" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="dv">6</span><span class="sc">:</span><span class="dv">50</span>),</span>
+<span id="cb153-93"><a href="other-useful.html#cb153-93" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
+<span id="cb153-94"><a href="other-useful.html#cb153-94" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-95"><a href="other-useful.html#cb153-95" tabindex="-1"></a></span>
+<span id="cb153-96"><a href="other-useful.html#cb153-96" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb153-97"><a href="other-useful.html#cb153-97" tabindex="-1"></a>                                      <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="fu">as.integer</span>(<span class="cn">NA</span>))),</span>
+<span id="cb153-98"><a href="other-useful.html#cb153-98" tabindex="-1"></a>                         <span class="st">"!is.na(clusters) are not all TRUE"</span>,</span>
+<span id="cb153-99"><a href="other-useful.html#cb153-99" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-100"><a href="other-useful.html#cb153-100" tabindex="-1"></a></span>
+<span id="cb153-101"><a href="other-useful.html#cb153-101" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">5</span>))),</span>
+<span id="cb153-102"><a href="other-useful.html#cb153-102" tabindex="-1"></a>                         <span class="st">"length(clusters[[i]]) == length(unique(clusters[[i]])) is not TRUE"</span>,</span>
+<span id="cb153-103"><a href="other-useful.html#cb153-103" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-104"><a href="other-useful.html#cb153-104" tabindex="-1"></a></span>
+<span id="cb153-105"><a href="other-useful.html#cb153-105" tabindex="-1"></a>   testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="sc">-</span><span class="dv">1</span>)),</span>
+<span id="cb153-106"><a href="other-useful.html#cb153-106" tabindex="-1"></a>                         <span class="st">"all(clusters[[i]] &gt;= 1) is not TRUE"</span>,</span>
+<span id="cb153-107"><a href="other-useful.html#cb153-107" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-108"><a href="other-useful.html#cb153-108" tabindex="-1"></a></span>
+<span id="cb153-109"><a href="other-useful.html#cb153-109" tabindex="-1"></a>   testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="other-useful.html#getModelSize">getModelSize</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>,</span>
+<span id="cb153-110"><a href="other-useful.html#cb153-110" tabindex="-1"></a>                                                               <span class="fu">c</span>(<span class="fl">2.3</span>, <span class="fl">1.2</span>))),</span>
+<span id="cb153-111"><a href="other-useful.html#cb153-111" tabindex="-1"></a>                         <span class="st">"all(clusters[[i]] == round(clusters[[i]])) is not TRUE"</span>,</span>
+<span id="cb153-112"><a href="other-useful.html#cb153-112" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb153-113"><a href="other-useful.html#cb153-113" tabindex="-1"></a></span>
+<span id="cb153-114"><a href="other-useful.html#cb153-114" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## ── Warning: getModelSize works ─────────────────────────────────────────────────
 ## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
 ## Backtrace:
@@ -2026,7 +2039,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ##  1. └─litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X = x, y = y, clusters = good_clusters)
 ##  2.   └─glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian")
 ##  3.     └─glmnet:::cv.glmnet.raw(...)
-## Test passed with 34 successes 😀.</code></pre>
+## Test passed with 35 successes 😀.</code></pre>
 <p><code><a href="other-useful.html#printCssDf">printCssDf</a>()</code>:</p>
 <div class="sourceCode" id="cb155"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb155-1"><a href="other-useful.html#cb155-1" tabindex="-1"></a><span class="co">#' Prepares a data.frame summarazing cluster stability selection output to print</span></span>
 <span id="cb155-2"><a href="other-useful.html#cb155-2" tabindex="-1"></a><span class="co">#'</span></span>
