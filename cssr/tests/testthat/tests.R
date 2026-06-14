@@ -522,6 +522,17 @@ testthat::test_that("checkCssInputs works", {
   testthat::expect_equal(length(clust_feats), length(intersect(clust_feats,
                                                                1:11)))
 
+  # Regression test: train_inds with an out-of-range index (> n) must be
+  # rejected. Previously the upper-bound check was a no-op due to a misplaced
+  # parenthesis (all(train_inds) <= n instead of all(train_inds <= n)), so
+  # out-of-range indices were silently accepted. (n = 15 here; 16 is invalid.)
+  testthat::expect_error(checkCssInputs(X=x, y=y, lambda=0.01,
+                                        clusters=good_clusters,
+                                        fitfun = cssLasso, sampling_type = "SS",
+                                        B = 13, prop_feats_remove = 0,
+                                        train_inds = c(1L, 2L, 16L),
+                                        num_cores = 1L))
+
   ## Trying other inputs
 
   # Custom fitfun with nonsense lambda (which will be ignored by fitfun, and
