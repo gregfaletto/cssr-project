@@ -46,7 +46,7 @@
 #' from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
 checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,

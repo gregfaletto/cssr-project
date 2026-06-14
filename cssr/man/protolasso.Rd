@@ -39,10 +39,10 @@ vectors. Entry k of this list contains a selected set (an integer vector) of
 size k yielded by the protolasso (If no set of size k was selected, entry k
 will be empty.)} \item{selected_clusts_list}{A list; each element of the list
 is a named list of selected clusters. (That is, if a selected set of size k
-was yielded by the protolasso, then selected_clusts_list[\link{k}] is a named
+was yielded by the protolasso, then \code{selected_clusts_list[[k]]} is a named
 list of length k, where each member of the list is an integer vector
-of cluster members. In particular, selected_clusts_lists[\link{k}][\link{j}] will be
-the cluster that contains feature selected_sets[\link{k}]\link{j}.)} \item{beta}{The
+of cluster members. In particular, \code{selected_clusts_lists[[k]][[j]]} will be
+the cluster that contains feature \code{selected_sets[[k]][j]}.)} \item{beta}{The
 beta output from glmnet when the lasso was estimated on a matrix of
 prototypes. (See documentation for the function glmnet from the glmnet
 package for details.)}

@@ -4,15 +4,17 @@
 #' 
 #' Runs provided feature selection method `fitfun` on each subsample for cluster
 #' stability selection (this function is called within `mclapply`).
-#' @param input Could be one of two things: \item{subsample}{An integer vector
-#' of size `n/2` containing the indices of the observations in the subsample.}
-#' \item{drop_var_input}{A named list containing two elements: one named
-#' "subsample" and the same as the previous description, and a logical vector
-#' named "feats_to_keep" containing the indices of the features to be
-#' automatically selected.} (The first object is the output of the function
-#' `createSubsamples()` when the provided `prop_feats_remove` is 0, the default, and
-#' the second object is the output of `createSubsamples()` when `prop_feats_remove >
-#' 0`.)
+#' @param input Could be one of two things:
+#'   - `subsample`: An integer vector of size `n/2` containing the indices of the
+#'   observations in the subsample.
+#'   - `drop_var_input`: A named list containing two elements: one named
+#'   "subsample" and the same as the previous description, and a logical vector
+#'   named "feats_to_keep" containing the indices of the features to be
+#'   automatically selected.
+#'
+#' (The first object is the output of the function `createSubsamples()` when the
+#' provided `prop_feats_remove` is 0, the default, and the second object is the
+#' output of `createSubsamples()` when `prop_feats_remove > 0`.)
 #' @param x an n x p numeric matrix containing the predictors. (This should be
 #' the full design matrix provided to css.)
 #' @param y A response; can be any response that takes the form of a length n

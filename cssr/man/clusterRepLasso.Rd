@@ -43,10 +43,10 @@ prototype from that cluster--the cluster member most highly correlated with
 y). (If no set of size k was selected, entry k will be empty.)}
 \item{selected_clusts_list}{A list; each element of the list is a named list
 of selected clusters. (That is, if a selected set of size k was yielded by
-the cluster representative lasso, then selected_clusts_list[\link{k}] is a named
+the cluster representative lasso, then \code{selected_clusts_list[[k]]} is a named
 list of length k, where each member of the list is an integer vector
-of cluster members. Note that selected_clusts_lists[\link{k}][\link{j}] will be the
-cluster that contains feature selected_sets[\link{k}]\link{j}.)} \item{beta}{The beta
+of cluster members. Note that \code{selected_clusts_lists[[k]][[j]]} will be the
+cluster that contains feature \code{selected_sets[[k]][j]}.)} \item{beta}{The beta
 output from glmnet when the lasso was estimated on a matrix of prototypes.
 (See documentation for the function glmnet from the glmnet package for
 details.)}

@@ -21,7 +21,7 @@
 #' each selected cluster will be returned.). See Faletto and Bien (2022) for
 #' details.
 #' @return A named list of the same length as sel_clusters of numeric vectors.
-#' weights[[j]] is the weights to use for the jth selected cluster, and it has
+#' `weights[[j]]` is the weights to use for the jth selected cluster, and it has
 #' the same name as the cluster it corresponds to.
 #' @author Gregory Faletto, Jacob Bien
 getAllClustWeights <- function(css_results, sel_clusters, weighting){

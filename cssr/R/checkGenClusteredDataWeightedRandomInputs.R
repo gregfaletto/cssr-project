@@ -2,9 +2,6 @@
 
 #' Check inputs to genClusteredDataWeightedRandom
 #'
-#' @param n Integer or numeric; the number of observations to generate. (The
-#' generated X and Z will have n rows, and the generated y and mu will have
-#' length n.)
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that

@@ -8,10 +8,10 @@
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
 #' "cluster" of size 1).
-#' @param res A binary integer matrix. res[i, j] = 1 if feature j was selected
+#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected
 #' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
 #' (That is, each row is a selected set.)
-#' @return The parameter B, corresponding to half of the subsamples for 
+#' @return The parameter B, corresponding to half of the subsamples for
 #' sampling_type "SS".
 #' @author Gregory Faletto, Jacob Bien
 checkGetClusterSelMatrixInput <- function(clusters, res){

@@ -39,14 +39,15 @@
 #' @return A list of the following elements. \item{Z}{The
 #' latent features; either a numeric vector (if n_clusters > 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
-#' item{mu}{A length `n` numeric vector; the expected response given X, Z, and
+#' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).} \item{y}{A
 #' length n numeric vector; the response generated from X, the latent features
-#' from Z, and the coefficient vector, along with additive noise.} 
+#' from Z, and the coefficient vector, along with additive noise.}
 #' \item{other_X}{A numeric matrix of n observations from a multivariate normal
 #' distribution generated using the specified parameters, containing the weak
 #' signal features and the noise features that will eventually be in X. (The
-#' only missing features are the proxies for the latent features Z.)
+#' only missing features are the proxies for the latent features Z.)}
+#'
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.

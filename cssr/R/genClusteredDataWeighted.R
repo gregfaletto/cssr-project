@@ -44,9 +44,6 @@
 #' correlation between the "weak proxy" features in the cluster will be
 #' rho_low/var. rho_low cannot equal 0 and must be no larger than rho_high.
 #' Default is 0.5.
-#' @param var Integer or numeric; the variance of all of the observed features
-#' in X (both the proxies for the latent variables and the k_unclustered other
-#' features). Can't equal 0. Default is 1.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.

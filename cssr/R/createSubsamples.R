@@ -13,8 +13,9 @@
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
 #' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 #' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
-#' @param num_feats_remove Integer; number of features select automatically on
-#' every iteration. Determined earlier from input prop_feats_remove to css.
+#' @param prop_feats_remove Numeric; the proportion of features (between 0 and 1)
+#' that are dropped (and not provided to the feature selection method) on each
+#' subsample. Default is 0.
 #' @return A list of length `B` (or `2*B` for `sampling_type = "SS"`). If
 #' `prop_feats_remove = 0`, each list element is an integer vector of length
 #' `floor(n/2)` containing the indices of a subsample of `1:n`. (For

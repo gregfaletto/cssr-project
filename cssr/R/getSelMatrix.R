@@ -23,15 +23,17 @@
 #' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 #' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
 #' @param subsamps_object A list of length `B` (or `2*B` if `sampling_type="SS"`),
-#' where each element is one of the following: \item{subsample}{An integer
-#' vector of size `n/2` containing the indices of the observations in the
-#' subsample.} \item{drop_var_input}{A named list containing two elements: one
-#' named "subsample", matching the previous description, and a logical vector
-#' named "feats_to_keep" containing the indices of the features to be
-#' automatically selected.} (The first object is the output of the function
-#' createSubsamples when the provided prop_feats_remove is 0, the default, and
-#' the second object is the output of createSubsamples when prop_feats_remove >
-#' 0.)
+#' where each element is one of the following:
+#'   - `subsample`: An integer vector of size `n/2` containing the indices of the
+#'   observations in the subsample.
+#'   - `drop_var_input`: A named list containing two elements: one named
+#'   "subsample", matching the previous description, and a logical vector named
+#'   "feats_to_keep" containing the indices of the features to be automatically
+#'   selected.
+#'
+#' (The first object is the output of the function `createSubsamples()` when the
+#' provided `prop_feats_remove` is 0, the default, and the second object is the
+#' output of `createSubsamples()` when `prop_feats_remove > 0`.)
 #' @param num_cores Optional; an integer. If using parallel processing, the
 #' number of cores to use for parallel processing (num_cores will be supplied
 #' internally as the mc.cores argument of parallel::mclapply).
@@ -46,7 +48,7 @@
 #' of lasso (relying on the R package `glmnet`), where `lambda` must be a 
 #' positive numeric specifying the L1 penalty for the `lasso`.
 #' @return A binary integer matrix of dimension `B` x `p` (if sampling_type ==
-#' "MB") or `2*B` x `p` (if sampling_type == "SS"). res[i, j] = 1 if feature j
+#' "MB") or `2*B` x `p` (if sampling_type == "SS"). `res[i, j]` = 1 if feature j
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a
 #' selected set.)
 #' @author Gregory Faletto, Jacob Bien

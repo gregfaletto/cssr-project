@@ -64,10 +64,6 @@ snr and sigma_eps_sq must be specified. Default is NA.}
 
 \item{sigma_eps_sq}{Integer or numeric; the variance on the noise added
 to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.}
-
-\item{n}{Integer or numeric; the number of observations to generate. (The
-generated X and Z will have n rows, and the generated y and mu will have
-length n.)}
 }
 \value{
 A list of the following elements. \item{X}{An n x p numeric matrix of
