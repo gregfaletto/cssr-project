@@ -162,7 +162,7 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
         stopifnot(all(round(train_inds) == train_inds))
         stopifnot(length(train_inds) == length(unique(train_inds)))
         stopifnot(all(train_inds >= 1))
-        stopifnot(all(train_inds) <= n)
+        stopifnot(all(train_inds <= n))
         stopifnot(length(train_inds) <= n - 2)
         stopifnot(length(train_inds) >= 1)
     }

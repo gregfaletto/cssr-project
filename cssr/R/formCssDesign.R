@@ -88,7 +88,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
         clust_i <- css_results$clusters[[clust_i_name]]
 
         stopifnot(length(clust_i) >= 1)
-        stopifnot(all(clust_i) %in% 1:p)
+        stopifnot(all(clust_i %in% 1:p))
 
         weights_i <- weights[[clust_i_name]]
 
