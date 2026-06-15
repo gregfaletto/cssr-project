@@ -8495,6 +8495,180 @@ testthat::test_that("genClusteredDataWeightedRandom works", {
 })
 ```
 
+Finally, characterization snapshots that pin the exact generated output of all
+three `genClusteredData*` generators. The "... works" tests above only check
+distributional properties (correlations, ranges), not the exact RNG draw order
+(which differs across the three: bulk `rnorm` vs per-column vs random per
+column). These snapshots make the #16 consolidation of the generators and their
+validators provably behavior-preserving; regenerate only if the data-generating
+algorithm intentionally changes.
+
+```{r}
+# Characterization snapshots: pin the EXACT generated values (X / y / Z / mu)
+# under fixed seeds so the #16 consolidation of the genClusteredData* functions
+# and their validators is provably behavior-preserving. The existing "... works"
+# tests only check distributional properties (correlations, ranges), NOT the
+# exact RNG draw order, which differs across the three generators (bulk vs
+# per-column vs random-per-column). Regenerate ONLY if the data-generating
+# algorithm intentionally changes.
+
+testthat::test_that("genClusteredData output is byte-stable (characterization snapshot, #16)", {
+  set.seed(23478)
+  ret <- genClusteredData(n=25, p=19, k_unclustered=2, cluster_size=5,
+    n_clusters=3, sig_clusters=2, rho=.99, beta_latent=1.5, beta_unclustered=-2,
+    snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-1.02641989570528,
+    -0.113749750828501, -0.0540798505887575, -0.719018251689331,
+    -1.02002920513898, -0.133167075802704, -0.228504275273568,
+    -0.594853445315136, -1.3743321671407, -0.691923420713347, -0.11653157345392,
+    -0.949501763500117, -1.09911307059764, -0.234373142554013,
+    -0.0610136281766905, -0.614831158775111, -0.875588846521461,
+    -0.267096146835881, 0.243882464912086, -0.525573959766865, 0.38889466127034,
+    -0.196999108158916, -0.548580993298435, 1.29708342622908), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(1.78818155412284, 2.55825580753328,
+    0.0881535457958548, 1.21771079504409))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538,
+    0.402628944106856, -0.0568963388614887, -0.533358544824988, 1.23055042537552,
+    0.495888208134907, 2.19477907424054, 0.357725198858587, -0.863633909554439),
+    dim = 4:3))
+  testthat::expect_equal(ret$mu[1:4], c(1.12211695300006, 3.29507281236772,
+    -0.106753094432726, 1.52394871772745))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = 7.85857128981734, sumY = 13.5810460445817, sumZ = 3.15823002771053,
+      sumMu = 9.93005749962466))
+
+  # single latent variable (n_clusters = 1): Z is a one-column matrix, and the
+  # proxy block adds bulk noise to the raw vector Z.
+  set.seed(23478)
+  ret <- genClusteredData(n=5, p=19, k_unclustered=2, cluster_size=5,
+    n_clusters=1, sig_clusters=1, rho=.8, beta_latent=1.5, beta_unclustered=-2,
+    snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-0.00161764234876749,
+    -0.557794858227907, -0.827386446973581, -0.460377784885637, -2.67619233265038,
+    0.671711827459298, 1.65236925524076, -0.600115109545631, -0.280741265470752,
+    -1.67026187144442, -0.0473803806232191, 0.0826508004462609, 0.170200984778884,
+    0.976190994120857, -0.499749723868518, -0.474295388720649, -1.17346153974724,
+    -0.574655697546479, -0.120791507647279, -0.567678976454219, -1.3596277359555,
+    -0.0619416164679036, 0.538496824968004, 0.51591446765952), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(-0.558336409902388, -2.73369761842788,
+    -0.884087327686163, -3.17343267752372))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538),
+    dim = c(4L, 1L)))
+  testthat::expect_equal(ret$mu[1:4], c(0.195781398124046, -1.51661095607912,
+    -0.722190912632797, -2.90119777610212))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = -5.88971766152033, sumY = -7.36101068003228, sumZ = -2.4782435456402,
+      sumMu = -5.08843939501818))
+})
+
+testthat::test_that("genClusteredDataWeighted output is byte-stable (characterization snapshot, #16)", {
+  set.seed(23478)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+    n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+    rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-1.02641989570528,
+    -0.113749750828501, -0.0540798505887575, -0.719018251689331,
+    -1.02002920513898, -0.133167075802704, -0.228504275273568,
+    -0.594853445315136, -1.3743321671407, -0.691923420713347, -0.11653157345392,
+    -0.949501763500117, -0.748805376677026, 0.925796953277494, -0.766705940388196,
+    -0.348877774329742, 1.96822115764394, 0.528035720534176, 2.93942827641455,
+    0.736079254765787, 0.38889466127034, -0.196999108158916, -0.548580993298435,
+    1.29708342622908), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(1.78818155412284, 2.55825580753328,
+    0.0881535457958548, 1.21771079504409))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538,
+    0.402628944106856, -0.0568963388614887, -0.533358544824988, 1.23055042537552,
+    0.495888208134907, 2.19477907424054, 0.357725198858587, -0.863633909554439),
+    dim = 4:3))
+  testthat::expect_equal(ret$mu[1:4], c(1.12211695300006, 3.29507281236772,
+    -0.106753094432726, 1.52394871772745))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = 15.3829830134111, sumY = 13.5810460445817, sumZ = 3.15823002771053,
+      sumMu = 9.93005749962466))
+
+  # single latent variable (n_clusters = 1)
+  set.seed(23478)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+    n_strong_cluster_vars=3, n_clusters=1, sig_clusters=1, rho_high=.99,
+    rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-1.07114417787482,
+    -0.368013007285506, 0.014438919713251, -0.845503147886515, -1.23739163512048,
+    -0.174811089926991, -0.0829364724064908, -0.479069797377207, -1.12138274604786,
+    -0.402828108682171, 0.104291325515473, -0.844159398768831, 0.352430473911601,
+    -1.4960796572646, -1.23544829374631, 0.148162490964714, -1.03021388828778,
+    0.576416731940481, -0.513340292522171, -1.14008022670496, 0.402628944106856,
+    -0.0568963388614887, -0.533358544824988, 1.23055042537552), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(-3.91149964768012, -4.73964429926795,
+    0.513991031913566, -2.95972727928473))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538),
+    dim = c(4L, 1L)))
+  testthat::expect_equal(ret$mu[1:4], c(-3.20232310305676, -3.49765450037239,
+    0.564187042362111, -2.19774596140566))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = -24.0234160115409, sumY = -10.2198990332918, sumZ = 0.586596841562748,
+      sumMu = -5.15679097838167))
+})
+
+testthat::test_that("genClusteredDataWeightedRandom output is byte-stable (characterization snapshot, #16)", {
+  set.seed(23478)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2,
+    cluster_size=5, n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5,
+    beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-1.1897691657824,
+    -0.00982041549935259, 0.665172439447775, -0.756543570417209, 1.15949678203449,
+    -2.91344510959381, 0.491240389956153, -1.30476423524191, -0.485131132932798,
+    0.707045727376943, 3.2222522503854, -3.27350445562509, -1.85428176680484,
+    -0.0656090373877866, -0.551130785327929, -1.90090513408521, -1.29616909361208,
+    -0.144918159176611, 0.544180897409365, -0.50148178532334, 0.627200376817289,
+    0.171599744439457, -1.07507438640901, 1.5693792481444), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(1.78818155412284, 2.55825580753328,
+    0.0881535457958548, 1.21771079504409))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538,
+    0.402628944106856, -0.0568963388614887, -0.533358544824988, 1.23055042537552,
+    0.495888208134907, 2.19477907424054, 0.357725198858587, -0.863633909554439),
+    dim = 4:3))
+  testthat::expect_equal(ret$mu[1:4], c(1.12211695300006, 3.29507281236772,
+    -0.106753094432726, 1.52394871772745))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = 3.23025166163967, sumY = 13.5810460445817, sumZ = 3.15823002771053,
+      sumMu = 9.93005749962466))
+
+  # single latent variable (n_clusters = 1)
+  set.seed(23478)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2,
+    cluster_size=5, n_clusters=1, sig_clusters=1, rho_high=1, rho_low=.5,
+    beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_equal(ret$X[1:4, 1:6], structure(c(-1.36526166060881,
+    0.586409931283558, 1.2227469255493, -2.17655371414979, 0.326418806550987,
+    -1.09714072579561, 1.4239012653582, -0.760011975131564, -0.227256340192126,
+    -1.84845832529723, 0.184388770399019, -0.394752299747441, -1.47062212216842,
+    -0.12215942773548, -0.0749451055463801, -0.842364831584477, -1.41223753691949,
+    -1.68487949598676, 0.247717311839652, -1.86068883953814, 0.402628944106856,
+    -0.0568963388614887, -0.533358544824988, 1.23055042537552), dim = c(4L, 6L)))
+  testthat::expect_equal(ret$y[1:4], c(-3.91149964768012, -4.73964429926795,
+    0.513991031913566, -2.95972727928473))
+  testthat::expect_equal(ret$Z[1:4, , drop = FALSE], structure(c(-1.13051559031852,
+    -0.338373896594486, 0.00224652036037424, -0.638671932314538),
+    dim = c(4L, 1L)))
+  testthat::expect_equal(ret$mu[1:4], c(-3.20232310305676, -3.49765450037239,
+    0.564187042362111, -2.19774596140566))
+  testthat::expect_equal(
+    c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
+    c(sumX = -28.8273582900822, sumY = -10.2198990332918, sumZ = 0.586596841562748,
+      sumMu = -5.15679097838167))
+})
+```
+
 `getLassoLambda()`:
 
 ```{r}
