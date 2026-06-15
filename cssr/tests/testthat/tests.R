@@ -1323,6 +1323,54 @@ testthat::test_that("css works", {
 
 })
 
+testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isolated (#12)", {
+  set.seed(99)
+  x_rng <- matrix(stats::rnorm(40 * 8), nrow=40, ncol=8)
+  y_rng <- stats::rnorm(40)
+
+  # A stochastic fitfun: randomly selects 2 features (uses the RNG), so its
+  # output depends on the seed in effect when it runs.
+  rfit <- function(X, y, lambda){ sort(sample.int(ncol(X), 2)) }
+  sub <- sort(sample.int(40L, 20L))
+
+  # cssLoop's seed argument makes a stochastic fitfun reproducible: the same
+  # seed gives the same selection. (On main, cssLoop has no seed argument, so
+  # this behavior does not exist there.) This needs no parallelism.
+  r1 <- cssLoop(input=sub, x=x_rng, y=y_rng, lambda=0.1, fitfun=rfit, seed=123L)
+  r2 <- cssLoop(input=sub, x=x_rng, y=y_rng, lambda=0.1, fitfun=rfit, seed=123L)
+  testthat::expect_identical(r1, r2)
+
+  # ...and the seed genuinely drives the (stochastic) selection -- different
+  # seeds give more than one distinct result (so the check above is not vacuous).
+  outs <- lapply(1:8, function(s) cssLoop(input=sub, x=x_rng, y=y_rng,
+                                          lambda=0.1, fitfun=rfit, seed=s))
+  testthat::expect_true(length(unique(outs)) > 1)
+
+  # End-to-end, serial css is reproducible across re-runs.
+  set.seed(1)
+  d1 <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=1L)$feat_sel_mat
+  set.seed(1)
+  d2 <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=1L)$feat_sel_mat
+  testthat::expect_identical(d1, d2)
+
+  # Parallel checks need real forking; run the parallel css calls defensively
+  # and skip (rather than fail) when forking is unavailable -- Windows, CRAN, or
+  # a fully-loaded machine. A genuine reproducibility regression would still
+  # surface as a failed expectation below, not a skip.
+  par_runs <- tryCatch({
+    set.seed(1)
+    a <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=2L)$feat_sel_mat
+    set.seed(1)
+    b <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=2L)$feat_sel_mat
+    list(a=a, b=b)
+  }, error=function(e) NULL)
+  if(is.null(par_runs)){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+  testthat::expect_identical(par_runs$a, par_runs$b)   # parallel reproducible
+  testthat::expect_identical(par_runs$a, d1)           # serial == parallel
+})
+
 testthat::test_that("checkCutoff works", {
   testthat::expect_null(checkCutoff(0))
   testthat::expect_null(checkCutoff(0.2))

@@ -6,7 +6,7 @@ cluster stability selection (this function is called within `mclapply`).
 ## Usage
 
 ``` r
-cssLoop(input, x, y, lambda, fitfun)
+cssLoop(input, x, y, lambda, fitfun, seed = NULL)
 ```
 
 ## Arguments
@@ -53,6 +53,15 @@ cssLoop(input, x, y, lambda, fitfun)
 
   A function that takes in arguments X, y, and lambda and returns a
   vector of indices of the columns of X (selected features).
+
+- seed:
+
+  Optional integer. If non-NULL, the random number generator is seeded
+  with `set.seed(seed)` immediately before `fitfun` is called, so that a
+  stochastic `fitfun` is reproducible and identical across serial and
+  parallel execution. Default NULL (no seeding). Supplied internally by
+  `getSelMatrix` (one reproducible seed per subsample); direct callers
+  can leave it NULL.
 
 ## Value
 

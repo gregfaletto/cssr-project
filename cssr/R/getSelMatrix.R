@@ -72,8 +72,23 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 
     # Get list of selected feature sets from subsamples
 
-    res_list <- parallel::mclapply(X=subsamps_object, FUN=cssLoop, x=x, y=y,
-        lambda=lambda, fitfun=fitfun, mc.cores=num_cores)
+    # Reproducible per-subsample seeding (issue #12): draw one seed per
+    # subsample from the caller's RNG, then seed inside cssLoop right before
+    # fitfun runs, so a stochastic fitfun is reproducible and identical across
+    # serial/parallel/platform/num_cores given a seed set before css(). The
+    # default cssLasso is deterministic and ignores the seed. Save and restore
+    # .Random.seed so css() leaves the caller's RNG where the (pre-existing)
+    # subsampling left it.
+    if(exists(".Random.seed", envir=.GlobalEnv)){
+        old_seed <- get(".Random.seed", envir=.GlobalEnv)
+        on.exit(assign(".Random.seed", old_seed, envir=.GlobalEnv), add=TRUE)
+    }
+    seeds <- sample.int(.Machine$integer.max, length(subsamps_object))
+
+    res_list <- parallel::mclapply(X=seq_along(subsamps_object),
+        FUN=function(i) cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
+            fitfun=fitfun, seed=seeds[i]),
+        mc.cores=num_cores)
 
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
     if(sampling_type=="SS"){

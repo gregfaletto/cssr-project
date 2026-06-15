@@ -4,7 +4,7 @@
 \alias{cssLoop}
 \title{Helper function run on each subsample}
 \usage{
-cssLoop(input, x, y, lambda, fitfun)
+cssLoop(input, x, y, lambda, fitfun, seed = NULL)
 }
 \arguments{
 \item{input}{Could be one of two things:
@@ -36,6 +36,12 @@ fit.}
 
 \item{fitfun}{A function that takes in arguments X, y, and lambda and returns
 a vector of indices of the columns of X (selected features).}
+
+\item{seed}{Optional integer. If non-NULL, the random number generator is
+seeded with \code{set.seed(seed)} immediately before \code{fitfun} is called, so that a
+stochastic \code{fitfun} is reproducible and identical across serial and parallel
+execution. Default NULL (no seeding). Supplied internally by \code{getSelMatrix}
+(one reproducible seed per subsample); direct callers can leave it NULL.}
 }
 \value{
 An integer vector; the indices of the features selected by \code{fitfun}.
