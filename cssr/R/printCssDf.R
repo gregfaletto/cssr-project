@@ -33,7 +33,7 @@
 printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
     max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
     checkCutoff(cutoff)
 
     p <- ncol(css_results$feat_sel_mat)

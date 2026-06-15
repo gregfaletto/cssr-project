@@ -49,7 +49,7 @@
 getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
     checkCutoff(cutoff)
     checkWeighting(weighting)
 

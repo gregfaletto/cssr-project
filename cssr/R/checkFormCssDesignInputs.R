@@ -39,7 +39,7 @@
 #' @author Gregory Faletto, Jacob Bien
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
     min_num_clusts, max_num_clusts, newx){    
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     if(length(newx) == 1){
         if(is.na(newx)){

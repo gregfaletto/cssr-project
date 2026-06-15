@@ -53,7 +53,7 @@
 getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     cutoff=0, min_num_clusts=1, max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     check_results <- checkNewXProvided(newX, css_results)
 

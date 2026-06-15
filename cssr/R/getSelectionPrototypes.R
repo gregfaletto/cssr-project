@@ -18,7 +18,7 @@
 getSelectionPrototypes <- function(css_results, selected_clusts){
     
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     stopifnot(is.list(selected_clusts))
     n_selected_clusts <- length(selected_clusts)
