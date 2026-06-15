@@ -20,8 +20,8 @@
 #' Bühlmann and van de Geer 2011, Section 2.5.1.). Default is "1se".
 #' @param nfolds Numeric or integer; the number of folds for cross-validation.
 #' Must be at least 4 (as specified by cv.glmnet). Default is 10.
-#' @param alpha Numeric; the elastic net mixing parameter. Default is 1 (in
-#' which case the penalty is for lasso)
+#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
+#' Default is 1 (in which case the penalty is for lasso).
 #' @return A numeric; the selected value of lambda.
 #' @author Gregory Faletto, Jacob Bien
 #' @references Bühlmann, P., & Meinshausen, N. (2006). High-Dimensional Graphs
@@ -52,7 +52,7 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(is.numeric(alpha) | is.integer(alpha))
     stopifnot(length(alpha) == 1)
     stopifnot(!is.na(alpha))
-    stopifnot(alpha >= 0)
+    stopifnot(alpha > 0)
     stopifnot(alpha <= 1)
 
     # Since we are using the lasso, we require y to be a real-valued response

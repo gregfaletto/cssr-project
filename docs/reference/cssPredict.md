@@ -22,7 +22,8 @@ cssPredict(
   cutoff = NA,
   max_num_clusts = NA,
   train_inds = NA,
-  auto_select_size = TRUE
+  auto_select_size = TRUE,
+  alpha = 1
 )
 ```
 
@@ -116,6 +117,13 @@ cssPredict(
   (If desired output is to generate predictions using all clusters, you
   should set auto_select_size to FALSE and do not provide cutoff or
   max_num_clusts.)
+
+- alpha:
+
+  Numeric; the elastic net mixing parameter. Must be in `(0, 1]`. Drives
+  both the choice of lambda (when lambda is not provided) and the
+  elastic net fit used for feature selection in each subsample. Default
+  is 1 (in which case the penalty is the lasso).
 
 ## Value
 

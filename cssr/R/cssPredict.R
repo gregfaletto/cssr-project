@@ -71,13 +71,17 @@
 #' provided. (If desired output is to generate predictions using all clusters,
 #' you should set auto_select_size to FALSE and do not provide cutoff or
 #' max_num_clusts.)
+#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
+#' Drives both the choice of lambda (when lambda is not provided) and the
+#' elastic net fit used for feature selection in each subsample. Default is 1
+#' (in which case the penalty is the lasso).
 #' @return A numeric vector of length nrow(X_test) of predictions
 #' corresponding to the observations from X_test.
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     lambda=NA, cutoff=NA, max_num_clusts=NA, train_inds=NA,
-    auto_select_size=TRUE){
+    auto_select_size=TRUE, alpha=1){
 
     # Check inputs (most inputs will be checked by called functions)
     if(!is.numeric(y_train_selec) & !is.integer(y_train_selec)){
@@ -87,6 +91,14 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(!is.na(auto_select_size))
     stopifnot(length(auto_select_size) == 1)
     stopifnot(is.logical(auto_select_size))
+
+    # Validate alpha up front (before the NA-lambda branch and bundling below);
+    # see cssSelect for the ordering rationale. Mirrors getLassoLambda.
+    stopifnot(is.numeric(alpha) | is.integer(alpha))
+    stopifnot(length(alpha) == 1)
+    stopifnot(!is.na(alpha))
+    stopifnot(alpha > 0)
+    stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X_train_selec) | is.data.frame(X_train_selec))
     stopifnot(all(!is.na(X_train_selec)))
@@ -115,7 +127,14 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
         lambda <- getLassoLambda(X_train_selec[setdiff(1:n, train_inds), ],
-            y_train_selec[setdiff(1:n, train_inds)]) 
+            y_train_selec[setdiff(1:n, train_inds)], alpha=alpha)
+    }
+
+    # Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the
+    # default), leave lambda as a scalar so the pure-lasso path is byte-identical
+    # to the original behavior.
+    if(alpha != 1){
+        lambda <- c(lambda=lambda, alpha=alpha)
     }
 
     css_results <- css(X=X_train_selec, y=y_train_selec, lambda=lambda,

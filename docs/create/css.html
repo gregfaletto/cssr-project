@@ -648,67 +648,92 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb17-5"><a href="css.html#cb17-5" tabindex="-1"></a><span class="co">#' @param X A design matrix containing the predictors. (In practice this will</span></span>
 <span id="cb17-6"><a href="css.html#cb17-6" tabindex="-1"></a><span class="co">#' be a subsample of the full design matrix provided to `<a href="css.html#css">css</a>()`.)</span></span>
 <span id="cb17-7"><a href="css.html#cb17-7" tabindex="-1"></a><span class="co">#' @param y A numeric vector containing the response.</span></span>
-<span id="cb17-8"><a href="css.html#cb17-8" tabindex="-1"></a><span class="co">#' @param lambda Numeric; a nonnegative number for the lasso penalty to use</span></span>
-<span id="cb17-9"><a href="css.html#cb17-9" tabindex="-1"></a><span class="co">#' on each subsample. (For now, only one lambda value can be provided to</span></span>
-<span id="cb17-10"><a href="css.html#cb17-10" tabindex="-1"></a><span class="co">#' `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan to allow for multiple lambda values to be</span></span>
-<span id="cb17-11"><a href="css.html#cb17-11" tabindex="-1"></a><span class="co">#' provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as described in Faletto and Bien 2022.)</span></span>
-<span id="cb17-12"><a href="css.html#cb17-12" tabindex="-1"></a><span class="co">#' @return An integer vector; the indices of the features selected by the lasso.</span></span>
-<span id="cb17-13"><a href="css.html#cb17-13" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb17-14"><a href="css.html#cb17-14" tabindex="-1"></a><span class="co">#' @references </span></span>
-<span id="cb17-15"><a href="css.html#cb17-15" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb17-16"><a href="css.html#cb17-16" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
-<span id="cb17-17"><a href="css.html#cb17-17" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb17-18"><a href="css.html#cb17-18" tabindex="-1"></a><span class="co">#' Jerome Friedman, Trevor Hastie,</span></span>
-<span id="cb17-19"><a href="css.html#cb17-19" tabindex="-1"></a><span class="co">#' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models</span></span>
-<span id="cb17-20"><a href="css.html#cb17-20" tabindex="-1"></a><span class="co">#' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.</span></span>
-<span id="cb17-21"><a href="css.html#cb17-21" tabindex="-1"></a><span class="co">#' URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb17-22"><a href="css.html#cb17-22" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb17-23"><a href="css.html#cb17-23" tabindex="-1"></a><span id="cssLasso">cssLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
-<span id="cb17-24"><a href="css.html#cb17-24" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb17-25"><a href="css.html#cb17-25" tabindex="-1"></a></span>
-<span id="cb17-26"><a href="css.html#cb17-26" tabindex="-1"></a>    <span class="co"># </span><span class="al">TODO</span><span class="co">(gregfaletto) allow cssLasso to accept a vector of lambda values rather</span></span>
-<span id="cb17-27"><a href="css.html#cb17-27" tabindex="-1"></a>    <span class="co"># than just a single one.</span></span>
-<span id="cb17-28"><a href="css.html#cb17-28" tabindex="-1"></a>    <a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(X, y, lambda)</span>
+<span id="cb17-8"><a href="css.html#cb17-8" tabindex="-1"></a><span class="co">#' @param lambda Either a single nonnegative number for the lasso penalty to</span></span>
+<span id="cb17-9"><a href="css.html#cb17-9" tabindex="-1"></a><span class="co">#' use on each subsample (in which case a pure lasso fit, alpha = 1, is used),</span></span>
+<span id="cb17-10"><a href="css.html#cb17-10" tabindex="-1"></a><span class="co">#' or a named length-2 numeric vector `c(lambda = &lt;value&gt;, alpha = &lt;value&gt;)`</span></span>
+<span id="cb17-11"><a href="css.html#cb17-11" tabindex="-1"></a><span class="co">#' bundling the penalty together with the elastic net mixing parameter alpha</span></span>
+<span id="cb17-12"><a href="css.html#cb17-12" tabindex="-1"></a><span class="co">#' (which must be in `(0, 1]`); in the latter case an elastic net fit with that</span></span>
+<span id="cb17-13"><a href="css.html#cb17-13" tabindex="-1"></a><span class="co">#' alpha is used. (For now, only one lambda value can be provided to</span></span>
+<span id="cb17-14"><a href="css.html#cb17-14" tabindex="-1"></a><span class="co">#' `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan to allow for multiple lambda values to be</span></span>
+<span id="cb17-15"><a href="css.html#cb17-15" tabindex="-1"></a><span class="co">#' provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as described in Faletto and Bien 2022.)</span></span>
+<span id="cb17-16"><a href="css.html#cb17-16" tabindex="-1"></a><span class="co">#' @return An integer vector; the indices of the features selected by the lasso.</span></span>
+<span id="cb17-17"><a href="css.html#cb17-17" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb17-18"><a href="css.html#cb17-18" tabindex="-1"></a><span class="co">#' @references </span></span>
+<span id="cb17-19"><a href="css.html#cb17-19" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb17-20"><a href="css.html#cb17-20" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
+<span id="cb17-21"><a href="css.html#cb17-21" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb17-22"><a href="css.html#cb17-22" tabindex="-1"></a><span class="co">#' Jerome Friedman, Trevor Hastie,</span></span>
+<span id="cb17-23"><a href="css.html#cb17-23" tabindex="-1"></a><span class="co">#' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models</span></span>
+<span id="cb17-24"><a href="css.html#cb17-24" tabindex="-1"></a><span class="co">#' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.</span></span>
+<span id="cb17-25"><a href="css.html#cb17-25" tabindex="-1"></a><span class="co">#' URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
+<span id="cb17-26"><a href="css.html#cb17-26" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb17-27"><a href="css.html#cb17-27" tabindex="-1"></a><span id="cssLasso">cssLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
+<span id="cb17-28"><a href="css.html#cb17-28" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
 <span id="cb17-29"><a href="css.html#cb17-29" tabindex="-1"></a></span>
-<span id="cb17-30"><a href="css.html#cb17-30" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb17-31"><a href="css.html#cb17-31" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb17-32"><a href="css.html#cb17-32" tabindex="-1"></a></span>
-<span id="cb17-33"><a href="css.html#cb17-33" tabindex="-1"></a>    <span class="co"># Fit a lasso path (full path for speed, per glmnet documentation)</span></span>
-<span id="cb17-34"><a href="css.html#cb17-34" tabindex="-1"></a></span>
-<span id="cb17-35"><a href="css.html#cb17-35" tabindex="-1"></a>    lasso_model <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(X, y, <span class="at">family=</span><span class="st">"gaussian"</span>)</span>
-<span id="cb17-36"><a href="css.html#cb17-36" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all.equal</span>(<span class="fu">class</span>(lasso_model), <span class="fu">c</span>(<span class="st">"elnet"</span>, <span class="st">"glmnet"</span>)))</span>
-<span id="cb17-37"><a href="css.html#cb17-37" tabindex="-1"></a></span>
-<span id="cb17-38"><a href="css.html#cb17-38" tabindex="-1"></a>    <span class="co"># Get coefficients at desired lambda</span></span>
-<span id="cb17-39"><a href="css.html#cb17-39" tabindex="-1"></a></span>
-<span id="cb17-40"><a href="css.html#cb17-40" tabindex="-1"></a>    pred <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(lasso_model, <span class="at">type=</span><span class="st">"nonzero"</span>,</span>
-<span id="cb17-41"><a href="css.html#cb17-41" tabindex="-1"></a>        <span class="at">s=</span>lambda, <span class="at">exact=</span><span class="cn">TRUE</span>, <span class="at">newx=</span>X, <span class="at">x=</span>X, <span class="at">y=</span>y)</span>
-<span id="cb17-42"><a href="css.html#cb17-42" tabindex="-1"></a></span>
-<span id="cb17-43"><a href="css.html#cb17-43" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(pred[[<span class="dv">1</span>]])){<span class="fu">return</span>(<span class="fu">integer</span>())}</span>
-<span id="cb17-44"><a href="css.html#cb17-44" tabindex="-1"></a></span>
-<span id="cb17-45"><a href="css.html#cb17-45" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(pred))</span>
-<span id="cb17-46"><a href="css.html#cb17-46" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span></span>
-<span id="cb17-47"><a href="css.html#cb17-47" tabindex="-1"></a>        <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred)))</span>
-<span id="cb17-48"><a href="css.html#cb17-48" tabindex="-1"></a></span>
-<span id="cb17-49"><a href="css.html#cb17-49" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">2</span>){</span>
-<span id="cb17-50"><a href="css.html#cb17-50" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred[, <span class="dv">1</span>]</span>
-<span id="cb17-51"><a href="css.html#cb17-51" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">3</span>){</span>
-<span id="cb17-52"><a href="css.html#cb17-52" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred[, <span class="dv">1</span>, <span class="dv">1</span>]</span>
-<span id="cb17-53"><a href="css.html#cb17-53" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb17-54"><a href="css.html#cb17-54" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred</span>
-<span id="cb17-55"><a href="css.html#cb17-55" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb17-56"><a href="css.html#cb17-56" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"length(dim(pred)) not 1, 2, or 3"</span>)</span>
-<span id="cb17-57"><a href="css.html#cb17-57" tabindex="-1"></a>    }</span>
-<span id="cb17-58"><a href="css.html#cb17-58" tabindex="-1"></a></span>
-<span id="cb17-59"><a href="css.html#cb17-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb17-60"><a href="css.html#cb17-60" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X))</span>
-<span id="cb17-61"><a href="css.html#cb17-61" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(selected_glmnet <span class="sc">==</span> <span class="fu">round</span>(selected_glmnet)))</span>
-<span id="cb17-62"><a href="css.html#cb17-62" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected_glmnet)))</span>
-<span id="cb17-63"><a href="css.html#cb17-63" tabindex="-1"></a>    selected_glmnet <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(selected_glmnet)</span>
+<span id="cb17-30"><a href="css.html#cb17-30" tabindex="-1"></a>    <span class="co"># </span><span class="al">TODO</span><span class="co">(gregfaletto) allow cssLasso to accept a vector of lambda values rather</span></span>
+<span id="cb17-31"><a href="css.html#cb17-31" tabindex="-1"></a>    <span class="co"># than just a single one.</span></span>
+<span id="cb17-32"><a href="css.html#cb17-32" tabindex="-1"></a>    <a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(X, y, lambda)</span>
+<span id="cb17-33"><a href="css.html#cb17-33" tabindex="-1"></a></span>
+<span id="cb17-34"><a href="css.html#cb17-34" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb17-35"><a href="css.html#cb17-35" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb17-36"><a href="css.html#cb17-36" tabindex="-1"></a></span>
+<span id="cb17-37"><a href="css.html#cb17-37" tabindex="-1"></a>    <span class="co"># lambda may be either a single nonnegative number (pure lasso, as in the</span></span>
+<span id="cb17-38"><a href="css.html#cb17-38" tabindex="-1"></a>    <span class="co"># original implementation) or a named length-2 numeric vector</span></span>
+<span id="cb17-39"><a href="css.html#cb17-39" tabindex="-1"></a>    <span class="co"># c(lambda=&lt;value&gt;, alpha=&lt;value&gt;) bundling the elastic net mixing</span></span>
+<span id="cb17-40"><a href="css.html#cb17-40" tabindex="-1"></a>    <span class="co"># parameter alpha alongside the penalty. Unpack alpha if it is provided.</span></span>
+<span id="cb17-41"><a href="css.html#cb17-41" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">2</span>){</span>
+<span id="cb17-42"><a href="css.html#cb17-42" tabindex="-1"></a>        alpha <span class="ot">&lt;-</span> <span class="fu">unname</span>(lambda[<span class="st">"alpha"</span>])</span>
+<span id="cb17-43"><a href="css.html#cb17-43" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">unname</span>(lambda[<span class="st">"lambda"</span>])</span>
+<span id="cb17-44"><a href="css.html#cb17-44" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb17-45"><a href="css.html#cb17-45" tabindex="-1"></a>        alpha <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb17-46"><a href="css.html#cb17-46" tabindex="-1"></a>    }</span>
+<span id="cb17-47"><a href="css.html#cb17-47" tabindex="-1"></a></span>
+<span id="cb17-48"><a href="css.html#cb17-48" tabindex="-1"></a>    <span class="co"># Fit a lasso path (full path for speed, per glmnet documentation)</span></span>
+<span id="cb17-49"><a href="css.html#cb17-49" tabindex="-1"></a></span>
+<span id="cb17-50"><a href="css.html#cb17-50" tabindex="-1"></a>    <span class="co"># Build the model with do.call so the stored call (lasso_model$call) carries</span></span>
+<span id="cb17-51"><a href="css.html#cb17-51" tabindex="-1"></a>    <span class="co"># the literal numeric value of alpha rather than the symbol `alpha`. This is</span></span>
+<span id="cb17-52"><a href="css.html#cb17-52" tabindex="-1"></a>    <span class="co"># load-bearing: predict.glmnet(..., exact=TRUE) below re-evaluates the</span></span>
+<span id="cb17-53"><a href="css.html#cb17-53" tabindex="-1"></a>    <span class="co"># stored call via update(), and if that call contained the symbol `alpha`</span></span>
+<span id="cb17-54"><a href="css.html#cb17-54" tabindex="-1"></a>    <span class="co"># (as glmnet::glmnet(X, y, family="gaussian", alpha=alpha) would store) the</span></span>
+<span id="cb17-55"><a href="css.html#cb17-55" tabindex="-1"></a>    <span class="co"># refit would throw "object 'alpha' not found" -- on both the elastic-net</span></span>
+<span id="cb17-56"><a href="css.html#cb17-56" tabindex="-1"></a>    <span class="co"># and the alpha=1 paths. See Decision Log / Surprises in the plan.</span></span>
+<span id="cb17-57"><a href="css.html#cb17-57" tabindex="-1"></a>    lasso_model <span class="ot">&lt;-</span> <span class="fu">do.call</span>(glmnet<span class="sc">::</span>glmnet,</span>
+<span id="cb17-58"><a href="css.html#cb17-58" tabindex="-1"></a>        <span class="fu">list</span>(<span class="at">x=</span>X, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">alpha=</span>alpha))</span>
+<span id="cb17-59"><a href="css.html#cb17-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all.equal</span>(<span class="fu">class</span>(lasso_model), <span class="fu">c</span>(<span class="st">"elnet"</span>, <span class="st">"glmnet"</span>)))</span>
+<span id="cb17-60"><a href="css.html#cb17-60" tabindex="-1"></a></span>
+<span id="cb17-61"><a href="css.html#cb17-61" tabindex="-1"></a>    <span class="co"># Get coefficients at desired lambda. exact=TRUE is load-bearing (dropping</span></span>
+<span id="cb17-62"><a href="css.html#cb17-62" tabindex="-1"></a>    <span class="co"># it changes results materially); the model object carries its own alpha for</span></span>
+<span id="cb17-63"><a href="css.html#cb17-63" tabindex="-1"></a>    <span class="co"># the exact refit, so only the unpacked scalar lambda is passed as s.</span></span>
 <span id="cb17-64"><a href="css.html#cb17-64" tabindex="-1"></a></span>
-<span id="cb17-65"><a href="css.html#cb17-65" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sort</span>(selected_glmnet)</span>
-<span id="cb17-66"><a href="css.html#cb17-66" tabindex="-1"></a></span>
-<span id="cb17-67"><a href="css.html#cb17-67" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
-<span id="cb17-68"><a href="css.html#cb17-68" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb17-65"><a href="css.html#cb17-65" tabindex="-1"></a>    pred <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(lasso_model, <span class="at">type=</span><span class="st">"nonzero"</span>,</span>
+<span id="cb17-66"><a href="css.html#cb17-66" tabindex="-1"></a>        <span class="at">s=</span>lambda, <span class="at">exact=</span><span class="cn">TRUE</span>, <span class="at">newx=</span>X, <span class="at">x=</span>X, <span class="at">y=</span>y)</span>
+<span id="cb17-67"><a href="css.html#cb17-67" tabindex="-1"></a></span>
+<span id="cb17-68"><a href="css.html#cb17-68" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(pred[[<span class="dv">1</span>]])){<span class="fu">return</span>(<span class="fu">integer</span>())}</span>
+<span id="cb17-69"><a href="css.html#cb17-69" tabindex="-1"></a></span>
+<span id="cb17-70"><a href="css.html#cb17-70" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(pred))</span>
+<span id="cb17-71"><a href="css.html#cb17-71" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span></span>
+<span id="cb17-72"><a href="css.html#cb17-72" tabindex="-1"></a>        <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred)))</span>
+<span id="cb17-73"><a href="css.html#cb17-73" tabindex="-1"></a></span>
+<span id="cb17-74"><a href="css.html#cb17-74" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">2</span>){</span>
+<span id="cb17-75"><a href="css.html#cb17-75" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred[, <span class="dv">1</span>]</span>
+<span id="cb17-76"><a href="css.html#cb17-76" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">3</span>){</span>
+<span id="cb17-77"><a href="css.html#cb17-77" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred[, <span class="dv">1</span>, <span class="dv">1</span>]</span>
+<span id="cb17-78"><a href="css.html#cb17-78" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">dim</span>(pred)) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb17-79"><a href="css.html#cb17-79" tabindex="-1"></a>        selected_glmnet <span class="ot">&lt;-</span> pred</span>
+<span id="cb17-80"><a href="css.html#cb17-80" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb17-81"><a href="css.html#cb17-81" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"length(dim(pred)) not 1, 2, or 3"</span>)</span>
+<span id="cb17-82"><a href="css.html#cb17-82" tabindex="-1"></a>    }</span>
+<span id="cb17-83"><a href="css.html#cb17-83" tabindex="-1"></a></span>
+<span id="cb17-84"><a href="css.html#cb17-84" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb17-85"><a href="css.html#cb17-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X))</span>
+<span id="cb17-86"><a href="css.html#cb17-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(selected_glmnet <span class="sc">==</span> <span class="fu">round</span>(selected_glmnet)))</span>
+<span id="cb17-87"><a href="css.html#cb17-87" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected_glmnet)))</span>
+<span id="cb17-88"><a href="css.html#cb17-88" tabindex="-1"></a>    selected_glmnet <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(selected_glmnet)</span>
+<span id="cb17-89"><a href="css.html#cb17-89" tabindex="-1"></a></span>
+<span id="cb17-90"><a href="css.html#cb17-90" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sort</span>(selected_glmnet)</span>
+<span id="cb17-91"><a href="css.html#cb17-91" tabindex="-1"></a></span>
+<span id="cb17-92"><a href="css.html#cb17-92" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
+<span id="cb17-93"><a href="css.html#cb17-93" tabindex="-1"></a>}</span></code></pre></div>
 <p>Notice that <code><a href="css.html#cssLasso">cssLasso</a>()</code> depends on the package <code>glmnet</code>, and calls the function <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>, which verifies that the inputs to <code><a href="css.html#cssLasso">cssLasso</a>()</code> are as needed. (In particular, the function <code><a href="css.html#css">css</a>()</code> imposes very few requirements on <code>lambda</code> and <code>y</code> to allow the end user flexibility for any specified <code>fitfun</code>. <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> ensures that <code>y</code> is a real-valued response, <code>lambda</code> is a nonnegative real number, etc.) <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> is specified in the helper functions section later.</p>
 <p>We add <code>glmnet</code> to the DESCRIPTION file as well:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="css.html#cb18-1" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"glmnet"</span>)</span></code></pre></div>
@@ -1099,7 +1124,7 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb24-66"><a href="css.html#cb24-66" tabindex="-1"></a></span>
 <span id="cb24-67"><a href="css.html#cb24-67" tabindex="-1"></a></span>
 <span id="cb24-68"><a href="css.html#cb24-68" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 17 successes 🥇.</code></pre>
+<pre><code>## Test passed with 17 successes 😀.</code></pre>
 <p><code><a href="css.html#formatClusters">formatClusters</a>()</code>:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="css.html#cb26-1" tabindex="-1"></a><span class="co">#' Formats clusters in standardized way, optionally estimating cluster</span></span>
 <span id="cb26-2"><a href="css.html#cb26-2" tabindex="-1"></a><span class="co">#' prototypes</span></span>
@@ -1489,7 +1514,7 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb31-84"><a href="css.html#cb31-84" tabindex="-1"></a>                                                          <span class="at">get_prototypes=</span><span class="cn">FALSE</span>,</span>
 <span id="cb31-85"><a href="css.html#cb31-85" tabindex="-1"></a>                                                          <span class="at">x=</span><span class="cn">NA</span>, <span class="at">y=</span><span class="cn">NA</span>, <span class="at">R=</span><span class="cn">NA</span>)))</span>
 <span id="cb31-86"><a href="css.html#cb31-86" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 13 successes 🎊.</code></pre>
+<pre><code>## Test passed with 13 successes 🥳.</code></pre>
 <p><code><a href="css.html#checkClusters">checkClusters</a>()</code>:</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="css.html#cb33-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the argument clusters to several functions is</span></span>
 <span id="cb33-2"><a href="css.html#cb33-2" tabindex="-1"></a><span class="co">#' as expected</span></span>
@@ -1555,7 +1580,7 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb34-24"><a href="css.html#cb34-24" tabindex="-1"></a>                         <span class="st">"all(all_clustered_feats &lt;= p) is not TRUE"</span>,</span>
 <span id="cb34-25"><a href="css.html#cb34-25" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb34-26"><a href="css.html#cb34-26" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 7 successes 🌈.</code></pre>
+<pre><code>## Test passed with 7 successes 🎊.</code></pre>
 <p><code><a href="css.html#getPrototypes">getPrototypes</a>()</code>:</p>
 <div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="css.html#cb36-1" tabindex="-1"></a><span class="co">#' Estimate prototypes from a list of clusters</span></span>
 <span id="cb36-2"><a href="css.html#cb36-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -2374,41 +2399,58 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb62-4"><a href="css.html#cb62-4" tabindex="-1"></a><span class="co">#' to check X very much, because X will have already been checked by the</span></span>
 <span id="cb62-5"><a href="css.html#cb62-5" tabindex="-1"></a><span class="co">#' function `<a href="css.html#checkCssInputs">checkCssInputs</a>()` when it was provided to `<a href="css.html#css">css</a>()`.)</span></span>
 <span id="cb62-6"><a href="css.html#cb62-6" tabindex="-1"></a><span class="co">#' @param y A numeric vector containing the response.</span></span>
-<span id="cb62-7"><a href="css.html#cb62-7" tabindex="-1"></a><span class="co">#' @param lambda Numeric; a nonnegative number for the lasso penalty to use</span></span>
-<span id="cb62-8"><a href="css.html#cb62-8" tabindex="-1"></a><span class="co">#' on each subsample. (For now, only one lambda value can be provided to</span></span>
-<span id="cb62-9"><a href="css.html#cb62-9" tabindex="-1"></a><span class="co">#' `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan to allow for multiple lambda values to be</span></span>
-<span id="cb62-10"><a href="css.html#cb62-10" tabindex="-1"></a><span class="co">#' provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as described in Faletto and Bien 2022.)</span></span>
-<span id="cb62-11"><a href="css.html#cb62-11" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb62-12"><a href="css.html#cb62-12" tabindex="-1"></a><span id="checkCssLassoInputs">checkCssLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
-<span id="cb62-13"><a href="css.html#cb62-13" tabindex="-1"></a></span>
-<span id="cb62-14"><a href="css.html#cb62-14" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb62-15"><a href="css.html#cb62-15" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb62-7"><a href="css.html#cb62-7" tabindex="-1"></a><span class="co">#' @param lambda Either a single nonnegative number for the lasso penalty to</span></span>
+<span id="cb62-8"><a href="css.html#cb62-8" tabindex="-1"></a><span class="co">#' use on each subsample, or a named length-2 numeric vector</span></span>
+<span id="cb62-9"><a href="css.html#cb62-9" tabindex="-1"></a><span class="co">#' `c(lambda = &lt;value&gt;, alpha = &lt;value&gt;)` bundling the penalty together with the</span></span>
+<span id="cb62-10"><a href="css.html#cb62-10" tabindex="-1"></a><span class="co">#' elastic net mixing parameter alpha (which must be in `(0, 1]`). (For now,</span></span>
+<span id="cb62-11"><a href="css.html#cb62-11" tabindex="-1"></a><span class="co">#' only one lambda value can be provided to `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan</span></span>
+<span id="cb62-12"><a href="css.html#cb62-12" tabindex="-1"></a><span class="co">#' to allow for multiple lambda values to be provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as</span></span>
+<span id="cb62-13"><a href="css.html#cb62-13" tabindex="-1"></a><span class="co">#' described in Faletto and Bien 2022.)</span></span>
+<span id="cb62-14"><a href="css.html#cb62-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb62-15"><a href="css.html#cb62-15" tabindex="-1"></a><span id="checkCssLassoInputs">checkCssLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
 <span id="cb62-16"><a href="css.html#cb62-16" tabindex="-1"></a></span>
-<span id="cb62-17"><a href="css.html#cb62-17" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y)){</span>
-<span id="cb62-18"><a href="css.html#cb62-18" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector."</span>)</span>
-<span id="cb62-19"><a href="css.html#cb62-19" tabindex="-1"></a>    }</span>
-<span id="cb62-20"><a href="css.html#cb62-20" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.matrix</span>(y)){</span>
-<span id="cb62-21"><a href="css.html#cb62-21" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector (inputted y was a matrix)."</span>)</span>
+<span id="cb62-17"><a href="css.html#cb62-17" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb62-18"><a href="css.html#cb62-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb62-19"><a href="css.html#cb62-19" tabindex="-1"></a></span>
+<span id="cb62-20"><a href="css.html#cb62-20" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y)){</span>
+<span id="cb62-21"><a href="css.html#cb62-21" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector."</span>)</span>
 <span id="cb62-22"><a href="css.html#cb62-22" tabindex="-1"></a>    }</span>
-<span id="cb62-23"><a href="css.html#cb62-23" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">!=</span> <span class="fu">length</span>(y)){</span>
-<span id="cb62-24"><a href="css.html#cb62-24" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>)</span>
+<span id="cb62-23"><a href="css.html#cb62-23" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.matrix</span>(y)){</span>
+<span id="cb62-24"><a href="css.html#cb62-24" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector (inputted y was a matrix)."</span>)</span>
 <span id="cb62-25"><a href="css.html#cb62-25" tabindex="-1"></a>    }</span>
-<span id="cb62-26"><a href="css.html#cb62-26" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">unique</span>(y)) <span class="sc">&lt;=</span> <span class="dv">1</span>){</span>
-<span id="cb62-27"><a href="css.html#cb62-27" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value."</span>)</span>
+<span id="cb62-26"><a href="css.html#cb62-26" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">!=</span> <span class="fu">length</span>(y)){</span>
+<span id="cb62-27"><a href="css.html#cb62-27" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>)</span>
 <span id="cb62-28"><a href="css.html#cb62-28" tabindex="-1"></a>    }</span>
-<span id="cb62-29"><a href="css.html#cb62-29" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(lambda) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(lambda)){</span>
-<span id="cb62-30"><a href="css.html#cb62-30" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be a numeric."</span>)</span>
+<span id="cb62-29"><a href="css.html#cb62-29" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">unique</span>(y)) <span class="sc">&lt;=</span> <span class="dv">1</span>){</span>
+<span id="cb62-30"><a href="css.html#cb62-30" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value."</span>)</span>
 <span id="cb62-31"><a href="css.html#cb62-31" tabindex="-1"></a>    }</span>
-<span id="cb62-32"><a href="css.html#cb62-32" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(lambda))){</span>
-<span id="cb62-33"><a href="css.html#cb62-33" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"NA detected in provided lambda input to cssLasso"</span>)</span>
+<span id="cb62-32"><a href="css.html#cb62-32" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(lambda) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(lambda)){</span>
+<span id="cb62-33"><a href="css.html#cb62-33" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be a numeric."</span>)</span>
 <span id="cb62-34"><a href="css.html#cb62-34" tabindex="-1"></a>    }</span>
-<span id="cb62-35"><a href="css.html#cb62-35" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">!=</span> <span class="dv">1</span>){</span>
-<span id="cb62-36"><a href="css.html#cb62-36" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be a numeric of length 1."</span>)</span>
+<span id="cb62-35"><a href="css.html#cb62-35" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(lambda))){</span>
+<span id="cb62-36"><a href="css.html#cb62-36" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"NA detected in provided lambda input to cssLasso"</span>)</span>
 <span id="cb62-37"><a href="css.html#cb62-37" tabindex="-1"></a>    }</span>
-<span id="cb62-38"><a href="css.html#cb62-38" tabindex="-1"></a>    <span class="cf">if</span>(lambda <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
-<span id="cb62-39"><a href="css.html#cb62-39" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be nonnegative."</span>)</span>
-<span id="cb62-40"><a href="css.html#cb62-40" tabindex="-1"></a>    }</span>
-<span id="cb62-41"><a href="css.html#cb62-41" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb62-38"><a href="css.html#cb62-38" tabindex="-1"></a>    <span class="co"># lambda may be either a single nonnegative number (pure lasso) or a named</span></span>
+<span id="cb62-39"><a href="css.html#cb62-39" tabindex="-1"></a>    <span class="co"># length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;) bundling the</span></span>
+<span id="cb62-40"><a href="css.html#cb62-40" tabindex="-1"></a>    <span class="co"># elastic net mixing parameter alpha (in (0, 1]) alongside the penalty.</span></span>
+<span id="cb62-41"><a href="css.html#cb62-41" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb62-42"><a href="css.html#cb62-42" tabindex="-1"></a>        <span class="cf">if</span>(lambda <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
+<span id="cb62-43"><a href="css.html#cb62-43" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be nonnegative."</span>)</span>
+<span id="cb62-44"><a href="css.html#cb62-44" tabindex="-1"></a>        }</span>
+<span id="cb62-45"><a href="css.html#cb62-45" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">2</span>){</span>
+<span id="cb62-46"><a href="css.html#cb62-46" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">setequal</span>(<span class="fu">names</span>(lambda), <span class="fu">c</span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))){</span>
+<span id="cb62-47"><a href="css.html#cb62-47" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
+<span id="cb62-48"><a href="css.html#cb62-48" tabindex="-1"></a>        }</span>
+<span id="cb62-49"><a href="css.html#cb62-49" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"lambda"</span>] <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
+<span id="cb62-50"><a href="css.html#cb62-50" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the lambda component of lambda must be nonnegative."</span>)</span>
+<span id="cb62-51"><a href="css.html#cb62-51" tabindex="-1"></a>        }</span>
+<span id="cb62-52"><a href="css.html#cb62-52" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"alpha"</span>] <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> lambda[<span class="st">"alpha"</span>] <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb62-53"><a href="css.html#cb62-53" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>)</span>
+<span id="cb62-54"><a href="css.html#cb62-54" tabindex="-1"></a>        }</span>
+<span id="cb62-55"><a href="css.html#cb62-55" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb62-56"><a href="css.html#cb62-56" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
+<span id="cb62-57"><a href="css.html#cb62-57" tabindex="-1"></a>    }</span>
+<span id="cb62-58"><a href="css.html#cb62-58" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>:</p>
 <div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="css.html#cb63-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkCssLassoInputs works"</span>, {</span>
 <span id="cb63-2"><a href="css.html#cb63-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">761</span>)</span>
@@ -2443,178 +2485,255 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb63-31"><a href="css.html#cb63-31" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb63-32"><a href="css.html#cb63-32" tabindex="-1"></a></span>
 <span id="cb63-33"><a href="css.html#cb63-33" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>x),</span>
-<span id="cb63-34"><a href="css.html#cb63-34" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be a numeric of length 1."</span>,</span>
+<span id="cb63-34"><a href="css.html#cb63-34" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
 <span id="cb63-35"><a href="css.html#cb63-35" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-36"><a href="css.html#cb63-36" tabindex="-1"></a>  </span>
+<span id="cb63-36"><a href="css.html#cb63-36" tabindex="-1"></a></span>
 <span id="cb63-37"><a href="css.html#cb63-37" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">numeric</span>()),</span>
-<span id="cb63-38"><a href="css.html#cb63-38" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be a numeric of length 1."</span>,</span>
+<span id="cb63-38"><a href="css.html#cb63-38" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
 <span id="cb63-39"><a href="css.html#cb63-39" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-40"><a href="css.html#cb63-40" tabindex="-1"></a>  </span>
+<span id="cb63-40"><a href="css.html#cb63-40" tabindex="-1"></a></span>
 <span id="cb63-41"><a href="css.html#cb63-41" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
 <span id="cb63-42"><a href="css.html#cb63-42" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
 <span id="cb63-43"><a href="css.html#cb63-43" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-44"><a href="css.html#cb63-44" tabindex="-1"></a>  </span>
-<span id="cb63-45"><a href="css.html#cb63-45" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 10 successes 🌈.</code></pre>
-<p>Tests for <code><a href="css.html#cssLoop">cssLoop</a>()</code> (had to define <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> first):</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="css.html#cb65-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"cssLoop works"</span>, {</span>
-<span id="cb65-2"><a href="css.html#cb65-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">89134</span>)</span>
-<span id="cb65-3"><a href="css.html#cb65-3" tabindex="-1"></a></span>
-<span id="cb65-4"><a href="css.html#cb65-4" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">9</span><span class="sc">*</span><span class="dv">8</span>), <span class="at">nrow=</span><span class="dv">9</span>, <span class="at">ncol=</span><span class="dv">8</span>)</span>
-<span id="cb65-5"><a href="css.html#cb65-5" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">9</span>)</span>
-<span id="cb65-6"><a href="css.html#cb65-6" tabindex="-1"></a></span>
-<span id="cb65-7"><a href="css.html#cb65-7" tabindex="-1"></a>  output <span class="ot">&lt;-</span> <a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.05</span>,</span>
-<span id="cb65-8"><a href="css.html#cb65-8" tabindex="-1"></a>                    <span class="at">fitfun=</span>cssLasso)</span>
-<span id="cb65-9"><a href="css.html#cb65-9" tabindex="-1"></a></span>
-<span id="cb65-10"><a href="css.html#cb65-10" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(output))</span>
-<span id="cb65-11"><a href="css.html#cb65-11" tabindex="-1"></a></span>
-<span id="cb65-12"><a href="css.html#cb65-12" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(output), <span class="fu">length</span>(<span class="fu">unique</span>(output)))</span>
-<span id="cb65-13"><a href="css.html#cb65-13" tabindex="-1"></a></span>
-<span id="cb65-14"><a href="css.html#cb65-14" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(output) <span class="sc">&lt;=</span> <span class="dv">8</span>)</span>
-<span id="cb65-15"><a href="css.html#cb65-15" tabindex="-1"></a></span>
-<span id="cb65-16"><a href="css.html#cb65-16" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb65-17"><a href="css.html#cb65-17" tabindex="-1"></a></span>
-<span id="cb65-18"><a href="css.html#cb65-18" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output <span class="sc">&lt;=</span> <span class="dv">8</span>))</span>
+<span id="cb63-44"><a href="css.html#cb63-44" tabindex="-1"></a></span>
+<span id="cb63-45"><a href="css.html#cb63-45" tabindex="-1"></a>  <span class="co"># Bundled c(lambda=, alpha=) form (elastic net)</span></span>
+<span id="cb63-46"><a href="css.html#cb63-46" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-47"><a href="css.html#cb63-47" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>)))</span>
+<span id="cb63-48"><a href="css.html#cb63-48" tabindex="-1"></a></span>
+<span id="cb63-49"><a href="css.html#cb63-49" tabindex="-1"></a>  <span class="co"># Order-insensitive (setequal on names)</span></span>
+<span id="cb63-50"><a href="css.html#cb63-50" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-51"><a href="css.html#cb63-51" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">alpha=</span><span class="fl">0.5</span>, <span class="at">lambda=</span><span class="fl">0.1</span>)))</span>
+<span id="cb63-52"><a href="css.html#cb63-52" tabindex="-1"></a></span>
+<span id="cb63-53"><a href="css.html#cb63-53" tabindex="-1"></a>  <span class="co"># alpha at the boundary 1 is allowed</span></span>
+<span id="cb63-54"><a href="css.html#cb63-54" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-55"><a href="css.html#cb63-55" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">1</span>)))</span>
+<span id="cb63-56"><a href="css.html#cb63-56" tabindex="-1"></a></span>
+<span id="cb63-57"><a href="css.html#cb63-57" tabindex="-1"></a>  <span class="co"># Unnamed length-2 vector is rejected</span></span>
+<span id="cb63-58"><a href="css.html#cb63-58" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.5</span>)),</span>
+<span id="cb63-59"><a href="css.html#cb63-59" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb63-60"><a href="css.html#cb63-60" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-61"><a href="css.html#cb63-61" tabindex="-1"></a></span>
+<span id="cb63-62"><a href="css.html#cb63-62" tabindex="-1"></a>  <span class="co"># alpha = 0 (degenerate ridge) is rejected</span></span>
+<span id="cb63-63"><a href="css.html#cb63-63" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-64"><a href="css.html#cb63-64" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">0</span>)),</span>
+<span id="cb63-65"><a href="css.html#cb63-65" tabindex="-1"></a>                         <span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>,</span>
+<span id="cb63-66"><a href="css.html#cb63-66" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-67"><a href="css.html#cb63-67" tabindex="-1"></a></span>
+<span id="cb63-68"><a href="css.html#cb63-68" tabindex="-1"></a>  <span class="co"># alpha &gt; 1 is rejected</span></span>
+<span id="cb63-69"><a href="css.html#cb63-69" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-70"><a href="css.html#cb63-70" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">1.2</span>)),</span>
+<span id="cb63-71"><a href="css.html#cb63-71" tabindex="-1"></a>                         <span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>,</span>
+<span id="cb63-72"><a href="css.html#cb63-72" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-73"><a href="css.html#cb63-73" tabindex="-1"></a></span>
+<span id="cb63-74"><a href="css.html#cb63-74" tabindex="-1"></a>  <span class="co"># Length-3 vector is rejected</span></span>
+<span id="cb63-75"><a href="css.html#cb63-75" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-76"><a href="css.html#cb63-76" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>,</span>
+<span id="cb63-77"><a href="css.html#cb63-77" tabindex="-1"></a>                                                      <span class="at">extra=</span><span class="fl">0.3</span>)),</span>
+<span id="cb63-78"><a href="css.html#cb63-78" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb63-79"><a href="css.html#cb63-79" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-80"><a href="css.html#cb63-80" tabindex="-1"></a></span>
+<span id="cb63-81"><a href="css.html#cb63-81" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 17 successes 🌈.</code></pre>
+<p>Tests for <code><a href="css.html#cssLasso">cssLasso</a>()</code> confirming that the elastic net mixing parameter <code>alpha</code>,
+bundled into <code>lambda</code> as <code>c(lambda=, alpha=)</code>, actually changes which features
+are selected (and that the default pure-lasso path is unchanged). On a design
+with a correlated block of relevant features, a smaller <code>alpha</code> (more ridge-like)
+pulls in the correlated block partners that the pure lasso drops, so the
+elastic-net selected set is a strict superset of the lasso selected set:</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="css.html#cb65-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"cssLasso alpha (bundled in lambda) drives selection"</span>, {</span>
+<span id="cb65-2"><a href="css.html#cb65-2" tabindex="-1"></a>  <span class="co"># Correlated-block design: features 1-4 are relevant and share a common</span></span>
+<span id="cb65-3"><a href="css.html#cb65-3" tabindex="-1"></a>  <span class="co"># latent factor at correlation rho; features 5-20 are irrelevant noise.</span></span>
+<span id="cb65-4"><a href="css.html#cb65-4" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb65-5"><a href="css.html#cb65-5" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb65-6"><a href="css.html#cb65-6" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb65-7"><a href="css.html#cb65-7" tabindex="-1"></a>  rho <span class="ot">&lt;-</span> <span class="fl">0.9</span></span>
+<span id="cb65-8"><a href="css.html#cb65-8" tabindex="-1"></a>  block <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb65-9"><a href="css.html#cb65-9" tabindex="-1"></a>  Z <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(n<span class="sc">*</span>p), n, p)</span>
+<span id="cb65-10"><a href="css.html#cb65-10" tabindex="-1"></a>  common <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(n)</span>
+<span id="cb65-11"><a href="css.html#cb65-11" tabindex="-1"></a>  <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>block){</span>
+<span id="cb65-12"><a href="css.html#cb65-12" tabindex="-1"></a>    Z[, j] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(rho)<span class="sc">*</span>common <span class="sc">+</span> <span class="fu">sqrt</span>(<span class="dv">1</span> <span class="sc">-</span> rho)<span class="sc">*</span>Z[, j]</span>
+<span id="cb65-13"><a href="css.html#cb65-13" tabindex="-1"></a>  }</span>
+<span id="cb65-14"><a href="css.html#cb65-14" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(Z <span class="sc">%*%</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, block), <span class="fu">rep</span>(<span class="dv">0</span>, p <span class="sc">-</span> block)) <span class="sc">+</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(n))</span>
+<span id="cb65-15"><a href="css.html#cb65-15" tabindex="-1"></a>  L <span class="ot">&lt;-</span> <span class="fl">3.72251</span></span>
+<span id="cb65-16"><a href="css.html#cb65-16" tabindex="-1"></a></span>
+<span id="cb65-17"><a href="css.html#cb65-17" tabindex="-1"></a>  s_lasso <span class="ot">&lt;-</span> <a href="css.html#cssLasso">cssLasso</a>(Z, y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span>L, <span class="at">alpha=</span><span class="dv">1</span>))</span>
+<span id="cb65-18"><a href="css.html#cb65-18" tabindex="-1"></a>  s_enet <span class="ot">&lt;-</span> <a href="css.html#cssLasso">cssLasso</a>(Z, y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span>L, <span class="at">alpha=</span><span class="fl">0.2</span>))</span>
 <span id="cb65-19"><a href="css.html#cb65-19" tabindex="-1"></a></span>
-<span id="cb65-20"><a href="css.html#cb65-20" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">6</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.05</span>,</span>
-<span id="cb65-21"><a href="css.html#cb65-21" tabindex="-1"></a>                                 <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb65-22"><a href="css.html#cb65-22" tabindex="-1"></a>                         <span class="st">"floor(n/2) == length(subsample) is not TRUE"</span>,</span>
-<span id="cb65-23"><a href="css.html#cb65-23" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb65-20"><a href="css.html#cb65-20" tabindex="-1"></a>  <span class="co"># Pure lasso selects only the two strongest block members; the elastic net</span></span>
+<span id="cb65-21"><a href="css.html#cb65-21" tabindex="-1"></a>  <span class="co"># pulls in the full correlated block.</span></span>
+<span id="cb65-22"><a href="css.html#cb65-22" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(s_lasso, <span class="fu">c</span>(<span class="dv">3</span><span class="dt">L</span>, <span class="dv">4</span><span class="dt">L</span>))</span>
+<span id="cb65-23"><a href="css.html#cb65-23" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(s_enet, <span class="fu">c</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="dv">2</span><span class="dt">L</span>, <span class="dv">3</span><span class="dt">L</span>, <span class="dv">4</span><span class="dt">L</span>))</span>
 <span id="cb65-24"><a href="css.html#cb65-24" tabindex="-1"></a></span>
-<span id="cb65-25"><a href="css.html#cb65-25" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>],</span>
-<span id="cb65-26"><a href="css.html#cb65-26" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="fl">0.05</span>, <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb65-27"><a href="css.html#cb65-27" tabindex="-1"></a>                         <span class="st">"length(y) == n is not TRUE"</span>,</span>
-<span id="cb65-28"><a href="css.html#cb65-28" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb65-25"><a href="css.html#cb65-25" tabindex="-1"></a>  <span class="co"># The elastic-net set is a strict superset of the lasso set (the round-2</span></span>
+<span id="cb65-26"><a href="css.html#cb65-26" tabindex="-1"></a>  <span class="co"># cosmetic: robust to L within +/-10%).</span></span>
+<span id="cb65-27"><a href="css.html#cb65-27" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(s_lasso <span class="sc">%in%</span> s_enet))</span>
+<span id="cb65-28"><a href="css.html#cb65-28" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(<span class="fu">setdiff</span>(s_enet, s_lasso)) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
 <span id="cb65-29"><a href="css.html#cb65-29" tabindex="-1"></a></span>
-<span id="cb65-30"><a href="css.html#cb65-30" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span><span class="fu">logical</span>(<span class="dv">9</span>),</span>
-<span id="cb65-31"><a href="css.html#cb65-31" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="fl">0.05</span>, <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb65-32"><a href="css.html#cb65-32" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric vector."</span>,</span>
-<span id="cb65-33"><a href="css.html#cb65-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb65-34"><a href="css.html#cb65-34" tabindex="-1"></a></span>
-<span id="cb65-35"><a href="css.html#cb65-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb65-36"><a href="css.html#cb65-36" tabindex="-1"></a>                                 <span class="at">lambda=</span>x, <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb65-37"><a href="css.html#cb65-37" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be a numeric of length 1."</span>,</span>
-<span id="cb65-38"><a href="css.html#cb65-38" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb65-39"><a href="css.html#cb65-39" tabindex="-1"></a></span>
-<span id="cb65-40"><a href="css.html#cb65-40" tabindex="-1"></a>  <span class="co"># Test other input format</span></span>
-<span id="cb65-41"><a href="css.html#cb65-41" tabindex="-1"></a></span>
-<span id="cb65-42"><a href="css.html#cb65-42" tabindex="-1"></a>  alt_input <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">"subsample"</span><span class="ot">=</span><span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">"feats_to_keep"</span><span class="ot">=</span><span class="fu">c</span>(<span class="cn">FALSE</span>, <span class="fu">rep</span>(<span class="cn">TRUE</span>, <span class="dv">4</span>),</span>
-<span id="cb65-43"><a href="css.html#cb65-43" tabindex="-1"></a>                                                       <span class="fu">rep</span>(<span class="cn">FALSE</span>, <span class="dv">2</span>), <span class="cn">TRUE</span>))</span>
-<span id="cb65-44"><a href="css.html#cb65-44" tabindex="-1"></a></span>
-<span id="cb65-45"><a href="css.html#cb65-45" tabindex="-1"></a>  output2 <span class="ot">&lt;-</span> <a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span>alt_input, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.08</span>, <span class="at">fitfun=</span>cssLasso)</span>
-<span id="cb65-46"><a href="css.html#cb65-46" tabindex="-1"></a></span>
-<span id="cb65-47"><a href="css.html#cb65-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(output2))</span>
-<span id="cb65-48"><a href="css.html#cb65-48" tabindex="-1"></a></span>
-<span id="cb65-49"><a href="css.html#cb65-49" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(output2), <span class="fu">length</span>(<span class="fu">unique</span>(output2)))</span>
-<span id="cb65-50"><a href="css.html#cb65-50" tabindex="-1"></a></span>
-<span id="cb65-51"><a href="css.html#cb65-51" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(output2) <span class="sc">&lt;=</span> <span class="dv">8</span>)</span>
-<span id="cb65-52"><a href="css.html#cb65-52" tabindex="-1"></a></span>
-<span id="cb65-53"><a href="css.html#cb65-53" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output2 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">8</span>)))</span>
-<span id="cb65-54"><a href="css.html#cb65-54" tabindex="-1"></a></span>
-<span id="cb65-55"><a href="css.html#cb65-55" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span> <span class="fu">list</span>(<span class="st">"subsample"</span><span class="ot">=</span><span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>,</span>
-<span id="cb65-56"><a href="css.html#cb65-56" tabindex="-1"></a>                                             <span class="st">"feats_to_keep"</span><span class="ot">=</span><span class="fu">c</span>(<span class="cn">FALSE</span>,</span>
-<span id="cb65-57"><a href="css.html#cb65-57" tabindex="-1"></a>                                                               <span class="fu">rep</span>(<span class="cn">TRUE</span>, <span class="dv">4</span>),</span>
-<span id="cb65-58"><a href="css.html#cb65-58" tabindex="-1"></a>                                                               <span class="fu">rep</span>(<span class="cn">FALSE</span>, <span class="dv">2</span>))),</span>
-<span id="cb65-59"><a href="css.html#cb65-59" tabindex="-1"></a>                                 <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.08</span>, <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb65-60"><a href="css.html#cb65-60" tabindex="-1"></a>                         <span class="st">"length(feats_to_keep) == p is not TRUE"</span>,</span>
-<span id="cb65-61"><a href="css.html#cb65-61" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb65-62"><a href="css.html#cb65-62" tabindex="-1"></a></span>
-<span id="cb65-63"><a href="css.html#cb65-63" tabindex="-1"></a>  <span class="co"># Custom fitfun with nonsense lambda (which will be ignored by fitfun, and</span></span>
-<span id="cb65-64"><a href="css.html#cb65-64" tabindex="-1"></a>  <span class="co"># shouldn't throw any error, because the acceptable input for lambda should be</span></span>
-<span id="cb65-65"><a href="css.html#cb65-65" tabindex="-1"></a>  <span class="co"># enforced only by fitfun) and nonsense y</span></span>
-<span id="cb65-66"><a href="css.html#cb65-66" tabindex="-1"></a></span>
-<span id="cb65-67"><a href="css.html#cb65-67" tabindex="-1"></a>  <span id="testFitfun">testFitfun</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
-<span id="cb65-68"><a href="css.html#cb65-68" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb65-69"><a href="css.html#cb65-69" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
-<span id="cb65-70"><a href="css.html#cb65-70" tabindex="-1"></a>    <span class="co"># Choose p/2 features randomly</span></span>
-<span id="cb65-71"><a href="css.html#cb65-71" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(p, <span class="at">size=</span><span class="fu">floor</span>(p<span class="sc">/</span><span class="dv">2</span>))</span>
-<span id="cb65-72"><a href="css.html#cb65-72" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
-<span id="cb65-73"><a href="css.html#cb65-73" tabindex="-1"></a>  }</span>
-<span id="cb65-74"><a href="css.html#cb65-74" tabindex="-1"></a></span>
-<span id="cb65-75"><a href="css.html#cb65-75" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb65-76"><a href="css.html#cb65-76" tabindex="-1"></a>                                           <span class="at">lambda=</span><span class="cn">TRUE</span>, <span class="at">fitfun=</span>testFitfun)))</span>
-<span id="cb65-77"><a href="css.html#cb65-77" tabindex="-1"></a></span>
-<span id="cb65-78"><a href="css.html#cb65-78" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x,</span>
-<span id="cb65-79"><a href="css.html#cb65-79" tabindex="-1"></a>                                           <span class="at">y=</span><span class="fu">character</span>(<span class="dv">9</span>), <span class="at">lambda=</span>.<span class="dv">05</span>,</span>
-<span id="cb65-80"><a href="css.html#cb65-80" tabindex="-1"></a>                                           <span class="at">fitfun=</span>testFitfun)))</span>
-<span id="cb65-81"><a href="css.html#cb65-81" tabindex="-1"></a></span>
-<span id="cb65-82"><a href="css.html#cb65-82" tabindex="-1"></a>})</span></code></pre></div>
+<span id="cb65-30"><a href="css.html#cb65-30" tabindex="-1"></a>  <span class="co"># Back-compatibility: a scalar lambda is byte-identical to the bundled form</span></span>
+<span id="cb65-31"><a href="css.html#cb65-31" tabindex="-1"></a>  <span class="co"># with alpha = 1 (the default pure-lasso path is unchanged).</span></span>
+<span id="cb65-32"><a href="css.html#cb65-32" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<a href="css.html#cssLasso">cssLasso</a>(Z, y, <span class="at">lambda=</span>L),</span>
+<span id="cb65-33"><a href="css.html#cb65-33" tabindex="-1"></a>                             <a href="css.html#cssLasso">cssLasso</a>(Z, y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span>L, <span class="at">alpha=</span><span class="dv">1</span>)))</span>
+<span id="cb65-34"><a href="css.html#cb65-34" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 5 successes 🎊.</code></pre>
+<p>Tests for <code><a href="css.html#cssLoop">cssLoop</a>()</code> (had to define <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> first):</p>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="css.html#cb67-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"cssLoop works"</span>, {</span>
+<span id="cb67-2"><a href="css.html#cb67-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">89134</span>)</span>
+<span id="cb67-3"><a href="css.html#cb67-3" tabindex="-1"></a></span>
+<span id="cb67-4"><a href="css.html#cb67-4" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">9</span><span class="sc">*</span><span class="dv">8</span>), <span class="at">nrow=</span><span class="dv">9</span>, <span class="at">ncol=</span><span class="dv">8</span>)</span>
+<span id="cb67-5"><a href="css.html#cb67-5" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">9</span>)</span>
+<span id="cb67-6"><a href="css.html#cb67-6" tabindex="-1"></a></span>
+<span id="cb67-7"><a href="css.html#cb67-7" tabindex="-1"></a>  output <span class="ot">&lt;-</span> <a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.05</span>,</span>
+<span id="cb67-8"><a href="css.html#cb67-8" tabindex="-1"></a>                    <span class="at">fitfun=</span>cssLasso)</span>
+<span id="cb67-9"><a href="css.html#cb67-9" tabindex="-1"></a></span>
+<span id="cb67-10"><a href="css.html#cb67-10" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(output))</span>
+<span id="cb67-11"><a href="css.html#cb67-11" tabindex="-1"></a></span>
+<span id="cb67-12"><a href="css.html#cb67-12" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(output), <span class="fu">length</span>(<span class="fu">unique</span>(output)))</span>
+<span id="cb67-13"><a href="css.html#cb67-13" tabindex="-1"></a></span>
+<span id="cb67-14"><a href="css.html#cb67-14" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(output) <span class="sc">&lt;=</span> <span class="dv">8</span>)</span>
+<span id="cb67-15"><a href="css.html#cb67-15" tabindex="-1"></a></span>
+<span id="cb67-16"><a href="css.html#cb67-16" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb67-17"><a href="css.html#cb67-17" tabindex="-1"></a></span>
+<span id="cb67-18"><a href="css.html#cb67-18" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output <span class="sc">&lt;=</span> <span class="dv">8</span>))</span>
+<span id="cb67-19"><a href="css.html#cb67-19" tabindex="-1"></a></span>
+<span id="cb67-20"><a href="css.html#cb67-20" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">6</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.05</span>,</span>
+<span id="cb67-21"><a href="css.html#cb67-21" tabindex="-1"></a>                                 <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb67-22"><a href="css.html#cb67-22" tabindex="-1"></a>                         <span class="st">"floor(n/2) == length(subsample) is not TRUE"</span>,</span>
+<span id="cb67-23"><a href="css.html#cb67-23" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb67-24"><a href="css.html#cb67-24" tabindex="-1"></a></span>
+<span id="cb67-25"><a href="css.html#cb67-25" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>],</span>
+<span id="cb67-26"><a href="css.html#cb67-26" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="fl">0.05</span>, <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb67-27"><a href="css.html#cb67-27" tabindex="-1"></a>                         <span class="st">"length(y) == n is not TRUE"</span>,</span>
+<span id="cb67-28"><a href="css.html#cb67-28" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb67-29"><a href="css.html#cb67-29" tabindex="-1"></a></span>
+<span id="cb67-30"><a href="css.html#cb67-30" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span><span class="fu">logical</span>(<span class="dv">9</span>),</span>
+<span id="cb67-31"><a href="css.html#cb67-31" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="fl">0.05</span>, <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb67-32"><a href="css.html#cb67-32" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric vector."</span>,</span>
+<span id="cb67-33"><a href="css.html#cb67-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb67-34"><a href="css.html#cb67-34" tabindex="-1"></a></span>
+<span id="cb67-35"><a href="css.html#cb67-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb67-36"><a href="css.html#cb67-36" tabindex="-1"></a>                                 <span class="at">lambda=</span>x, <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb67-37"><a href="css.html#cb67-37" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb67-38"><a href="css.html#cb67-38" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb67-39"><a href="css.html#cb67-39" tabindex="-1"></a></span>
+<span id="cb67-40"><a href="css.html#cb67-40" tabindex="-1"></a>  <span class="co"># Test other input format</span></span>
+<span id="cb67-41"><a href="css.html#cb67-41" tabindex="-1"></a></span>
+<span id="cb67-42"><a href="css.html#cb67-42" tabindex="-1"></a>  alt_input <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">"subsample"</span><span class="ot">=</span><span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>, <span class="st">"feats_to_keep"</span><span class="ot">=</span><span class="fu">c</span>(<span class="cn">FALSE</span>, <span class="fu">rep</span>(<span class="cn">TRUE</span>, <span class="dv">4</span>),</span>
+<span id="cb67-43"><a href="css.html#cb67-43" tabindex="-1"></a>                                                       <span class="fu">rep</span>(<span class="cn">FALSE</span>, <span class="dv">2</span>), <span class="cn">TRUE</span>))</span>
+<span id="cb67-44"><a href="css.html#cb67-44" tabindex="-1"></a></span>
+<span id="cb67-45"><a href="css.html#cb67-45" tabindex="-1"></a>  output2 <span class="ot">&lt;-</span> <a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span>alt_input, <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.08</span>, <span class="at">fitfun=</span>cssLasso)</span>
+<span id="cb67-46"><a href="css.html#cb67-46" tabindex="-1"></a></span>
+<span id="cb67-47"><a href="css.html#cb67-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(output2))</span>
+<span id="cb67-48"><a href="css.html#cb67-48" tabindex="-1"></a></span>
+<span id="cb67-49"><a href="css.html#cb67-49" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(output2), <span class="fu">length</span>(<span class="fu">unique</span>(output2)))</span>
+<span id="cb67-50"><a href="css.html#cb67-50" tabindex="-1"></a></span>
+<span id="cb67-51"><a href="css.html#cb67-51" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(output2) <span class="sc">&lt;=</span> <span class="dv">8</span>)</span>
+<span id="cb67-52"><a href="css.html#cb67-52" tabindex="-1"></a></span>
+<span id="cb67-53"><a href="css.html#cb67-53" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(output2 <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">8</span>)))</span>
+<span id="cb67-54"><a href="css.html#cb67-54" tabindex="-1"></a></span>
+<span id="cb67-55"><a href="css.html#cb67-55" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span> <span class="fu">list</span>(<span class="st">"subsample"</span><span class="ot">=</span><span class="dv">2</span><span class="sc">:</span><span class="dv">5</span>,</span>
+<span id="cb67-56"><a href="css.html#cb67-56" tabindex="-1"></a>                                             <span class="st">"feats_to_keep"</span><span class="ot">=</span><span class="fu">c</span>(<span class="cn">FALSE</span>,</span>
+<span id="cb67-57"><a href="css.html#cb67-57" tabindex="-1"></a>                                                               <span class="fu">rep</span>(<span class="cn">TRUE</span>, <span class="dv">4</span>),</span>
+<span id="cb67-58"><a href="css.html#cb67-58" tabindex="-1"></a>                                                               <span class="fu">rep</span>(<span class="cn">FALSE</span>, <span class="dv">2</span>))),</span>
+<span id="cb67-59"><a href="css.html#cb67-59" tabindex="-1"></a>                                 <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.08</span>, <span class="at">fitfun=</span>cssLasso),</span>
+<span id="cb67-60"><a href="css.html#cb67-60" tabindex="-1"></a>                         <span class="st">"length(feats_to_keep) == p is not TRUE"</span>,</span>
+<span id="cb67-61"><a href="css.html#cb67-61" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb67-62"><a href="css.html#cb67-62" tabindex="-1"></a></span>
+<span id="cb67-63"><a href="css.html#cb67-63" tabindex="-1"></a>  <span class="co"># Custom fitfun with nonsense lambda (which will be ignored by fitfun, and</span></span>
+<span id="cb67-64"><a href="css.html#cb67-64" tabindex="-1"></a>  <span class="co"># shouldn't throw any error, because the acceptable input for lambda should be</span></span>
+<span id="cb67-65"><a href="css.html#cb67-65" tabindex="-1"></a>  <span class="co"># enforced only by fitfun) and nonsense y</span></span>
+<span id="cb67-66"><a href="css.html#cb67-66" tabindex="-1"></a></span>
+<span id="cb67-67"><a href="css.html#cb67-67" tabindex="-1"></a>  <span id="testFitfun">testFitfun</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
+<span id="cb67-68"><a href="css.html#cb67-68" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb67-69"><a href="css.html#cb67-69" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb67-70"><a href="css.html#cb67-70" tabindex="-1"></a>    <span class="co"># Choose p/2 features randomly</span></span>
+<span id="cb67-71"><a href="css.html#cb67-71" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(p, <span class="at">size=</span><span class="fu">floor</span>(p<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb67-72"><a href="css.html#cb67-72" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
+<span id="cb67-73"><a href="css.html#cb67-73" tabindex="-1"></a>  }</span>
+<span id="cb67-74"><a href="css.html#cb67-74" tabindex="-1"></a></span>
+<span id="cb67-75"><a href="css.html#cb67-75" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb67-76"><a href="css.html#cb67-76" tabindex="-1"></a>                                           <span class="at">lambda=</span><span class="cn">TRUE</span>, <span class="at">fitfun=</span>testFitfun)))</span>
+<span id="cb67-77"><a href="css.html#cb67-77" tabindex="-1"></a></span>
+<span id="cb67-78"><a href="css.html#cb67-78" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x,</span>
+<span id="cb67-79"><a href="css.html#cb67-79" tabindex="-1"></a>                                           <span class="at">y=</span><span class="fu">character</span>(<span class="dv">9</span>), <span class="at">lambda=</span>.<span class="dv">05</span>,</span>
+<span id="cb67-80"><a href="css.html#cb67-80" tabindex="-1"></a>                                           <span class="at">fitfun=</span>testFitfun)))</span>
+<span id="cb67-81"><a href="css.html#cb67-81" tabindex="-1"></a></span>
+<span id="cb67-82"><a href="css.html#cb67-82" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 16 successes 🎊.</code></pre>
 <p><code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="css.html#cb67-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
-<span id="cb67-2"><a href="css.html#cb67-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb67-3"><a href="css.html#cb67-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb67-4"><a href="css.html#cb67-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
-<span id="cb67-5"><a href="css.html#cb67-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
-<span id="cb67-6"><a href="css.html#cb67-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
-<span id="cb67-7"><a href="css.html#cb67-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
-<span id="cb67-8"><a href="css.html#cb67-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
-<span id="cb67-9"><a href="css.html#cb67-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
-<span id="cb67-10"><a href="css.html#cb67-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
-<span id="cb67-11"><a href="css.html#cb67-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
-<span id="cb67-12"><a href="css.html#cb67-12" tabindex="-1"></a><span class="co">#' @return The parameter B, corresponding to half of the subsamples for</span></span>
-<span id="cb67-13"><a href="css.html#cb67-13" tabindex="-1"></a><span class="co">#' sampling_type "SS".</span></span>
-<span id="cb67-14"><a href="css.html#cb67-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb67-15"><a href="css.html#cb67-15" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
-<span id="cb67-16"><a href="css.html#cb67-16" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
-<span id="cb67-17"><a href="css.html#cb67-17" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
-<span id="cb67-18"><a href="css.html#cb67-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
-<span id="cb67-19"><a href="css.html#cb67-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb67-20"><a href="css.html#cb67-20" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
-<span id="cb67-21"><a href="css.html#cb67-21" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="css.html#cb69-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
+<span id="cb69-2"><a href="css.html#cb69-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb69-3"><a href="css.html#cb69-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb69-4"><a href="css.html#cb69-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
+<span id="cb69-5"><a href="css.html#cb69-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
+<span id="cb69-6"><a href="css.html#cb69-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
+<span id="cb69-7"><a href="css.html#cb69-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
+<span id="cb69-8"><a href="css.html#cb69-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
+<span id="cb69-9"><a href="css.html#cb69-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
+<span id="cb69-10"><a href="css.html#cb69-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
+<span id="cb69-11"><a href="css.html#cb69-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
+<span id="cb69-12"><a href="css.html#cb69-12" tabindex="-1"></a><span class="co">#' @return The parameter B, corresponding to half of the subsamples for</span></span>
+<span id="cb69-13"><a href="css.html#cb69-13" tabindex="-1"></a><span class="co">#' sampling_type "SS".</span></span>
+<span id="cb69-14"><a href="css.html#cb69-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb69-15"><a href="css.html#cb69-15" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
+<span id="cb69-16"><a href="css.html#cb69-16" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb69-17"><a href="css.html#cb69-17" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb69-18"><a href="css.html#cb69-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
+<span id="cb69-19"><a href="css.html#cb69-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb69-20"><a href="css.html#cb69-20" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
+<span id="cb69-21"><a href="css.html#cb69-21" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
-<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="css.html#cb68-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkGetClusterSelMatrixInput works"</span>, {</span>
-<span id="cb68-2"><a href="css.html#cb68-2" tabindex="-1"></a>  </span>
-<span id="cb68-3"><a href="css.html#cb68-3" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">happy=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">sad=</span><span class="dv">9</span><span class="dt">L</span><span class="sc">:</span><span class="dv">10</span><span class="dt">L</span>, <span class="at">med=</span><span class="dv">11</span><span class="dt">L</span>)</span>
-<span id="cb68-4"><a href="css.html#cb68-4" tabindex="-1"></a>  </span>
-<span id="cb68-5"><a href="css.html#cb68-5" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">size=</span><span class="dv">6</span><span class="sc">*</span><span class="dv">11</span>, <span class="at">replace=</span><span class="cn">TRUE</span>), <span class="at">nrow=</span><span class="dv">6</span>, <span class="at">ncol=</span><span class="dv">11</span>)</span>
-<span id="cb68-6"><a href="css.html#cb68-6" tabindex="-1"></a>  </span>
-<span id="cb68-7"><a href="css.html#cb68-7" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, res))</span>
-<span id="cb68-8"><a href="css.html#cb68-8" tabindex="-1"></a>  </span>
-<span id="cb68-9"><a href="css.html#cb68-9" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">happy=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>,</span>
-<span id="cb68-10"><a href="css.html#cb68-10" tabindex="-1"></a>                                                            <span class="at">med=</span><span class="dv">11</span><span class="dt">L</span>), res),</span>
-<span id="cb68-11"><a href="css.html#cb68-11" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
-<span id="cb68-12"><a href="css.html#cb68-12" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-13"><a href="css.html#cb68-13" tabindex="-1"></a>  </span>
-<span id="cb68-14"><a href="css.html#cb68-14" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>),</span>
-<span id="cb68-15"><a href="css.html#cb68-15" tabindex="-1"></a>                         <span class="st">"is.matrix(res) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-16"><a href="css.html#cb68-16" tabindex="-1"></a>  </span>
-<span id="cb68-17"><a href="css.html#cb68-17" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, res <span class="sc">+</span> .<span class="dv">3</span>),</span>
-<span id="cb68-18"><a href="css.html#cb68-18" tabindex="-1"></a>                         <span class="st">"all(res %in% c(0, 1)) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-19"><a href="css.html#cb68-19" tabindex="-1"></a>  </span>
-<span id="cb68-20"><a href="css.html#cb68-20" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters,</span>
-<span id="cb68-21"><a href="css.html#cb68-21" tabindex="-1"></a>                                                       res[, <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>]),</span>
-<span id="cb68-22"><a href="css.html#cb68-22" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
-<span id="cb68-23"><a href="css.html#cb68-23" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-24"><a href="css.html#cb68-24" tabindex="-1"></a>  </span>
-<span id="cb68-25"><a href="css.html#cb68-25" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">10</span><span class="dt">L</span>, res),</span>
-<span id="cb68-26"><a href="css.html#cb68-26" tabindex="-1"></a>                         <span class="st">"is.list(clusters) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-27"><a href="css.html#cb68-27" tabindex="-1"></a>  </span>
-<span id="cb68-28"><a href="css.html#cb68-28" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
-<span id="cb68-29"><a href="css.html#cb68-29" tabindex="-1"></a>                                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>,</span>
-<span id="cb68-30"><a href="css.html#cb68-30" tabindex="-1"></a>                                                            <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
-<span id="cb68-31"><a href="css.html#cb68-31" tabindex="-1"></a>                                                            <span class="at">c4=</span><span class="fu">integer</span>()), res),</span>
-<span id="cb68-32"><a href="css.html#cb68-32" tabindex="-1"></a>                         <span class="st">"all(lengths(clusters) &gt;= 1) is not TRUE"</span>,</span>
-<span id="cb68-33"><a href="css.html#cb68-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-34"><a href="css.html#cb68-34" tabindex="-1"></a>                         </span>
-<span id="cb68-35"><a href="css.html#cb68-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
-<span id="cb68-36"><a href="css.html#cb68-36" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
-<span id="cb68-37"><a href="css.html#cb68-37" tabindex="-1"></a>                                            <span class="at">c4=</span><span class="fu">as.integer</span>(<span class="cn">NA</span>)), res),</span>
-<span id="cb68-38"><a href="css.html#cb68-38" tabindex="-1"></a>                         <span class="st">"all(!is.na(clusters)) is not TRUE"</span>,</span>
-<span id="cb68-39"><a href="css.html#cb68-39" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-40"><a href="css.html#cb68-40" tabindex="-1"></a>  </span>
-<span id="cb68-41"><a href="css.html#cb68-41" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
-<span id="cb68-42"><a href="css.html#cb68-42" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
-<span id="cb68-43"><a href="css.html#cb68-43" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>), res),</span>
-<span id="cb68-44"><a href="css.html#cb68-44" tabindex="-1"></a>                         <span class="st">"n_clusters == length(unique(clusters)) is not TRUE"</span>,</span>
-<span id="cb68-45"><a href="css.html#cb68-45" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-46"><a href="css.html#cb68-46" tabindex="-1"></a>  </span>
-<span id="cb68-47"><a href="css.html#cb68-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
-<span id="cb68-48"><a href="css.html#cb68-48" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">14</span><span class="dt">L</span>), res),</span>
-<span id="cb68-49"><a href="css.html#cb68-49" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
-<span id="cb68-50"><a href="css.html#cb68-50" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb68-51"><a href="css.html#cb68-51" tabindex="-1"></a>  </span>
-<span id="cb68-52"><a href="css.html#cb68-52" tabindex="-1"></a>})</span></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="css.html#cb70-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkGetClusterSelMatrixInput works"</span>, {</span>
+<span id="cb70-2"><a href="css.html#cb70-2" tabindex="-1"></a>  </span>
+<span id="cb70-3"><a href="css.html#cb70-3" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">happy=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">sad=</span><span class="dv">9</span><span class="dt">L</span><span class="sc">:</span><span class="dv">10</span><span class="dt">L</span>, <span class="at">med=</span><span class="dv">11</span><span class="dt">L</span>)</span>
+<span id="cb70-4"><a href="css.html#cb70-4" tabindex="-1"></a>  </span>
+<span id="cb70-5"><a href="css.html#cb70-5" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">size=</span><span class="dv">6</span><span class="sc">*</span><span class="dv">11</span>, <span class="at">replace=</span><span class="cn">TRUE</span>), <span class="at">nrow=</span><span class="dv">6</span>, <span class="at">ncol=</span><span class="dv">11</span>)</span>
+<span id="cb70-6"><a href="css.html#cb70-6" tabindex="-1"></a>  </span>
+<span id="cb70-7"><a href="css.html#cb70-7" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, res))</span>
+<span id="cb70-8"><a href="css.html#cb70-8" tabindex="-1"></a>  </span>
+<span id="cb70-9"><a href="css.html#cb70-9" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">happy=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>,</span>
+<span id="cb70-10"><a href="css.html#cb70-10" tabindex="-1"></a>                                                            <span class="at">med=</span><span class="dv">11</span><span class="dt">L</span>), res),</span>
+<span id="cb70-11"><a href="css.html#cb70-11" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
+<span id="cb70-12"><a href="css.html#cb70-12" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-13"><a href="css.html#cb70-13" tabindex="-1"></a>  </span>
+<span id="cb70-14"><a href="css.html#cb70-14" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>),</span>
+<span id="cb70-15"><a href="css.html#cb70-15" tabindex="-1"></a>                         <span class="st">"is.matrix(res) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-16"><a href="css.html#cb70-16" tabindex="-1"></a>  </span>
+<span id="cb70-17"><a href="css.html#cb70-17" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters, res <span class="sc">+</span> .<span class="dv">3</span>),</span>
+<span id="cb70-18"><a href="css.html#cb70-18" tabindex="-1"></a>                         <span class="st">"all(res %in% c(0, 1)) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-19"><a href="css.html#cb70-19" tabindex="-1"></a>  </span>
+<span id="cb70-20"><a href="css.html#cb70-20" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(good_clusters,</span>
+<span id="cb70-21"><a href="css.html#cb70-21" tabindex="-1"></a>                                                       res[, <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span>]),</span>
+<span id="cb70-22"><a href="css.html#cb70-22" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
+<span id="cb70-23"><a href="css.html#cb70-23" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-24"><a href="css.html#cb70-24" tabindex="-1"></a>  </span>
+<span id="cb70-25"><a href="css.html#cb70-25" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">10</span><span class="dt">L</span>, res),</span>
+<span id="cb70-26"><a href="css.html#cb70-26" tabindex="-1"></a>                         <span class="st">"is.list(clusters) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-27"><a href="css.html#cb70-27" tabindex="-1"></a>  </span>
+<span id="cb70-28"><a href="css.html#cb70-28" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
+<span id="cb70-29"><a href="css.html#cb70-29" tabindex="-1"></a>                                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>,</span>
+<span id="cb70-30"><a href="css.html#cb70-30" tabindex="-1"></a>                                                            <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
+<span id="cb70-31"><a href="css.html#cb70-31" tabindex="-1"></a>                                                            <span class="at">c4=</span><span class="fu">integer</span>()), res),</span>
+<span id="cb70-32"><a href="css.html#cb70-32" tabindex="-1"></a>                         <span class="st">"all(lengths(clusters) &gt;= 1) is not TRUE"</span>,</span>
+<span id="cb70-33"><a href="css.html#cb70-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-34"><a href="css.html#cb70-34" tabindex="-1"></a>                         </span>
+<span id="cb70-35"><a href="css.html#cb70-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
+<span id="cb70-36"><a href="css.html#cb70-36" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
+<span id="cb70-37"><a href="css.html#cb70-37" tabindex="-1"></a>                                            <span class="at">c4=</span><span class="fu">as.integer</span>(<span class="cn">NA</span>)), res),</span>
+<span id="cb70-38"><a href="css.html#cb70-38" tabindex="-1"></a>                         <span class="st">"all(!is.na(clusters)) is not TRUE"</span>,</span>
+<span id="cb70-39"><a href="css.html#cb70-39" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-40"><a href="css.html#cb70-40" tabindex="-1"></a>  </span>
+<span id="cb70-41"><a href="css.html#cb70-41" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
+<span id="cb70-42"><a href="css.html#cb70-42" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">9</span><span class="dt">L</span>,</span>
+<span id="cb70-43"><a href="css.html#cb70-43" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>), res),</span>
+<span id="cb70-44"><a href="css.html#cb70-44" tabindex="-1"></a>                         <span class="st">"n_clusters == length(unique(clusters)) is not TRUE"</span>,</span>
+<span id="cb70-45"><a href="css.html#cb70-45" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-46"><a href="css.html#cb70-46" tabindex="-1"></a>  </span>
+<span id="cb70-47"><a href="css.html#cb70-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>(<span class="fu">list</span>(<span class="at">c1=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">5</span><span class="dt">L</span>,</span>
+<span id="cb70-48"><a href="css.html#cb70-48" tabindex="-1"></a>                                            <span class="at">c2=</span><span class="dv">6</span><span class="dt">L</span><span class="sc">:</span><span class="dv">8</span><span class="dt">L</span>, <span class="at">c3=</span><span class="dv">14</span><span class="dt">L</span>), res),</span>
+<span id="cb70-49"><a href="css.html#cb70-49" tabindex="-1"></a>                         <span class="st">"length(all_clustered_feats) == p is not TRUE"</span>,</span>
+<span id="cb70-50"><a href="css.html#cb70-50" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb70-51"><a href="css.html#cb70-51" tabindex="-1"></a>  </span>
+<span id="cb70-52"><a href="css.html#cb70-52" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 10 successes 🎉.</code></pre>
 </div>
 </div>

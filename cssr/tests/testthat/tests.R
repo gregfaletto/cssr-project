@@ -716,17 +716,88 @@ testthat::test_that("checkCssLassoInputs works", {
                          fixed=TRUE)
 
   testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=x),
-                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         "For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).",
                          fixed=TRUE)
-  
+
   testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=numeric()),
-                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         "For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).",
                          fixed=TRUE)
-  
+
   testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=-0.01),
                          "For method cssLasso, lambda must be nonnegative.",
                          fixed=TRUE)
-  
+
+  # Bundled c(lambda=, alpha=) form (elastic net)
+  testthat::expect_null(checkCssLassoInputs(X=x, y=y,
+                                            lambda=c(lambda=0.1, alpha=0.5)))
+
+  # Order-insensitive (setequal on names)
+  testthat::expect_null(checkCssLassoInputs(X=x, y=y,
+                                            lambda=c(alpha=0.5, lambda=0.1)))
+
+  # alpha at the boundary 1 is allowed
+  testthat::expect_null(checkCssLassoInputs(X=x, y=y,
+                                            lambda=c(lambda=0.1, alpha=1)))
+
+  # Unnamed length-2 vector is rejected
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=c(0.1, 0.5)),
+                         "For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).",
+                         fixed=TRUE)
+
+  # alpha = 0 (degenerate ridge) is rejected
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y,
+                                             lambda=c(lambda=0.1, alpha=0)),
+                         "For method cssLasso, the alpha component of lambda must be in (0, 1].",
+                         fixed=TRUE)
+
+  # alpha > 1 is rejected
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y,
+                                             lambda=c(lambda=0.1, alpha=1.2)),
+                         "For method cssLasso, the alpha component of lambda must be in (0, 1].",
+                         fixed=TRUE)
+
+  # Length-3 vector is rejected
+  testthat::expect_error(checkCssLassoInputs(X=x, y=y,
+                                             lambda=c(lambda=0.1, alpha=0.5,
+                                                      extra=0.3)),
+                         "For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).",
+                         fixed=TRUE)
+
+})
+
+testthat::test_that("cssLasso alpha (bundled in lambda) drives selection", {
+  # Correlated-block design: features 1-4 are relevant and share a common
+  # latent factor at correlation rho; features 5-20 are irrelevant noise.
+  set.seed(1)
+  n <- 100
+  p <- 20
+  rho <- 0.9
+  block <- 4
+  Z <- matrix(stats::rnorm(n*p), n, p)
+  common <- stats::rnorm(n)
+  for(j in 1:block){
+    Z[, j] <- sqrt(rho)*common + sqrt(1 - rho)*Z[, j]
+  }
+  y <- as.numeric(Z %*% c(rep(1, block), rep(0, p - block)) + stats::rnorm(n))
+  L <- 3.72251
+
+  s_lasso <- cssLasso(Z, y, lambda=c(lambda=L, alpha=1))
+  s_enet <- cssLasso(Z, y, lambda=c(lambda=L, alpha=0.2))
+
+  # Pure lasso selects only the two strongest block members; the elastic net
+  # pulls in the full correlated block.
+  testthat::expect_identical(s_lasso, c(3L, 4L))
+  testthat::expect_identical(s_enet, c(1L, 2L, 3L, 4L))
+
+  # The elastic-net set is a strict superset of the lasso set (the round-2
+  # cosmetic: robust to L within +/-10%).
+  testthat::expect_true(all(s_lasso %in% s_enet))
+  testthat::expect_true(length(setdiff(s_enet, s_lasso)) > 0)
+
+  # Back-compatibility: a scalar lambda is byte-identical to the bundled form
+  # with alpha = 1 (the default pure-lasso path is unchanged).
+  testthat::expect_identical(cssLasso(Z, y, lambda=L),
+                             cssLasso(Z, y, lambda=c(lambda=L, alpha=1)))
 })
 
 testthat::test_that("cssLoop works", {
@@ -765,7 +836,7 @@ testthat::test_that("cssLoop works", {
 
   testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y,
                                  lambda=x, fitfun=cssLasso),
-                         "For method cssLasso, lambda must be a numeric of length 1.",
+                         "For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).",
                          fixed=TRUE)
 
   # Test other input format
@@ -4115,6 +4186,10 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=4, alpha=1.2),
                          "alpha <= 1 is not TRUE", fixed=TRUE)
 
+  # alpha = 0 (degenerate ridge) is now rejected (previously allowed)
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=4, alpha=0),
+                         "alpha > 0 is not TRUE", fixed=TRUE)
+
 })
 
 testthat::test_that("getModelSize works", {
@@ -4872,6 +4947,63 @@ testthat::test_that("cssSelect works", {
   
   testthat::expect_error(cssSelect(X=x, y=y, auto_select_size=1),
                          "is.logical(auto_select_size) is not TRUE", fixed=TRUE)
+
+  # alpha = 0 (degenerate ridge) is rejected
+  testthat::expect_error(cssSelect(X=x, y=y, alpha=0),
+                         "alpha > 0 is not TRUE", fixed=TRUE)
+
+  # alpha > 1 is rejected
+  testthat::expect_error(cssSelect(X=x, y=y, alpha=1.5),
+                         "alpha <= 1 is not TRUE", fixed=TRUE)
+
+  # alpha = NA is rejected with a clear message (rather than a cryptic error
+  # deep inside the bundling/subsampling logic). A bare (logical) NA trips the
+  # type check first; a numeric NA reaches the dedicated !is.na guard.
+  testthat::expect_error(cssSelect(X=x, y=y, alpha=NA),
+                         "is.numeric(alpha) | is.integer(alpha) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(cssSelect(X=x, y=y, alpha=NA_real_),
+                         "!is.na(alpha) is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("cssSelect threads alpha through to selection", {
+  set.seed(1)
+  n <- 100
+  p <- 20
+  rho <- 0.9
+  block <- 4
+  Z <- matrix(stats::rnorm(n*p), n, p)
+  common <- stats::rnorm(n)
+  for(j in 1:block){
+    Z[, j] <- sqrt(rho)*common + sqrt(1 - rho)*Z[, j]
+  }
+  y <- as.numeric(Z %*% c(rep(1, block), rep(0, p - block)) + stats::rnorm(n))
+
+  # Treat the correlated block as one cluster; the remaining features are
+  # singletons. Fix lambda and the model size so the only thing that varies
+  # between the two calls is alpha.
+  clusters <- list(block=1:block)
+
+  res_lasso <- cssSelect(X=Z, y=y, clusters=clusters, lambda=3.72251,
+                         max_num_clusts=p - block + 1, alpha=1)
+  res_enet <- cssSelect(X=Z, y=y, clusters=clusters, lambda=3.72251,
+                        max_num_clusts=p - block + 1, alpha=0.5)
+
+  # Both return a well-formed selection
+  for(res in list(res_lasso, res_enet)){
+    testthat::expect_true(is.list(res))
+    testthat::expect_true(all(c("selected_clusts", "selected_feats") %in%
+                                 names(res)))
+    testthat::expect_true(is.integer(res$selected_feats))
+    testthat::expect_true(all(res$selected_feats %in% 1:p))
+  }
+
+  # The elastic net selects (weakly) more features than the pure lasso on this
+  # correlated design, and the two selected sets differ.
+  testthat::expect_true(length(res_enet$selected_feats) >=
+                          length(res_lasso$selected_feats))
+  testthat::expect_false(setequal(res_enet$selected_feats,
+                                  res_lasso$selected_feats))
 })
 
 testthat::test_that("cssPredict works", {
@@ -4996,7 +5128,16 @@ testthat::test_that("cssPredict works", {
 
   res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
                     auto_select_size=FALSE)
-  
+
+  testthat::expect_true(all(!is.na(res)))
+  testthat::expect_true(is.numeric(res))
+  testthat::expect_equal(length(res), 5)
+
+  # Non-default alpha (elastic net) threaded through end-to-end; smoke test
+  # confirming it returns a well-formed prediction vector of the right length.
+  res <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                    alpha=0.5)
+
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 5)
@@ -5046,6 +5187,16 @@ testthat::test_that("cssPredict works", {
                                                                       FALSE)),
                          "length(auto_select_size) == 1 is not TRUE",
                          fixed=TRUE)
+
+  # alpha = 0 (degenerate ridge) is rejected
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, alpha=0),
+                         "alpha > 0 is not TRUE", fixed=TRUE)
+
+  # alpha > 1 is rejected
+  testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
+                                    X_test=test_x, alpha=1.5),
+                         "alpha <= 1 is not TRUE", fixed=TRUE)
 })
 
 testthat::test_that("processClusterLassoInputs works", {

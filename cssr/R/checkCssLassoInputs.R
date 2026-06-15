@@ -6,10 +6,13 @@
 #' to check X very much, because X will have already been checked by the
 #' function `checkCssInputs()` when it was provided to `css()`.)
 #' @param y A numeric vector containing the response.
-#' @param lambda Numeric; a nonnegative number for the lasso penalty to use
-#' on each subsample. (For now, only one lambda value can be provided to
-#' `cssLasso()`; in the future, we plan to allow for multiple lambda values to be
-#' provided to `cssLasso()`, as described in Faletto and Bien 2022.)
+#' @param lambda Either a single nonnegative number for the lasso penalty to
+#' use on each subsample, or a named length-2 numeric vector
+#' `c(lambda = <value>, alpha = <value>)` bundling the penalty together with the
+#' elastic net mixing parameter alpha (which must be in `(0, 1]`). (For now,
+#' only one lambda value can be provided to `cssLasso()`; in the future, we plan
+#' to allow for multiple lambda values to be provided to `cssLasso()`, as
+#' described in Faletto and Bien 2022.)
 #' @author Gregory Faletto, Jacob Bien
 checkCssLassoInputs <- function(X, y, lambda){
 
@@ -34,10 +37,24 @@ checkCssLassoInputs <- function(X, y, lambda){
     if(any(is.na(lambda))){
         stop("NA detected in provided lambda input to cssLasso")
     }
-    if(length(lambda) != 1){
-        stop("For method cssLasso, lambda must be a numeric of length 1.")
-    }
-    if(lambda < 0){
-        stop("For method cssLasso, lambda must be nonnegative.")
+    # lambda may be either a single nonnegative number (pure lasso) or a named
+    # length-2 numeric vector c(lambda=<value>, alpha=<value>) bundling the
+    # elastic net mixing parameter alpha (in (0, 1]) alongside the penalty.
+    if(length(lambda) == 1){
+        if(lambda < 0){
+            stop("For method cssLasso, lambda must be nonnegative.")
+        }
+    } else if(length(lambda) == 2){
+        if(!setequal(names(lambda), c("lambda", "alpha"))){
+            stop("For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).")
+        }
+        if(lambda["lambda"] < 0){
+            stop("For method cssLasso, the lambda component of lambda must be nonnegative.")
+        }
+        if(lambda["alpha"] <= 0 | lambda["alpha"] > 1){
+            stop("For method cssLasso, the alpha component of lambda must be in (0, 1].")
+        }
+    } else{
+        stop("For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=<value>, alpha=<value>).")
     }
 }
