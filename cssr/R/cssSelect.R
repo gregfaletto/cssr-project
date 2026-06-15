@@ -93,16 +93,7 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X)){
-        p <- ncol(X)
-        X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X))){
-            stop("When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert the data.frame X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-
-    }
+    X <- coerceDataFrameToMatrix(X, clusters, convert_phrase = "the data.frame X")
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
