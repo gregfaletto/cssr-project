@@ -27,9 +27,14 @@
 #' fit.
 #' @param fitfun A function that takes in arguments X, y, and lambda and returns
 #' a vector of indices of the columns of X (selected features).
+#' @param seed Optional integer. If non-NULL, the random number generator is
+#' seeded with `set.seed(seed)` immediately before `fitfun` is called, so that a
+#' stochastic `fitfun` is reproducible and identical across serial and parallel
+#' execution. Default NULL (no seeding). Supplied internally by `getSelMatrix`
+#' (one reproducible seed per subsample); direct callers can leave it NULL.
 #' @return An integer vector; the indices of the features selected by `fitfun`.
 #' @author Gregory Faletto, Jacob Bien
-cssLoop <- function(input, x, y, lambda, fitfun){
+cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     # Check inputs
     stopifnot(is.matrix(x))
     stopifnot(all(!is.na(x)))
@@ -59,6 +64,13 @@ cssLoop <- function(input, x, y, lambda, fitfun){
 
     stopifnot(is.logical(feats_to_keep))
     stopifnot(length(feats_to_keep) == p)
+
+    # Seed immediately before fitfun so a stochastic fitfun is reproducible
+    # across serial/parallel execution (issue #12). seed is NULL for the
+    # deterministic default cssLasso path and for direct callers.
+    if(!is.null(seed)){
+        set.seed(seed)
+    }
 
     selected <- do.call(fitfun, list(X=x[subsample, feats_to_keep],
         y=y[subsample], lambda=lambda))

@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.10",
+    Version = "0.1.11",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -576,8 +576,23 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
 
     # Get list of selected feature sets from subsamples
 
-    res_list <- parallel::mclapply(X=subsamps_object, FUN=cssLoop, x=x, y=y,
-        lambda=lambda, fitfun=fitfun, mc.cores=num_cores)
+    # Reproducible per-subsample seeding (issue #12): draw one seed per
+    # subsample from the caller's RNG, then seed inside cssLoop right before
+    # fitfun runs, so a stochastic fitfun is reproducible and identical across
+    # serial/parallel/platform/num_cores given a seed set before css(). The
+    # default cssLasso is deterministic and ignores the seed. Save and restore
+    # .Random.seed so css() leaves the caller's RNG where the (pre-existing)
+    # subsampling left it.
+    if(exists(".Random.seed", envir=.GlobalEnv)){
+        old_seed <- get(".Random.seed", envir=.GlobalEnv)
+        on.exit(assign(".Random.seed", old_seed, envir=.GlobalEnv), add=TRUE)
+    }
+    seeds <- sample.int(.Machine$integer.max, length(subsamps_object))
+
+    res_list <- parallel::mclapply(X=seq_along(subsamps_object),
+        FUN=function(i) cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
+            fitfun=fitfun, seed=seeds[i]),
+        mc.cores=num_cores)
 
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
     if(sampling_type=="SS"){
@@ -2328,9 +2343,14 @@ testthat::test_that("checkCssInputs works", {
 #' fit.
 #' @param fitfun A function that takes in arguments X, y, and lambda and returns
 #' a vector of indices of the columns of X (selected features).
+#' @param seed Optional integer. If non-NULL, the random number generator is
+#' seeded with `set.seed(seed)` immediately before `fitfun` is called, so that a
+#' stochastic `fitfun` is reproducible and identical across serial and parallel
+#' execution. Default NULL (no seeding). Supplied internally by `getSelMatrix`
+#' (one reproducible seed per subsample); direct callers can leave it NULL.
 #' @return An integer vector; the indices of the features selected by `fitfun`.
 #' @author Gregory Faletto, Jacob Bien
-cssLoop <- function(input, x, y, lambda, fitfun){
+cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     # Check inputs
     stopifnot(is.matrix(x))
     stopifnot(all(!is.na(x)))
@@ -2360,6 +2380,13 @@ cssLoop <- function(input, x, y, lambda, fitfun){
 
     stopifnot(is.logical(feats_to_keep))
     stopifnot(length(feats_to_keep) == p)
+
+    # Seed immediately before fitfun so a stochastic fitfun is reproducible
+    # across serial/parallel execution (issue #12). seed is NULL for the
+    # deterministic default cssLasso path and for direct callers.
+    if(!is.null(seed)){
+        set.seed(seed)
+    }
 
     selected <- do.call(fitfun, list(X=x[subsample, feats_to_keep],
         y=y[subsample], lambda=lambda))
@@ -2670,7 +2697,6 @@ testthat::test_that("cssLasso alpha (bundled in lambda) drives selection", {
                              cssLasso(Z, y, lambda=c(lambda=L, alpha=1)))
 })
 ```
-
 
 Tests for `cssLoop()` (had to define `checkCssLassoInputs()` first):
 
@@ -3256,6 +3282,58 @@ testthat::test_that("css works", {
   res_train <- css(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
   testthat::expect_equal(res_train$train_inds, 11:15)
 
+})
+```
+
+We also confirm the parallel feature-selection loop's RNG is isolated per subsample (issue #12): `cssLoop` seeds the RNG immediately before `fitfun`, so a stochastic `fitfun` is reproducible and identical whether run serially or in parallel, given a seed set before `css()`. (The parallel checks require real forking, so they are guarded and skipped where forking is unavailable -- Windows, CRAN, or a fully-loaded machine.)
+
+```{r}
+testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isolated (#12)", {
+  set.seed(99)
+  x_rng <- matrix(stats::rnorm(40 * 8), nrow=40, ncol=8)
+  y_rng <- stats::rnorm(40)
+
+  # A stochastic fitfun: randomly selects 2 features (uses the RNG), so its
+  # output depends on the seed in effect when it runs.
+  rfit <- function(X, y, lambda){ sort(sample.int(ncol(X), 2)) }
+  sub <- sort(sample.int(40L, 20L))
+
+  # cssLoop's seed argument makes a stochastic fitfun reproducible: the same
+  # seed gives the same selection. (On main, cssLoop has no seed argument, so
+  # this behavior does not exist there.) This needs no parallelism.
+  r1 <- cssLoop(input=sub, x=x_rng, y=y_rng, lambda=0.1, fitfun=rfit, seed=123L)
+  r2 <- cssLoop(input=sub, x=x_rng, y=y_rng, lambda=0.1, fitfun=rfit, seed=123L)
+  testthat::expect_identical(r1, r2)
+
+  # ...and the seed genuinely drives the (stochastic) selection -- different
+  # seeds give more than one distinct result (so the check above is not vacuous).
+  outs <- lapply(1:8, function(s) cssLoop(input=sub, x=x_rng, y=y_rng,
+                                          lambda=0.1, fitfun=rfit, seed=s))
+  testthat::expect_true(length(unique(outs)) > 1)
+
+  # End-to-end, serial css is reproducible across re-runs.
+  set.seed(1)
+  d1 <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=1L)$feat_sel_mat
+  set.seed(1)
+  d2 <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=1L)$feat_sel_mat
+  testthat::expect_identical(d1, d2)
+
+  # Parallel checks need real forking; run the parallel css calls defensively
+  # and skip (rather than fail) when forking is unavailable -- Windows, CRAN, or
+  # a fully-loaded machine. A genuine reproducibility regression would still
+  # surface as a failed expectation below, not a skip.
+  par_runs <- tryCatch({
+    set.seed(1)
+    a <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=2L)$feat_sel_mat
+    set.seed(1)
+    b <- css(x_rng, y_rng, lambda=0.1, fitfun=rfit, B=10L, num_cores=2L)$feat_sel_mat
+    list(a=a, b=b)
+  }, error=function(e) NULL)
+  if(is.null(par_runs)){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+  testthat::expect_identical(par_runs$a, par_runs$b)   # parallel reproducible
+  testthat::expect_identical(par_runs$a, d1)           # serial == parallel
 })
 ```
 

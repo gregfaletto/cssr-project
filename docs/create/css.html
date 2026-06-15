@@ -581,60 +581,75 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb13-49"><a href="css.html#cb13-49" tabindex="-1"></a></span>
 <span id="cb13-50"><a href="css.html#cb13-50" tabindex="-1"></a>    <span class="co"># Get list of selected feature sets from subsamples</span></span>
 <span id="cb13-51"><a href="css.html#cb13-51" tabindex="-1"></a></span>
-<span id="cb13-52"><a href="css.html#cb13-52" tabindex="-1"></a>    res_list <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">mclapply</span>(<span class="at">X=</span>subsamps_object, <span class="at">FUN=</span>cssLoop, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb13-53"><a href="css.html#cb13-53" tabindex="-1"></a>        <span class="at">lambda=</span>lambda, <span class="at">fitfun=</span>fitfun, <span class="at">mc.cores=</span>num_cores)</span>
-<span id="cb13-54"><a href="css.html#cb13-54" tabindex="-1"></a></span>
-<span id="cb13-55"><a href="css.html#cb13-55" tabindex="-1"></a>    <span class="co"># Store selected sets in B x p (or `2*B` x p for "SS") binary matrix</span></span>
-<span id="cb13-56"><a href="css.html#cb13-56" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
-<span id="cb13-57"><a href="css.html#cb13-57" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">2</span><span class="sc">*</span>B, p)</span>
-<span id="cb13-58"><a href="css.html#cb13-58" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"MB"</span>){</span>
-<span id="cb13-59"><a href="css.html#cb13-59" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, B, p)</span>
-<span id="cb13-60"><a href="css.html#cb13-60" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb13-61"><a href="css.html#cb13-61" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res"</span>)</span>
+<span id="cb13-52"><a href="css.html#cb13-52" tabindex="-1"></a>    <span class="co"># Reproducible per-subsample seeding (issue #12): draw one seed per</span></span>
+<span id="cb13-53"><a href="css.html#cb13-53" tabindex="-1"></a>    <span class="co"># subsample from the caller's RNG, then seed inside cssLoop right before</span></span>
+<span id="cb13-54"><a href="css.html#cb13-54" tabindex="-1"></a>    <span class="co"># fitfun runs, so a stochastic fitfun is reproducible and identical across</span></span>
+<span id="cb13-55"><a href="css.html#cb13-55" tabindex="-1"></a>    <span class="co"># serial/parallel/platform/num_cores given a seed set before <a href="css.html#css">css</a>(). The</span></span>
+<span id="cb13-56"><a href="css.html#cb13-56" tabindex="-1"></a>    <span class="co"># default cssLasso is deterministic and ignores the seed. Save and restore</span></span>
+<span id="cb13-57"><a href="css.html#cb13-57" tabindex="-1"></a>    <span class="co"># .Random.seed so <a href="css.html#css">css</a>() leaves the caller's RNG where the (pre-existing)</span></span>
+<span id="cb13-58"><a href="css.html#cb13-58" tabindex="-1"></a>    <span class="co"># subsampling left it.</span></span>
+<span id="cb13-59"><a href="css.html#cb13-59" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">exists</span>(<span class="st">".Random.seed"</span>, <span class="at">envir=</span>.GlobalEnv)){</span>
+<span id="cb13-60"><a href="css.html#cb13-60" tabindex="-1"></a>        old_seed <span class="ot">&lt;-</span> <span class="fu">get</span>(<span class="st">".Random.seed"</span>, <span class="at">envir=</span>.GlobalEnv)</span>
+<span id="cb13-61"><a href="css.html#cb13-61" tabindex="-1"></a>        <span class="fu">on.exit</span>(<span class="fu">assign</span>(<span class="st">".Random.seed"</span>, old_seed, <span class="at">envir=</span>.GlobalEnv), <span class="at">add=</span><span class="cn">TRUE</span>)</span>
 <span id="cb13-62"><a href="css.html#cb13-62" tabindex="-1"></a>    }</span>
-<span id="cb13-63"><a href="css.html#cb13-63" tabindex="-1"></a></span>
-<span id="cb13-64"><a href="css.html#cb13-64" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list) <span class="sc">==</span> <span class="fu">nrow</span>(res))</span>
-<span id="cb13-65"><a href="css.html#cb13-65" tabindex="-1"></a></span>
-<span id="cb13-66"><a href="css.html#cb13-66" tabindex="-1"></a>    <span class="co"># Get selected sets into matrix res</span></span>
-<span id="cb13-67"><a href="css.html#cb13-67" tabindex="-1"></a></span>
-<span id="cb13-68"><a href="css.html#cb13-68" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(res)){</span>
-<span id="cb13-69"><a href="css.html#cb13-69" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb13-70"><a href="css.html#cb13-70" tabindex="-1"></a>            <span class="co"># If no features are selected, don't fill in anything in this row</span></span>
-<span id="cb13-71"><a href="css.html#cb13-71" tabindex="-1"></a>            <span class="cf">next</span></span>
-<span id="cb13-72"><a href="css.html#cb13-72" tabindex="-1"></a>        }</span>
-<span id="cb13-73"><a href="css.html#cb13-73" tabindex="-1"></a></span>
-<span id="cb13-74"><a href="css.html#cb13-74" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(res_list[[i]])){</span>
-<span id="cb13-75"><a href="css.html#cb13-75" tabindex="-1"></a>            <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">"failed on iteration"</span>, i))</span>
-<span id="cb13-76"><a href="css.html#cb13-76" tabindex="-1"></a>            <span class="fu">print</span>(res_list[[i]])</span>
-<span id="cb13-77"><a href="css.html#cb13-77" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Something seems to be wrong with the feature selection method (fitfun failed to return an integer vector)"</span>)</span>
-<span id="cb13-78"><a href="css.html#cb13-78" tabindex="-1"></a>        }</span>
-<span id="cb13-79"><a href="css.html#cb13-79" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">&lt;=</span> p <span class="sc">&amp;</span> <span class="fu">length</span>(res_list[[i]]) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb13-80"><a href="css.html#cb13-80" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_list[[i]])))</span>
-<span id="cb13-81"><a href="css.html#cb13-81" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">max</span>(res_list[[i]]) <span class="sc">&lt;=</span> p)</span>
-<span id="cb13-82"><a href="css.html#cb13-82" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">min</span>(res_list[[i]]) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb13-83"><a href="css.html#cb13-83" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(res_list[[i]])))</span>
-<span id="cb13-84"><a href="css.html#cb13-84" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-85"><a href="css.html#cb13-85" tabindex="-1"></a>            <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-86"><a href="css.html#cb13-86" tabindex="-1"></a>            <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-87"><a href="css.html#cb13-87" tabindex="-1"></a>            <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]])))</span>
+<span id="cb13-63"><a href="css.html#cb13-63" tabindex="-1"></a>    seeds <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(.Machine<span class="sc">$</span>integer.max, <span class="fu">length</span>(subsamps_object))</span>
+<span id="cb13-64"><a href="css.html#cb13-64" tabindex="-1"></a></span>
+<span id="cb13-65"><a href="css.html#cb13-65" tabindex="-1"></a>    res_list <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">mclapply</span>(<span class="at">X=</span><span class="fu">seq_along</span>(subsamps_object),</span>
+<span id="cb13-66"><a href="css.html#cb13-66" tabindex="-1"></a>        <span class="at">FUN=</span><span class="cf">function</span>(i) <a href="css.html#cssLoop">cssLoop</a>(subsamps_object[[i]], <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>lambda,</span>
+<span id="cb13-67"><a href="css.html#cb13-67" tabindex="-1"></a>            <span class="at">fitfun=</span>fitfun, <span class="at">seed=</span>seeds[i]),</span>
+<span id="cb13-68"><a href="css.html#cb13-68" tabindex="-1"></a>        <span class="at">mc.cores=</span>num_cores)</span>
+<span id="cb13-69"><a href="css.html#cb13-69" tabindex="-1"></a></span>
+<span id="cb13-70"><a href="css.html#cb13-70" tabindex="-1"></a>    <span class="co"># Store selected sets in B x p (or `2*B` x p for "SS") binary matrix</span></span>
+<span id="cb13-71"><a href="css.html#cb13-71" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
+<span id="cb13-72"><a href="css.html#cb13-72" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">2</span><span class="sc">*</span>B, p)</span>
+<span id="cb13-73"><a href="css.html#cb13-73" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"MB"</span>){</span>
+<span id="cb13-74"><a href="css.html#cb13-74" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, B, p)</span>
+<span id="cb13-75"><a href="css.html#cb13-75" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb13-76"><a href="css.html#cb13-76" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res"</span>)</span>
+<span id="cb13-77"><a href="css.html#cb13-77" tabindex="-1"></a>    }</span>
+<span id="cb13-78"><a href="css.html#cb13-78" tabindex="-1"></a></span>
+<span id="cb13-79"><a href="css.html#cb13-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list) <span class="sc">==</span> <span class="fu">nrow</span>(res))</span>
+<span id="cb13-80"><a href="css.html#cb13-80" tabindex="-1"></a></span>
+<span id="cb13-81"><a href="css.html#cb13-81" tabindex="-1"></a>    <span class="co"># Get selected sets into matrix res</span></span>
+<span id="cb13-82"><a href="css.html#cb13-82" tabindex="-1"></a></span>
+<span id="cb13-83"><a href="css.html#cb13-83" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(res)){</span>
+<span id="cb13-84"><a href="css.html#cb13-84" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb13-85"><a href="css.html#cb13-85" tabindex="-1"></a>            <span class="co"># If no features are selected, don't fill in anything in this row</span></span>
+<span id="cb13-86"><a href="css.html#cb13-86" tabindex="-1"></a>            <span class="cf">next</span></span>
+<span id="cb13-87"><a href="css.html#cb13-87" tabindex="-1"></a>        }</span>
 <span id="cb13-88"><a href="css.html#cb13-88" tabindex="-1"></a></span>
-<span id="cb13-89"><a href="css.html#cb13-89" tabindex="-1"></a>        <span class="co"># Store selected variables in the ith row of res</span></span>
-<span id="cb13-90"><a href="css.html#cb13-90" tabindex="-1"></a>        res[i, res_list[[i]]] <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
-<span id="cb13-91"><a href="css.html#cb13-91" tabindex="-1"></a>    }</span>
-<span id="cb13-92"><a href="css.html#cb13-92" tabindex="-1"></a></span>
-<span id="cb13-93"><a href="css.html#cb13-93" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb13-94"><a href="css.html#cb13-94" tabindex="-1"></a></span>
-<span id="cb13-95"><a href="css.html#cb13-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
-<span id="cb13-96"><a href="css.html#cb13-96" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
-<span id="cb13-97"><a href="css.html#cb13-97" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
-<span id="cb13-98"><a href="css.html#cb13-98" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb13-99"><a href="css.html#cb13-99" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> B)</span>
-<span id="cb13-100"><a href="css.html#cb13-100" tabindex="-1"></a>    }</span>
-<span id="cb13-101"><a href="css.html#cb13-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res) <span class="sc">==</span> p)</span>
-<span id="cb13-102"><a href="css.html#cb13-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb13-89"><a href="css.html#cb13-89" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(res_list[[i]])){</span>
+<span id="cb13-90"><a href="css.html#cb13-90" tabindex="-1"></a>            <span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">"failed on iteration"</span>, i))</span>
+<span id="cb13-91"><a href="css.html#cb13-91" tabindex="-1"></a>            <span class="fu">print</span>(res_list[[i]])</span>
+<span id="cb13-92"><a href="css.html#cb13-92" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Something seems to be wrong with the feature selection method (fitfun failed to return an integer vector)"</span>)</span>
+<span id="cb13-93"><a href="css.html#cb13-93" tabindex="-1"></a>        }</span>
+<span id="cb13-94"><a href="css.html#cb13-94" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">&lt;=</span> p <span class="sc">&amp;</span> <span class="fu">length</span>(res_list[[i]]) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb13-95"><a href="css.html#cb13-95" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_list[[i]])))</span>
+<span id="cb13-96"><a href="css.html#cb13-96" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">max</span>(res_list[[i]]) <span class="sc">&lt;=</span> p)</span>
+<span id="cb13-97"><a href="css.html#cb13-97" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">min</span>(res_list[[i]]) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb13-98"><a href="css.html#cb13-98" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(res_list[[i]])))</span>
+<span id="cb13-99"><a href="css.html#cb13-99" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-100"><a href="css.html#cb13-100" tabindex="-1"></a>            <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-101"><a href="css.html#cb13-101" tabindex="-1"></a>            <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-102"><a href="css.html#cb13-102" tabindex="-1"></a>            <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]])))</span>
 <span id="cb13-103"><a href="css.html#cb13-103" tabindex="-1"></a></span>
-<span id="cb13-104"><a href="css.html#cb13-104" tabindex="-1"></a>    <span class="fu">return</span>(res)</span>
-<span id="cb13-105"><a href="css.html#cb13-105" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb13-104"><a href="css.html#cb13-104" tabindex="-1"></a>        <span class="co"># Store selected variables in the ith row of res</span></span>
+<span id="cb13-105"><a href="css.html#cb13-105" tabindex="-1"></a>        res[i, res_list[[i]]] <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb13-106"><a href="css.html#cb13-106" tabindex="-1"></a>    }</span>
+<span id="cb13-107"><a href="css.html#cb13-107" tabindex="-1"></a></span>
+<span id="cb13-108"><a href="css.html#cb13-108" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb13-109"><a href="css.html#cb13-109" tabindex="-1"></a></span>
+<span id="cb13-110"><a href="css.html#cb13-110" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb13-111"><a href="css.html#cb13-111" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
+<span id="cb13-112"><a href="css.html#cb13-112" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
+<span id="cb13-113"><a href="css.html#cb13-113" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb13-114"><a href="css.html#cb13-114" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> B)</span>
+<span id="cb13-115"><a href="css.html#cb13-115" tabindex="-1"></a>    }</span>
+<span id="cb13-116"><a href="css.html#cb13-116" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res) <span class="sc">==</span> p)</span>
+<span id="cb13-117"><a href="css.html#cb13-117" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb13-118"><a href="css.html#cb13-118" tabindex="-1"></a></span>
+<span id="cb13-119"><a href="css.html#cb13-119" tabindex="-1"></a>    <span class="fu">return</span>(res)</span>
+<span id="cb13-120"><a href="css.html#cb13-120" tabindex="-1"></a>}</span></code></pre></div>
 <p>Again, <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> uses some helper functions to check the inputs for safety. <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> leverages the function <code>parallel::mclapply()</code> package, in order to allow for parallel processing if the user has set this up. This requires a helper function <code><a href="css.html#cssLoop">cssLoop</a>()</code>, which is also specified in the later section for helper functions.
 We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="css.html#cb14-1" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"parallel"</span>)</span></code></pre></div>
@@ -2254,49 +2269,61 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb58-25"><a href="css.html#cb58-25" tabindex="-1"></a><span class="co">#' fit.</span></span>
 <span id="cb58-26"><a href="css.html#cb58-26" tabindex="-1"></a><span class="co">#' @param fitfun A function that takes in arguments X, y, and lambda and returns</span></span>
 <span id="cb58-27"><a href="css.html#cb58-27" tabindex="-1"></a><span class="co">#' a vector of indices of the columns of X (selected features).</span></span>
-<span id="cb58-28"><a href="css.html#cb58-28" tabindex="-1"></a><span class="co">#' @return An integer vector; the indices of the features selected by `fitfun`.</span></span>
-<span id="cb58-29"><a href="css.html#cb58-29" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb58-30"><a href="css.html#cb58-30" tabindex="-1"></a><span id="cssLoop">cssLoop</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(input, x, y, lambda, fitfun){</span>
-<span id="cb58-31"><a href="css.html#cb58-31" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb58-32"><a href="css.html#cb58-32" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(x))</span>
-<span id="cb58-33"><a href="css.html#cb58-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(x)))</span>
-<span id="cb58-34"><a href="css.html#cb58-34" tabindex="-1"></a></span>
-<span id="cb58-35"><a href="css.html#cb58-35" tabindex="-1"></a>    <span class="fu">colnames</span>(x) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
-<span id="cb58-36"><a href="css.html#cb58-36" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)</span>
-<span id="cb58-37"><a href="css.html#cb58-37" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)</span>
-<span id="cb58-38"><a href="css.html#cb58-38" tabindex="-1"></a></span>
-<span id="cb58-39"><a href="css.html#cb58-39" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
-<span id="cb58-40"><a href="css.html#cb58-40" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.matrix</span>(y))</span>
-<span id="cb58-41"><a href="css.html#cb58-41" tabindex="-1"></a>    <span class="co"># Intentionally don't check y or lambda further to allow for flexibility--these</span></span>
-<span id="cb58-42"><a href="css.html#cb58-42" tabindex="-1"></a>    <span class="co"># inputs should be checked within fitfun.</span></span>
+<span id="cb58-28"><a href="css.html#cb58-28" tabindex="-1"></a><span class="co">#' @param seed Optional integer. If non-NULL, the random number generator is</span></span>
+<span id="cb58-29"><a href="css.html#cb58-29" tabindex="-1"></a><span class="co">#' seeded with `set.seed(seed)` immediately before `fitfun` is called, so that a</span></span>
+<span id="cb58-30"><a href="css.html#cb58-30" tabindex="-1"></a><span class="co">#' stochastic `fitfun` is reproducible and identical across serial and parallel</span></span>
+<span id="cb58-31"><a href="css.html#cb58-31" tabindex="-1"></a><span class="co">#' execution. Default NULL (no seeding). Supplied internally by `getSelMatrix`</span></span>
+<span id="cb58-32"><a href="css.html#cb58-32" tabindex="-1"></a><span class="co">#' (one reproducible seed per subsample); direct callers can leave it NULL.</span></span>
+<span id="cb58-33"><a href="css.html#cb58-33" tabindex="-1"></a><span class="co">#' @return An integer vector; the indices of the features selected by `fitfun`.</span></span>
+<span id="cb58-34"><a href="css.html#cb58-34" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb58-35"><a href="css.html#cb58-35" tabindex="-1"></a><span id="cssLoop">cssLoop</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(input, x, y, lambda, fitfun, <span class="at">seed=</span><span class="cn">NULL</span>){</span>
+<span id="cb58-36"><a href="css.html#cb58-36" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb58-37"><a href="css.html#cb58-37" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(x))</span>
+<span id="cb58-38"><a href="css.html#cb58-38" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(x)))</span>
+<span id="cb58-39"><a href="css.html#cb58-39" tabindex="-1"></a></span>
+<span id="cb58-40"><a href="css.html#cb58-40" tabindex="-1"></a>    <span class="fu">colnames</span>(x) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
+<span id="cb58-41"><a href="css.html#cb58-41" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)</span>
+<span id="cb58-42"><a href="css.html#cb58-42" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)</span>
 <span id="cb58-43"><a href="css.html#cb58-43" tabindex="-1"></a></span>
-<span id="cb58-44"><a href="css.html#cb58-44" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.list</span>(input)){</span>
-<span id="cb58-45"><a href="css.html#cb58-45" tabindex="-1"></a>        subsample <span class="ot">&lt;-</span> input</span>
-<span id="cb58-46"><a href="css.html#cb58-46" tabindex="-1"></a>        feats_to_keep <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">TRUE</span>, p)</span>
-<span id="cb58-47"><a href="css.html#cb58-47" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb58-48"><a href="css.html#cb58-48" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">names</span>(input) <span class="sc">==</span> <span class="fu">c</span>(<span class="st">"subsample"</span>, <span class="st">"feats_to_keep"</span>)))</span>
-<span id="cb58-49"><a href="css.html#cb58-49" tabindex="-1"></a>        subsample <span class="ot">&lt;-</span> input<span class="sc">$</span>subsample</span>
-<span id="cb58-50"><a href="css.html#cb58-50" tabindex="-1"></a>        feats_to_keep <span class="ot">&lt;-</span> input<span class="sc">$</span>feats_to_keep</span>
-<span id="cb58-51"><a href="css.html#cb58-51" tabindex="-1"></a>    }</span>
-<span id="cb58-52"><a href="css.html#cb58-52" tabindex="-1"></a></span>
-<span id="cb58-53"><a href="css.html#cb58-53" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(subsample))</span>
-<span id="cb58-54"><a href="css.html#cb58-54" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(subsample <span class="sc">==</span> <span class="fu">round</span>(subsample)))</span>
-<span id="cb58-55"><a href="css.html#cb58-55" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">floor</span>(n<span class="sc">/</span><span class="dv">2</span>) <span class="sc">==</span> <span class="fu">length</span>(subsample))</span>
-<span id="cb58-56"><a href="css.html#cb58-56" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(subsample) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(subsample)))</span>
+<span id="cb58-44"><a href="css.html#cb58-44" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
+<span id="cb58-45"><a href="css.html#cb58-45" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.matrix</span>(y))</span>
+<span id="cb58-46"><a href="css.html#cb58-46" tabindex="-1"></a>    <span class="co"># Intentionally don't check y or lambda further to allow for flexibility--these</span></span>
+<span id="cb58-47"><a href="css.html#cb58-47" tabindex="-1"></a>    <span class="co"># inputs should be checked within fitfun.</span></span>
+<span id="cb58-48"><a href="css.html#cb58-48" tabindex="-1"></a></span>
+<span id="cb58-49"><a href="css.html#cb58-49" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.list</span>(input)){</span>
+<span id="cb58-50"><a href="css.html#cb58-50" tabindex="-1"></a>        subsample <span class="ot">&lt;-</span> input</span>
+<span id="cb58-51"><a href="css.html#cb58-51" tabindex="-1"></a>        feats_to_keep <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">TRUE</span>, p)</span>
+<span id="cb58-52"><a href="css.html#cb58-52" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb58-53"><a href="css.html#cb58-53" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">names</span>(input) <span class="sc">==</span> <span class="fu">c</span>(<span class="st">"subsample"</span>, <span class="st">"feats_to_keep"</span>)))</span>
+<span id="cb58-54"><a href="css.html#cb58-54" tabindex="-1"></a>        subsample <span class="ot">&lt;-</span> input<span class="sc">$</span>subsample</span>
+<span id="cb58-55"><a href="css.html#cb58-55" tabindex="-1"></a>        feats_to_keep <span class="ot">&lt;-</span> input<span class="sc">$</span>feats_to_keep</span>
+<span id="cb58-56"><a href="css.html#cb58-56" tabindex="-1"></a>    }</span>
 <span id="cb58-57"><a href="css.html#cb58-57" tabindex="-1"></a></span>
-<span id="cb58-58"><a href="css.html#cb58-58" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(feats_to_keep))</span>
-<span id="cb58-59"><a href="css.html#cb58-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(feats_to_keep) <span class="sc">==</span> p)</span>
-<span id="cb58-60"><a href="css.html#cb58-60" tabindex="-1"></a></span>
-<span id="cb58-61"><a href="css.html#cb58-61" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">do.call</span>(fitfun, <span class="fu">list</span>(<span class="at">X=</span>x[subsample, feats_to_keep],</span>
-<span id="cb58-62"><a href="css.html#cb58-62" tabindex="-1"></a>        <span class="at">y=</span>y[subsample], <span class="at">lambda=</span>lambda))</span>
-<span id="cb58-63"><a href="css.html#cb58-63" tabindex="-1"></a></span>
-<span id="cb58-64"><a href="css.html#cb58-64" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[selected]</span>
+<span id="cb58-58"><a href="css.html#cb58-58" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(subsample))</span>
+<span id="cb58-59"><a href="css.html#cb58-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(subsample <span class="sc">==</span> <span class="fu">round</span>(subsample)))</span>
+<span id="cb58-60"><a href="css.html#cb58-60" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">floor</span>(n<span class="sc">/</span><span class="dv">2</span>) <span class="sc">==</span> <span class="fu">length</span>(subsample))</span>
+<span id="cb58-61"><a href="css.html#cb58-61" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(subsample) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(subsample)))</span>
+<span id="cb58-62"><a href="css.html#cb58-62" tabindex="-1"></a></span>
+<span id="cb58-63"><a href="css.html#cb58-63" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(feats_to_keep))</span>
+<span id="cb58-64"><a href="css.html#cb58-64" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(feats_to_keep) <span class="sc">==</span> p)</span>
 <span id="cb58-65"><a href="css.html#cb58-65" tabindex="-1"></a></span>
-<span id="cb58-66"><a href="css.html#cb58-66" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb58-67"><a href="css.html#cb58-67" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
-<span id="cb58-68"><a href="css.html#cb58-68" tabindex="-1"></a></span>
-<span id="cb58-69"><a href="css.html#cb58-69" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
-<span id="cb58-70"><a href="css.html#cb58-70" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb58-66"><a href="css.html#cb58-66" tabindex="-1"></a>    <span class="co"># Seed immediately before fitfun so a stochastic fitfun is reproducible</span></span>
+<span id="cb58-67"><a href="css.html#cb58-67" tabindex="-1"></a>    <span class="co"># across serial/parallel execution (issue #12). seed is NULL for the</span></span>
+<span id="cb58-68"><a href="css.html#cb58-68" tabindex="-1"></a>    <span class="co"># deterministic default cssLasso path and for direct callers.</span></span>
+<span id="cb58-69"><a href="css.html#cb58-69" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(seed)){</span>
+<span id="cb58-70"><a href="css.html#cb58-70" tabindex="-1"></a>        <span class="fu">set.seed</span>(seed)</span>
+<span id="cb58-71"><a href="css.html#cb58-71" tabindex="-1"></a>    }</span>
+<span id="cb58-72"><a href="css.html#cb58-72" tabindex="-1"></a></span>
+<span id="cb58-73"><a href="css.html#cb58-73" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">do.call</span>(fitfun, <span class="fu">list</span>(<span class="at">X=</span>x[subsample, feats_to_keep],</span>
+<span id="cb58-74"><a href="css.html#cb58-74" tabindex="-1"></a>        <span class="at">y=</span>y[subsample], <span class="at">lambda=</span>lambda))</span>
+<span id="cb58-75"><a href="css.html#cb58-75" tabindex="-1"></a></span>
+<span id="cb58-76"><a href="css.html#cb58-76" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[selected]</span>
+<span id="cb58-77"><a href="css.html#cb58-77" tabindex="-1"></a></span>
+<span id="cb58-78"><a href="css.html#cb58-78" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb58-79"><a href="css.html#cb58-79" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
+<span id="cb58-80"><a href="css.html#cb58-80" tabindex="-1"></a></span>
+<span id="cb58-81"><a href="css.html#cb58-81" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
+<span id="cb58-82"><a href="css.html#cb58-82" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>()</code>:</p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="css.html#cb59-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the outputs of the provided feature selection</span></span>
 <span id="cb59-2"><a href="css.html#cb59-2" tabindex="-1"></a><span class="co">#' method are as required. </span></span>
