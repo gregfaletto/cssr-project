@@ -104,16 +104,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(all(!is.na(X_train_selec)))
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X_train_selec)){
-        p <- ncol(X_train_selec)
-        X_train_selec <- stats::model.matrix(~ ., X_train_selec)
-        X_train_selec <- X_train_selec[, colnames(X_train_selec) !=
-            "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X_train_selec))){
-            stop("When stats::model.matrix converted the provided data.frame X_train_selec to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X_train_selec to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-    }
+    X_train_selec <- coerceDataFrameToMatrix(X_train_selec, clusters,
+        arg_name = "X_train_selec")
 
     stopifnot(is.matrix(X_train_selec))
     stopifnot(all(!is.na(X_train_selec)))

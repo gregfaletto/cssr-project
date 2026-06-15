@@ -847,6 +847,46 @@ Below, we specify some of the helper functions for `css()`, which are less impor
 
 Tests are written for all of these functions and appear as early as possible after the function is defined. (For functions that don't depend on any other functions, tests appear immediately after the function; for functions with dependencies, the tests appear after all dependencies have been defined.)
 
+Several of the entry points below accept either a numeric matrix or a data.frame for the design matrix and share the same coercion logic (convert the data.frame with `model.matrix`, drop the intercept column, and guard against a column-count change that would invalidate supplied cluster indices). We factor that logic into a single internal helper, `coerceDataFrameToMatrix()`, so the six call sites stay in sync.
+
+```{r}
+#' Coerce a data.frame design matrix to a numeric matrix
+#'
+#' Shared helper for the several entry points that accept either a matrix or
+#' a data.frame `X`: if `X` is a data.frame, convert it with
+#' `stats::model.matrix(~ .)` and drop the intercept column. If the column
+#' count changed and clusters were supplied (which would invalidate the
+#' cluster indices), error. If `X` is already a matrix it is returned
+#' unchanged.
+#' @param X A numeric matrix or a data.frame.
+#' @param clusters A list of integer vectors (the cluster assignments); the
+#' column-count guard only fires when `length(clusters) > 0`.
+#' @param arg_name Character; the name of the argument as it should appear in
+#' the error message's first sentence. Default "X".
+#' @param convert_phrase Character; the subject of the "Please convert ___"
+#' sentence. Defaults to `arg_name`; cssSelect passes "the data.frame X" to
+#' reproduce its existing message verbatim.
+#' @return The (possibly coerced) numeric matrix.
+#' @keywords internal
+#' @noRd
+coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
+    convert_phrase = arg_name){
+    if(is.data.frame(X)){
+        p <- ncol(X)
+        X <- stats::model.matrix(~ ., X)
+        X <- X[, colnames(X) != "(Intercept)"]
+        if(length(clusters) > 0 & (p != ncol(X))){
+            stop(paste0("When stats::model.matrix converted the provided data.frame ",
+                arg_name,
+                " to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert ",
+                convert_phrase,
+                " to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."))
+        }
+    }
+    X
+}
+```
+
 `checkCssInputs()`:
 
 ```{r}
@@ -924,16 +964,7 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     }
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X)){
-        p <- ncol(X)
-        
-        X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X))){
-            stop("When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-    }
+    X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
@@ -4838,10 +4869,7 @@ checkNewXProvided <- function(trainX, css_results){
 checkXInputResults <- function(newx, css_X){
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(newx)){
-        newx <- stats::model.matrix(~ ., newx)
-        newx <- newx[, colnames(newx) != "(Intercept)"]
-    }
+    newx <- coerceDataFrameToMatrix(newx, clusters = list(), arg_name = "newx")
 
     feat_names <- as.character(NA)
     if(!is.null(colnames(newx))){
@@ -8688,16 +8716,7 @@ getModelSize <- function(X, y, clusters, alpha = 1){
     stopifnot(is.matrix(X) | is.data.frame(X))
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X)){
-        p <- ncol(X)
-
-        X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X))){
-            stop("When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-    }
+    X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
@@ -9549,16 +9568,7 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X)){
-        p <- ncol(X)
-        X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X))){
-            stop("When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert the data.frame X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-
-    }
+    X <- coerceDataFrameToMatrix(X, clusters, convert_phrase = "the data.frame X")
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
@@ -10101,16 +10111,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(all(!is.na(X_train_selec)))
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X_train_selec)){
-        p <- ncol(X_train_selec)
-        X_train_selec <- stats::model.matrix(~ ., X_train_selec)
-        X_train_selec <- X_train_selec[, colnames(X_train_selec) !=
-            "(Intercept)"]
-
-        if(length(clusters) > 0 & (p != ncol(X_train_selec))){
-            stop("When stats::model.matrix converted the provided data.frame X_train_selec to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X_train_selec to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-    }
+    X_train_selec <- coerceDataFrameToMatrix(X_train_selec, clusters,
+        arg_name = "X_train_selec")
 
     stopifnot(is.matrix(X_train_selec))
     stopifnot(all(!is.na(X_train_selec)))
@@ -10504,16 +10506,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
     stopifnot(is.matrix(X) | is.data.frame(X))
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
-    if(is.data.frame(X)){
-        p <- ncol(X)
-
-        X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
-
-        if(p != ncol(X) & length(clusters) > 0){
-            stop("When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix.")
-        }
-    }
+    X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
     stopifnot(all(!is.na(X)))
