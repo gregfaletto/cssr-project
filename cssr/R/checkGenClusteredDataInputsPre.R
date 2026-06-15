@@ -66,3 +66,30 @@ checkGenClusteredDataInputsPost <- function(p, k_unclustered, cluster_size,
         stop("Only one of snr and sigma_eps_sq may be specified")
     }
 }
+
+#' Shared snr / sigma_eps_sq input checks for the genClusteredData* generators
+#'
+#' Validates whichever of snr / sigma_eps_sq was supplied (exactly one is non-NA
+#' by this point, enforced by `checkGenClusteredDataInputsPost()`): it must be
+#' numeric and length 1, and positive (snr) or non-negative (sigma_eps_sq).
+#' Previously only `genClusteredData()` ran the full type/length checks; the two
+#' weighted generators ran a leaner version that silently accepted a
+#' non-numeric snr / sigma_eps_sq (which then failed later inside `genZmuY()`).
+#' Sharing this helper makes the three consistent (#35).
+#' @param snr,sigma_eps_sq As documented in `checkGenClusteredDataInputs()`.
+#' @return No return value; called for the side effect of erroring on bad input.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
+    if(is.na(snr)){
+        stopifnot(all(!is.na(sigma_eps_sq)))
+        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
+        stopifnot(length(sigma_eps_sq) == 1)
+        stopifnot(sigma_eps_sq >= 0)
+    } else{
+        stopifnot(is.numeric(snr) | is.integer(snr))
+        stopifnot(length(snr) == 1)
+        stopifnot(snr > 0)
+    }
+}
