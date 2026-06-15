@@ -42,30 +42,5 @@
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
 #' @export
 protolasso <- function(X, y, clusters=list(), nlambda=100){
-
-    # Handle and format inputs; get cluster prototypes
-    ret <- processClusterLassoInputs(X, y, clusters, nlambda)
-
-    x <- ret$x
-    clusters <- ret$clusters
-    prototypes <- ret$prototypes
-    feat_names <- ret$var_names
-
-    rm(ret)
-
-    # Format the design matrix for glmnet according to the protolasso procedure
-    X_glmnet <- getXglmnet(x, clusters, type="protolasso",
-        prototypes=prototypes)
-
-    # Estimate the lasso on the cluster prototypes
-    fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=nlambda)
-    lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
-
-    # Finally, obtain a tidy list of selected sets--one for each model size
-    cluster_sel_results <- getClusterSelsFromGlmnet(lasso_sets, clusters,
-        prototypes, feat_names)
-
-    return(list(selected_sets=cluster_sel_results$selected_sets,
-        selected_clusts_list=cluster_sel_results$selected_clusts_list,
-        beta=fit$beta))
+    clusterLassoCore(X, y, clusters, nlambda, type="protolasso")
 }
