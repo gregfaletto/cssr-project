@@ -42,8 +42,8 @@ getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
 
 - alpha:
 
-  Numeric; the elastic net mixing parameter. Default is 1 (in which case
-  the penalty is for lasso)
+  Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
+  Default is 1 (in which case the penalty is for lasso).
 
 ## Value
 

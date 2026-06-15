@@ -7,8 +7,12 @@
 #' @param X A design matrix containing the predictors. (In practice this will
 #' be a subsample of the full design matrix provided to `css()`.)
 #' @param y A numeric vector containing the response.
-#' @param lambda Numeric; a nonnegative number for the lasso penalty to use
-#' on each subsample. (For now, only one lambda value can be provided to
+#' @param lambda Either a single nonnegative number for the lasso penalty to
+#' use on each subsample (in which case a pure lasso fit, alpha = 1, is used),
+#' or a named length-2 numeric vector `c(lambda = <value>, alpha = <value>)`
+#' bundling the penalty together with the elastic net mixing parameter alpha
+#' (which must be in `(0, 1]`); in the latter case an elastic net fit with that
+#' alpha is used. (For now, only one lambda value can be provided to
 #' `cssLasso()`; in the future, we plan to allow for multiple lambda values to be
 #' provided to `cssLasso()`, as described in Faletto and Bien 2022.)
 #' @return An integer vector; the indices of the features selected by the lasso.
@@ -34,12 +38,33 @@ cssLasso <- function(X, y, lambda){
     n <- nrow(X)
     p <- ncol(X)
 
+    # lambda may be either a single nonnegative number (pure lasso, as in the
+    # original implementation) or a named length-2 numeric vector
+    # c(lambda=<value>, alpha=<value>) bundling the elastic net mixing
+    # parameter alpha alongside the penalty. Unpack alpha if it is provided.
+    if(length(lambda) == 2){
+        alpha <- unname(lambda["alpha"])
+        lambda <- unname(lambda["lambda"])
+    } else{
+        alpha <- 1
+    }
+
     # Fit a lasso path (full path for speed, per glmnet documentation)
 
-    lasso_model <- glmnet::glmnet(X, y, family="gaussian")
+    # Build the model with do.call so the stored call (lasso_model$call) carries
+    # the literal numeric value of alpha rather than the symbol `alpha`. This is
+    # load-bearing: predict.glmnet(..., exact=TRUE) below re-evaluates the
+    # stored call via update(), and if that call contained the symbol `alpha`
+    # (as glmnet::glmnet(X, y, family="gaussian", alpha=alpha) would store) the
+    # refit would throw "object 'alpha' not found" -- on both the elastic-net
+    # and the alpha=1 paths. See Decision Log / Surprises in the plan.
+    lasso_model <- do.call(glmnet::glmnet,
+        list(x=X, y=y, family="gaussian", alpha=alpha))
     stopifnot(all.equal(class(lasso_model), c("elnet", "glmnet")))
 
-    # Get coefficients at desired lambda
+    # Get coefficients at desired lambda. exact=TRUE is load-bearing (dropping
+    # it changes results materially); the model object carries its own alpha for
+    # the exact refit, so only the unpacked scalar lambda is passed as s.
 
     pred <- glmnet::predict.glmnet(lasso_model, type="nonzero",
         s=lambda, exact=TRUE, newx=X, x=X, y=y)

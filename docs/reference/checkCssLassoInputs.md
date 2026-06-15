@@ -24,8 +24,11 @@ checkCssLassoInputs(X, y, lambda)
 
 - lambda:
 
-  Numeric; a nonnegative number for the lasso penalty to use on each
-  subsample. (For now, only one lambda value can be provided to
+  Either a single nonnegative number for the lasso penalty to use on
+  each subsample, or a named length-2 numeric vector
+  `c(lambda = <value>, alpha = <value>)` bundling the penalty together
+  with the elastic net mixing parameter alpha (which must be in
+  `(0, 1]`). (For now, only one lambda value can be provided to
   [`cssLasso()`](cssLasso.md); in the future, we plan to allow for
   multiple lambda values to be provided to [`cssLasso()`](cssLasso.md),
   as described in Faletto and Bien 2022.)

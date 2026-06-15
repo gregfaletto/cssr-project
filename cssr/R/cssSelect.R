@@ -57,6 +57,10 @@
 #' TRUE, though his argument is ignored if either cutoff or max_num_clusts is
 #' provided. (If desired output is to return all clusters, you should set
 #' auto_select_size to FALSE and do not provide cutoff or max_num_clusts.)
+#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
+#' Drives both the choice of lambda (when lambda is not provided) and the
+#' elastic net fit used for feature selection in each subsample. Default is 1
+#' (in which case the penalty is the lasso).
 #' @return A named list with two items. \item{selected_clusts}{A list of
 #' integer vectors; each vector contains the indices of one of the selected
 #' clusters.} \item{selected_feats}{An integer vector; the indices of the
@@ -65,13 +69,24 @@
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
-    max_num_clusts=NA, auto_select_size=TRUE){
+    max_num_clusts=NA, auto_select_size=TRUE, alpha=1){
 
     # Check inputs (most inputs will be checked by called functions)
 
     stopifnot(!is.na(auto_select_size))
     stopifnot(length(auto_select_size) == 1)
     stopifnot(is.logical(auto_select_size))
+
+    # Validate alpha up front. This must happen before the NA-lambda branch
+    # below (a user-supplied non-NA lambda skips getLassoLambda and therefore
+    # its own alpha check) and before the bundling step, so that an invalid or
+    # NA alpha is caught here with a clear message rather than deep inside the
+    # subsampling loop. Mirrors the validation in getLassoLambda.
+    stopifnot(is.numeric(alpha) | is.integer(alpha))
+    stopifnot(length(alpha) == 1)
+    stopifnot(!is.na(alpha))
+    stopifnot(alpha > 0)
+    stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
     stopifnot(all(!is.na(X)))
@@ -98,7 +113,14 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
-        lambda <- getLassoLambda(X, y)
+        lambda <- getLassoLambda(X, y, alpha=alpha)
+    }
+
+    # Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the
+    # default), leave lambda as a scalar so the pure-lasso path is byte-identical
+    # to the original behavior.
+    if(alpha != 1){
+        lambda <- c(lambda=lambda, alpha=alpha)
     }
 
     css_results <- css(X, y, lambda, clusters)

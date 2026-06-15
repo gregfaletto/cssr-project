@@ -22,11 +22,15 @@ cssLasso(X, y, lambda)
 
 - lambda:
 
-  Numeric; a nonnegative number for the lasso penalty to use on each
-  subsample. (For now, only one lambda value can be provided to
-  `cssLasso()`; in the future, we plan to allow for multiple lambda
-  values to be provided to `cssLasso()`, as described in Faletto and
-  Bien 2022.)
+  Either a single nonnegative number for the lasso penalty to use on
+  each subsample (in which case a pure lasso fit, alpha = 1, is used),
+  or a named length-2 numeric vector
+  `c(lambda = <value>, alpha = <value>)` bundling the penalty together
+  with the elastic net mixing parameter alpha (which must be in
+  `(0, 1]`); in the latter case an elastic net fit with that alpha is
+  used. (For now, only one lambda value can be provided to `cssLasso()`;
+  in the future, we plan to allow for multiple lambda values to be
+  provided to `cssLasso()`, as described in Faletto and Bien 2022.)
 
 ## Value
 
