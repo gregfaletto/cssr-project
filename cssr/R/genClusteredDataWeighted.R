@@ -15,10 +15,10 @@
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
-#' will have nonzero coefficients in the true model for y among those features 
-#' not generated from the n_clusters latent variables (called "weak signal" 
+#' will have nonzero coefficients in the true model for y among those features
+#' not generated from the n_clusters latent variables (called "weak signal"
 #' features in the simulations from Faletto and Bien 2022). The coefficients on
-#' these features will be determined by beta_unclustered.
+#' these features will be determined by beta_unclustered. Must be at least 1.
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
 #' the latent variable.
@@ -56,7 +56,8 @@
 #' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
 #' snr and sigma_eps_sq must be specified. Default is NA.
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
-#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' to y (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+#' must be specified. Default is NA.
 #' @return A list of the following elements. \item{X}{An n x p numeric matrix of
 #' n observations from a p-dimensional multivariate normal distribution
 #' generated using the specified parameters. The first n_clusters times

@@ -97,7 +97,7 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 2)
+    stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
     
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
@@ -108,11 +108,15 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     if(is.na(snr) & is.na(sigma_eps_sq)){
         stop("Must specify one of snr or sigma_eps_sq")
     }
+
+    if(!is.na(snr) & !is.na(sigma_eps_sq)){
+        stop("Only one of snr and sigma_eps_sq may be specified")
+    }
     
     if(!is.na(snr)){
         stopifnot(snr > 0)
     }
     if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq > 0)
+        stopifnot(sigma_eps_sq >= 0)
     }
 }

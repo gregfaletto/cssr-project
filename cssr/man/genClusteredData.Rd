@@ -64,7 +64,8 @@ calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
 snr and sigma_eps_sq must be specified. Default is NA.}
 
 \item{sigma_eps_sq}{Integer or numeric; the variance on the noise added
-to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.}
+to y (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+must be specified. Default is NA.}
 }
 \value{
 A list of the following elements. \item{X}{An n x p numeric matrix of

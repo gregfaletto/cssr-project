@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-06-14">
+<meta name="date" content="2026-06-15">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -2439,8 +2439,8 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb62-17"><a href="css.html#cb62-17" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
 <span id="cb62-18"><a href="css.html#cb62-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
 <span id="cb62-19"><a href="css.html#cb62-19" tabindex="-1"></a></span>
-<span id="cb62-20"><a href="css.html#cb62-20" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y)){</span>
-<span id="cb62-21"><a href="css.html#cb62-21" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector."</span>)</span>
+<span id="cb62-20"><a href="css.html#cb62-20" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
+<span id="cb62-21"><a href="css.html#cb62-21" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric or integer vector."</span>)</span>
 <span id="cb62-22"><a href="css.html#cb62-22" tabindex="-1"></a>    }</span>
 <span id="cb62-23"><a href="css.html#cb62-23" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.matrix</span>(y)){</span>
 <span id="cb62-24"><a href="css.html#cb62-24" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector (inputted y was a matrix)."</span>)</span>
@@ -2488,79 +2488,85 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb63-7"><a href="css.html#cb63-7" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>))</span>
 <span id="cb63-8"><a href="css.html#cb63-8" tabindex="-1"></a>  </span>
 <span id="cb63-9"><a href="css.html#cb63-9" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">logical</span>(<span class="dv">15</span>), <span class="at">lambda=</span><span class="fl">0.05</span>),</span>
-<span id="cb63-10"><a href="css.html#cb63-10" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric vector."</span>,</span>
+<span id="cb63-10"><a href="css.html#cb63-10" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric or integer vector."</span>,</span>
 <span id="cb63-11"><a href="css.html#cb63-11" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-12"><a href="css.html#cb63-12" tabindex="-1"></a>  </span>
-<span id="cb63-13"><a href="css.html#cb63-13" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">13</span>, ], <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>),</span>
-<span id="cb63-14"><a href="css.html#cb63-14" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>,</span>
-<span id="cb63-15"><a href="css.html#cb63-15" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-16"><a href="css.html#cb63-16" tabindex="-1"></a>  </span>
-<span id="cb63-17"><a href="css.html#cb63-17" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">rep</span>(<span class="fl">1.2</span>, <span class="dv">15</span>), <span class="at">lambda=</span><span class="fl">0.05</span>),</span>
-<span id="cb63-18"><a href="css.html#cb63-18" tabindex="-1"></a>                         <span class="st">"Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value."</span>,</span>
-<span id="cb63-19"><a href="css.html#cb63-19" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-20"><a href="css.html#cb63-20" tabindex="-1"></a>  </span>
-<span id="cb63-21"><a href="css.html#cb63-21" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="cn">TRUE</span>),</span>
-<span id="cb63-22"><a href="css.html#cb63-22" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be a numeric."</span>,</span>
-<span id="cb63-23"><a href="css.html#cb63-23" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-24"><a href="css.html#cb63-24" tabindex="-1"></a>  </span>
-<span id="cb63-25"><a href="css.html#cb63-25" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">as.numeric</span>(<span class="cn">NA</span>)),</span>
-<span id="cb63-26"><a href="css.html#cb63-26" tabindex="-1"></a>                         <span class="st">"NA detected in provided lambda input to cssLasso"</span>,</span>
-<span id="cb63-27"><a href="css.html#cb63-27" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-28"><a href="css.html#cb63-28" tabindex="-1"></a>  </span>
-<span id="cb63-29"><a href="css.html#cb63-29" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
-<span id="cb63-30"><a href="css.html#cb63-30" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
-<span id="cb63-31"><a href="css.html#cb63-31" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-32"><a href="css.html#cb63-32" tabindex="-1"></a></span>
-<span id="cb63-33"><a href="css.html#cb63-33" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>x),</span>
-<span id="cb63-34"><a href="css.html#cb63-34" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
-<span id="cb63-35"><a href="css.html#cb63-35" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-36"><a href="css.html#cb63-36" tabindex="-1"></a></span>
-<span id="cb63-37"><a href="css.html#cb63-37" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">numeric</span>()),</span>
-<span id="cb63-38"><a href="css.html#cb63-38" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
-<span id="cb63-39"><a href="css.html#cb63-39" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-40"><a href="css.html#cb63-40" tabindex="-1"></a></span>
-<span id="cb63-41"><a href="css.html#cb63-41" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
-<span id="cb63-42"><a href="css.html#cb63-42" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
-<span id="cb63-43"><a href="css.html#cb63-43" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-44"><a href="css.html#cb63-44" tabindex="-1"></a></span>
-<span id="cb63-45"><a href="css.html#cb63-45" tabindex="-1"></a>  <span class="co"># Bundled c(lambda=, alpha=) form (elastic net)</span></span>
-<span id="cb63-46"><a href="css.html#cb63-46" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-47"><a href="css.html#cb63-47" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>)))</span>
-<span id="cb63-48"><a href="css.html#cb63-48" tabindex="-1"></a></span>
-<span id="cb63-49"><a href="css.html#cb63-49" tabindex="-1"></a>  <span class="co"># Order-insensitive (setequal on names)</span></span>
-<span id="cb63-50"><a href="css.html#cb63-50" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-51"><a href="css.html#cb63-51" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">alpha=</span><span class="fl">0.5</span>, <span class="at">lambda=</span><span class="fl">0.1</span>)))</span>
-<span id="cb63-52"><a href="css.html#cb63-52" tabindex="-1"></a></span>
-<span id="cb63-53"><a href="css.html#cb63-53" tabindex="-1"></a>  <span class="co"># alpha at the boundary 1 is allowed</span></span>
-<span id="cb63-54"><a href="css.html#cb63-54" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-55"><a href="css.html#cb63-55" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">1</span>)))</span>
-<span id="cb63-56"><a href="css.html#cb63-56" tabindex="-1"></a></span>
-<span id="cb63-57"><a href="css.html#cb63-57" tabindex="-1"></a>  <span class="co"># Unnamed length-2 vector is rejected</span></span>
-<span id="cb63-58"><a href="css.html#cb63-58" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.5</span>)),</span>
-<span id="cb63-59"><a href="css.html#cb63-59" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
-<span id="cb63-60"><a href="css.html#cb63-60" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-61"><a href="css.html#cb63-61" tabindex="-1"></a></span>
-<span id="cb63-62"><a href="css.html#cb63-62" tabindex="-1"></a>  <span class="co"># alpha = 0 (degenerate ridge) is rejected</span></span>
-<span id="cb63-63"><a href="css.html#cb63-63" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-64"><a href="css.html#cb63-64" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">0</span>)),</span>
-<span id="cb63-65"><a href="css.html#cb63-65" tabindex="-1"></a>                         <span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>,</span>
+<span id="cb63-12"><a href="css.html#cb63-12" tabindex="-1"></a></span>
+<span id="cb63-13"><a href="css.html#cb63-13" tabindex="-1"></a>  <span class="co"># Integer y is accepted (is.numeric(1L) is TRUE; the | !is.integer guard</span></span>
+<span id="cb63-14"><a href="css.html#cb63-14" tabindex="-1"></a>  <span class="co"># makes the validator read uniformly with the other entry points). Regression</span></span>
+<span id="cb63-15"><a href="css.html#cb63-15" tabindex="-1"></a>  <span class="co"># test for issue #13 -- this is NOT a behavior change, integer y always worked.</span></span>
+<span id="cb63-16"><a href="css.html#cb63-16" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">as.integer</span>(<span class="fu">round</span>(y <span class="sc">*</span> <span class="dv">10</span>)),</span>
+<span id="cb63-17"><a href="css.html#cb63-17" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fl">0.01</span>))</span>
+<span id="cb63-18"><a href="css.html#cb63-18" tabindex="-1"></a></span>
+<span id="cb63-19"><a href="css.html#cb63-19" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">13</span>, ], <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fl">0.01</span>),</span>
+<span id="cb63-20"><a href="css.html#cb63-20" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>,</span>
+<span id="cb63-21"><a href="css.html#cb63-21" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-22"><a href="css.html#cb63-22" tabindex="-1"></a>  </span>
+<span id="cb63-23"><a href="css.html#cb63-23" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">rep</span>(<span class="fl">1.2</span>, <span class="dv">15</span>), <span class="at">lambda=</span><span class="fl">0.05</span>),</span>
+<span id="cb63-24"><a href="css.html#cb63-24" tabindex="-1"></a>                         <span class="st">"Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value."</span>,</span>
+<span id="cb63-25"><a href="css.html#cb63-25" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-26"><a href="css.html#cb63-26" tabindex="-1"></a>  </span>
+<span id="cb63-27"><a href="css.html#cb63-27" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="cn">TRUE</span>),</span>
+<span id="cb63-28"><a href="css.html#cb63-28" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be a numeric."</span>,</span>
+<span id="cb63-29"><a href="css.html#cb63-29" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-30"><a href="css.html#cb63-30" tabindex="-1"></a>  </span>
+<span id="cb63-31"><a href="css.html#cb63-31" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">as.numeric</span>(<span class="cn">NA</span>)),</span>
+<span id="cb63-32"><a href="css.html#cb63-32" tabindex="-1"></a>                         <span class="st">"NA detected in provided lambda input to cssLasso"</span>,</span>
+<span id="cb63-33"><a href="css.html#cb63-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-34"><a href="css.html#cb63-34" tabindex="-1"></a>  </span>
+<span id="cb63-35"><a href="css.html#cb63-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
+<span id="cb63-36"><a href="css.html#cb63-36" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
+<span id="cb63-37"><a href="css.html#cb63-37" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-38"><a href="css.html#cb63-38" tabindex="-1"></a></span>
+<span id="cb63-39"><a href="css.html#cb63-39" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>x),</span>
+<span id="cb63-40"><a href="css.html#cb63-40" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb63-41"><a href="css.html#cb63-41" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-42"><a href="css.html#cb63-42" tabindex="-1"></a></span>
+<span id="cb63-43"><a href="css.html#cb63-43" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">numeric</span>()),</span>
+<span id="cb63-44"><a href="css.html#cb63-44" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb63-45"><a href="css.html#cb63-45" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-46"><a href="css.html#cb63-46" tabindex="-1"></a></span>
+<span id="cb63-47"><a href="css.html#cb63-47" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span><span class="fl">0.01</span>),</span>
+<span id="cb63-48"><a href="css.html#cb63-48" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
+<span id="cb63-49"><a href="css.html#cb63-49" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-50"><a href="css.html#cb63-50" tabindex="-1"></a></span>
+<span id="cb63-51"><a href="css.html#cb63-51" tabindex="-1"></a>  <span class="co"># Bundled c(lambda=, alpha=) form (elastic net)</span></span>
+<span id="cb63-52"><a href="css.html#cb63-52" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-53"><a href="css.html#cb63-53" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>)))</span>
+<span id="cb63-54"><a href="css.html#cb63-54" tabindex="-1"></a></span>
+<span id="cb63-55"><a href="css.html#cb63-55" tabindex="-1"></a>  <span class="co"># Order-insensitive (setequal on names)</span></span>
+<span id="cb63-56"><a href="css.html#cb63-56" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-57"><a href="css.html#cb63-57" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">alpha=</span><span class="fl">0.5</span>, <span class="at">lambda=</span><span class="fl">0.1</span>)))</span>
+<span id="cb63-58"><a href="css.html#cb63-58" tabindex="-1"></a></span>
+<span id="cb63-59"><a href="css.html#cb63-59" tabindex="-1"></a>  <span class="co"># alpha at the boundary 1 is allowed</span></span>
+<span id="cb63-60"><a href="css.html#cb63-60" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-61"><a href="css.html#cb63-61" tabindex="-1"></a>                                            <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">1</span>)))</span>
+<span id="cb63-62"><a href="css.html#cb63-62" tabindex="-1"></a></span>
+<span id="cb63-63"><a href="css.html#cb63-63" tabindex="-1"></a>  <span class="co"># Unnamed length-2 vector is rejected</span></span>
+<span id="cb63-64"><a href="css.html#cb63-64" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.5</span>)),</span>
+<span id="cb63-65"><a href="css.html#cb63-65" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
 <span id="cb63-66"><a href="css.html#cb63-66" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb63-67"><a href="css.html#cb63-67" tabindex="-1"></a></span>
-<span id="cb63-68"><a href="css.html#cb63-68" tabindex="-1"></a>  <span class="co"># alpha &gt; 1 is rejected</span></span>
+<span id="cb63-68"><a href="css.html#cb63-68" tabindex="-1"></a>  <span class="co"># alpha = 0 (degenerate ridge) is rejected</span></span>
 <span id="cb63-69"><a href="css.html#cb63-69" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-70"><a href="css.html#cb63-70" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">1.2</span>)),</span>
+<span id="cb63-70"><a href="css.html#cb63-70" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="dv">0</span>)),</span>
 <span id="cb63-71"><a href="css.html#cb63-71" tabindex="-1"></a>                         <span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>,</span>
 <span id="cb63-72"><a href="css.html#cb63-72" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb63-73"><a href="css.html#cb63-73" tabindex="-1"></a></span>
-<span id="cb63-74"><a href="css.html#cb63-74" tabindex="-1"></a>  <span class="co"># Length-3 vector is rejected</span></span>
+<span id="cb63-74"><a href="css.html#cb63-74" tabindex="-1"></a>  <span class="co"># alpha &gt; 1 is rejected</span></span>
 <span id="cb63-75"><a href="css.html#cb63-75" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
-<span id="cb63-76"><a href="css.html#cb63-76" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>,</span>
-<span id="cb63-77"><a href="css.html#cb63-77" tabindex="-1"></a>                                                      <span class="at">extra=</span><span class="fl">0.3</span>)),</span>
-<span id="cb63-78"><a href="css.html#cb63-78" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
-<span id="cb63-79"><a href="css.html#cb63-79" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb63-80"><a href="css.html#cb63-80" tabindex="-1"></a></span>
-<span id="cb63-81"><a href="css.html#cb63-81" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 17 successes.</code></pre>
+<span id="cb63-76"><a href="css.html#cb63-76" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">1.2</span>)),</span>
+<span id="cb63-77"><a href="css.html#cb63-77" tabindex="-1"></a>                         <span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>,</span>
+<span id="cb63-78"><a href="css.html#cb63-78" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-79"><a href="css.html#cb63-79" tabindex="-1"></a></span>
+<span id="cb63-80"><a href="css.html#cb63-80" tabindex="-1"></a>  <span class="co"># Length-3 vector is rejected</span></span>
+<span id="cb63-81"><a href="css.html#cb63-81" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>(<span class="at">X=</span>x, <span class="at">y=</span>y,</span>
+<span id="cb63-82"><a href="css.html#cb63-82" tabindex="-1"></a>                                             <span class="at">lambda=</span><span class="fu">c</span>(<span class="at">lambda=</span><span class="fl">0.1</span>, <span class="at">alpha=</span><span class="fl">0.5</span>,</span>
+<span id="cb63-83"><a href="css.html#cb63-83" tabindex="-1"></a>                                                      <span class="at">extra=</span><span class="fl">0.3</span>)),</span>
+<span id="cb63-84"><a href="css.html#cb63-84" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>,</span>
+<span id="cb63-85"><a href="css.html#cb63-85" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb63-86"><a href="css.html#cb63-86" tabindex="-1"></a></span>
+<span id="cb63-87"><a href="css.html#cb63-87" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 18 successes.</code></pre>
 <p>Tests for <code><a href="css.html#cssLasso">cssLasso</a>()</code> confirming that the elastic net mixing parameter <code>alpha</code>,
 bundled into <code>lambda</code> as <code>c(lambda=, alpha=)</code>, actually changes which features
 are selected (and that the default pure-lasso path is unchanged). On a design
@@ -2634,7 +2640,7 @@ elastic-net selected set is a strict superset of the lasso selected set:</p>
 <span id="cb67-29"><a href="css.html#cb67-29" tabindex="-1"></a></span>
 <span id="cb67-30"><a href="css.html#cb67-30" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span><span class="fu">logical</span>(<span class="dv">9</span>),</span>
 <span id="cb67-31"><a href="css.html#cb67-31" tabindex="-1"></a>                                 <span class="at">lambda=</span><span class="fl">0.05</span>, <span class="at">fitfun=</span>cssLasso),</span>
-<span id="cb67-32"><a href="css.html#cb67-32" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric vector."</span>,</span>
+<span id="cb67-32"><a href="css.html#cb67-32" tabindex="-1"></a>                         <span class="st">"For method cssLasso, y must be a numeric or integer vector."</span>,</span>
 <span id="cb67-33"><a href="css.html#cb67-33" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb67-34"><a href="css.html#cb67-34" tabindex="-1"></a></span>
 <span id="cb67-35"><a href="css.html#cb67-35" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#cssLoop">cssLoop</a>(<span class="at">input=</span><span class="dv">1</span><span class="dt">L</span><span class="sc">:</span><span class="dv">4</span><span class="dt">L</span>, <span class="at">x=</span>x, <span class="at">y=</span>y,</span>
