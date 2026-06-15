@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.11",
+    Version = "0.1.12",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -2527,8 +2527,8 @@ checkCssLassoInputs <- function(X, y, lambda){
     n <- nrow(X)
     p <- ncol(X)
 
-    if(!is.numeric(y)){
-        stop("For method cssLasso, y must be a numeric vector.")
+    if(!is.numeric(y) & !is.integer(y)){
+        stop("For method cssLasso, y must be a numeric or integer vector.")
     }
     if(is.matrix(y)){
         stop("For method cssLasso, y must be a numeric vector (inputted y was a matrix).")
@@ -2580,9 +2580,15 @@ testthat::test_that("checkCssLassoInputs works", {
   testthat::expect_null(checkCssLassoInputs(X=x, y=y, lambda=0.01))
   
   testthat::expect_error(checkCssLassoInputs(X=x, y=logical(15), lambda=0.05),
-                         "For method cssLasso, y must be a numeric vector.",
+                         "For method cssLasso, y must be a numeric or integer vector.",
                          fixed=TRUE)
-  
+
+  # Integer y is accepted (is.numeric(1L) is TRUE; the | !is.integer guard
+  # makes the validator read uniformly with the other entry points). Regression
+  # test for issue #13 -- this is NOT a behavior change, integer y always worked.
+  testthat::expect_null(checkCssLassoInputs(X=x, y=as.integer(round(y * 10)),
+                                            lambda=0.01))
+
   testthat::expect_error(checkCssLassoInputs(X=x[1:13, ], y=y, lambda=0.01),
                          "For method cssLasso, y must be a vector of length equal to nrow(X).",
                          fixed=TRUE)
@@ -2732,7 +2738,7 @@ testthat::test_that("cssLoop works", {
 
   testthat::expect_error(cssLoop(input=1L:4L, x=x, y=logical(9),
                                  lambda=0.05, fitfun=cssLasso),
-                         "For method cssLasso, y must be a numeric vector.",
+                         "For method cssLasso, y must be a numeric or integer vector.",
                          fixed=TRUE)
 
   testthat::expect_error(cssLoop(input=1L:4L, x=x, y=y,
@@ -7001,7 +7007,8 @@ The following are some other functions that are useful for specific tasks.
 #' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
 #' snr and sigma_eps_sq must be specified. Default is NA.
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
-#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' to y (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+#' must be specified. Default is NA.
 #' @return A list of the following elements. \item{X}{An n x p numeric matrix of
 #' n observations from a p-dimensional multivariate normal distribution
 #' generated using the specified parameters. The first n_clusters times
@@ -7157,7 +7164,7 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 2)
+    stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
 
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
@@ -7167,6 +7174,10 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     # a definitive ranking of weak signal features.
     if(is.na(snr) & is.na(sigma_eps_sq)){
         stop("Must specify one of snr or sigma_eps_sq")
+    }
+
+    if(!is.na(snr) & !is.na(sigma_eps_sq)){
+        stop("Only one of snr and sigma_eps_sq may be specified")
     }
 
     if(is.na(snr)){
@@ -7312,13 +7323,13 @@ testthat::test_that("checkGenClusteredDataInputs works", {
                          "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(checkGenClusteredDataInputs(p=19, k_unclustered=-2,
+  testthat::expect_error(checkGenClusteredDataInputs(p=19, k_unclustered=0,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
                                                   sigma_eps_sq=NA),
-                         "k_unclustered >= 2 is not TRUE", fixed=TRUE)
+                         "k_unclustered >= 1 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(checkGenClusteredDataInputs(p=19, k_unclustered=2.2,
                                                   cluster_size=5, n_clusters=3,
@@ -7554,18 +7565,13 @@ testthat::test_that("genClusteredData works", {
   testthat::expect_true(is.list(ret))
   testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
   
-  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
-  # implies a very large noise variance to test this)
-  ret <- genClusteredData(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
-                          sig_clusters=2, rho=.8, beta_latent=1.5,
-                          beta_unclustered=-2, snr=.01, sigma_eps_sq=.25)
-  
-  testthat::expect_true(is.list(ret))
-  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-  
-  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
-  # mu, expect all observations to lie within 5 sds of mu
-  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*.25))
+  # Specifying both snr and sigma_eps_sq is an error (issue #13): only one of
+  # the two may be given.
+  testthat::expect_error(
+    genClusteredData(n=5, p=19, k_unclustered=2, cluster_size=5, n_clusters=3,
+                     sig_clusters=2, rho=.8, beta_latent=1.5,
+                     beta_unclustered=-2, snr=.01, sigma_eps_sq=.25),
+    "Only one of snr and sigma_eps_sq may be specified", fixed=TRUE)
   
   # Try a single latent variable (z should be a one-column matrix)
   ret <- genClusteredData(n=5, p=19, k_unclustered=2, cluster_size=5,
@@ -7692,13 +7698,13 @@ testthat::test_that("genClusteredData works", {
                          "is.numeric(k_unclustered) | is.integer(k_unclustered) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(genClusteredData(n=5, p=19, k_unclustered=-2,
+  testthat::expect_error(genClusteredData(n=5, p=19, k_unclustered=0,
                                                   cluster_size=5, n_clusters=3,
                                                   sig_clusters=2, rho=0.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
                                                   sigma_eps_sq=NA),
-                         "k_unclustered >= 2 is not TRUE", fixed=TRUE)
+                         "k_unclustered >= 1 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(genClusteredData(n=5, p=19, k_unclustered=2.2,
                                                   cluster_size=5, n_clusters=3,
@@ -7733,6 +7739,23 @@ testthat::test_that("genClusteredData works", {
                                                   sigma_eps_sq=-.3),
                          "sigma_eps_sq >= 0 is not TRUE", fixed=TRUE)
 
+  # sigma_eps_sq = 0 is allowed (issue #13) and yields noiseless data (y == mu)
+  ret <- genClusteredData(n=5, p=19, k_unclustered=2, cluster_size=5,
+                          n_clusters=3, sig_clusters=2, rho=.8, beta_latent=1.5,
+                          beta_unclustered=-2, snr=NA, sigma_eps_sq=0)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ret$y, ret$mu)
+
+  # k_unclustered = 1 is allowed (issue #13)
+  ret <- genClusteredData(n=5, p=19, k_unclustered=1, cluster_size=5,
+                          n_clusters=3, sig_clusters=2, rho=.8, beta_latent=1.5,
+                          beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(nrow(ret$X), 5)
+  testthat::expect_equal(ncol(ret$X), 19)
+
 })
 ```
 
@@ -7754,10 +7777,10 @@ testthat::test_that("genClusteredData works", {
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
-#' will have nonzero coefficients in the true model for y among those features 
-#' not generated from the n_clusters latent variables (called "weak signal" 
+#' will have nonzero coefficients in the true model for y among those features
+#' not generated from the n_clusters latent variables (called "weak signal"
 #' features in the simulations from Faletto and Bien 2022). The coefficients on
-#' these features will be determined by beta_unclustered.
+#' these features will be determined by beta_unclustered. Must be at least 1.
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
 #' the latent variable.
@@ -7795,7 +7818,8 @@ testthat::test_that("genClusteredData works", {
 #' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
 #' snr and sigma_eps_sq must be specified. Default is NA.
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
-#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' to y (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+#' must be specified. Default is NA.
 #' @return A list of the following elements. \item{X}{An n x p numeric matrix of
 #' n observations from a p-dimensional multivariate normal distribution
 #' generated using the specified parameters. The first n_clusters times
@@ -7968,7 +7992,7 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 2)
+    stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
     
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
@@ -7979,12 +8003,16 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     if(is.na(snr) & is.na(sigma_eps_sq)){
         stop("Must specify one of snr or sigma_eps_sq")
     }
+
+    if(!is.na(snr) & !is.na(sigma_eps_sq)){
+        stop("Only one of snr and sigma_eps_sq may be specified")
+    }
     
     if(!is.na(snr)){
         stopifnot(snr > 0)
     }
     if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq > 0)
+        stopifnot(sigma_eps_sq >= 0)
     }
 }
 ```
@@ -8053,20 +8081,15 @@ testthat::test_that("genClusteredDataWeighted works", {
   testthat::expect_true(is.list(ret))
   testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
 
-  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
-  # implies a very large noise variance to test this)
-  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
-                                  n_strong_cluster_vars=3, n_clusters=3,
-                                  sig_clusters=2, rho_high=.99, rho_low=.5,
-                                  beta_latent=1.5, beta_unclustered=-2,
-                                  snr=.01, sigma_eps_sq=.25)
-
-  testthat::expect_true(is.list(ret))
-  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-
-  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
-  # mu, expect all observations to lie within 5 sds of mu
-  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*sqrt(.25)))
+  # Specifying both snr and sigma_eps_sq is an error (issue #13): only one of
+  # the two may be given.
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                             n_strong_cluster_vars=3, n_clusters=3,
+                             sig_clusters=2, rho_high=.99, rho_low=.5,
+                             beta_latent=1.5, beta_unclustered=-2,
+                             snr=.01, sigma_eps_sq=.25),
+    "Only one of snr and sigma_eps_sq may be specified", fixed=TRUE)
 
   # Try a single latent variable (z should be a one-column matrix)
   ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
@@ -8082,6 +8105,26 @@ testthat::test_that("genClusteredDataWeighted works", {
   testthat::expect_true(is.matrix(ret$Z))
   testthat::expect_equal(nrow(ret$Z), 25)
   testthat::expect_equal(ncol(ret$Z), 1)
+
+  # sigma_eps_sq = 0 is allowed (issue #13) and yields noiseless data (y == mu)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=3,
+                                  sig_clusters=2, rho_high=.99, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=0)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ret$y, ret$mu)
+
+  # k_unclustered = 1 is allowed (issue #13)
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=1, cluster_size=5,
+                                  n_strong_cluster_vars=3, n_clusters=3,
+                                  sig_clusters=2, rho_high=.99, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ncol(ret$X), 19)
 
 })
 ```
@@ -8103,10 +8146,10 @@ testthat::test_that("genClusteredDataWeighted works", {
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
-#' will have nonzero coefficients in the true model for y among those features 
-#' not generated from the n_clusters latent variables (called "weak signal" 
+#' will have nonzero coefficients in the true model for y among those features
+#' not generated from the n_clusters latent variables (called "weak signal"
 #' features in the simulations from Faletto and Bien 2022). The coefficients on
-#' these features will be determined by beta_unclustered.
+#' these features will be determined by beta_unclustered. Must be at least 1.
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
 #' the latent variable.
@@ -8134,7 +8177,8 @@ testthat::test_that("genClusteredDataWeighted works", {
 #' calculated using the formula sigma_eps_sq = sum(mu^2)/(n * snr). Only one of
 #' snr and sigma_eps_sq must be specified. Default is NA.
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
-#' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
+#' to y (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+#' must be specified. Default is NA.
 #' @return A list of the following elements. \item{X}{An n x p numeric matrix of
 #' n observations from a p-dimensional multivariate normal distribution
 #' generated using the specified parameters. The first n_clusters times
@@ -8286,7 +8330,7 @@ checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     stopifnot(beta_unclustered != 0)
 
     stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 2)
+    stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
     
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
@@ -8297,12 +8341,16 @@ checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     if(is.na(snr) & is.na(sigma_eps_sq)){
         stop("Must specify one of snr or sigma_eps_sq")
     }
+
+    if(!is.na(snr) & !is.na(sigma_eps_sq)){
+        stop("Only one of snr and sigma_eps_sq may be specified")
+    }
     
     if(!is.na(snr)){
         stopifnot(snr > 0)
     }
     if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq > 0)
+        stopifnot(sigma_eps_sq >= 0)
     }
 }
 ```
@@ -8371,20 +8419,15 @@ testthat::test_that("genClusteredDataWeightedRandom works", {
   testthat::expect_true(is.list(ret))
   testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
 
-  # If sigma_eps_sq is specified, snr should be ignored. (Set an SNR that
-  # implies a very large noise variance to test this)
-  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
-                                  n_clusters=3,
-                                  sig_clusters=2, rho_high=.99, rho_low=.5,
-                                  beta_latent=1.5, beta_unclustered=-2,
-                                  snr=.01, sigma_eps_sq=.25)
-
-  testthat::expect_true(is.list(ret))
-  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
-
-  # Because y is Gaussian with mean mu and standard deviation .5 conditional on
-  # mu, expect all observations to lie within 5 sds of mu
-  testthat::expect_true(all(abs(ret$y - ret$mu) < 5*sqrt(.25)))
+  # Specifying both snr and sigma_eps_sq is an error (issue #13): only one of
+  # the two may be given.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                   n_clusters=3,
+                                   sig_clusters=2, rho_high=.99, rho_low=.5,
+                                   beta_latent=1.5, beta_unclustered=-2,
+                                   snr=.01, sigma_eps_sq=.25),
+    "Only one of snr and sigma_eps_sq may be specified", fixed=TRUE)
 
   # Try a single latent variable (z should be a one-column matrix)
   ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
@@ -8400,6 +8443,26 @@ testthat::test_that("genClusteredDataWeightedRandom works", {
   testthat::expect_true(is.matrix(ret$Z))
   testthat::expect_equal(nrow(ret$Z), 25)
   testthat::expect_equal(ncol(ret$Z), 1)
+
+  # sigma_eps_sq = 0 is allowed (issue #13) and yields noiseless data (y == mu)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+                                  n_clusters=3,
+                                  sig_clusters=2, rho_high=1, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=0)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ret$y, ret$mu)
+
+  # k_unclustered = 1 is allowed (issue #13)
+  ret <- genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=1, cluster_size=5,
+                                  n_clusters=3,
+                                  sig_clusters=2, rho_high=1, rho_low=.5,
+                                  beta_latent=1.5, beta_unclustered=-2,
+                                  snr=NA, sigma_eps_sq=.5)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ncol(ret$X), 19)
 
 })
 ```

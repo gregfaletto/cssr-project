@@ -93,8 +93,9 @@ genClusteredData(
 
 - sigma_eps_sq:
 
-  Integer or numeric; the variance on the noise added to y. Only one of
-  snr and sigma_eps_sq must be specified. Default is NA.
+  Integer or numeric; the variance on the noise added to y
+  (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+  must be specified. Default is NA.
 
 ## Value
 

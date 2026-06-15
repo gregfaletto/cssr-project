@@ -48,6 +48,7 @@ genClusteredDataWeighted(
   generated from the n_clusters latent variables (called "weak signal"
   features in the simulations from Faletto and Bien 2022). The
   coefficients on these features will be determined by beta_unclustered.
+  Must be at least 1.
 
 - cluster_size:
 
@@ -114,8 +115,9 @@ genClusteredDataWeighted(
 
 - sigma_eps_sq:
 
-  Integer or numeric; the variance on the noise added to y. Only one of
-  snr and sigma_eps_sq must be specified. Default is NA.
+  Integer or numeric; the variance on the noise added to y
+  (non-negative; 0 gives noiseless y). Only one of snr and sigma_eps_sq
+  must be specified. Default is NA.
 
 ## Value
 
