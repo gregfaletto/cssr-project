@@ -3,9 +3,10 @@
 ## Authors
 
 - **[Gregory Faletto](https://gregoryfaletto.com/)**. Author,
-  maintainer.
+  maintainer, copyright holder.
 
-- **[Jacob Bien](http://faculty.marshall.usc.edu/jacob-bien/)**. Author.
+- **[Jacob Bien](http://faculty.marshall.usc.edu/jacob-bien/)**. Author,
+  copyright holder.
 
 ## Citation
 

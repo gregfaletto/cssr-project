@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2026 F. Last
+Copyright (c) 2026 Gregory Faletto and Jacob Bien
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the

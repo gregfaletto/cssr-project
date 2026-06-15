@@ -1,4 +1,4 @@
 # License
 
     YEAR: 2026
-    COPYRIGHT HOLDER: F. Last
+    COPYRIGHT HOLDER: Gregory Faletto and Jacob Bien

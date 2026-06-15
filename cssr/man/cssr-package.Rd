@@ -16,12 +16,12 @@ more about this package, please visit its website
 \code{\link{css}} \code{\link{cssSelect}}
 }
 \author{
-\strong{Maintainer}: Gregory Faletto \email{gregory.faletto@marshall.usc.edu}
+\strong{Maintainer}: Gregory Faletto \email{gregory.faletto@marshall.usc.edu} [copyright holder]
 
 Authors:
 \itemize{
-  \item Gregory Faletto \email{gregory.faletto@marshall.usc.edu}
-  \item Jacob Bien \email{jbien@usc.edu}
+  \item Gregory Faletto \email{gregory.faletto@marshall.usc.edu} [copyright holder]
+  \item Jacob Bien \email{jbien@usc.edu} [copyright holder]
 }
 
 }

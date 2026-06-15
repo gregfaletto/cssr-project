@@ -13,9 +13,11 @@ please visit its website <https://gregfaletto.github.io/cssr-project/>.
 ## Author
 
 **Maintainer**: Gregory Faletto <gregory.faletto@marshall.usc.edu>
+\[copyright holder\]
 
 Authors:
 
-- Gregory Faletto <gregory.faletto@marshall.usc.edu>
+- Gregory Faletto <gregory.faletto@marshall.usc.edu> \[copyright
+  holder\]
 
-- Jacob Bien <jbien@usc.edu>
+- Jacob Bien <jbien@usc.edu> \[copyright holder\]
