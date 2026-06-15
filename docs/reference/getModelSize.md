@@ -8,7 +8,7 @@ correlation with y, as in the protolasso (Reid and Tibshirani 2016).
 ## Usage
 
 ``` r
-getModelSize(X, y, clusters)
+getModelSize(X, y, clusters, alpha = 1)
 ```
 
 ## Arguments
@@ -43,6 +43,14 @@ getModelSize(X, y, clusters)
   results in this case, please use model.matrix to convert the
   data.frame to a numeric matrix on your own, then provide this matrix
   and cluster assignments with respect to this matrix.
+
+- alpha:
+
+  Numeric; the elastic net mixing parameter for the cross-validated fit
+  used to estimate the model size. Must be in `(0, 1]`. Default is 1 (in
+  which case the penalty is the lasso). Set alpha to match the alpha
+  used for feature selection so the model-size estimate is consistent
+  with the elastic-net selection (see `cssSelect` / `cssPredict`).
 
 ## Value
 

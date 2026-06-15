@@ -129,7 +129,8 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     # size by cross-validation
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
-            max_num_clusts <- getModelSize(X, y, css_results$clusters)
+            max_num_clusts <- getModelSize(X, y, css_results$clusters,
+                alpha=alpha)
         }
     }
 

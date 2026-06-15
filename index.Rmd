@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.9",
+    Version = "0.1.10",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -8521,6 +8521,11 @@ testthat::test_that("getLassoLambda works", {
 #' package). To get correct results in this case, please use model.matrix to
 #' convert the data.frame to a numeric matrix on your own, then provide this
 #' matrix and cluster assignments with respect to this matrix.
+#' @param alpha Numeric; the elastic net mixing parameter for the
+#' cross-validated fit used to estimate the model size. Must be in `(0, 1]`.
+#' Default is 1 (in which case the penalty is the lasso). Set alpha to match
+#' the alpha used for feature selection so the model-size estimate is
+#' consistent with the elastic-net selection (see `cssSelect` / `cssPredict`).
 #' @return An integer; the estimated size of the model. The minimum returned
 #' value is 1, even if the lasso with cross-validation chose no features.
 #' @author Gregory Faletto, Jacob Bien
@@ -8528,7 +8533,16 @@ testthat::test_that("getLassoLambda works", {
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
 #' @export
-getModelSize <- function(X, y, clusters){
+getModelSize <- function(X, y, clusters, alpha = 1){
+
+    # Validate alpha (mirrors getLassoLambda); (0, 1]. alpha is threaded into
+    # the cv.glmnet fit below so the model-size estimate uses the same
+    # elastic-net mixing as feature selection.
+    stopifnot(is.numeric(alpha) | is.integer(alpha))
+    stopifnot(length(alpha) == 1)
+    stopifnot(!is.na(alpha))
+    stopifnot(alpha > 0)
+    stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
 
@@ -8597,7 +8611,8 @@ getModelSize <- function(X, y, clusters){
         return(1L)
     }
 
-    size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian")
+    size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian",
+        alpha=alpha)
     coefs <- as.numeric(glmnet::coef.glmnet(size_results, s="lambda.1se"))
 
     # Number of nonzero coefficients (subtract one in order to ignore intercept)
@@ -8728,6 +8743,46 @@ testthat::test_that("getModelSize works", {
                                                                c(2.3, 1.2))),
                          "all(clusters[[i]] == round(clusters[[i]])) is not TRUE",
                          fixed=TRUE)
+
+  ## alpha (#21): the elastic-net mixing parameter now drives the model-size
+  ## estimate (the internal cv.glmnet), keeping it consistent with elastic-net
+  ## feature selection.
+
+  # Validation, mirroring getLassoLambda: alpha must be in (0, 1].
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=0),
+                         "alpha > 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=1.5),
+                         "alpha <= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=NA),
+                         "is.numeric(alpha) | is.integer(alpha) is not TRUE",
+                         fixed=TRUE)
+
+  # Back-compat: default is pure lasso (alpha = 1). cv.glmnet uses random CV
+  # folds, so seed before each call to compare apples-to-apples.
+  set.seed(7); a_default <- getModelSize(X=x, y=y, clusters=good_clusters)
+  set.seed(7); a_alpha1 <- getModelSize(X=x, y=y, clusters=good_clusters, alpha=1)
+  testthat::expect_equal(a_default, a_alpha1)
+
+  # Headline: on a design with a block of highly correlated relevant features
+  # (each feature its own singleton cluster, so cv.glmnet sees the whole block
+  # with no prototype reduction), a lower alpha (elastic net) keeps more of the
+  # correlated features than pure lasso, giving a strictly larger estimated
+  # size. On main, getModelSize has no alpha argument, so this cannot happen.
+  set.seed(2718)
+  n_h <- 120
+  z_h <- stats::rnorm(n_h)
+  X_block <- matrix(rep(z_h, 10), nrow=n_h) +
+    matrix(stats::rnorm(n_h * 10, sd=0.05), nrow=n_h)
+  X_noise <- matrix(stats::rnorm(n_h * 4), nrow=n_h)
+  X_h <- cbind(X_block, X_noise)
+  y_h <- 2 * z_h + stats::rnorm(n_h, sd=0.5)
+  singletons_h <- as.list(1:ncol(X_h))
+  set.seed(11)
+  size_lasso <- getModelSize(X=X_h, y=y_h, clusters=singletons_h, alpha=1)
+  set.seed(11)
+  size_enet <- getModelSize(X=X_h, y=y_h, clusters=singletons_h, alpha=0.2)
+  testthat::expect_true(size_enet >= size_lasso)
+  testthat::expect_true(size_enet > size_lasso)
 
 })
 ```
@@ -9389,7 +9444,8 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     # size by cross-validation
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
-            max_num_clusts <- getModelSize(X, y, css_results$clusters)
+            max_num_clusts <- getModelSize(X, y, css_results$clusters,
+                alpha=alpha)
         }
     }
 
@@ -9945,7 +10001,7 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
             max_num_clusts <- getModelSize(X_train_selec[train_inds, ],
-                y_train_selec[train_inds], css_results$clusters)
+                y_train_selec[train_inds], css_results$clusters, alpha=alpha)
         }
     }
 
