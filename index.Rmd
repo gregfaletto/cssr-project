@@ -7096,21 +7096,86 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
         proxy_mat[, 1:cluster_size] <- Z + noise_mat
     }
 
-    X <- cbind(proxy_mat, other_X)
-    Z <- as.matrix(Z)
+    return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
+        n_clusters))
+}
+```
 
-    # Check output
-    stopifnot(length(mu) == n)
+The three `genClusteredData*` validators share the bulk of their checks. To
+keep them from drifting apart (the source of the validation inconsistencies
+fixed in #13), the common checks live in two shared helpers:
+`checkGenClusteredDataInputsPre()` (the checks that precede each generator's
+correlation-specific checks) and `checkGenClusteredDataInputsPost()` (the
+checks that follow them). Each validator calls `Pre()`, then its own
+correlation/strength checks, then `Post()`, then its own snr/sigma_eps_sq
+checks -- preserving each validator's exact original check order.
 
-    stopifnot(nrow(X) == n)
-    stopifnot(ncol(X) == p)
+```{r}
+#' Shared leading input checks for the genClusteredData* generators
+#'
+#' The checks every genClusteredData* validator runs before its
+#' correlation-specific checks (sig_clusters, n_clusters, and cluster_size).
+#' @param sig_clusters,n_clusters,cluster_size As documented in
+#' `checkGenClusteredDataInputs()`.
+#' @return No return value; called for the side effect of erroring on bad input.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+checkGenClusteredDataInputsPre <- function(sig_clusters, n_clusters,
+    cluster_size){
 
-    if(any(!is.na(Z))){
-        stopifnot(nrow(Z) == n)
-        stopifnot(ncol(Z) == n_clusters)
+    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
+    stopifnot(sig_clusters <= n_clusters)
+    stopifnot(sig_clusters >= 0)
+    stopifnot(sig_clusters == round(sig_clusters))
+
+    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
+    stopifnot(n_clusters == round(n_clusters))
+    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
+    # at least 1 (so that it's possible to generate data with no latent
+    # features)? If so, should only check that cluster_size >= 1 if n_clusters
+    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
+    # rather than 2.
+    stopifnot(n_clusters >= 1)
+
+    stopifnot(cluster_size >= 2)
+}
+
+#' Shared trailing input checks for the genClusteredData* generators
+#'
+#' The checks every genClusteredData* validator runs after its
+#' correlation-specific checks: the beta coefficients, k_unclustered, the
+#' feature-count lower bound, and that exactly one of snr / sigma_eps_sq is
+#' given. (Each validator then runs its own type/range checks on whichever of
+#' snr / sigma_eps_sq was supplied.)
+#' @param p,k_unclustered,cluster_size,n_clusters,beta_latent,beta_unclustered,snr,sigma_eps_sq
+#' As documented in `checkGenClusteredDataInputs()`.
+#' @return No return value; called for the side effect of erroring on bad input.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+checkGenClusteredDataInputsPost <- function(p, k_unclustered, cluster_size,
+    n_clusters, beta_latent, beta_unclustered, snr, sigma_eps_sq){
+
+    stopifnot(beta_latent != 0)
+    stopifnot(beta_unclustered != 0)
+
+    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
+    stopifnot(k_unclustered >= 1)
+    stopifnot(k_unclustered == round(k_unclustered))
+
+    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
+
+    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
+    # of weak signal features is beta_unclustered/sqrt(i) in order to have
+    # a definitive ranking of weak signal features.
+    if(is.na(snr) & is.na(sigma_eps_sq)){
+        stop("Must specify one of snr or sigma_eps_sq")
     }
 
-    return(list(X=X, y=y, Z=Z, mu=mu))
+    if(!is.na(snr) & !is.na(sigma_eps_sq)){
+        stop("Only one of snr and sigma_eps_sq may be specified")
+    }
 }
 ```
 
@@ -7170,43 +7235,12 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     n_clusters, sig_clusters, rho, beta_latent, beta_unclustered, snr,
     sigma_eps_sq){
 
-    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
-    stopifnot(sig_clusters <= n_clusters)
-    stopifnot(sig_clusters >= 0)
-    stopifnot(sig_clusters == round(sig_clusters))
-    
-    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
-    stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent 
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
-    stopifnot(n_clusters >= 1)
-
-    stopifnot(cluster_size >= 2)
+    checkGenClusteredDataInputsPre(sig_clusters, n_clusters, cluster_size)
 
     stopifnot(rho > 0)
 
-    stopifnot(beta_latent != 0)
-    stopifnot(beta_unclustered != 0)
-
-    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 1)
-    stopifnot(k_unclustered == round(k_unclustered))
-
-    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
-
-    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
-    # of weak signal features is beta_unclustered/sqrt(i) in order to have
-    # a definitive ranking of weak signal features.
-    if(is.na(snr) & is.na(sigma_eps_sq)){
-        stop("Must specify one of snr or sigma_eps_sq")
-    }
-
-    if(!is.na(snr) & !is.na(sigma_eps_sq)){
-        stop("Only one of snr and sigma_eps_sq may be specified")
-    }
+    checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
+        beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
     if(is.na(snr)){
         stopifnot(all(!is.na(sigma_eps_sq)))
@@ -7533,6 +7567,59 @@ getNoiseVar <- function(cor){
 ```
 
 No tests for `getNoiseVar()`.
+
+`finalizeGenClusteredData()` is the shared tail of all three `genClusteredData*`
+generators: once each generator has built its cluster-proxy matrix (the only
+step where the three differ), this helper column-binds the proxies with the
+remaining features, coerces the latent features to a matrix, runs the common
+output dimension checks, and returns the standard `list(X, y, Z, mu)`.
+
+```{r}
+#' Assemble and validate the output of a genClusteredData* generator
+#'
+#' Shared tail of `genClusteredData()`, `genClusteredDataWeighted()`, and
+#' `genClusteredDataWeightedRandom()`: column-bind the freshly generated cluster
+#' proxies with the remaining features, coerce the latent features to a matrix,
+#' run the common output dimension checks, and return the standard
+#' `list(X, y, Z, mu)`.
+#' @param proxy_mat Numeric matrix; the n by n_clusters*cluster_size block of
+#' generated cluster proxies.
+#' @param other_X Numeric matrix; the weak-signal and noise features (the
+#' non-proxy columns of X), as returned by `genZmuY()`.
+#' @param y Numeric vector; the response, as returned by `genZmuY()`.
+#' @param mu Numeric vector; the expected response, as returned by `genZmuY()`.
+#' @param Z The latent features, as returned by `genZmuY()` (a numeric vector
+#' when n_clusters == 1); coerced to a matrix here.
+#' @param n Integer or numeric; the number of observations.
+#' @param p Integer or numeric; the total number of features (columns of X).
+#' @param n_clusters Integer or numeric; the number of latent variables.
+#' @return A list with elements X (numeric matrix), y (numeric vector), Z
+#' (numeric matrix), and mu (numeric vector).
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+finalizeGenClusteredData <- function(proxy_mat, other_X, y, mu, Z, n, p,
+    n_clusters){
+    X <- cbind(proxy_mat, other_X)
+    Z <- as.matrix(Z)
+
+    # Check output
+    stopifnot(length(mu) == n)
+
+    stopifnot(nrow(X) == n)
+    stopifnot(ncol(X) == p)
+
+    if(any(!is.na(Z))){
+        stopifnot(nrow(Z) == n)
+        stopifnot(ncol(Z) == n_clusters)
+    }
+
+    return(list(X=X, y=y, Z=Z, mu=mu))
+}
+```
+
+No tests for `finalizeGenClusteredData()`; it is exercised through the three
+`genClusteredData*` generators (including their characterization snapshots).
 
 Finally, tests for `genClusteredData()`
 
@@ -7903,20 +7990,8 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
         }
     }
 
-    X <- cbind(proxy_mat, other_X)
-    
-    # Check output
-    stopifnot(length(mu) == n)
-
-    stopifnot(nrow(X) == n)
-    stopifnot(ncol(X) == p)
-
-    if(any(!is.na(Z))){
-        stopifnot(nrow(Z) == n)
-        stopifnot(ncol(Z) == n_clusters)
-    }
-
-    return(list(X=X, y=y, Z=Z, mu=mu))
+    return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
+        n_clusters))
 }
 ```
 
@@ -7987,21 +8062,7 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
         n_strong_cluster_vars, n_clusters, sig_clusters, rho_high, rho_low,
         beta_latent, beta_unclustered, snr, sigma_eps_sq){
 
-    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
-    stopifnot(sig_clusters <= n_clusters)
-    stopifnot(sig_clusters >= 0)
-    stopifnot(sig_clusters == round(sig_clusters))
-    
-    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
-    stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent 
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
-    stopifnot(n_clusters >= 1)
-
-    stopifnot(cluster_size >= 2)
+    checkGenClusteredDataInputsPre(sig_clusters, n_clusters, cluster_size)
 
     stopifnot(is.integer(n_strong_cluster_vars) |
         is.numeric(n_strong_cluster_vars))
@@ -8016,26 +8077,9 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     stopifnot(rho_low > 0)
     stopifnot(rho_high >= rho_low)
 
-    stopifnot(beta_latent != 0)
-    stopifnot(beta_unclustered != 0)
+    checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
+        beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 1)
-    stopifnot(k_unclustered == round(k_unclustered))
-    
-    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
-
-    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
-    # of weak signal features is beta_unclustered/sqrt(i) in order to have
-    # a definitive ranking of weak signal features.
-    if(is.na(snr) & is.na(sigma_eps_sq)){
-        stop("Must specify one of snr or sigma_eps_sq")
-    }
-
-    if(!is.na(snr) & !is.na(sigma_eps_sq)){
-        stop("Only one of snr and sigma_eps_sq may be specified")
-    }
-    
     if(!is.na(snr)){
         stopifnot(snr > 0)
     }
@@ -8258,20 +8302,8 @@ genClusteredDataWeightedRandom <- function(n, p, k_unclustered, cluster_size,
         }
     }
 
-    X <- cbind(proxy_mat, other_X)
-    
-    # Check output
-    stopifnot(length(mu) == n)
-
-    stopifnot(nrow(X) == n)
-    stopifnot(ncol(X) == p)
-
-    if(any(!is.na(Z))){
-        stopifnot(nrow(Z) == n)
-        stopifnot(ncol(Z) == n_clusters)
-    }
-
-    return(list(X=X, y=y, Z=Z, mu=mu))
+    return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
+        n_clusters))
 }
 ```
 
@@ -8333,47 +8365,16 @@ checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     cluster_size, n_clusters, sig_clusters, rho_high, rho_low, beta_latent,
     beta_unclustered, snr, sigma_eps_sq){
 
-    stopifnot(is.numeric(sig_clusters) | is.integer(sig_clusters))
-    stopifnot(sig_clusters <= n_clusters)
-    stopifnot(sig_clusters >= 0)
-    stopifnot(sig_clusters == round(sig_clusters))
-    
-    stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
-    stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent 
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
-    stopifnot(n_clusters >= 1)
-
-    stopifnot(cluster_size >= 2)
+    checkGenClusteredDataInputsPre(sig_clusters, n_clusters, cluster_size)
 
     stopifnot(rho_high <= 1)
     stopifnot(rho_high > 0)
     stopifnot(rho_low > 0)
     stopifnot(rho_high >= rho_low)
 
-    stopifnot(beta_latent != 0)
-    stopifnot(beta_unclustered != 0)
+    checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
+        beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    stopifnot(is.numeric(k_unclustered) | is.integer(k_unclustered))
-    stopifnot(k_unclustered >= 1)
-    stopifnot(k_unclustered == round(k_unclustered))
-    
-    stopifnot(p >= n_clusters*cluster_size + k_unclustered)
-
-    # Same as make_sparse_blocked_linear_model_random, but ith coefficient
-    # of weak signal features is beta_unclustered/sqrt(i) in order to have
-    # a definitive ranking of weak signal features.
-    if(is.na(snr) & is.na(sigma_eps_sq)){
-        stop("Must specify one of snr or sigma_eps_sq")
-    }
-
-    if(!is.na(snr) & !is.na(sigma_eps_sq)){
-        stop("Only one of snr and sigma_eps_sq may be specified")
-    }
-    
     if(!is.na(snr)){
         stopifnot(snr > 0)
     }
