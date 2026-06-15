@@ -28,6 +28,11 @@
 #' package). To get correct results in this case, please use model.matrix to
 #' convert the data.frame to a numeric matrix on your own, then provide this
 #' matrix and cluster assignments with respect to this matrix.
+#' @param alpha Numeric; the elastic net mixing parameter for the
+#' cross-validated fit used to estimate the model size. Must be in `(0, 1]`.
+#' Default is 1 (in which case the penalty is the lasso). Set alpha to match
+#' the alpha used for feature selection so the model-size estimate is
+#' consistent with the elastic-net selection (see `cssSelect` / `cssPredict`).
 #' @return An integer; the estimated size of the model. The minimum returned
 #' value is 1, even if the lasso with cross-validation chose no features.
 #' @author Gregory Faletto, Jacob Bien
@@ -35,7 +40,16 @@
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
 #' @export
-getModelSize <- function(X, y, clusters){
+getModelSize <- function(X, y, clusters, alpha = 1){
+
+    # Validate alpha (mirrors getLassoLambda); (0, 1]. alpha is threaded into
+    # the cv.glmnet fit below so the model-size estimate uses the same
+    # elastic-net mixing as feature selection.
+    stopifnot(is.numeric(alpha) | is.integer(alpha))
+    stopifnot(length(alpha) == 1)
+    stopifnot(!is.na(alpha))
+    stopifnot(alpha > 0)
+    stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
 
@@ -104,7 +118,8 @@ getModelSize <- function(X, y, clusters){
         return(1L)
     }
 
-    size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian")
+    size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian",
+        alpha=alpha)
     coefs <- as.numeric(glmnet::coef.glmnet(size_results, s="lambda.1se"))
 
     # Number of nonzero coefficients (subtract one in order to ignore intercept)

@@ -4305,6 +4305,46 @@ testthat::test_that("getModelSize works", {
                          "all(clusters[[i]] == round(clusters[[i]])) is not TRUE",
                          fixed=TRUE)
 
+  ## alpha (#21): the elastic-net mixing parameter now drives the model-size
+  ## estimate (the internal cv.glmnet), keeping it consistent with elastic-net
+  ## feature selection.
+
+  # Validation, mirroring getLassoLambda: alpha must be in (0, 1].
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=0),
+                         "alpha > 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=1.5),
+                         "alpha <= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getModelSize(X=x, y=y, clusters=good_clusters, alpha=NA),
+                         "is.numeric(alpha) | is.integer(alpha) is not TRUE",
+                         fixed=TRUE)
+
+  # Back-compat: default is pure lasso (alpha = 1). cv.glmnet uses random CV
+  # folds, so seed before each call to compare apples-to-apples.
+  set.seed(7); a_default <- getModelSize(X=x, y=y, clusters=good_clusters)
+  set.seed(7); a_alpha1 <- getModelSize(X=x, y=y, clusters=good_clusters, alpha=1)
+  testthat::expect_equal(a_default, a_alpha1)
+
+  # Headline: on a design with a block of highly correlated relevant features
+  # (each feature its own singleton cluster, so cv.glmnet sees the whole block
+  # with no prototype reduction), a lower alpha (elastic net) keeps more of the
+  # correlated features than pure lasso, giving a strictly larger estimated
+  # size. On main, getModelSize has no alpha argument, so this cannot happen.
+  set.seed(2718)
+  n_h <- 120
+  z_h <- stats::rnorm(n_h)
+  X_block <- matrix(rep(z_h, 10), nrow=n_h) +
+    matrix(stats::rnorm(n_h * 10, sd=0.05), nrow=n_h)
+  X_noise <- matrix(stats::rnorm(n_h * 4), nrow=n_h)
+  X_h <- cbind(X_block, X_noise)
+  y_h <- 2 * z_h + stats::rnorm(n_h, sd=0.5)
+  singletons_h <- as.list(1:ncol(X_h))
+  set.seed(11)
+  size_lasso <- getModelSize(X=X_h, y=y_h, clusters=singletons_h, alpha=1)
+  set.seed(11)
+  size_enet <- getModelSize(X=X_h, y=y_h, clusters=singletons_h, alpha=0.2)
+  testthat::expect_true(size_enet >= size_lasso)
+  testthat::expect_true(size_enet > size_lasso)
+
 })
 
 testthat::test_that("getSelectionPrototypes works", {
