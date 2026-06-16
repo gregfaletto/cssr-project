@@ -1925,6 +1925,34 @@ testthat::test_that("getSelectedClusters works", {
                          length(unique(names(res$selected_feats))))
 })
 
+testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)", {
+  # Minimal cssr object: cluster c1 at selection proportion 1.0, cluster c2 at
+  # (B - 1)/B (just below 1.0). With max_num_clusts = 1 the cutoff loop must
+  # raise the threshold to 1.0 to drop c2 and keep only the proportion-1.0
+  # cluster. The cutoff accumulates +1/B, and for these B the cumulative sum
+  # floats just above 1 (e.g. B = 9: 1.0000000000000002), so the old
+  # `if(cutoff > 1) break` fired before the cutoff == 1 filter ran and wrongly
+  # kept c2 (returning 2 clusters for max_num_clusts = 1). The `+ tol` guard
+  # fixes this.
+  make_obj <- function(B){
+    clusters <- list(c1 = 1:2, c2 = 3:4)
+    clus_sel_mat <- cbind(c1 = rep(1, B), c2 = c(rep(1, B - 1), 0))
+    feat_sel_mat <- cbind(X1 = rep(1, B), X2 = rep(1, B),
+                          X3 = c(rep(1, B - 1), 0), X4 = c(rep(1, B - 1), 0))
+    obj <- list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                clusters = clusters)
+    class(obj) <- "cssr"
+    obj
+  }
+  for(B in c(9, 11, 20)){
+    res <- getSelectedClusters(make_obj(B), weighting = "simple_avg", cutoff = 0,
+      min_num_clusts = 1, max_num_clusts = 1)
+    # Only the proportion-1.0 cluster c1 survives; c2 at (B-1)/B is below 1.
+    testthat::expect_identical(names(res$selected_clusts), "c1")
+    testthat::expect_equal(unname(res$selected_clusts), 1)
+  }
+})
+
 testthat::test_that("getCssSelections works", {
 
   set.seed(26717)
