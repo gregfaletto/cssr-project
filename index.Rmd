@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.12",
+    Version = "0.1.13",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -7177,6 +7177,33 @@ checkGenClusteredDataInputsPost <- function(p, k_unclustered, cluster_size,
         stop("Only one of snr and sigma_eps_sq may be specified")
     }
 }
+
+#' Shared snr / sigma_eps_sq input checks for the genClusteredData* generators
+#'
+#' Validates whichever of snr / sigma_eps_sq was supplied (exactly one is non-NA
+#' by this point, enforced by `checkGenClusteredDataInputsPost()`): it must be
+#' numeric and length 1, and positive (snr) or non-negative (sigma_eps_sq).
+#' Previously only `genClusteredData()` ran the full type/length checks; the two
+#' weighted generators ran a leaner version that silently accepted a
+#' non-numeric snr / sigma_eps_sq (which then failed later inside `genZmuY()`).
+#' Sharing this helper makes the three consistent (#35).
+#' @param snr,sigma_eps_sq As documented in `checkGenClusteredDataInputs()`.
+#' @return No return value; called for the side effect of erroring on bad input.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
+    if(is.na(snr)){
+        stopifnot(all(!is.na(sigma_eps_sq)))
+        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
+        stopifnot(length(sigma_eps_sq) == 1)
+        stopifnot(sigma_eps_sq >= 0)
+    } else{
+        stopifnot(is.numeric(snr) | is.integer(snr))
+        stopifnot(length(snr) == 1)
+        stopifnot(snr > 0)
+    }
+}
 ```
 
 `checkGenClusteredDataInputs()`
@@ -7242,16 +7269,7 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    if(is.na(snr)){
-        stopifnot(all(!is.na(sigma_eps_sq)))
-        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
-        stopifnot(length(sigma_eps_sq) == 1)
-        stopifnot(sigma_eps_sq >= 0)
-    } else{
-        stopifnot(is.numeric(snr) | is.integer(snr))
-        stopifnot(length(snr) == 1)
-        stopifnot(snr > 0)
-    }
+    checkGenClusteredDataInputsSnrSigma(snr, sigma_eps_sq)
 }
 ```
 
@@ -8080,12 +8098,7 @@ checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    if(!is.na(snr)){
-        stopifnot(snr > 0)
-    }
-    if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq >= 0)
-    }
+    checkGenClusteredDataInputsSnrSigma(snr, sigma_eps_sq)
 }
 ```
 
@@ -8375,12 +8388,7 @@ checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    if(!is.na(snr)){
-        stopifnot(snr > 0)
-    }
-    if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq >= 0)
-    }
+    checkGenClusteredDataInputsSnrSigma(snr, sigma_eps_sq)
 }
 ```
 
@@ -8667,6 +8675,59 @@ testthat::test_that("genClusteredDataWeightedRandom output is byte-stable (chara
     c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
     c(sumX = -28.8273582900822, sumY = -10.2198990332918, sumZ = 0.586596841562748,
       sumMu = -5.15679097838167))
+})
+```
+
+The two weighted generators now run the same `snr` / `sigma_eps_sq` type checks
+as `genClusteredData()` (#35): a non-numeric `snr` / `sigma_eps_sq` is rejected
+up front rather than silently passing the old lean check and failing later
+inside `genZmuY()`.
+
+```{r}
+testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq type (#35)", {
+  # Newly rejected (these previously slipped past the weighted validators' lean
+  # checks and only failed later, cryptically, inside genZmuY).
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr="1",
+      sigma_eps_sq=NA),
+    "is.numeric(snr) | is.integer(snr) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA,
+      sigma_eps_sq="0.5"),
+    "is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr="1", sigma_eps_sq=NA),
+    "is.numeric(snr) | is.integer(snr) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr=NA, sigma_eps_sq="0.5"),
+    "is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE", fixed=TRUE)
+
+  # Range checks (snr > 0, sigma_eps_sq >= 0) are unchanged by #35.
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=-.2,
+      sigma_eps_sq=NA),
+    "snr > 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr=NA, sigma_eps_sq=-.3),
+    "sigma_eps_sq >= 0 is not TRUE", fixed=TRUE)
+
+  # A valid scalar numeric snr / sigma_eps_sq is still accepted.
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+    n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+    rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
 })
 ```
 

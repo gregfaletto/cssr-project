@@ -4378,6 +4378,52 @@ testthat::test_that("genClusteredDataWeightedRandom output is byte-stable (chara
       sumMu = -5.15679097838167))
 })
 
+testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq type (#35)", {
+  # Newly rejected (these previously slipped past the weighted validators' lean
+  # checks and only failed later, cryptically, inside genZmuY).
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr="1",
+      sigma_eps_sq=NA),
+    "is.numeric(snr) | is.integer(snr) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA,
+      sigma_eps_sq="0.5"),
+    "is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr="1", sigma_eps_sq=NA),
+    "is.numeric(snr) | is.integer(snr) is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr=NA, sigma_eps_sq="0.5"),
+    "is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq) is not TRUE", fixed=TRUE)
+
+  # Range checks (snr > 0, sigma_eps_sq >= 0) are unchanged by #35.
+  testthat::expect_error(
+    genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+      rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=-.2,
+      sigma_eps_sq=NA),
+    "snr > 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n=25, p=19, k_unclustered=2, cluster_size=5,
+      n_clusters=3, sig_clusters=2, rho_high=1, rho_low=.5, beta_latent=1.5,
+      beta_unclustered=-2, snr=NA, sigma_eps_sq=-.3),
+    "sigma_eps_sq >= 0 is not TRUE", fixed=TRUE)
+
+  # A valid scalar numeric snr / sigma_eps_sq is still accepted.
+  ret <- genClusteredDataWeighted(n=25, p=19, k_unclustered=2, cluster_size=5,
+    n_strong_cluster_vars=3, n_clusters=3, sig_clusters=2, rho_high=.99,
+    rho_low=.5, beta_latent=1.5, beta_unclustered=-2, snr=NA, sigma_eps_sq=.5)
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+})
+
 testthat::test_that("getLassoLambda works", {
   set.seed(7252)
   

@@ -65,10 +65,5 @@ checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    if(!is.na(snr)){
-        stopifnot(snr > 0)
-    }
-    if(!is.na(sigma_eps_sq)){
-        stopifnot(sigma_eps_sq >= 0)
-    }
+    checkGenClusteredDataInputsSnrSigma(snr, sigma_eps_sq)
 }

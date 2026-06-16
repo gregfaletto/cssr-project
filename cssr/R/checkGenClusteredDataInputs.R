@@ -60,14 +60,5 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)
 
-    if(is.na(snr)){
-        stopifnot(all(!is.na(sigma_eps_sq)))
-        stopifnot(is.numeric(sigma_eps_sq) | is.integer(sigma_eps_sq))
-        stopifnot(length(sigma_eps_sq) == 1)
-        stopifnot(sigma_eps_sq >= 0)
-    } else{
-        stopifnot(is.numeric(snr) | is.integer(snr))
-        stopifnot(length(snr) == 1)
-        stopifnot(snr > 0)
-    }
+    checkGenClusteredDataInputsSnrSigma(snr, sigma_eps_sq)
 }
