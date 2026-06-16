@@ -26,7 +26,10 @@ checkNewXProvided <- function(trainX, css_results){
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         
         n_train <- nrow(trainX)
-        stopifnot(n_train > 1)
+        # A single-row newX is fine -- the design is just one row of cluster
+        # representatives, and getCssPreds/cssPredict already accept a 1-row test
+        # set -- so don't require more than one row here (#44).
+        stopifnot(n_train >= 1)
     } else{
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")

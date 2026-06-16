@@ -2865,6 +2865,13 @@ testthat::test_that("getCssDesign works", {
   testthat::expect_equal(ncol(res), length(css_res$clusters))
   testthat::expect_true(all(colnames(res) %in% names(css_res$clusters)))
   testthat::expect_true(all(names(css_res$clusters) %in% colnames(res)))
+
+  # A single-row newX is accepted (#44): getCssDesign used to require > 1 row,
+  # while getCssPreds/cssPredict already accept a 1-row test set.
+  res_1row <- getCssDesign(css_res, newX = x_new[1, , drop = FALSE])
+  testthat::expect_true(is.matrix(res_1row))
+  testthat::expect_equal(nrow(res_1row), 1)
+  testthat::expect_equal(ncol(res_1row), length(css_res$clusters))
   
   # Add training indices
   css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
