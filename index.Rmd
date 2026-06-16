@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.15",
+    Version = "0.1.16",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -4926,7 +4926,10 @@ checkNewXProvided <- function(trainX, css_results){
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         
         n_train <- nrow(trainX)
-        stopifnot(n_train > 1)
+        # A single-row newX is fine -- the design is just one row of cluster
+        # representatives, and getCssPreds/cssPredict already accept a 1-row test
+        # set -- so don't require more than one row here (#44).
+        stopifnot(n_train >= 1)
     } else{
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
@@ -5995,6 +5998,13 @@ testthat::test_that("getCssDesign works", {
   testthat::expect_equal(ncol(res), length(css_res$clusters))
   testthat::expect_true(all(colnames(res) %in% names(css_res$clusters)))
   testthat::expect_true(all(names(css_res$clusters) %in% colnames(res)))
+
+  # A single-row newX is accepted (#44): getCssDesign used to require > 1 row,
+  # while getCssPreds/cssPredict already accept a 1-row test set.
+  res_1row <- getCssDesign(css_res, newX = x_new[1, , drop = FALSE])
+  testthat::expect_true(is.matrix(res_1row))
+  testthat::expect_equal(nrow(res_1row), 1)
+  testthat::expect_equal(ncol(res_1row), length(css_res$clusters))
   
   # Add training indices
   css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
