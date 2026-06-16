@@ -47,6 +47,13 @@ model size. Before using the lasso, in each cluster all features will be
 dropped from X except the one feature with the highest marginal correlation
 with y, as in the protolasso (Reid and Tibshirani 2016).
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+getModelSize(X = data$X, y = data$y, clusters = clusters)
+}
 \references{
 Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.

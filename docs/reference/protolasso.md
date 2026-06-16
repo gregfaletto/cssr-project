@@ -80,3 +80,18 @@ testing using cluster prototypes. *Biostatistics*, 17(2), 364–376.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- protolasso(X = data$X, y = data$y, clusters = clusters)
+str(res, max.level = 1)
+#> List of 3
+#>  $ selected_sets       :List of 8
+#>  $ selected_clusts_list:List of 8
+#>  $ beta                :Formal class 'dgCMatrix' [package "Matrix"] with 6 slots
+```

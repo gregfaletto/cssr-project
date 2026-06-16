@@ -122,3 +122,15 @@ A named list with two items.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- cssSelect(X = data$X, y = data$y, clusters = clusters)
+res$selected_feats
+#> [1] 2 5 6
+```

@@ -106,6 +106,17 @@ return results for different matrices of new data or using different values
 of cutoff, max_num_clusts, etc. by using the calculations done in one call to
 css.
 }
+\examples{
+set.seed(1)
+train <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+test <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+preds <- cssPredict(X_train_selec = train$X, y_train_selec = train$y,
+  X_test = test$X, clusters = clusters)
+preds
+}
 \author{
 Gregory Faletto, Jacob Bien
 }

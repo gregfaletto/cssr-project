@@ -94,6 +94,12 @@ an observed response y which is a linear model of features from Z and X as
 well as independent mean zero noise, and mu (the responses from y without
 the added noise).
 }
+\examples{
+set.seed(1)
+data <- genClusteredDataWeightedRandom(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+dim(data$X)
+}
 \references{
 Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 \emph{arXiv preprint arXiv:2201.00494}.

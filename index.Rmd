@@ -301,6 +301,14 @@ The function `css()` is specified below. (There are some extra details that I om
 #' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized
 #' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},
 #' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' print(res)
 #' @export
 css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sampling_type = "SS", B = ifelse(sampling_type == "MB", 100L, 50L),
@@ -682,6 +690,14 @@ usethis::use_package("parallel")
 #' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models
 #' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.
 #' URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' # cssLasso is the default base feature-selection method used by css();
+#' # it returns the integer indices selected at the given lambda.
+#' selected <- cssLasso(X = data$X, y = data$y, lambda = 0.01)
+#' selected
 #' @export
 cssLasso <- function(X, y, lambda){
     # Check inputs
@@ -3448,6 +3464,14 @@ As in the previous section, we first define each function and then define the he
 #' @author Gregory Faletto, Jacob Bien
 #' @references 
 <<faletto2022>>
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' getCssSelections(res)
 #' @export
 getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA){
@@ -4753,6 +4777,17 @@ testthat::test_that("getCssSelections works", {
 #' observations and number of columns equal to the number of selected clusters,
 #' containing the cluster representatives for each cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' train <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' newdata <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = train$X, y = train$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' X_design <- getCssDesign(res, newX = newdata$X)
+#' dim(X_design)
 #' @export
 getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     cutoff=0, min_num_clusts=1, max_num_clusts=NA){
@@ -6140,6 +6175,17 @@ testthat::test_that("getCssDesign works", {
 #' @author Gregory Faletto, Jacob Bien
 #' @references 
 <<faletto2022>>
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 60, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' # Split into selection / training / test rows.
+#' res <- css(X = data$X[1:20, ], y = data$y[1:20], lambda = 0.01,
+#'   clusters = clusters, B = 10)
+#' preds <- getCssPreds(res, testX = data$X[51:60, ],
+#'   trainX = data$X[21:50, ], trainY = data$y[21:50])
+#' preds
 #' @export
 getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, trainX=NA, trainY=NA){
@@ -7054,6 +7100,12 @@ The following are some other functions that are useful for specific tasks.
 #' @references
 <<faletto2022>>
 #' @importFrom stats rnorm runif
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' dim(data$X)
+#' length(data$y)
 #' @export
 genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     sig_clusters=1, rho=0.9, beta_latent=1.5, beta_unclustered=1,
@@ -7560,6 +7612,10 @@ No tests for `genZmuY()`.
 #' @return A vector of variances of independent Gaussian random variables to add
 #' to Z in order to yield proxies with the desired correlations with Z.
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' # Noise variance needed so a proxy Z + N(0, v) attains each target
+#' # correlation with Z (correlations must be positive).
+#' getNoiseVar(c(0.9, 0.5, 1))
 #' @export
 getNoiseVar <- function(cor){
     # Correlation between standard normal Z and X = Z + epsilon where epsilon
@@ -7992,6 +8048,11 @@ testthat::test_that("genClusteredData works", {
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredDataWeighted(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_strong_cluster_vars = 2, n_clusters = 1, snr = 3)
+#' dim(data$X)
 #' @export
 genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
     n_strong_cluster_vars, n_clusters=1, sig_clusters=1, rho_high=0.9,
@@ -8299,6 +8360,11 @@ testthat::test_that("genClusteredDataWeighted works", {
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredDataWeightedRandom(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' dim(data$X)
 #' @export
 genClusteredDataWeightedRandom <- function(n, p, k_unclustered, cluster_size,
     n_clusters=1, sig_clusters=1, rho_high=1, rho_low=0.5, beta_latent=1.5,
@@ -8786,6 +8852,12 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
 #' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization
 #' Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of
 #' Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' lambda <- getLassoLambda(X = data$X, y = data$y, nfolds = 5)
+#' lambda
 #' @export
 getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(is.character(lambda_choice))
@@ -8956,6 +9028,12 @@ testthat::test_that("getLassoLambda works", {
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' getModelSize(X = data$X, y = data$y, clusters = clusters)
 #' @export
 getModelSize <- function(X, y, clusters, alpha = 1){
 
@@ -9234,6 +9312,14 @@ testthat::test_that("getModelSize works", {
 #' ClustProtoNum (the column number of the prototype in the X matrix provided to
 #' css), and ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' printCssDf(res)
 #' @export
 printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
     max_num_clusts=NA){
@@ -9845,6 +9931,13 @@ The two main disadvantages of these functions are flexibility and computational 
 #' all of the selected features within all of the selected clusters (typically
 #' only one feature is selected from each cluster).}
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- cssSelect(X = data$X, y = data$y, clusters = clusters)
+#' res$selected_feats
 #' @export
 cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     max_num_clusts=NA, auto_select_size=TRUE, alpha=1){
@@ -10388,6 +10481,16 @@ testthat::test_that("cssSelect threads alpha through to selection", {
 #' @return A numeric vector of length nrow(X_test) of predictions
 #' corresponding to the observations from X_test.
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' train <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' test <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' preds <- cssPredict(X_train_selec = train$X, y_train_selec = train$y,
+#'   X_test = test$X, clusters = clusters)
+#' preds
 #' @export
 cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     lambda=NA, cutoff=NA, max_num_clusts=NA, train_inds=NA,
@@ -10761,6 +10864,13 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- protolasso(X = data$X, y = data$y, clusters = clusters)
+#' str(res, max.level = 1)
 #' @export
 protolasso <- function(X, y, clusters=list(), nlambda=100){
     clusterLassoCore(X, y, clusters, nlambda, type="protolasso")
@@ -12792,6 +12902,13 @@ testthat::test_that("protolasso works", {
 #' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear
 #' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)
 #' ' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- clusterRepLasso(X = data$X, y = data$y, clusters = clusters)
+#' str(res, max.level = 1)
 #' @export
 clusterRepLasso <- function(X, y, clusters=list(), nlambda=100){
     clusterLassoCore(X, y, clusters, nlambda, type="clusterRepLasso")

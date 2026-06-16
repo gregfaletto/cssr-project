@@ -115,6 +115,14 @@
 #' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized
 #' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},
 #' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' print(res)
 #' @export
 css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sampling_type = "SS", B = ifelse(sampling_type == "MB", 100L, 50L),

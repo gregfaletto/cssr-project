@@ -37,6 +37,13 @@ A numeric; the selected value of lambda.
 Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
 cluster stability selection) by cross-validation.
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+lambda <- getLassoLambda(X = data$X, y = data$y, nfolds = 5)
+lambda
+}
 \references{
 Bühlmann, P., & Meinshausen, N. (2006). High-Dimensional Graphs
 and Variable Selection With the Lasso. \emph{The Annals of Statistics},

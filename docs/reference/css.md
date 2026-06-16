@@ -205,3 +205,24 @@ Statistical Software*, 33(1), 1-22. URL
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10)
+print(res)
+#>   ClustName ClustProtoNum ClustSelProp ClustSize
+#> 1  cluster1             3         1.00         4
+#> 2        c2             5         1.00         1
+#> 3        c3             6         1.00         1
+#> 4        c5             8         1.00         1
+#> 5        c6             9         1.00         1
+#> 6        c4             7         0.95         1
+#> 7        c7            10         0.90         1
+#> 8        c8            11         0.90         1
+```

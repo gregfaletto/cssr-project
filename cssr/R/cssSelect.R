@@ -67,6 +67,13 @@
 #' all of the selected features within all of the selected clusters (typically
 #' only one feature is selected from each cluster).}
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- cssSelect(X = data$X, y = data$y, clusters = clusters)
+#' res$selected_feats
 #' @export
 cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     max_num_clusts=NA, auto_select_size=TRUE, alpha=1){

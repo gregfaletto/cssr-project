@@ -45,6 +45,14 @@
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' getCssSelections(res)
 #' @export
 getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA){

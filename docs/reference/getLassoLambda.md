@@ -65,3 +65,14 @@ Statistical Software*, 33(1), 1-22. URL
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+lambda <- getLassoLambda(X = data$X, y = data$y, nfolds = 5)
+lambda
+#> [1] 0.2057562
+```

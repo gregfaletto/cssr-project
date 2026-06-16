@@ -54,6 +54,14 @@ details.)}
 \description{
 Select features via the cluster representative lasso (Bühlmann et. al. 2013)
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- clusterRepLasso(X = data$X, y = data$y, clusters = clusters)
+str(res, max.level = 1)
+}
 \references{
 Bühlmann, P., Rütimann, P., van de Geer, S., & Zhang, C. H.
 (2013). Correlated variables in regression: Clustering and sparse estimation.

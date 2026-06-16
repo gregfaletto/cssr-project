@@ -47,6 +47,13 @@
 #' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear
 #' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)
 #' ' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- clusterRepLasso(X = data$X, y = data$y, clusters = clusters)
+#' str(res, max.level = 1)
 #' @export
 clusterRepLasso <- function(X, y, clusters=list(), nlambda=100){
     clusterLassoCore(X, y, clusters, nlambda, type="clusterRepLasso")

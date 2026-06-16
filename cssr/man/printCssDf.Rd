@@ -41,6 +41,15 @@ css), and ClustSize (the size of the cluster).
 \description{
 Print a summary of the information from the css function.
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10)
+printCssDf(res)
+}
 \author{
 Gregory Faletto, Jacob Bien
 }

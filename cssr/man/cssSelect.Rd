@@ -92,6 +92,14 @@ called just once, and then getCssSelections can quickly return results using
 different values of cutoff, max_num_clusts, etc. from the calculations done
 in one call to css.
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- cssSelect(X = data$X, y = data$y, clusters = clusters)
+res$selected_feats
+}
 \author{
 Gregory Faletto, Jacob Bien
 }

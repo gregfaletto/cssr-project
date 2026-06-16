@@ -120,6 +120,15 @@ Executes cluster stability selection algorithm. Takes subsamples of data,
 executes feature selection algorithm on each subsample, and returns matrices
 of feature selection indicators as well as cluster selection indicators.
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10)
+print(res)
+}
 \references{
 Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 \emph{arXiv preprint arXiv:2201.00494}.
