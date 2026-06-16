@@ -153,3 +153,13 @@ preprint arXiv:2201.00494*. <https://arxiv.org/abs/2201.00494>.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredDataWeighted(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_strong_cluster_vars = 2, n_clusters = 1, snr = 3)
+dim(data$X)
+#> [1] 50 11
+```

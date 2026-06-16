@@ -40,6 +40,13 @@
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- protolasso(X = data$X, y = data$y, clusters = clusters)
+#' str(res, max.level = 1)
 #' @export
 protolasso <- function(X, y, clusters=list(), nlambda=100){
     clusterLassoCore(X, y, clusters, nlambda, type="protolasso")

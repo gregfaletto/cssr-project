@@ -49,3 +49,16 @@ Statistical Software*, 33(1), 1-22. URL
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+# cssLasso is the default base feature-selection method used by css();
+# it returns the integer indices selected at the given lambda.
+selected <- cssLasso(X = data$X, y = data$y, lambda = 0.01)
+selected
+#>  [1]  1  2  3  4  5  6  7  8  9 10
+```

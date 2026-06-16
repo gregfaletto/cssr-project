@@ -133,3 +133,20 @@ the observations from X_test.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+train <- genClusteredData(n = 80, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+test <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+preds <- cssPredict(X_train_selec = train$X, y_train_selec = train$y,
+  X_test = test$X, clusters = clusters)
+#> Warning: Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per fold
+preds
+#>  [1] -0.4417829  1.4912685 -2.6765010  0.4581225  2.6650597 -0.2897214
+#>  [7]  2.0567418 -1.8107138  2.2560345 -0.6526000
+```

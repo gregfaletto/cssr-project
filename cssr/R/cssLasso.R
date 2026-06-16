@@ -27,6 +27,14 @@
 #' Robert Tibshirani (2010). Regularization Paths for Generalized Linear Models
 #' via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1), 1-22.
 #' URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' # cssLasso is the default base feature-selection method used by css();
+#' # it returns the integer indices selected at the given lambda.
+#' selected <- cssLasso(X = data$X, y = data$y, lambda = 0.01)
+#' selected
 #' @export
 cssLasso <- function(X, y, lambda){
     # Check inputs

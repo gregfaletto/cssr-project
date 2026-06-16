@@ -72,6 +72,11 @@
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredDataWeighted(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_strong_cluster_vars = 2, n_clusters = 1, snr = 3)
+#' dim(data$X)
 #' @export
 genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
     n_strong_cluster_vars, n_clusters=1, sig_clusters=1, rho_high=0.9,

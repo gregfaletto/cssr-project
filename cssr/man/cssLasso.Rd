@@ -28,6 +28,15 @@ An integer vector; the indices of the features selected by the lasso.
 Function used to select features with the lasso on each subsample in cluster
 stability selection. Uses glmnet implementation of the lasso.
 }
+\examples{
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+# cssLasso is the default base feature-selection method used by css();
+# it returns the integer indices selected at the given lambda.
+selected <- cssLasso(X = data$X, y = data$y, lambda = 0.01)
+selected
+}
 \references{
 Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 \emph{arXiv preprint arXiv:2201.00494}.

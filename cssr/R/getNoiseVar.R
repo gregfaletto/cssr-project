@@ -8,6 +8,10 @@
 #' @return A vector of variances of independent Gaussian random variables to add
 #' to Z in order to yield proxies with the desired correlations with Z.
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' # Noise variance needed so a proxy Z + N(0, v) attains each target
+#' # correlation with Z (correlations must be positive).
+#' getNoiseVar(c(0.9, 0.5, 1))
 #' @export
 getNoiseVar <- function(cor){
     # Correlation between standard normal Z and X = Z + epsilon where epsilon

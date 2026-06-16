@@ -70,6 +70,18 @@ Takes a matrix of observations from the original feature space and returns
 a matrix of representatives from the selected clusters based on the results
 of cluster stability selection.
 }
+\examples{
+set.seed(1)
+train <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+newdata <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- css(X = train$X, y = train$y, lambda = 0.01, clusters = clusters,
+  B = 10)
+X_design <- getCssDesign(res, newX = newdata$X)
+dim(X_design)
+}
 \author{
 Gregory Faletto, Jacob Bien
 }

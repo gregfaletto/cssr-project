@@ -19,6 +19,11 @@ to Z in order to yield proxies with the desired correlations with Z.
 Get variance of noise to add to Z in order to yield proxies X with desired
 correlations with Z
 }
+\examples{
+# Noise variance needed so a proxy Z + N(0, v) attains each target
+# correlation with Z (correlations must be positive).
+getNoiseVar(c(0.9, 0.5, 1))
+}
 \author{
 Gregory Faletto, Jacob Bien
 }

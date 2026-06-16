@@ -89,3 +89,70 @@ preprint arXiv:2201.00494*. <https://arxiv.org/abs/2201.00494>.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+set.seed(1)
+data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+  cluster_size = 4, n_clusters = 1, snr = 3)
+clusters <- list(cluster1 = 1:4)
+res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10)
+getCssSelections(res)
+#> $selected_clusts
+#> $selected_clusts$cluster1
+#> [1] 1 2 3 4
+#> 
+#> $selected_clusts$c2
+#> [1] 5
+#> 
+#> $selected_clusts$c3
+#> [1] 6
+#> 
+#> $selected_clusts$c4
+#> [1] 7
+#> 
+#> $selected_clusts$c5
+#> [1] 8
+#> 
+#> $selected_clusts$c6
+#> [1] 9
+#> 
+#> $selected_clusts$c7
+#> [1] 10
+#> 
+#> $selected_clusts$c8
+#> [1] 11
+#> 
+#> 
+#> $selected_feats
+#> [1]  3  5  6  7  8  9 10 11
+#> 
+#> $weights
+#> $weights$cluster1
+#> [1] 0 0 1 0
+#> 
+#> $weights$c2
+#> [1] 1
+#> 
+#> $weights$c3
+#> [1] 1
+#> 
+#> $weights$c4
+#> [1] 1
+#> 
+#> $weights$c5
+#> [1] 1
+#> 
+#> $weights$c6
+#> [1] 1
+#> 
+#> $weights$c7
+#> [1] 1
+#> 
+#> $weights$c8
+#> [1] 1
+#> 
+#> 
+```

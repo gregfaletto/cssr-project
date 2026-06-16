@@ -33,6 +33,12 @@
 #' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization
 #' Paths for Generalized Linear Models via Coordinate Descent. \emph{Journal of
 #' Statistical Software}, 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' lambda <- getLassoLambda(X = data$X, y = data$y, nfolds = 5)
+#' lambda
 #' @export
 getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(is.character(lambda_choice))

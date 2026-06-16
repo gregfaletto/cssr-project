@@ -24,3 +24,12 @@ Z in order to yield proxies with the desired correlations with Z.
 ## Author
 
 Gregory Faletto, Jacob Bien
+
+## Examples
+
+``` r
+# Noise variance needed so a proxy Z + N(0, v) attains each target
+# correlation with Z (correlations must be positive).
+getNoiseVar(c(0.9, 0.5, 1))
+#> [1] 0.2345679 3.0000000 0.0000000
+```

@@ -49,6 +49,17 @@
 #' observations and number of columns equal to the number of selected clusters,
 #' containing the cluster representatives for each cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @examples
+#' set.seed(1)
+#' train <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' newdata <- genClusteredData(n = 10, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = train$X, y = train$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' X_design <- getCssDesign(res, newX = newdata$X)
+#' dim(X_design)
 #' @export
 getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     cutoff=0, min_num_clusts=1, max_num_clusts=NA){
