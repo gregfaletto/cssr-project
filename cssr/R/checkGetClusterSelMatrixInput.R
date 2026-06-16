@@ -11,8 +11,8 @@
 #' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected
 #' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
 #' (That is, each row is a selected set.)
-#' @return The parameter B, corresponding to half of the subsamples for
-#' sampling_type "SS".
+#' @return No return value; called for the side effect of erroring if the inputs
+#' to getClusterSelMatrix are invalid.
 #' @author Gregory Faletto, Jacob Bien
 checkGetClusterSelMatrixInput <- function(clusters, res){
     stopifnot(is.matrix(res))

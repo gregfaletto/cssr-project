@@ -6,9 +6,9 @@
 #' only one unique value, returns 0 by definition.
 #' @param t A numeric or integer vector.
 #' @param y A numeric or integer vector; must have the same length as t.
-#' @return A numeric vector of the same length as cluster_i containing the
-#' weights corresponding to each of the features in cluster_i. The weights
-#' will all be nonnegative and sum to 1.
+#' @return A length-one numeric vector; the absolute value of the sample
+#' correlation between t and y (between 0 and 1), or 0 if either t or y has only
+#' one unique value.
 #' @author Gregory Faletto, Jacob Bien
 corFunction <- function(t, y){
     # Check inputs

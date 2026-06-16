@@ -12,9 +12,9 @@ corFunction(t, y)
 \item{y}{A numeric or integer vector; must have the same length as t.}
 }
 \value{
-A numeric vector of the same length as cluster_i containing the
-weights corresponding to each of the features in cluster_i. The weights
-will all be nonnegative and sum to 1.
+A length-one numeric vector; the absolute value of the sample
+correlation between t and y (between 0 and 1), or 0 if either t or y has only
+one unique value.
 }
 \description{
 Calculates the absolute value of correlation of t and y. If either input has
