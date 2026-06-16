@@ -69,7 +69,7 @@
 checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     min_num_clusts, max_num_clusts, trainX, trainY){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     check_results <- checkNewXProvided(trainX, css_results)
 

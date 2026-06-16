@@ -2195,7 +2195,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb160-31"><a href="other-useful.html#cb160-31" tabindex="-1"></a><span id="printCssDf">printCssDf</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>,</span>
 <span id="cb160-32"><a href="other-useful.html#cb160-32" tabindex="-1"></a>    <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
 <span id="cb160-33"><a href="other-useful.html#cb160-33" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb160-34"><a href="other-useful.html#cb160-34" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">class</span>(css_results) <span class="sc">==</span> <span class="st">"cssr"</span>)</span>
+<span id="cb160-34"><a href="other-useful.html#cb160-34" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
 <span id="cb160-35"><a href="other-useful.html#cb160-35" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
 <span id="cb160-36"><a href="other-useful.html#cb160-36" tabindex="-1"></a></span>
 <span id="cb160-37"><a href="other-useful.html#cb160-37" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
@@ -2267,7 +2267,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb161-16"><a href="other-useful.html#cb161-16" tabindex="-1"></a><span id="getSelectionPrototypes">getSelectionPrototypes</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, selected_clusts){</span>
 <span id="cb161-17"><a href="other-useful.html#cb161-17" tabindex="-1"></a>    </span>
 <span id="cb161-18"><a href="other-useful.html#cb161-18" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb161-19"><a href="other-useful.html#cb161-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">class</span>(css_results) <span class="sc">==</span> <span class="st">"cssr"</span>)</span>
+<span id="cb161-19"><a href="other-useful.html#cb161-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
 <span id="cb161-20"><a href="other-useful.html#cb161-20" tabindex="-1"></a></span>
 <span id="cb161-21"><a href="other-useful.html#cb161-21" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(selected_clusts))</span>
 <span id="cb161-22"><a href="other-useful.html#cb161-22" tabindex="-1"></a>    n_selected_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(selected_clusts)</span>
@@ -2640,23 +2640,26 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb166-17"><a href="other-useful.html#cb166-17" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
 <span id="cb166-18"><a href="other-useful.html#cb166-18" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
 <span id="cb166-19"><a href="other-useful.html#cb166-19" tabindex="-1"></a><span class="co">#' @param ... Additional arguments to generic print.data.frame function</span></span>
-<span id="cb166-20"><a href="other-useful.html#cb166-20" tabindex="-1"></a><span class="co">#' @return A data.frame; each row contains a cluster, arranged in decreasing</span></span>
-<span id="cb166-21"><a href="other-useful.html#cb166-21" tabindex="-1"></a><span class="co">#' order of cluster selection proportion from top to bottom. The columns are</span></span>
-<span id="cb166-22"><a href="other-useful.html#cb166-22" tabindex="-1"></a><span class="co">#' ClustName (the name of the cluster that was either provided to css or made by</span></span>
-<span id="cb166-23"><a href="other-useful.html#cb166-23" tabindex="-1"></a><span class="co">#' css if no name was provided); ClustProtoName (the name of the selection</span></span>
-<span id="cb166-24"><a href="other-useful.html#cb166-24" tabindex="-1"></a><span class="co">#' prototype from the cluster, which is the feature with the greatest individual</span></span>
-<span id="cb166-25"><a href="other-useful.html#cb166-25" tabindex="-1"></a><span class="co">#' selection proportion among all the cluster members, with ties broken by</span></span>
-<span id="cb166-26"><a href="other-useful.html#cb166-26" tabindex="-1"></a><span class="co">#' choosing the feature with the highest correlation with the response if the</span></span>
-<span id="cb166-27"><a href="other-useful.html#cb166-27" tabindex="-1"></a><span class="co">#' response is real-valued; only returned if the features are named),</span></span>
-<span id="cb166-28"><a href="other-useful.html#cb166-28" tabindex="-1"></a><span class="co">#' ClustProtoNum (the column number of the prototype in the X matrix provided to</span></span>
-<span id="cb166-29"><a href="other-useful.html#cb166-29" tabindex="-1"></a><span class="co">#' css), and ClustSize (the size of the cluster).</span></span>
-<span id="cb166-30"><a href="other-useful.html#cb166-30" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb166-31"><a href="other-useful.html#cb166-31" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb166-32"><a href="other-useful.html#cb166-32" tabindex="-1"></a><span id="print.cssr">print.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, ...){</span>
-<span id="cb166-33"><a href="other-useful.html#cb166-33" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <a href="other-useful.html#printCssDf">printCssDf</a>(<span class="at">css_results=</span>x, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb166-34"><a href="other-useful.html#cb166-34" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb166-35"><a href="other-useful.html#cb166-35" tabindex="-1"></a>    <span class="fu">print.data.frame</span>(df, ...)</span>
-<span id="cb166-36"><a href="other-useful.html#cb166-36" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb166-20"><a href="other-useful.html#cb166-20" tabindex="-1"></a><span class="co">#' @return Invisibly, the unchanged `cssr` object `x` (following the standard</span></span>
+<span id="cb166-21"><a href="other-useful.html#cb166-21" tabindex="-1"></a><span class="co">#' convention for `print` methods). Called for its side effect: printing a</span></span>
+<span id="cb166-22"><a href="other-useful.html#cb166-22" tabindex="-1"></a><span class="co">#' summary table with one row per cluster, arranged in decreasing order of</span></span>
+<span id="cb166-23"><a href="other-useful.html#cb166-23" tabindex="-1"></a><span class="co">#' cluster selection proportion from top to bottom. The printed columns are</span></span>
+<span id="cb166-24"><a href="other-useful.html#cb166-24" tabindex="-1"></a><span class="co">#' ClustName (the name of the cluster that was either provided to css or made by</span></span>
+<span id="cb166-25"><a href="other-useful.html#cb166-25" tabindex="-1"></a><span class="co">#' css if no name was provided); ClustProtoName (the name of the selection</span></span>
+<span id="cb166-26"><a href="other-useful.html#cb166-26" tabindex="-1"></a><span class="co">#' prototype from the cluster, which is the feature with the greatest individual</span></span>
+<span id="cb166-27"><a href="other-useful.html#cb166-27" tabindex="-1"></a><span class="co">#' selection proportion among all the cluster members, with ties broken by</span></span>
+<span id="cb166-28"><a href="other-useful.html#cb166-28" tabindex="-1"></a><span class="co">#' choosing the feature with the highest correlation with the response if the</span></span>
+<span id="cb166-29"><a href="other-useful.html#cb166-29" tabindex="-1"></a><span class="co">#' response is real-valued; only shown if the features are named); ClustProtoNum</span></span>
+<span id="cb166-30"><a href="other-useful.html#cb166-30" tabindex="-1"></a><span class="co">#' (the column number of the prototype in the X matrix provided to css); and</span></span>
+<span id="cb166-31"><a href="other-useful.html#cb166-31" tabindex="-1"></a><span class="co">#' ClustSize (the size of the cluster).</span></span>
+<span id="cb166-32"><a href="other-useful.html#cb166-32" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb166-33"><a href="other-useful.html#cb166-33" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb166-34"><a href="other-useful.html#cb166-34" tabindex="-1"></a><span id="print.cssr">print.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, ...){</span>
+<span id="cb166-35"><a href="other-useful.html#cb166-35" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <a href="other-useful.html#printCssDf">printCssDf</a>(<span class="at">css_results=</span>x, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb166-36"><a href="other-useful.html#cb166-36" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb166-37"><a href="other-useful.html#cb166-37" tabindex="-1"></a>    <span class="fu">print.data.frame</span>(df, ...)</span>
+<span id="cb166-38"><a href="other-useful.html#cb166-38" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
+<span id="cb166-39"><a href="other-useful.html#cb166-39" tabindex="-1"></a>}</span></code></pre></div>
 </div>
             </section>
 </div>

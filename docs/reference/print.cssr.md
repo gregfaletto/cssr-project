@@ -44,16 +44,18 @@ print(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA, ...)
 
 ## Value
 
-A data.frame; each row contains a cluster, arranged in decreasing order
-of cluster selection proportion from top to bottom. The columns are
+Invisibly, the unchanged `cssr` object `x` (following the standard
+convention for `print` methods). Called for its side effect: printing a
+summary table with one row per cluster, arranged in decreasing order of
+cluster selection proportion from top to bottom. The printed columns are
 ClustName (the name of the cluster that was either provided to css or
 made by css if no name was provided); ClustProtoName (the name of the
 selection prototype from the cluster, which is the feature with the
 greatest individual selection proportion among all the cluster members,
 with ties broken by choosing the feature with the highest correlation
-with the response if the response is real-valued; only returned if the
-features are named), ClustProtoNum (the column number of the prototype
-in the X matrix provided to css), and ClustSize (the size of the
+with the response if the response is real-valued; only shown if the
+features are named); ClustProtoNum (the column number of the prototype
+in the X matrix provided to css); and ClustSize (the size of the
 cluster).
 
 ## Author

@@ -55,7 +55,7 @@
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)

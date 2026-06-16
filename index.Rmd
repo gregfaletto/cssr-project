@@ -3452,7 +3452,7 @@ As in the previous section, we first define each function and then define the he
 getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
     checkCutoff(cutoff)
     checkWeighting(weighting)
 
@@ -3778,7 +3778,7 @@ testthat::test_that("checkMaxNumClusts works", {
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     # Eliminate clusters with selection proportions below cutoff
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
@@ -3974,7 +3974,7 @@ testthat::test_that("checkSelectedClusters works", {
 getAllClustWeights <- function(css_results, sel_clusters, weighting){
 
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     stopifnot(is.numeric(sel_clusters))
     p_ret <- length(sel_clusters)
@@ -4757,7 +4757,7 @@ testthat::test_that("getCssSelections works", {
 getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
     cutoff=0, min_num_clusts=1, max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     check_results <- checkNewXProvided(newX, css_results)
 
@@ -5329,7 +5329,7 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 #' @author Gregory Faletto, Jacob Bien
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
     min_num_clusts, max_num_clusts, newx){    
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     if(length(newx) == 1){
         if(is.na(newx)){
@@ -6297,7 +6297,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     min_num_clusts, max_num_clusts, trainX, trainY){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     check_results <- checkNewXProvided(trainX, css_results)
 
@@ -8983,7 +8983,7 @@ testthat::test_that("getModelSize works", {
 printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
     max_num_clusts=NA){
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
     checkCutoff(cutoff)
 
     p <- ncol(css_results$feat_sel_mat)
@@ -9059,7 +9059,7 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
 getSelectionPrototypes <- function(css_results, selected_clusts){
     
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     stopifnot(is.list(selected_clusts))
     n_selected_clusts <- length(selected_clusts)
@@ -9442,22 +9442,25 @@ testthat::test_that("printCssDf works", {
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param ... Additional arguments to generic print.data.frame function
-#' @return A data.frame; each row contains a cluster, arranged in decreasing
-#' order of cluster selection proportion from top to bottom. The columns are
+#' @return Invisibly, the unchanged `cssr` object `x` (following the standard
+#' convention for `print` methods). Called for its side effect: printing a
+#' summary table with one row per cluster, arranged in decreasing order of
+#' cluster selection proportion from top to bottom. The printed columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
 #' css if no name was provided); ClustProtoName (the name of the selection
 #' prototype from the cluster, which is the feature with the greatest individual
 #' selection proportion among all the cluster members, with ties broken by
 #' choosing the feature with the highest correlation with the response if the
-#' response is real-valued; only returned if the features are named),
-#' ClustProtoNum (the column number of the prototype in the X matrix provided to
-#' css), and ClustSize (the size of the cluster).
+#' response is real-valued; only shown if the features are named); ClustProtoNum
+#' (the column number of the prototype in the X matrix provided to css); and
+#' ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     df <- printCssDf(css_results=x, cutoff=cutoff,
         min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
     print.data.frame(df, ...)
+    invisible(x)
 }
 ```
 

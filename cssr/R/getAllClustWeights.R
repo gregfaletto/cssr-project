@@ -27,7 +27,7 @@
 getAllClustWeights <- function(css_results, sel_clusters, weighting){
 
     # Check inputs
-    stopifnot(class(css_results) == "cssr")
+    stopifnot(inherits(css_results, "cssr"))
 
     stopifnot(is.numeric(sel_clusters))
     p_ret <- length(sel_clusters)

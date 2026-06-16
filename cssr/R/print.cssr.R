@@ -19,20 +19,23 @@
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param ... Additional arguments to generic print.data.frame function
-#' @return A data.frame; each row contains a cluster, arranged in decreasing
-#' order of cluster selection proportion from top to bottom. The columns are
+#' @return Invisibly, the unchanged `cssr` object `x` (following the standard
+#' convention for `print` methods). Called for its side effect: printing a
+#' summary table with one row per cluster, arranged in decreasing order of
+#' cluster selection proportion from top to bottom. The printed columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
 #' css if no name was provided); ClustProtoName (the name of the selection
 #' prototype from the cluster, which is the feature with the greatest individual
 #' selection proportion among all the cluster members, with ties broken by
 #' choosing the feature with the highest correlation with the response if the
-#' response is real-valued; only returned if the features are named),
-#' ClustProtoNum (the column number of the prototype in the X matrix provided to
-#' css), and ClustSize (the size of the cluster).
+#' response is real-valued; only shown if the features are named); ClustProtoNum
+#' (the column number of the prototype in the X matrix provided to css); and
+#' ClustSize (the size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     df <- printCssDf(css_results=x, cutoff=cutoff,
         min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
     print.data.frame(df, ...)
+    invisible(x)
 }
