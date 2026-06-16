@@ -7584,7 +7584,35 @@ getNoiseVar <- function(cor){
 
 ```
 
-No tests for `getNoiseVar()`.
+Tests for `getNoiseVar()`:
+
+```{r}
+testthat::test_that("getNoiseVar works", {
+  # getNoiseVar(cor) returns the noise variance v such that a proxy Z + N(0, v)
+  # has correlation cor with Z, i.e. v = 1/cor^2 - 1 (vectorized; cor in (0, 1]).
+  testthat::expect_equal(getNoiseVar(1), 0)
+  testthat::expect_equal(getNoiseVar(0.5), 3)
+  testthat::expect_equal(getNoiseVar(0.9), 1/0.81 - 1)
+  testthat::expect_equal(getNoiseVar(c(0.5, 1, 0.9)), c(3, 0, 1/0.81 - 1))
+  # The defining property: a proxy with this noise variance has correlation cor.
+  testthat::expect_equal(1/sqrt(1 + getNoiseVar(0.8)), 0.8)
+
+  # cor must be numeric, non-NA, non-empty, and in (0, 1] (checks are vectorized).
+  testthat::expect_error(getNoiseVar(0), "all(cor > 0) is not TRUE", fixed=TRUE)
+  testthat::expect_error(getNoiseVar(-0.5), "all(cor > 0) is not TRUE",
+    fixed=TRUE)
+  testthat::expect_error(getNoiseVar(c(0.5, 0)), "all(cor > 0) is not TRUE",
+    fixed=TRUE)
+  testthat::expect_error(getNoiseVar(1.5), "all(cor <= 1) is not TRUE",
+    fixed=TRUE)
+  testthat::expect_error(getNoiseVar(NA_real_), "all(!is.na(cor)) is not TRUE",
+    fixed=TRUE)
+  testthat::expect_error(getNoiseVar("0.5"),
+    "is.numeric(cor) | is.integer(cor) is not TRUE", fixed=TRUE)
+  testthat::expect_error(getNoiseVar(numeric(0)), "length(cor) >= 1 is not TRUE",
+    fixed=TRUE)
+})
+```
 
 `finalizeGenClusteredData()` is the shared tail of all three `genClusteredData*`
 generators: once each generator has built its cluster-proxy matrix (the only
@@ -9698,6 +9726,51 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     print.data.frame(df, ...)
     invisible(x)
 }
+```
+
+Tests for `print.cssr()` (and a minimal-`B` smoke test for `css()`):
+
+```{r}
+testthat::test_that("print.cssr works", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  # print() dispatches to print.cssr, which returns its argument invisibly (the
+  # standard print-method convention; see print.cssr's @return / #16).
+  testthat::expect_invisible(print(css_res))
+  ret <- print(css_res)
+  testthat::expect_identical(ret, css_res)
+
+  # It prints the printCssDf summary table (column headers included).
+  testthat::expect_output(print(css_res), "ClustName")
+  testthat::expect_output(print(css_res), "ClustSize")
+
+  # max_num_clusts routes through to printCssDf (at most that many cluster rows).
+  out_all <- utils::capture.output(print(css_res))
+  out_one <- utils::capture.output(print(css_res, max_num_clusts=1))
+  testthat::expect_true(length(out_one) <= length(out_all))
+})
+
+testthat::test_that("css runs with B = 1 (minimal subsampling)", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+
+  # B = 1 is allowed (checkB requires only B > 0) but warns that small B is poor.
+  testthat::expect_warning(
+    css_b1 <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 1),
+    "Small values of B may lead to poor results.", fixed=TRUE)
+  testthat::expect_true(inherits(css_b1, "cssr"))
+
+  # The minimal-B object is still well-formed downstream.
+  sel <- getCssSelections(css_b1)
+  testthat::expect_identical(names(sel),
+    c("selected_clusts", "selected_feats", "weights"))
+})
 ```
 
 
