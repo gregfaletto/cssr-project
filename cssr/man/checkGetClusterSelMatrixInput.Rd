@@ -19,8 +19,8 @@ on subsample i and equals 0 otherwise, as in the output of getSelMatrix.
 (That is, each row is a selected set.)}
 }
 \value{
-The parameter B, corresponding to half of the subsamples for
-sampling_type "SS".
+No return value; called for the side effect of erroring if the inputs
+to getClusterSelMatrix are invalid.
 }
 \description{
 Helper function to check inputs to getClusterSelMatrix function

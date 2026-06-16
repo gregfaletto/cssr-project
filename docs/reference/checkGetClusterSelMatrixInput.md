@@ -27,8 +27,8 @@ checkGetClusterSelMatrixInput(clusters, res)
 
 ## Value
 
-The parameter B, corresponding to half of the subsamples for
-sampling_type "SS".
+No return value; called for the side effect of erroring if the inputs to
+getClusterSelMatrix are invalid.
 
 ## Author
 
