@@ -83,7 +83,11 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
         n_clusters <- ncol(css_results$clus_sel_mat)
         while(length(selected_clusts) > max_num_clusts){
             cutoff <- cutoff + 1/B
-            if(cutoff > 1){
+            # Apply the same tol to the upper bound: cutoff accumulates +1/B and
+            # B*(1/B) can float just above 1, which would break before the
+            # cutoff == 1 filter runs and leave a cluster below proportion 1 in
+            # the selection (#42).
+            if(cutoff > 1 + tol){
                 break
             }
             # Make sure we don't reduce to a selected set of size 0
