@@ -115,18 +115,6 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
         }
     }
 
-    X <- cbind(proxy_mat, other_X)
-    
-    # Check output
-    stopifnot(length(mu) == n)
-
-    stopifnot(nrow(X) == n)
-    stopifnot(ncol(X) == p)
-
-    if(any(!is.na(Z))){
-        stopifnot(nrow(Z) == n)
-        stopifnot(ncol(Z) == n_clusters)
-    }
-
-    return(list(X=X, y=y, Z=Z, mu=mu))
+    return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
+        n_clusters))
 }
