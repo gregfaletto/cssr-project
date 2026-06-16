@@ -37,7 +37,7 @@
 #' @param sigma_eps_sq Integer or numeric; the variance on the noise added
 #' to y. Only one of snr and sigma_eps_sq must be specified. Default is NA.
 #' @return A list of the following elements. \item{Z}{The
-#' latent features; either a numeric vector (if n_clusters > 1) or a numeric
+#' latent features; either a numeric vector (if n_clusters == 1) or a numeric
 #' matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
 #' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).} \item{y}{A

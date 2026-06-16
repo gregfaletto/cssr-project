@@ -107,9 +107,8 @@ A list of the following elements.
 
 - Z:
 
-  The latent features; either a numeric vector (if n_clusters \> 1) or a
-  numeric matrix (if n_clusters \> 1). Note that (X, Z) is multivariate
-  Gaussian.
+  The latent features, as an n by n_clusters numeric matrix (one column
+  per latent variable). Note that (X, Z) is multivariate Gaussian.
 
 - mu:
 

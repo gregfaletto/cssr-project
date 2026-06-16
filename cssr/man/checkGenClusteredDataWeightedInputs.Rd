@@ -86,8 +86,8 @@ n_clusters latent variables. The next k_unclustered features will be the
 k_unclustered features will be the unclustered noise features.} \item{y}{A
 length n numeric vector; the response generated from X, the latent features
 from Z, and the coefficient vector, along with additive noise.} \item{Z}{The
-latent features; either a numeric vector (if n_clusters > 1) or a numeric
-matrix (if n_clusters > 1). Note that (X, Z) is multivariate Gaussian.}
+latent features, as an n by n_clusters numeric matrix (one column per
+latent variable). Note that (X, Z) is multivariate Gaussian.}
 \item{mu}{A length \code{n} numeric vector; the expected response given X, Z, and
 the true coefficient vector (equal to y minus the added noise).}
 }
