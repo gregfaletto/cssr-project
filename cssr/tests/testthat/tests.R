@@ -1,4 +1,26 @@
 # Generated from _main.Rmd: do not edit by hand  
+testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as a matrix (#43)", {
+  # A 1-column data.frame must coerce to a 1-column matrix, not collapse to a
+  # vector (which used to crash with the cryptic "argument is of length zero",
+  # both with and without clusters).
+  num_df <- data.frame(a = as.numeric(1:8))
+  res_clust <- coerceDataFrameToMatrix(num_df, clusters = list(1))
+  testthat::expect_true(is.matrix(res_clust))
+  testthat::expect_equal(dim(res_clust), c(8L, 1L))
+  res_noclust <- coerceDataFrameToMatrix(num_df, clusters = list())
+  testthat::expect_true(is.matrix(res_noclust))
+  testthat::expect_equal(dim(res_noclust), c(8L, 1L))
+
+  # A matrix passes through unchanged.
+  m <- matrix(as.numeric(1:8), nrow = 8, ncol = 1)
+  testthat::expect_identical(coerceDataFrameToMatrix(m, clusters = list()), m)
+
+  # The factor-expansion guard still fires (a >= 3-level factor changes ncol).
+  fac_df <- data.frame(a = factor(c("x", "y", "z", "x", "y", "z", "x", "y")))
+  testthat::expect_error(coerceDataFrameToMatrix(fac_df, clusters = list(1)),
+    "the number of columns changed", fixed = TRUE)
+})
+
 testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,

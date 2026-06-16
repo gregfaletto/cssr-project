@@ -24,7 +24,12 @@ coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
     if(is.data.frame(X)){
         p <- ncol(X)
         X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
+        # drop = FALSE: a single non-intercept column must stay a matrix.
+        # Without it a 1-column data.frame collapses to a vector, ncol(X) is
+        # NULL, and the guard below evaluates `... & logical(0)` -> the cryptic
+        # "argument is of length zero" instead of letting the clean downstream
+        # "p >= 2" check fire (#43).
+        X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         if(length(clusters) > 0 & (p != ncol(X))){
             stop(paste0("When stats::model.matrix converted the provided data.frame ",
                 arg_name,
