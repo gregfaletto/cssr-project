@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.14",
+    Version = "0.1.15",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     `Authors@R` = c(person(
@@ -890,7 +890,12 @@ coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
     if(is.data.frame(X)){
         p <- ncol(X)
         X <- stats::model.matrix(~ ., X)
-        X <- X[, colnames(X) != "(Intercept)"]
+        # drop = FALSE: a single non-intercept column must stay a matrix.
+        # Without it a 1-column data.frame collapses to a vector, ncol(X) is
+        # NULL, and the guard below evaluates `... & logical(0)` -> the cryptic
+        # "argument is of length zero" instead of letting the clean downstream
+        # "p >= 2" check fire (#43).
+        X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
         if(length(clusters) > 0 & (p != ncol(X))){
             stop(paste0("When stats::model.matrix converted the provided data.frame ",
                 arg_name,
@@ -901,6 +906,32 @@ coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
     }
     X
 }
+```
+
+Tests for `coerceDataFrameToMatrix()`:
+
+```{r}
+testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as a matrix (#43)", {
+  # A 1-column data.frame must coerce to a 1-column matrix, not collapse to a
+  # vector (which used to crash with the cryptic "argument is of length zero",
+  # both with and without clusters).
+  num_df <- data.frame(a = as.numeric(1:8))
+  res_clust <- coerceDataFrameToMatrix(num_df, clusters = list(1))
+  testthat::expect_true(is.matrix(res_clust))
+  testthat::expect_equal(dim(res_clust), c(8L, 1L))
+  res_noclust <- coerceDataFrameToMatrix(num_df, clusters = list())
+  testthat::expect_true(is.matrix(res_noclust))
+  testthat::expect_equal(dim(res_noclust), c(8L, 1L))
+
+  # A matrix passes through unchanged.
+  m <- matrix(as.numeric(1:8), nrow = 8, ncol = 1)
+  testthat::expect_identical(coerceDataFrameToMatrix(m, clusters = list()), m)
+
+  # The factor-expansion guard still fires (a >= 3-level factor changes ncol).
+  fac_df <- data.frame(a = factor(c("x", "y", "z", "x", "y", "z", "x", "y")))
+  testthat::expect_error(coerceDataFrameToMatrix(fac_df, clusters = list(1)),
+    "the number of columns changed", fixed = TRUE)
+})
 ```
 
 `checkCssInputs()`:
