@@ -19,7 +19,7 @@ cluster, clusters can either be a list of length 1 or an integer vector.)
 All of the provided clusters must be non-overlapping. Every feature not
 appearing in any cluster will be assumed to be unclustered (that is, they
 will be treated as if they are in a "cluster" containing only themselves).
-#' CAUTION: if the provided X is a data.frame that contains a categorical
+CAUTION: if the provided X is a data.frame that contains a categorical
 feature with more than two levels, then the resulting matrix made from
 model.matrix will have a different number of columns than the provided
 data.frame, some of the feature numbers will change, and the clusters

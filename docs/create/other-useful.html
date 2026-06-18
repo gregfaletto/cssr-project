@@ -1435,7 +1435,7 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb157-18"><a href="other-useful.html#cb157-18" tabindex="-1"></a><span class="co">#' these features will be determined by beta_unclustered. Must be at least 1.</span></span>
 <span id="cb157-19"><a href="other-useful.html#cb157-19" tabindex="-1"></a><span class="co">#' @param cluster_size Integer or numeric; for each of the n_clusters latent</span></span>
 <span id="cb157-20"><a href="other-useful.html#cb157-20" tabindex="-1"></a><span class="co">#' variables, X will contain cluster_size noisy proxies that are correlated with</span></span>
-<span id="cb157-21"><a href="other-useful.html#cb157-21" tabindex="-1"></a><span class="co">#' the latent variable.</span></span>
+<span id="cb157-21"><a href="other-useful.html#cb157-21" tabindex="-1"></a><span class="co">#' the latent variable. Must be at least 2.</span></span>
 <span id="cb157-22"><a href="other-useful.html#cb157-22" tabindex="-1"></a><span class="co">#' @param n_clusters Integer or numeric; the number of latent variables to</span></span>
 <span id="cb157-23"><a href="other-useful.html#cb157-23" tabindex="-1"></a><span class="co">#' generate, each of which will be associated with an observed cluster in X.</span></span>
 <span id="cb157-24"><a href="other-useful.html#cb157-24" tabindex="-1"></a><span class="co">#' Must be at least 1. Default is 1.</span></span>
@@ -1444,7 +1444,7 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb157-27"><a href="other-useful.html#cb157-27" tabindex="-1"></a><span class="co">#' them will have coefficient beta_latent). Must be less than or equal to</span></span>
 <span id="cb157-28"><a href="other-useful.html#cb157-28" tabindex="-1"></a><span class="co">#' n_clusters. Default is 1.</span></span>
 <span id="cb157-29"><a href="other-useful.html#cb157-29" tabindex="-1"></a><span class="co">#' @param rho_high Integer or numeric; the maximum correlation of the proxies</span></span>
-<span id="cb157-30"><a href="other-useful.html#cb157-30" tabindex="-1"></a><span class="co">#' each cluster with each other. Default is 1.</span></span>
+<span id="cb157-30"><a href="other-useful.html#cb157-30" tabindex="-1"></a><span class="co">#' in each cluster with each other. Default is 1.</span></span>
 <span id="cb157-31"><a href="other-useful.html#cb157-31" tabindex="-1"></a><span class="co">#' @param rho_low Integer or numeric; the minimum correlation of the proxies in</span></span>
 <span id="cb157-32"><a href="other-useful.html#cb157-32" tabindex="-1"></a><span class="co">#' each cluster with each other. rho_low cannot equal 0 and must be no larger</span></span>
 <span id="cb157-33"><a href="other-useful.html#cb157-33" tabindex="-1"></a><span class="co">#' than rho_high. Default is 0.5.</span></span>
@@ -1925,10 +1925,10 @@ inside <code><a href="other-useful.html#genZmuY">genZmuY</a>()</code>.</p>
 <span id="cb167-2"><a href="other-useful.html#cb167-2" tabindex="-1"></a><span class="co">#'</span></span>
 <span id="cb167-3"><a href="other-useful.html#cb167-3" tabindex="-1"></a><span class="co">#' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in</span></span>
 <span id="cb167-4"><a href="other-useful.html#cb167-4" tabindex="-1"></a><span class="co">#' cluster stability selection) by cross-validation.</span></span>
-<span id="cb167-5"><a href="other-useful.html#cb167-5" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb167-6"><a href="other-useful.html#cb167-6" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb167-7"><a href="other-useful.html#cb167-7" tabindex="-1"></a><span class="co">#' the p &gt;= 2 features/predictors that will be used by cluster stability</span></span>
-<span id="cb167-8"><a href="other-useful.html#cb167-8" tabindex="-1"></a><span class="co">#' selection.</span></span>
+<span id="cb167-5"><a href="other-useful.html#cb167-5" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix containing the p &gt;= 2 features/predictors</span></span>
+<span id="cb167-6"><a href="other-useful.html#cb167-6" tabindex="-1"></a><span class="co">#' that will be used by cluster stability selection. (Unlike the other</span></span>
+<span id="cb167-7"><a href="other-useful.html#cb167-7" tabindex="-1"></a><span class="co">#' X-accepting functions, getLassoLambda requires a matrix and does not coerce a</span></span>
+<span id="cb167-8"><a href="other-useful.html#cb167-8" tabindex="-1"></a><span class="co">#' data.frame.)</span></span>
 <span id="cb167-9"><a href="other-useful.html#cb167-9" tabindex="-1"></a><span class="co">#' @param y The response; an n-dimensional numeric or integer vector. (Unlike</span></span>
 <span id="cb167-10"><a href="other-useful.html#cb167-10" tabindex="-1"></a><span class="co">#' in the more general css setup, this response must be real-valued since</span></span>
 <span id="cb167-11"><a href="other-useful.html#cb167-11" tabindex="-1"></a><span class="co">#' lambda will be determined using the lasso with cross-validation.)</span></span>
@@ -2461,73 +2461,74 @@ inside <code><a href="other-useful.html#genZmuY">genZmuY</a>()</code>.</p>
 <span id="cb173-25"><a href="other-useful.html#cb173-25" tabindex="-1"></a><span class="co">#' choosing the feature with the highest correlation with the response if the</span></span>
 <span id="cb173-26"><a href="other-useful.html#cb173-26" tabindex="-1"></a><span class="co">#' response is real-valued; only returned if the features are named),</span></span>
 <span id="cb173-27"><a href="other-useful.html#cb173-27" tabindex="-1"></a><span class="co">#' ClustProtoNum (the column number of the prototype in the X matrix provided to</span></span>
-<span id="cb173-28"><a href="other-useful.html#cb173-28" tabindex="-1"></a><span class="co">#' css), and ClustSize (the size of the cluster).</span></span>
-<span id="cb173-29"><a href="other-useful.html#cb173-29" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb173-30"><a href="other-useful.html#cb173-30" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb173-31"><a href="other-useful.html#cb173-31" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb173-32"><a href="other-useful.html#cb173-32" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb173-33"><a href="other-useful.html#cb173-33" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb173-34"><a href="other-useful.html#cb173-34" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb173-35"><a href="other-useful.html#cb173-35" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb173-36"><a href="other-useful.html#cb173-36" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb173-37"><a href="other-useful.html#cb173-37" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#printCssDf">printCssDf</a>(res)</span></span>
-<span id="cb173-38"><a href="other-useful.html#cb173-38" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb173-39"><a href="other-useful.html#cb173-39" tabindex="-1"></a><span id="printCssDf">printCssDf</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>,</span>
-<span id="cb173-40"><a href="other-useful.html#cb173-40" tabindex="-1"></a>    <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
-<span id="cb173-41"><a href="other-useful.html#cb173-41" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb173-42"><a href="other-useful.html#cb173-42" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
-<span id="cb173-43"><a href="other-useful.html#cb173-43" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb173-44"><a href="other-useful.html#cb173-44" tabindex="-1"></a></span>
-<span id="cb173-45"><a href="other-useful.html#cb173-45" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
-<span id="cb173-46"><a href="other-useful.html#cb173-46" tabindex="-1"></a></span>
-<span id="cb173-47"><a href="other-useful.html#cb173-47" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb173-48"><a href="other-useful.html#cb173-48" tabindex="-1"></a></span>
-<span id="cb173-49"><a href="other-useful.html#cb173-49" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb173-50"><a href="other-useful.html#cb173-50" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb173-51"><a href="other-useful.html#cb173-51" tabindex="-1"></a></span>
-<span id="cb173-52"><a href="other-useful.html#cb173-52" tabindex="-1"></a>    sel_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(css_results, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb173-53"><a href="other-useful.html#cb173-53" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts,</span>
-<span id="cb173-54"><a href="other-useful.html#cb173-54" tabindex="-1"></a>        <span class="at">max_num_clusts=</span>max_num_clusts)<span class="sc">$</span>selected_clusts</span>
-<span id="cb173-55"><a href="other-useful.html#cb173-55" tabindex="-1"></a></span>
-<span id="cb173-56"><a href="other-useful.html#cb173-56" tabindex="-1"></a>    <span class="co"># sel_clusts is guaranteed to have length at least 1 by</span></span>
-<span id="cb173-57"><a href="other-useful.html#cb173-57" tabindex="-1"></a>    <span class="co"># getCssSelections </span></span>
-<span id="cb173-58"><a href="other-useful.html#cb173-58" tabindex="-1"></a></span>
-<span id="cb173-59"><a href="other-useful.html#cb173-59" tabindex="-1"></a>    <span class="co"># Get prototypes (feature from each cluster with highest selection</span></span>
-<span id="cb173-60"><a href="other-useful.html#cb173-60" tabindex="-1"></a>    <span class="co"># proportion, breaking ties by using marginal correlations of features with</span></span>
-<span id="cb173-61"><a href="other-useful.html#cb173-61" tabindex="-1"></a>    <span class="co"># y from data provided to css if y is real-valued)</span></span>
-<span id="cb173-62"><a href="other-useful.html#cb173-62" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> <a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>(css_results, sel_clusts)</span>
-<span id="cb173-63"><a href="other-useful.html#cb173-63" tabindex="-1"></a>    </span>
-<span id="cb173-64"><a href="other-useful.html#cb173-64" tabindex="-1"></a>    <span class="co"># Cluster selection proportions</span></span>
-<span id="cb173-65"><a href="other-useful.html#cb173-65" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(sel_clusts) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb173-66"><a href="other-useful.html#cb173-66" tabindex="-1"></a>        sel_clust_sel_props <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(css_results<span class="sc">$</span>clus_sel_mat[,</span>
-<span id="cb173-67"><a href="other-useful.html#cb173-67" tabindex="-1"></a>            <span class="fu">names</span>(sel_clusts)])</span>
-<span id="cb173-68"><a href="other-useful.html#cb173-68" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb173-69"><a href="other-useful.html#cb173-69" tabindex="-1"></a>        sel_clust_sel_props <span class="ot">&lt;-</span> <span class="fu">mean</span>(css_results<span class="sc">$</span>clus_sel_mat[,</span>
-<span id="cb173-70"><a href="other-useful.html#cb173-70" tabindex="-1"></a>            <span class="fu">names</span>(sel_clusts)])</span>
-<span id="cb173-71"><a href="other-useful.html#cb173-71" tabindex="-1"></a>    }</span>
-<span id="cb173-72"><a href="other-useful.html#cb173-72" tabindex="-1"></a></span>
-<span id="cb173-73"><a href="other-useful.html#cb173-73" tabindex="-1"></a>    <span class="co"># Data.frame: name of cluster, cluster prototype, selection proportion,</span></span>
-<span id="cb173-74"><a href="other-useful.html#cb173-74" tabindex="-1"></a>    <span class="co"># cluster size</span></span>
-<span id="cb173-75"><a href="other-useful.html#cb173-75" tabindex="-1"></a></span>
-<span id="cb173-76"><a href="other-useful.html#cb173-76" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(prototypes))){</span>
-<span id="cb173-77"><a href="other-useful.html#cb173-77" tabindex="-1"></a>        print_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ClustName=</span><span class="fu">names</span>(sel_clusts),</span>
-<span id="cb173-78"><a href="other-useful.html#cb173-78" tabindex="-1"></a>            <span class="at">ClustProtoName=</span><span class="fu">names</span>(prototypes), <span class="at">ClustProtoNum=</span><span class="fu">unname</span>(prototypes),</span>
-<span id="cb173-79"><a href="other-useful.html#cb173-79" tabindex="-1"></a>            <span class="at">ClustSelProp=</span>sel_clust_sel_props, <span class="at">ClustSize=</span><span class="fu">lengths</span>(sel_clusts))</span>
-<span id="cb173-80"><a href="other-useful.html#cb173-80" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb173-81"><a href="other-useful.html#cb173-81" tabindex="-1"></a>        print_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ClustName=</span><span class="fu">names</span>(sel_clusts),</span>
-<span id="cb173-82"><a href="other-useful.html#cb173-82" tabindex="-1"></a>            <span class="at">ClustProtoNum=</span><span class="fu">unname</span>(prototypes), <span class="at">ClustSelProp=</span>sel_clust_sel_props,</span>
-<span id="cb173-83"><a href="other-useful.html#cb173-83" tabindex="-1"></a>            <span class="at">ClustSize=</span><span class="fu">lengths</span>(sel_clusts))</span>
-<span id="cb173-84"><a href="other-useful.html#cb173-84" tabindex="-1"></a>    }</span>
-<span id="cb173-85"><a href="other-useful.html#cb173-85" tabindex="-1"></a></span>
-<span id="cb173-86"><a href="other-useful.html#cb173-86" tabindex="-1"></a>    print_df <span class="ot">&lt;-</span> print_df[<span class="fu">order</span>(print_df<span class="sc">$</span>ClustSelProp, <span class="at">decreasing=</span><span class="cn">TRUE</span>), ]</span>
-<span id="cb173-87"><a href="other-useful.html#cb173-87" tabindex="-1"></a></span>
-<span id="cb173-88"><a href="other-useful.html#cb173-88" tabindex="-1"></a>    <span class="fu">rownames</span>(print_df) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb173-89"><a href="other-useful.html#cb173-89" tabindex="-1"></a>    </span>
-<span id="cb173-90"><a href="other-useful.html#cb173-90" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(print_df))</span>
-<span id="cb173-91"><a href="other-useful.html#cb173-91" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(print_df) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb173-92"><a href="other-useful.html#cb173-92" tabindex="-1"></a></span>
-<span id="cb173-93"><a href="other-useful.html#cb173-93" tabindex="-1"></a>    <span class="fu">return</span>(print_df)</span>
-<span id="cb173-94"><a href="other-useful.html#cb173-94" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb173-28"><a href="other-useful.html#cb173-28" tabindex="-1"></a><span class="co">#' css), ClustSelProp (the cluster's selection proportion), and ClustSize (the</span></span>
+<span id="cb173-29"><a href="other-useful.html#cb173-29" tabindex="-1"></a><span class="co">#' size of the cluster).</span></span>
+<span id="cb173-30"><a href="other-useful.html#cb173-30" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb173-31"><a href="other-useful.html#cb173-31" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb173-32"><a href="other-useful.html#cb173-32" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb173-33"><a href="other-useful.html#cb173-33" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb173-34"><a href="other-useful.html#cb173-34" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb173-35"><a href="other-useful.html#cb173-35" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb173-36"><a href="other-useful.html#cb173-36" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb173-37"><a href="other-useful.html#cb173-37" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb173-38"><a href="other-useful.html#cb173-38" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#printCssDf">printCssDf</a>(res)</span></span>
+<span id="cb173-39"><a href="other-useful.html#cb173-39" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb173-40"><a href="other-useful.html#cb173-40" tabindex="-1"></a><span id="printCssDf">printCssDf</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>,</span>
+<span id="cb173-41"><a href="other-useful.html#cb173-41" tabindex="-1"></a>    <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
+<span id="cb173-42"><a href="other-useful.html#cb173-42" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb173-43"><a href="other-useful.html#cb173-43" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
+<span id="cb173-44"><a href="other-useful.html#cb173-44" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb173-45"><a href="other-useful.html#cb173-45" tabindex="-1"></a></span>
+<span id="cb173-46"><a href="other-useful.html#cb173-46" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
+<span id="cb173-47"><a href="other-useful.html#cb173-47" tabindex="-1"></a></span>
+<span id="cb173-48"><a href="other-useful.html#cb173-48" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb173-49"><a href="other-useful.html#cb173-49" tabindex="-1"></a></span>
+<span id="cb173-50"><a href="other-useful.html#cb173-50" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb173-51"><a href="other-useful.html#cb173-51" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb173-52"><a href="other-useful.html#cb173-52" tabindex="-1"></a></span>
+<span id="cb173-53"><a href="other-useful.html#cb173-53" tabindex="-1"></a>    sel_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(css_results, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb173-54"><a href="other-useful.html#cb173-54" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts,</span>
+<span id="cb173-55"><a href="other-useful.html#cb173-55" tabindex="-1"></a>        <span class="at">max_num_clusts=</span>max_num_clusts)<span class="sc">$</span>selected_clusts</span>
+<span id="cb173-56"><a href="other-useful.html#cb173-56" tabindex="-1"></a></span>
+<span id="cb173-57"><a href="other-useful.html#cb173-57" tabindex="-1"></a>    <span class="co"># sel_clusts is guaranteed to have length at least 1 by</span></span>
+<span id="cb173-58"><a href="other-useful.html#cb173-58" tabindex="-1"></a>    <span class="co"># getCssSelections </span></span>
+<span id="cb173-59"><a href="other-useful.html#cb173-59" tabindex="-1"></a></span>
+<span id="cb173-60"><a href="other-useful.html#cb173-60" tabindex="-1"></a>    <span class="co"># Get prototypes (feature from each cluster with highest selection</span></span>
+<span id="cb173-61"><a href="other-useful.html#cb173-61" tabindex="-1"></a>    <span class="co"># proportion, breaking ties by using marginal correlations of features with</span></span>
+<span id="cb173-62"><a href="other-useful.html#cb173-62" tabindex="-1"></a>    <span class="co"># y from data provided to css if y is real-valued)</span></span>
+<span id="cb173-63"><a href="other-useful.html#cb173-63" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> <a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>(css_results, sel_clusts)</span>
+<span id="cb173-64"><a href="other-useful.html#cb173-64" tabindex="-1"></a>    </span>
+<span id="cb173-65"><a href="other-useful.html#cb173-65" tabindex="-1"></a>    <span class="co"># Cluster selection proportions</span></span>
+<span id="cb173-66"><a href="other-useful.html#cb173-66" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(sel_clusts) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb173-67"><a href="other-useful.html#cb173-67" tabindex="-1"></a>        sel_clust_sel_props <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(css_results<span class="sc">$</span>clus_sel_mat[,</span>
+<span id="cb173-68"><a href="other-useful.html#cb173-68" tabindex="-1"></a>            <span class="fu">names</span>(sel_clusts)])</span>
+<span id="cb173-69"><a href="other-useful.html#cb173-69" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb173-70"><a href="other-useful.html#cb173-70" tabindex="-1"></a>        sel_clust_sel_props <span class="ot">&lt;-</span> <span class="fu">mean</span>(css_results<span class="sc">$</span>clus_sel_mat[,</span>
+<span id="cb173-71"><a href="other-useful.html#cb173-71" tabindex="-1"></a>            <span class="fu">names</span>(sel_clusts)])</span>
+<span id="cb173-72"><a href="other-useful.html#cb173-72" tabindex="-1"></a>    }</span>
+<span id="cb173-73"><a href="other-useful.html#cb173-73" tabindex="-1"></a></span>
+<span id="cb173-74"><a href="other-useful.html#cb173-74" tabindex="-1"></a>    <span class="co"># Data.frame: name of cluster, cluster prototype, selection proportion,</span></span>
+<span id="cb173-75"><a href="other-useful.html#cb173-75" tabindex="-1"></a>    <span class="co"># cluster size</span></span>
+<span id="cb173-76"><a href="other-useful.html#cb173-76" tabindex="-1"></a></span>
+<span id="cb173-77"><a href="other-useful.html#cb173-77" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(prototypes))){</span>
+<span id="cb173-78"><a href="other-useful.html#cb173-78" tabindex="-1"></a>        print_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ClustName=</span><span class="fu">names</span>(sel_clusts),</span>
+<span id="cb173-79"><a href="other-useful.html#cb173-79" tabindex="-1"></a>            <span class="at">ClustProtoName=</span><span class="fu">names</span>(prototypes), <span class="at">ClustProtoNum=</span><span class="fu">unname</span>(prototypes),</span>
+<span id="cb173-80"><a href="other-useful.html#cb173-80" tabindex="-1"></a>            <span class="at">ClustSelProp=</span>sel_clust_sel_props, <span class="at">ClustSize=</span><span class="fu">lengths</span>(sel_clusts))</span>
+<span id="cb173-81"><a href="other-useful.html#cb173-81" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb173-82"><a href="other-useful.html#cb173-82" tabindex="-1"></a>        print_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">ClustName=</span><span class="fu">names</span>(sel_clusts),</span>
+<span id="cb173-83"><a href="other-useful.html#cb173-83" tabindex="-1"></a>            <span class="at">ClustProtoNum=</span><span class="fu">unname</span>(prototypes), <span class="at">ClustSelProp=</span>sel_clust_sel_props,</span>
+<span id="cb173-84"><a href="other-useful.html#cb173-84" tabindex="-1"></a>            <span class="at">ClustSize=</span><span class="fu">lengths</span>(sel_clusts))</span>
+<span id="cb173-85"><a href="other-useful.html#cb173-85" tabindex="-1"></a>    }</span>
+<span id="cb173-86"><a href="other-useful.html#cb173-86" tabindex="-1"></a></span>
+<span id="cb173-87"><a href="other-useful.html#cb173-87" tabindex="-1"></a>    print_df <span class="ot">&lt;-</span> print_df[<span class="fu">order</span>(print_df<span class="sc">$</span>ClustSelProp, <span class="at">decreasing=</span><span class="cn">TRUE</span>), ]</span>
+<span id="cb173-88"><a href="other-useful.html#cb173-88" tabindex="-1"></a></span>
+<span id="cb173-89"><a href="other-useful.html#cb173-89" tabindex="-1"></a>    <span class="fu">rownames</span>(print_df) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb173-90"><a href="other-useful.html#cb173-90" tabindex="-1"></a>    </span>
+<span id="cb173-91"><a href="other-useful.html#cb173-91" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.data.frame</span>(print_df))</span>
+<span id="cb173-92"><a href="other-useful.html#cb173-92" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(print_df) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb173-93"><a href="other-useful.html#cb173-93" tabindex="-1"></a></span>
+<span id="cb173-94"><a href="other-useful.html#cb173-94" tabindex="-1"></a>    <span class="fu">return</span>(print_df)</span>
+<span id="cb173-95"><a href="other-useful.html#cb173-95" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>()</code></p>
 <div class="sourceCode" id="cb174"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb174-1"><a href="other-useful.html#cb174-1" tabindex="-1"></a><span class="co">#' Identify selection prototypes from selected clusters</span></span>
 <span id="cb174-2"><a href="other-useful.html#cb174-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -2930,16 +2931,17 @@ inside <code><a href="other-useful.html#genZmuY">genZmuY</a>()</code>.</p>
 <span id="cb179-27"><a href="other-useful.html#cb179-27" tabindex="-1"></a><span class="co">#' selection proportion among all the cluster members, with ties broken by</span></span>
 <span id="cb179-28"><a href="other-useful.html#cb179-28" tabindex="-1"></a><span class="co">#' choosing the feature with the highest correlation with the response if the</span></span>
 <span id="cb179-29"><a href="other-useful.html#cb179-29" tabindex="-1"></a><span class="co">#' response is real-valued; only shown if the features are named); ClustProtoNum</span></span>
-<span id="cb179-30"><a href="other-useful.html#cb179-30" tabindex="-1"></a><span class="co">#' (the column number of the prototype in the X matrix provided to css); and</span></span>
-<span id="cb179-31"><a href="other-useful.html#cb179-31" tabindex="-1"></a><span class="co">#' ClustSize (the size of the cluster).</span></span>
-<span id="cb179-32"><a href="other-useful.html#cb179-32" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb179-33"><a href="other-useful.html#cb179-33" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb179-34"><a href="other-useful.html#cb179-34" tabindex="-1"></a><span id="print.cssr">print.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, ...){</span>
-<span id="cb179-35"><a href="other-useful.html#cb179-35" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <a href="other-useful.html#printCssDf">printCssDf</a>(<span class="at">css_results=</span>x, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb179-36"><a href="other-useful.html#cb179-36" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb179-37"><a href="other-useful.html#cb179-37" tabindex="-1"></a>    <span class="fu">print.data.frame</span>(df, ...)</span>
-<span id="cb179-38"><a href="other-useful.html#cb179-38" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
-<span id="cb179-39"><a href="other-useful.html#cb179-39" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb179-30"><a href="other-useful.html#cb179-30" tabindex="-1"></a><span class="co">#' (the column number of the prototype in the X matrix provided to css);</span></span>
+<span id="cb179-31"><a href="other-useful.html#cb179-31" tabindex="-1"></a><span class="co">#' ClustSelProp (the cluster's selection proportion); and ClustSize (the size of</span></span>
+<span id="cb179-32"><a href="other-useful.html#cb179-32" tabindex="-1"></a><span class="co">#' the cluster).</span></span>
+<span id="cb179-33"><a href="other-useful.html#cb179-33" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb179-34"><a href="other-useful.html#cb179-34" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb179-35"><a href="other-useful.html#cb179-35" tabindex="-1"></a><span id="print.cssr">print.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, ...){</span>
+<span id="cb179-36"><a href="other-useful.html#cb179-36" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <a href="other-useful.html#printCssDf">printCssDf</a>(<span class="at">css_results=</span>x, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb179-37"><a href="other-useful.html#cb179-37" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb179-38"><a href="other-useful.html#cb179-38" tabindex="-1"></a>    <span class="fu">print.data.frame</span>(df, ...)</span>
+<span id="cb179-39"><a href="other-useful.html#cb179-39" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
+<span id="cb179-40"><a href="other-useful.html#cb179-40" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="other-useful.html#print.cssr">print.cssr</a>()</code> (and a minimal-<code>B</code> smoke test for <code><a href="css.html#css">css</a>()</code>):</p>
 <div class="sourceCode" id="cb180"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb180-1"><a href="other-useful.html#cb180-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"print.cssr works"</span>, {</span>
 <span id="cb180-2"><a href="other-useful.html#cb180-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">26717</span>)</span>

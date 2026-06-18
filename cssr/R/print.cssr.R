@@ -29,8 +29,9 @@
 #' selection proportion among all the cluster members, with ties broken by
 #' choosing the feature with the highest correlation with the response if the
 #' response is real-valued; only shown if the features are named); ClustProtoNum
-#' (the column number of the prototype in the X matrix provided to css); and
-#' ClustSize (the size of the cluster).
+#' (the column number of the prototype in the X matrix provided to css);
+#' ClustSelProp (the cluster's selection proportion); and ClustSize (the size of
+#' the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){

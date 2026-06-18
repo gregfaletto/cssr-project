@@ -27,7 +27,8 @@
 #' choosing the feature with the highest correlation with the response if the
 #' response is real-valued; only returned if the features are named),
 #' ClustProtoNum (the column number of the prototype in the X matrix provided to
-#' css), and ClustSize (the size of the cluster).
+#' css), ClustSelProp (the cluster's selection proportion), and ClustSize (the
+#' size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @examples
 #' set.seed(1)

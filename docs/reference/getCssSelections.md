@@ -62,7 +62,7 @@ getCssSelections(
 
 ## Value
 
-A named list with two items.
+A named list with three items.
 
 - selected_clusts:
 

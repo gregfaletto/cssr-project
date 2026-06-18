@@ -20,7 +20,7 @@
 #' these features will be determined by beta_unclustered. Must be at least 1.
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
-#' the latent variable.
+#' the latent variable. Must be at least 2.
 #' @param n_clusters Integer or numeric; the number of latent variables to
 #' generate, each of which will be associated with an observed cluster in X.
 #' Must be at least 1. Default is 1.
@@ -29,7 +29,7 @@
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
 #' @param rho_high Integer or numeric; the maximum correlation of the proxies
-#' each cluster with each other. Default is 1.
+#' in each cluster with each other. Default is 1.
 #' @param rho_low Integer or numeric; the minimum correlation of the proxies in
 #' each cluster with each other. rho_low cannot equal 0 and must be no larger
 #' than rho_high. Default is 0.5.

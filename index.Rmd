@@ -190,7 +190,7 @@ and
 #' 1), then `css()` returns the same results as stability selection (so the
 #' returned `feat_sel_mat` will be identical to `clus_sel_mat`). Names for the
 #' clusters will be needed later; any clusters that are not given names in the
-#' provided list will be given names automatically by `css()`. #' CAUTION: if
+#' provided list will be given names automatically by `css()`. CAUTION: if
 #' the provided X is a data.frame that contains a categorical feature with more
 #' than two levels, then the resulting matrix made from model.matrix will have a
 #' different number of columns than the provided data.frame, some of the feature
@@ -3484,7 +3484,7 @@ As in the previous section, we first define each function and then define the he
 #' max_num_clusts clusters, the cutoff will be decreased until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
-#' @return A named list with two items. \item{selected_clusts}{A named list of
+#' @return A named list with three items. \item{selected_clusts}{A named list of
 #' integer vectors; each vector contains the indices of the features in one of
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
 #' indices of the features with nonzero weights from all of the selected
@@ -6297,7 +6297,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
             min_num_clusts, max_num_clusts)
         y_train <- css_results$y[css_results$train_inds]
         if(!is.numeric(y_train) & !is.integer(y_train)){
-            stop("Can't generated predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression).")
+            stop("Can't generate predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression).")
         }
     }
 
@@ -8390,7 +8390,7 @@ testthat::test_that("genClusteredDataWeighted works", {
 #' these features will be determined by beta_unclustered. Must be at least 1.
 #' @param cluster_size Integer or numeric; for each of the n_clusters latent
 #' variables, X will contain cluster_size noisy proxies that are correlated with
-#' the latent variable.
+#' the latent variable. Must be at least 2.
 #' @param n_clusters Integer or numeric; the number of latent variables to
 #' generate, each of which will be associated with an observed cluster in X.
 #' Must be at least 1. Default is 1.
@@ -8399,7 +8399,7 @@ testthat::test_that("genClusteredDataWeighted works", {
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
 #' @param rho_high Integer or numeric; the maximum correlation of the proxies
-#' each cluster with each other. Default is 1.
+#' in each cluster with each other. Default is 1.
 #' @param rho_low Integer or numeric; the minimum correlation of the proxies in
 #' each cluster with each other. rho_low cannot equal 0 and must be no larger
 #' than rho_high. Default is 0.5.
@@ -8896,10 +8896,10 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
 #'
 #' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
 #' cluster stability selection) by cross-validation.
-#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
-#' be coerced internally to a matrix by the function model.matrix) containing
-#' the p >= 2 features/predictors that will be used by cluster stability
-#' selection.
+#' @param X An n x p numeric matrix containing the p >= 2 features/predictors
+#' that will be used by cluster stability selection. (Unlike the other
+#' X-accepting functions, getLassoLambda requires a matrix and does not coerce a
+#' data.frame.)
 #' @param y The response; an n-dimensional numeric or integer vector. (Unlike
 #' in the more general css setup, this response must be real-valued since
 #' lambda will be determined using the lasso with cross-validation.)
@@ -9383,7 +9383,8 @@ testthat::test_that("getModelSize works", {
 #' choosing the feature with the highest correlation with the response if the
 #' response is real-valued; only returned if the features are named),
 #' ClustProtoNum (the column number of the prototype in the X matrix provided to
-#' css), and ClustSize (the size of the cluster).
+#' css), ClustSelProp (the cluster's selection proportion), and ClustSize (the
+#' size of the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @examples
 #' set.seed(1)
@@ -9866,8 +9867,9 @@ testthat::test_that("printCssDf works", {
 #' selection proportion among all the cluster members, with ties broken by
 #' choosing the feature with the highest correlation with the response if the
 #' response is real-valued; only shown if the features are named); ClustProtoNum
-#' (the column number of the prototype in the X matrix provided to css); and
-#' ClustSize (the size of the cluster).
+#' (the column number of the prototype in the X matrix provided to css);
+#' ClustSelProp (the cluster's selection proportion); and ClustSize (the size of
+#' the cluster).
 #' @author Gregory Faletto, Jacob Bien
 #' @export
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
@@ -9991,7 +9993,7 @@ The two main disadvantages of these functions are flexibility and computational 
 #' unspecified, cssSelect chooses max_num_clusts by cross-validation).
 #' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
 #' automatically estimated using the lasso with cross-validation. Default is
-#' TRUE, though his argument is ignored if either cutoff or max_num_clusts is
+#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is
 #' provided. (If desired output is to return all clusters, you should set
 #' auto_select_size to FALSE and do not provide cutoff or max_num_clusts.)
 #' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
@@ -10543,7 +10545,7 @@ testthat::test_that("cssSelect threads alpha through to selection", {
 #' used for feature selection and half for model estimation (chosen at random).
 #' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
 #' automatically estimated using the lasso with cross-validation. Default is
-#' TRUE, though his argument is ignored if either cutoff or max_num_clusts is
+#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is
 #' provided. (If desired output is to generate predictions using all clusters,
 #' you should set auto_select_size to FALSE and do not provide cutoff or
 #' max_num_clusts.)
@@ -10909,7 +10911,7 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
 #' All of the provided clusters must be non-overlapping. Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves).
-#' #' CAUTION: if the provided X is a data.frame that contains a categorical
+#' CAUTION: if the provided X is a data.frame that contains a categorical
 #' feature with more than two levels, then the resulting matrix made from
 #' model.matrix will have a different number of columns than the provided
 #' data.frame, some of the feature numbers will change, and the clusters
@@ -12968,13 +12970,14 @@ testthat::test_that("protolasso works", {
 #' output from glmnet when the lasso was estimated on a matrix of prototypes.
 #' (See documentation for the function glmnet from the glmnet package for
 #' details.)}
+#' @author Gregory Faletto, Jacob Bien
 #' @references Bühlmann, P., Rütimann, P., van de Geer, S., & Zhang, C. H.
 #' (2013). Correlated variables in regression: Clustering and sparse estimation.
 #' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
 #' \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor
 #' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear
 #' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)
-#' ' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @examples
 #' set.seed(1)
 #' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,

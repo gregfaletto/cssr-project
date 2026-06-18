@@ -24,7 +24,7 @@ checkCssClustersInput(clusters)
   `feat_sel_mat` will be identical to `clus_sel_mat`). Names for the
   clusters will be needed later; any clusters that are not given names
   in the provided list will be given names automatically by
-  [`css()`](css.md). \#' CAUTION: if the provided X is a data.frame that
+  [`css()`](css.md). CAUTION: if the provided X is a data.frame that
   contains a categorical feature with more than two levels, then the
   resulting matrix made from model.matrix will have a different number
   of columns than the provided data.frame, some of the feature numbers
