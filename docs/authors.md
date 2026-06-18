@@ -14,12 +14,12 @@ Source:
 [`DESCRIPTION`](https://github.com/gregfaletto/cssr-project/tree/main/cssr/DESCRIPTION)
 
 Faletto G, Bien J (2026). *cssr: Cluster Stability Selection*. R package
-version 0.1.17, <https://gregfaletto.github.io/cssr-project/>.
+version 0.1.18, <https://gregfaletto.github.io/cssr-project/>.
 
     @Manual{,
       title = {cssr: Cluster Stability Selection},
       author = {Gregory Faletto and Jacob Bien},
       year = {2026},
-      note = {R package version 0.1.17},
+      note = {R package version 0.1.18},
       url = {https://gregfaletto.github.io/cssr-project/},
     }
