@@ -1151,6 +1151,11 @@ testthat::test_that("getClusterSelMatrix works", {
     testthat::expect_true(all(res[all_zeros, 2] == 0))
   }
 
+  # Single-cluster case (#57): t(clust_counts > 0L) collapses to one column
+  res1 <- getClusterSelMatrix(list(only = 1L:9L), good_res)
+  testthat::expect_equal(ncol(res1), 1)
+  testthat::expect_true(all(is.integer(res1)))
+
   # Not all features in a cluster
   bad_clusters <- list(red_cluster=1L:5L, green_cluster=6L:7L, blue_clust=9L)
 
