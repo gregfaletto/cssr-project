@@ -27,6 +27,8 @@
 #' cluster of features. Any duplicated clusters provided in the input will be
 #' removed.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkFormatClustersInput <- function(clusters, p, clust_names, 
     get_prototypes, x, y, R){
 

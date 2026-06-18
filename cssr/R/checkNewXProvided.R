@@ -18,6 +18,8 @@
 #' train_inds argument.} \item{newXProvided}{Logical; indicates whether a valid
 #' trainX input was provided.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 

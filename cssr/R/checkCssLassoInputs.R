@@ -14,6 +14,8 @@
 #' to allow for multiple lambda values to be provided to `cssLasso()`, as
 #' described in Faletto and Bien 2022.)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssLassoInputs <- function(X, y, lambda){
 
     n <- nrow(X)

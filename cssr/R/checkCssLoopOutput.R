@@ -11,6 +11,8 @@
 #' the feature selection method. All selected features must be among these
 #' features.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
     if(!exists("selected")){
         stop("The provided feature selection method fitfun failed to return anything on (at least) one subsample")

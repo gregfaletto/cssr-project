@@ -36,6 +36,8 @@
 #' regression: Clustering and sparse estimation.
 #' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
 #' \url{https://doi.org/10.1016/j.jspi.2013.05.019}.
+#' @keywords internal
+#' @noRd
 getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
     feat_names){
 

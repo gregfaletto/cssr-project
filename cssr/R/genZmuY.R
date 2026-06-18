@@ -53,6 +53,8 @@
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
+#' @keywords internal
+#' @noRd
 genZmuY <- function(n, p, k_unclustered, cluster_size, n_clusters, sig_clusters,
     beta_latent, beta_unclustered, snr, sigma_eps_sq){
     # Generate Z, weak signal features, and noise features (total of

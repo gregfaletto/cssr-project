@@ -20,6 +20,8 @@
 #' @return An integer vector of the same length as clusters. Entry j is the
 #' index of the feature identified as the prototype for cluster j.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getPrototypes <- function(clusters, x, y){
     # Check inputs
 

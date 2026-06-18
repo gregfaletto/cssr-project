@@ -34,6 +34,8 @@
 #' (one reproducible seed per subsample); direct callers can leave it NULL.
 #' @return An integer vector; the indices of the features selected by `fitfun`.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     # Check inputs
     stopifnot(is.matrix(x))

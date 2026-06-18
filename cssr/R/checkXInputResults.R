@@ -18,6 +18,8 @@
 #' will be NA.} \item{newx}{The provided newx matrix, coerced from a data.frame
 #' to a matrix if the provided newx was a data.frame.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkXInputResults <- function(newx, css_X){
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.

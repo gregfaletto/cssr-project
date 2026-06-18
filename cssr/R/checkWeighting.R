@@ -8,6 +8,8 @@
 #' cluster representatives. Must be one of "sparse", "weighted_avg", or
 #' "simple_avg'.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkWeighting <- function(weighting){
     stopifnot(length(weighting)==1)
     stopifnot(!is.na(weighting))

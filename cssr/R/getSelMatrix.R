@@ -52,6 +52,8 @@
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a
 #' selected set.)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     num_cores, fitfun=cssLasso){
 

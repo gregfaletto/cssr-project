@@ -86,6 +86,8 @@
 #' will contain the indices of a cluster of features. Any duplicated clusters
 #' provided in the input will be removed.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     prop_feats_remove, train_inds, num_cores){
 

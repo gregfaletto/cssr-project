@@ -24,6 +24,8 @@
 #' @return Same as the input, but all of the clusters will be coerced to
 #' integers.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssClustersInput <- function(clusters){
     stopifnot(!is.na(clusters))
     if(is.list(clusters)){

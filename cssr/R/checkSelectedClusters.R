@@ -17,6 +17,8 @@
 #' @param max_sel_prop Numeric; the maximum selection proportion observed for 
 #' any cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     max_sel_prop){
     if(n_sel_clusts == 0){

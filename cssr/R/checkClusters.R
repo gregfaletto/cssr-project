@@ -12,6 +12,8 @@
 #' @param p The number of features; must be at least as large as the number of
 #' clusters.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkClusters <- function(clusters, p){
     stopifnot(is.list(clusters))
     stopifnot(all(lengths(clusters) >= 1))

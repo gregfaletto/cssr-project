@@ -24,6 +24,8 @@
 #' `weights[[j]]` is the weights to use for the jth selected cluster, and it has
 #' the same name as the cluster it corresponds to.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getAllClustWeights <- function(css_results, sel_clusters, weighting){
 
     # Check inputs

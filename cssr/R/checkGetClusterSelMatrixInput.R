@@ -14,6 +14,8 @@
 #' @return No return value; called for the side effect of erroring if the inputs
 #' to getClusterSelMatrix are invalid.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetClusterSelMatrixInput <- function(clusters, res){
     stopifnot(is.matrix(res))
     stopifnot(all(res %in% c(0, 1)))

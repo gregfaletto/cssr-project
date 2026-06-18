@@ -18,6 +18,8 @@
 #' as res and length(clusters) columns. Entry i, j is 1 if at least
 #' one member of cluster j was selected on subsample i, and 0 otherwise.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getClusterSelMatrix <- function(clusters, res){
 
     # Check input

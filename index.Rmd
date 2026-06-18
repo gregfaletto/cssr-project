@@ -114,6 +114,8 @@ usethis::create_package(
     Version = "0.1.16",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
+    URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
+    BugReports = "https://github.com/gregfaletto/cssr-project/issues",
     `Authors@R` = c(person(
       given = "Gregory",
       family = "Faletto",
@@ -408,6 +410,8 @@ The function `createSubsamples()` is responsible for generating the subsamples $
 <<faletto2022>>
 #' 
 <<shah2013>>
+#' @keywords internal
+#' @noRd
 createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 
     # Check inputs
@@ -493,6 +497,8 @@ Notice that `createSubsamples()` calls some helper functions to check the inputs
 <<faletto2022>>
 #' 
 <<shah2013>>
+#' @keywords internal
+#' @noRd
 getSubsamps <- function(n, B, sampling_type){
     subsamples <- list()
     for(i in 1:B){
@@ -564,6 +570,8 @@ The next function called in the body of `css()` is `getSelMatrix()`, which recor
 #' was selected on subsample i and equals 0 otherwise. (That is, each row is a
 #' selected set.)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     num_cores, fitfun=cssLasso){
 
@@ -799,6 +807,8 @@ Finally, `getClusterSelMatrix()` is the last significant function called within 
 #' as res and length(clusters) columns. Entry i, j is 1 if at least
 #' one member of cluster j was selected on subsample i, and 0 otherwise.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getClusterSelMatrix <- function(clusters, res){
 
     # Check input
@@ -1000,6 +1010,8 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
 #' will contain the indices of a cluster of features. Any duplicated clusters
 #' provided in the input will be removed.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     prop_feats_remove, train_inds, num_cores){
 
@@ -1092,6 +1104,8 @@ checkCssClustersInput:
 #' @return Same as the input, but all of the clusters will be coerced to
 #' integers.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssClustersInput <- function(clusters){
     stopifnot(!is.na(clusters))
     if(is.list(clusters)){
@@ -1253,6 +1267,8 @@ testthat::test_that("checkCssClustersInput works", {
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 formatClusters <- function(clusters=NA, p=-1, clust_names=NA, 
     get_prototypes=FALSE, x=NA, y=NA, R=NA){
 
@@ -1374,6 +1390,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
 #' cluster of features. Any duplicated clusters provided in the input will be
 #' removed.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkFormatClustersInput <- function(clusters, p, clust_names, 
     get_prototypes, x, y, R){
 
@@ -1495,6 +1513,8 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
 #' @param y Numeric response vector.
 #' @param n Number of observations of covariates; should match length of y.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkY <- function(y, n){
     stopifnot(all(!is.na(y)))
     stopifnot(is.numeric(y) | is.integer(y))
@@ -1634,6 +1654,8 @@ testthat::test_that("checkFormatClustersInput works", {
 #' @param p The number of features; must be at least as large as the number of
 #' clusters.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkClusters <- function(clusters, p){
     stopifnot(is.list(clusters))
     stopifnot(all(lengths(clusters) >= 1))
@@ -1716,6 +1738,8 @@ testthat::test_that("checkClusters works", {
 #' @return An integer vector of the same length as clusters. Entry j is the
 #' index of the feature identified as the prototype for cluster j.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getPrototypes <- function(clusters, x, y){
     # Check inputs
 
@@ -1786,6 +1810,8 @@ getPrototypes <- function(clusters, x, y){
 #' @return integer; the index of the feature identified as the prototype for
 #' the cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 identifyPrototype <- function(cluster_members_i, x, y){
     # Check input
     stopifnot(is.integer(cluster_members_i))
@@ -1831,6 +1857,8 @@ identifyPrototype <- function(cluster_members_i, x, y){
 #' correlation between t and y (between 0 and 1), or 0 if either t or y has only
 #' one unique value.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 corFunction <- function(t, y){
     # Check inputs
     stopifnot(is.numeric(t) | is.integer(t))
@@ -2095,6 +2123,8 @@ testthat::test_that("formatClusters works", {
 #' @param sampling_type A character vector; either "SS" or "MB". "MB" is not
 #' supported yet.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkSamplingType <- function(sampling_type){
     stopifnot(is.character(sampling_type))
     stopifnot(length(sampling_type) == 1)
@@ -2134,6 +2164,8 @@ testthat::test_that("checkSamplingType works", {
 #' sampling.type=="MB" the total number of subsamples will be `B`; for
 #' sampling_type="SS" the number of subsamples will be `2*B`.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkB <- function(B){
     stopifnot(length(B) == 1)
     stopifnot(is.numeric(B) | is.integer(B))
@@ -2186,6 +2218,8 @@ testthat::test_that("checkB works", {
 #' @param p The number of features; must be greater than 2 if prop_feats_remove
 #' is greater than 0.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkPropFeatsRemove <- function(prop_feats_remove, p){
     stopifnot(length(prop_feats_remove) == 1)
     stopifnot(is.numeric(prop_feats_remove) | is.integer(prop_feats_remove))
@@ -2428,6 +2462,8 @@ testthat::test_that("checkCssInputs works", {
 #' (one reproducible seed per subsample); direct callers can leave it NULL.
 #' @return An integer vector; the indices of the features selected by `fitfun`.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     # Check inputs
     stopifnot(is.matrix(x))
@@ -2492,6 +2528,8 @@ cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
 #' the feature selection method. All selected features must be among these
 #' features.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
     if(!exists("selected")){
         stop("The provided feature selection method fitfun failed to return anything on (at least) one subsample")
@@ -2600,6 +2638,8 @@ testthat::test_that("checkCssLoopOutput works", {
 #' to allow for multiple lambda values to be provided to `cssLasso()`, as
 #' described in Faletto and Bien 2022.)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCssLassoInputs <- function(X, y, lambda){
 
     n <- nrow(X)
@@ -2887,6 +2927,8 @@ testthat::test_that("cssLoop works", {
 #' @return No return value; called for the side effect of erroring if the inputs
 #' to getClusterSelMatrix are invalid.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetClusterSelMatrixInput <- function(clusters, res){
     stopifnot(is.matrix(res))
     stopifnot(all(res %in% c(0, 1)))
@@ -3555,6 +3597,8 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
 #' to at least cutoff will be selected by cluster stability selection. Must be
 #' between 0 and 1.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCutoff <- function(cutoff){
     stopifnot(is.numeric(cutoff) | is.integer(cutoff))
     stopifnot(length(cutoff) == 1)
@@ -3598,6 +3642,8 @@ testthat::test_that("checkCutoff works", {
 #' cluster representatives. Must be one of "sparse", "weighted_avg", or
 #' "simple_avg'.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkWeighting <- function(weighting){
     stopifnot(length(weighting)==1)
     stopifnot(!is.na(weighting))
@@ -3645,6 +3691,8 @@ testthat::test_that("checkWeighting works", {
 #' @param n_clusters The number of clusters; note that this is an upper bound
 #' on min_num_clusts
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
     stopifnot(length(min_num_clusts) == 1)
     stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
@@ -3709,6 +3757,8 @@ testthat::test_that("checkMinNumClusts works", {
 #' @return The provided max_num_clusts, coerced to an integer if needed, and
 #' coerced to be less than or equal to the total number of clusters.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
     stopifnot(length(max_num_clusts) == 1)
     if(!is.na(max_num_clusts)){
@@ -3830,6 +3880,8 @@ testthat::test_that("checkMaxNumClusts works", {
 #' selected cluster, and it has the same name as the cluster it corresponds
 #' to.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input
@@ -3939,6 +3991,8 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 #' @param max_sel_prop Numeric; the maximum selection proportion observed for 
 #' any cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     max_sel_prop){
     if(n_sel_clusts == 0){
@@ -4030,6 +4084,8 @@ testthat::test_that("checkSelectedClusters works", {
 #' `weights[[j]]` is the weights to use for the jth selected cluster, and it has
 #' the same name as the cluster it corresponds to.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getAllClustWeights <- function(css_results, sel_clusters, weighting){
 
     # Check inputs
@@ -4109,6 +4165,8 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
 #' weights corresponding to each of the features in cluster_i. The weights
 #' will all be nonnegative and sum to 1.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getClustWeights <- function(cluster_i, weighting, feat_sel_props){
 
     stopifnot(is.integer(cluster_i) | is.numeric(cluster_i))
@@ -4323,6 +4381,8 @@ testthat::test_that("getAllClustWeights works", {
 #' @param p Integer; number of features in the data (all selected_feats should
 #' be in 1:p)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     weights, n_clusters, p){
     stopifnot(is.numeric(selected_clusts))
@@ -4918,6 +4978,8 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 #' train_inds argument.} \item{newXProvided}{Logical; indicates whether a valid
 #' trainX input was provided.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
@@ -4967,6 +5029,8 @@ checkNewXProvided <- function(trainX, css_results){
 #' will be NA.} \item{newx}{The provided newx matrix, coerced from a data.frame
 #' to a matrix if the provided newx was a data.frame.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkXInputResults <- function(newx, css_X){
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
@@ -5327,6 +5391,8 @@ testthat::test_that("checkNewXProvided works", {
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
+#' @keywords internal
+#' @noRd
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, newx=NA){
 
@@ -5428,6 +5494,8 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 #' provided max_num_clusts, coerced to an integer if needed, and coerced to be
 #' less than or equal to the total number of clusters.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
     min_num_clusts, max_num_clusts, newx){    
     stopifnot(inherits(css_results, "cssr"))
@@ -6413,6 +6481,8 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
 #' needed, and coerced to be less than or equal to the total number of clusters
 #' from the output of css_results.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     min_num_clusts, max_num_clusts, trainX, trainY){
     # Check inputs
@@ -7382,6 +7452,8 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
 #' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
     n_clusters, sig_clusters, rho, beta_latent, beta_unclustered, snr,
     sigma_eps_sq){
@@ -7625,6 +7697,8 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 #' @author Gregory Faletto, Jacob Bien
 #' @references
 <<faletto2022>>
+#' @keywords internal
+#' @noRd
 genZmuY <- function(n, p, k_unclustered, cluster_size, n_clusters, sig_clusters,
     beta_latent, beta_unclustered, snr, sigma_eps_sq){
     # Generate Z, weak signal features, and noise features (total of
@@ -8229,6 +8303,8 @@ genClusteredDataWeighted <- function(n, p, k_unclustered, cluster_size,
 #' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
         n_strong_cluster_vars, n_clusters, sig_clusters, rho_high, rho_low,
         beta_latent, beta_unclustered, snr, sigma_eps_sq){
@@ -8532,6 +8608,8 @@ genClusteredDataWeightedRandom <- function(n, p, k_unclustered, cluster_size,
 #' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGenClusteredDataWeightedRandomInputs <- function(p, k_unclustered,
     cluster_size, n_clusters, sig_clusters, rho_high, rho_low, beta_latent,
     beta_unclustered, snr, sigma_eps_sq){
@@ -9471,6 +9549,8 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
 #' selection). In the case of a tie, the tie is broken by choosing the feature
 #' most correlated with the response in the full data set provided to css.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelectionPrototypes <- function(css_results, selected_clusts){
     
     # Check inputs
@@ -10989,6 +11069,8 @@ protolasso <- function(X, y, clusters=list(), nlambda=100){
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 processClusterLassoInputs <- function(X, y, clusters, nlambda){
 
     stopifnot(is.matrix(X) | is.data.frame(X))
@@ -11295,6 +11377,8 @@ testthat::test_that("processClusterLassoInputs works", {
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 getXglmnet <- function(x, clusters, type, prototypes=NA){
     
     # Check inputs
@@ -11367,6 +11451,8 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
     stopifnot(is.matrix(x))
 
@@ -11750,6 +11836,8 @@ testthat::test_that("getXglmnet works", {
 #' regression: Clustering and sparse estimation.
 #' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
 #' \url{https://doi.org/10.1016/j.jspi.2013.05.019}.
+#' @keywords internal
+#' @noRd
 getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
     feat_names){
 
@@ -11820,6 +11908,8 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
 #' containing the indices of the features in X that are in the cluster
 #' containing prototype `selected_set[k]`.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
     
     model_size <- length(lasso_set)
