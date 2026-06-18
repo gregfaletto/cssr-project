@@ -806,32 +806,30 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb21-27"><a href="css.html#cb21-27" tabindex="-1"></a></span>
 <span id="cb21-28"><a href="css.html#cb21-28" tabindex="-1"></a>    n_clusters <span class="ot">&lt;-</span> <span class="fu">length</span>(clusters)</span>
 <span id="cb21-29"><a href="css.html#cb21-29" tabindex="-1"></a></span>
-<span id="cb21-30"><a href="css.html#cb21-30" tabindex="-1"></a>    <span class="co"># Matrix of cluster selection proportions (with n_clusters columns)</span></span>
-<span id="cb21-31"><a href="css.html#cb21-31" tabindex="-1"></a>    res_n_clusters <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="fu">nrow</span>(res)<span class="sc">*</span>n_clusters), <span class="at">nrow=</span><span class="fu">nrow</span>(res),</span>
-<span id="cb21-32"><a href="css.html#cb21-32" tabindex="-1"></a>        <span class="at">ncol=</span>n_clusters)</span>
-<span id="cb21-33"><a href="css.html#cb21-33" tabindex="-1"></a>    <span class="fu">colnames</span>(res_n_clusters) <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb21-34"><a href="css.html#cb21-34" tabindex="-1"></a></span>
-<span id="cb21-35"><a href="css.html#cb21-35" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusters){</span>
-<span id="cb21-36"><a href="css.html#cb21-36" tabindex="-1"></a>        <span class="co"># Identify rows of res where at least one feature from this cluster</span></span>
-<span id="cb21-37"><a href="css.html#cb21-37" tabindex="-1"></a>        <span class="co"># was selected</span></span>
-<span id="cb21-38"><a href="css.html#cb21-38" tabindex="-1"></a>        rows_j_sel <span class="ot">&lt;-</span> <span class="fu">apply</span>(res, <span class="dv">1</span>, <span class="cf">function</span>(x){<span class="fu">any</span>(x[clusters[[j]]] <span class="sc">==</span> <span class="dv">1</span>)})</span>
-<span id="cb21-39"><a href="css.html#cb21-39" tabindex="-1"></a></span>
-<span id="cb21-40"><a href="css.html#cb21-40" tabindex="-1"></a>        <span class="co"># Put ones in these rows of res_n_clusters[, j]</span></span>
-<span id="cb21-41"><a href="css.html#cb21-41" tabindex="-1"></a>        res_n_clusters[rows_j_sel, j] <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
-<span id="cb21-42"><a href="css.html#cb21-42" tabindex="-1"></a></span>
-<span id="cb21-43"><a href="css.html#cb21-43" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(clusters[[j]]) <span class="sc">&lt;=</span> <span class="dv">1</span>){</span>
-<span id="cb21-44"><a href="css.html#cb21-44" tabindex="-1"></a>            <span class="cf">next</span></span>
-<span id="cb21-45"><a href="css.html#cb21-45" tabindex="-1"></a>        }</span>
-<span id="cb21-46"><a href="css.html#cb21-46" tabindex="-1"></a>    }</span>
-<span id="cb21-47"><a href="css.html#cb21-47" tabindex="-1"></a></span>
-<span id="cb21-48"><a href="css.html#cb21-48" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb21-49"><a href="css.html#cb21-49" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res_n_clusters))</span>
-<span id="cb21-50"><a href="css.html#cb21-50" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">colnames</span>(res_n_clusters), <span class="fu">names</span>(clusters)))</span>
-<span id="cb21-51"><a href="css.html#cb21-51" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res_n_clusters <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
-<span id="cb21-52"><a href="css.html#cb21-52" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res_n_clusters) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
-<span id="cb21-53"><a href="css.html#cb21-53" tabindex="-1"></a></span>
-<span id="cb21-54"><a href="css.html#cb21-54" tabindex="-1"></a>    <span class="fu">return</span>(res_n_clusters)</span>
-<span id="cb21-55"><a href="css.html#cb21-55" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb21-30"><a href="css.html#cb21-30" tabindex="-1"></a>    <span class="co"># Map each feature to its (unique) cluster, then aggregate selections per</span></span>
+<span id="cb21-31"><a href="css.html#cb21-31" tabindex="-1"></a>    <span class="co"># cluster in one rowsum pass instead of apply()-ing over all rows once per</span></span>
+<span id="cb21-32"><a href="css.html#cb21-32" tabindex="-1"></a>    <span class="co"># cluster (#57). Each feature is in exactly one cluster and every cluster is</span></span>
+<span id="cb21-33"><a href="css.html#cb21-33" tabindex="-1"></a>    <span class="co"># non-empty (enforced by checkGetClusterSelMatrixInput -&gt; checkClusters</span></span>
+<span id="cb21-34"><a href="css.html#cb21-34" tabindex="-1"></a>    <span class="co"># above), so feat2clus is fully populated and rowsum's groups are exactly</span></span>
+<span id="cb21-35"><a href="css.html#cb21-35" tabindex="-1"></a>    <span class="co"># 1:n_clusters. rowsum's reorder=TRUE returns groups in numeric order, so the</span></span>
+<span id="cb21-36"><a href="css.html#cb21-36" tabindex="-1"></a>    <span class="co"># rows -- and thus columns after t() -- line up positionally with</span></span>
+<span id="cb21-37"><a href="css.html#cb21-37" tabindex="-1"></a>    <span class="co"># names(clusters).</span></span>
+<span id="cb21-38"><a href="css.html#cb21-38" tabindex="-1"></a>    feat2clus <span class="ot">&lt;-</span> <span class="fu">integer</span>(p)</span>
+<span id="cb21-39"><a href="css.html#cb21-39" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusters){</span>
+<span id="cb21-40"><a href="css.html#cb21-40" tabindex="-1"></a>        feat2clus[clusters[[j]]] <span class="ot">&lt;-</span> j</span>
+<span id="cb21-41"><a href="css.html#cb21-41" tabindex="-1"></a>    }</span>
+<span id="cb21-42"><a href="css.html#cb21-42" tabindex="-1"></a>    clust_counts <span class="ot">&lt;-</span> <span class="fu">rowsum</span>(<span class="fu">t</span>(res), <span class="at">group =</span> feat2clus)   <span class="co"># n_clusters x nrow(res)</span></span>
+<span id="cb21-43"><a href="css.html#cb21-43" tabindex="-1"></a>    res_n_clusters <span class="ot">&lt;-</span> <span class="fu">t</span>(clust_counts <span class="sc">&gt;</span> <span class="dv">0</span><span class="dt">L</span>) <span class="sc">*</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb21-44"><a href="css.html#cb21-44" tabindex="-1"></a>    <span class="fu">colnames</span>(res_n_clusters) <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb21-45"><a href="css.html#cb21-45" tabindex="-1"></a></span>
+<span id="cb21-46"><a href="css.html#cb21-46" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb21-47"><a href="css.html#cb21-47" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res_n_clusters))</span>
+<span id="cb21-48"><a href="css.html#cb21-48" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">colnames</span>(res_n_clusters), <span class="fu">names</span>(clusters)))</span>
+<span id="cb21-49"><a href="css.html#cb21-49" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res_n_clusters <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb21-50"><a href="css.html#cb21-50" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res_n_clusters) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
+<span id="cb21-51"><a href="css.html#cb21-51" tabindex="-1"></a></span>
+<span id="cb21-52"><a href="css.html#cb21-52" tabindex="-1"></a>    <span class="fu">return</span>(res_n_clusters)</span>
+<span id="cb21-53"><a href="css.html#cb21-53" tabindex="-1"></a>}</span></code></pre></div>
 <p>The helper function <code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code> verifies the inputs to <code><a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>()</code>.</p>
 <p>With the above and the helper functions below, the <code><a href="css.html#css">css</a>()</code> function is complete!</p>
 </div>

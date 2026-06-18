@@ -29,23 +29,21 @@ getClusterSelMatrix <- function(clusters, res){
 
     n_clusters <- length(clusters)
 
-    # Matrix of cluster selection proportions (with n_clusters columns)
-    res_n_clusters <- matrix(rep(0L, nrow(res)*n_clusters), nrow=nrow(res),
-        ncol=n_clusters)
-    colnames(res_n_clusters) <- names(clusters)
-
+    # Map each feature to its (unique) cluster, then aggregate selections per
+    # cluster in one rowsum pass instead of apply()-ing over all rows once per
+    # cluster (#57). Each feature is in exactly one cluster and every cluster is
+    # non-empty (enforced by checkGetClusterSelMatrixInput -> checkClusters
+    # above), so feat2clus is fully populated and rowsum's groups are exactly
+    # 1:n_clusters. rowsum's reorder=TRUE returns groups in numeric order, so the
+    # rows -- and thus columns after t() -- line up positionally with
+    # names(clusters).
+    feat2clus <- integer(p)
     for(j in 1:n_clusters){
-        # Identify rows of res where at least one feature from this cluster
-        # was selected
-        rows_j_sel <- apply(res, 1, function(x){any(x[clusters[[j]]] == 1)})
-
-        # Put ones in these rows of res_n_clusters[, j]
-        res_n_clusters[rows_j_sel, j] <- 1L
-
-        if(length(clusters[[j]]) <= 1){
-            next
-        }
+        feat2clus[clusters[[j]]] <- j
     }
+    clust_counts <- rowsum(t(res), group = feat2clus)   # n_clusters x nrow(res)
+    res_n_clusters <- t(clust_counts > 0L) * 1L
+    colnames(res_n_clusters) <- names(clusters)
 
     # Check output
     stopifnot(is.matrix(res_n_clusters))
