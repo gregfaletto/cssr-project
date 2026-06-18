@@ -91,7 +91,7 @@ cssSelect(
 - auto_select_size:
 
   Logical; if TRUE, then max_num_clusts will be automatically estimated
-  using the lasso with cross-validation. Default is TRUE, though his
+  using the lasso with cross-validation. Default is TRUE, though this
   argument is ignored if either cutoff or max_num_clusts is provided.
   (If desired output is to return all clusters, you should set
   auto_select_size to FALSE and do not provide cutoff or

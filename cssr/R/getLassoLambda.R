@@ -4,10 +4,10 @@
 #'
 #' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
 #' cluster stability selection) by cross-validation.
-#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
-#' be coerced internally to a matrix by the function model.matrix) containing
-#' the p >= 2 features/predictors that will be used by cluster stability
-#' selection.
+#' @param X An n x p numeric matrix containing the p >= 2 features/predictors
+#' that will be used by cluster stability selection. (Unlike the other
+#' X-accepting functions, getLassoLambda requires a matrix and does not coerce a
+#' data.frame.)
 #' @param y The response; an n-dimensional numeric or integer vector. (Unlike
 #' in the more general css setup, this response must be real-valued since
 #' lambda will be determined using the lasso with cross-validation.)

@@ -51,7 +51,7 @@ genClusteredDataWeightedRandom(
 
   Integer or numeric; for each of the n_clusters latent variables, X
   will contain cluster_size noisy proxies that are correlated with the
-  latent variable.
+  latent variable. Must be at least 2.
 
 - n_clusters:
 
@@ -68,7 +68,7 @@ genClusteredDataWeightedRandom(
 
 - rho_high:
 
-  Integer or numeric; the maximum correlation of the proxies each
+  Integer or numeric; the maximum correlation of the proxies in each
   cluster with each other. Default is 1.
 
 - rho_low:

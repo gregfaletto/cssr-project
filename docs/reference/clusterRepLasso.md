@@ -82,8 +82,12 @@ Correlated variables in regression: Clustering and sparse estimation.
 <https://doi.org/10.1016/j.jspi.2013.05.019>.  
 Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization
 Paths for Generalized Linear Models via Coordinate Descent. *Journal of
-Statistical Software*, 33(1) ' 1-22. URL
+Statistical Software*, 33(1) 1-22. URL
 <https://www.jstatsoft.org/v33/i01/>.
+
+## Author
+
+Gregory Faletto, Jacob Bien
 
 ## Examples
 

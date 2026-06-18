@@ -60,7 +60,7 @@ css(
   same results as stability selection (so the returned `feat_sel_mat`
   will be identical to `clus_sel_mat`). Names for the clusters will be
   needed later; any clusters that are not given names in the provided
-  list will be given names automatically by `css()`. \#' CAUTION: if the
+  list will be given names automatically by `css()`. CAUTION: if the
   provided X is a data.frame that contains a categorical feature with
   more than two levels, then the resulting matrix made from model.matrix
   will have a different number of columns than the provided data.frame,

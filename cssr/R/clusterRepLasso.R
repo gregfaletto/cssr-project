@@ -40,13 +40,14 @@
 #' output from glmnet when the lasso was estimated on a matrix of prototypes.
 #' (See documentation for the function glmnet from the glmnet package for
 #' details.)}
+#' @author Gregory Faletto, Jacob Bien
 #' @references Bühlmann, P., Rütimann, P., van de Geer, S., & Zhang, C. H.
 #' (2013). Correlated variables in regression: Clustering and sparse estimation.
 #' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.
 #' \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor
 #' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear
 #' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)
-#' ' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
+#' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.
 #' @examples
 #' set.seed(1)
 #' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,

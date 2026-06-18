@@ -110,7 +110,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
             min_num_clusts, max_num_clusts)
         y_train <- css_results$y[css_results$train_inds]
         if(!is.numeric(y_train) & !is.integer(y_train)){
-            stop("Can't generated predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression).")
+            stop("Can't generate predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression).")
         }
     }
 
