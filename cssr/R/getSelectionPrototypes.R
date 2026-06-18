@@ -28,9 +28,10 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
     stopifnot(all(lengths(selected_clusts) >= 1))
 
     prototypes <- rep(as.integer(NA), n_selected_clusts)
+    feat_sel_props <- colMeans(css_results$feat_sel_mat)
     for(i in 1:n_selected_clusts){
         clust_i <- selected_clusts[[i]]
-        sel_props_i <- colMeans(css_results$feat_sel_mat)[clust_i]
+        sel_props_i <- feat_sel_props[clust_i]
         proto_i <- clust_i[sel_props_i == max(sel_props_i)]
         stopifnot(length(proto_i) >= 1)
         if(length(proto_i) > 1){

@@ -300,23 +300,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb141-94"><a href="other-useful.html#cb141-94" tabindex="-1"></a>    noise_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(n<span class="sc">*</span>n_clusters<span class="sc">*</span>cluster_size, <span class="at">mean=</span><span class="dv">0</span>,</span>
 <span id="cb141-95"><a href="other-useful.html#cb141-95" tabindex="-1"></a>        <span class="at">sd=</span><span class="fu">sqrt</span>(noise_var)), n, n_clusters<span class="sc">*</span>cluster_size)</span>
 <span id="cb141-96"><a href="other-useful.html#cb141-96" tabindex="-1"></a></span>
-<span id="cb141-97"><a href="other-useful.html#cb141-97" tabindex="-1"></a>    <span class="co"># Create matrix of proxies</span></span>
-<span id="cb141-98"><a href="other-useful.html#cb141-98" tabindex="-1"></a>    proxy_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">as.numeric</span>(<span class="cn">NA</span>), n, n_clusters<span class="sc">*</span>cluster_size)</span>
-<span id="cb141-99"><a href="other-useful.html#cb141-99" tabindex="-1"></a>    <span class="cf">if</span>(n_clusters <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb141-100"><a href="other-useful.html#cb141-100" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_clusters){</span>
-<span id="cb141-101"><a href="other-useful.html#cb141-101" tabindex="-1"></a>            first_ind <span class="ot">&lt;-</span> (i <span class="sc">-</span> <span class="dv">1</span>)<span class="sc">*</span>cluster_size <span class="sc">+</span> <span class="dv">1</span></span>
-<span id="cb141-102"><a href="other-useful.html#cb141-102" tabindex="-1"></a>            last_ind <span class="ot">&lt;-</span> i<span class="sc">*</span>cluster_size</span>
-<span id="cb141-103"><a href="other-useful.html#cb141-103" tabindex="-1"></a>            proxy_mat[, first_ind<span class="sc">:</span>last_ind] <span class="ot">&lt;-</span> Z[, i] <span class="sc">+</span></span>
-<span id="cb141-104"><a href="other-useful.html#cb141-104" tabindex="-1"></a>                noise_mat[, first_ind<span class="sc">:</span>last_ind]</span>
-<span id="cb141-105"><a href="other-useful.html#cb141-105" tabindex="-1"></a>        }</span>
-<span id="cb141-106"><a href="other-useful.html#cb141-106" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb141-107"><a href="other-useful.html#cb141-107" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(noise_mat) <span class="sc">==</span> cluster_size)</span>
-<span id="cb141-108"><a href="other-useful.html#cb141-108" tabindex="-1"></a>        proxy_mat[, <span class="dv">1</span><span class="sc">:</span>cluster_size] <span class="ot">&lt;-</span> Z <span class="sc">+</span> noise_mat</span>
-<span id="cb141-109"><a href="other-useful.html#cb141-109" tabindex="-1"></a>    }</span>
-<span id="cb141-110"><a href="other-useful.html#cb141-110" tabindex="-1"></a></span>
-<span id="cb141-111"><a href="other-useful.html#cb141-111" tabindex="-1"></a>    <span class="fu">return</span>(<a href="other-useful.html#finalizeGenClusteredData">finalizeGenClusteredData</a>(proxy_mat, other_X, y, mu, Z, n, p,</span>
-<span id="cb141-112"><a href="other-useful.html#cb141-112" tabindex="-1"></a>        n_clusters))</span>
-<span id="cb141-113"><a href="other-useful.html#cb141-113" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb141-97"><a href="other-useful.html#cb141-97" tabindex="-1"></a>    <span class="co"># Create matrix of proxies. Each cluster's cluster_size proxies are its</span></span>
+<span id="cb141-98"><a href="other-useful.html#cb141-98" tabindex="-1"></a>    <span class="co"># latent Z column plus the matching noise columns (#58); column-expand Z to</span></span>
+<span id="cb141-99"><a href="other-useful.html#cb141-99" tabindex="-1"></a>    <span class="co"># the noise block layout in one vectorized add (replaces the per-cluster</span></span>
+<span id="cb141-100"><a href="other-useful.html#cb141-100" tabindex="-1"></a>    <span class="co"># block loop; noise_mat was already drawn above, so RNG order is unchanged).</span></span>
+<span id="cb141-101"><a href="other-useful.html#cb141-101" tabindex="-1"></a>    <span class="co"># For n_clusters == 1, genZmuY returns Z as a bare numeric vector, and</span></span>
+<span id="cb141-102"><a href="other-useful.html#cb141-102" tabindex="-1"></a>    <span class="co"># as.matrix(Z) promotes it to a one-column matrix before the column-expand.</span></span>
+<span id="cb141-103"><a href="other-useful.html#cb141-103" tabindex="-1"></a>    col_clust <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>n_clusters, <span class="at">each =</span> cluster_size)</span>
+<span id="cb141-104"><a href="other-useful.html#cb141-104" tabindex="-1"></a>    proxy_mat <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(Z)[, col_clust, drop <span class="ot">=</span> <span class="cn">FALSE</span>] <span class="sc">+</span> noise_mat</span>
+<span id="cb141-105"><a href="other-useful.html#cb141-105" tabindex="-1"></a></span>
+<span id="cb141-106"><a href="other-useful.html#cb141-106" tabindex="-1"></a>    <span class="fu">return</span>(<a href="other-useful.html#finalizeGenClusteredData">finalizeGenClusteredData</a>(proxy_mat, other_X, y, mu, Z, n, p,</span>
+<span id="cb141-107"><a href="other-useful.html#cb141-107" tabindex="-1"></a>        n_clusters))</span>
+<span id="cb141-108"><a href="other-useful.html#cb141-108" tabindex="-1"></a>}</span></code></pre></div>
 <p>The three <code>genClusteredData*</code> validators share the bulk of their checks. To
 keep them from drifting apart (the source of the validation inconsistencies
 fixed in #13), the common checks live in two shared helpers:
@@ -2584,33 +2579,34 @@ inside <code><a href="other-useful.html#genZmuY">genZmuY</a>()</code>.</p>
 <span id="cb174-26"><a href="other-useful.html#cb174-26" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
 <span id="cb174-27"><a href="other-useful.html#cb174-27" tabindex="-1"></a></span>
 <span id="cb174-28"><a href="other-useful.html#cb174-28" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">as.integer</span>(<span class="cn">NA</span>), n_selected_clusts)</span>
-<span id="cb174-29"><a href="other-useful.html#cb174-29" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_selected_clusts){</span>
-<span id="cb174-30"><a href="other-useful.html#cb174-30" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> selected_clusts[[i]]</span>
-<span id="cb174-31"><a href="other-useful.html#cb174-31" tabindex="-1"></a>        sel_props_i <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(css_results<span class="sc">$</span>feat_sel_mat)[clust_i]</span>
-<span id="cb174-32"><a href="other-useful.html#cb174-32" tabindex="-1"></a>        proto_i <span class="ot">&lt;-</span> clust_i[sel_props_i <span class="sc">==</span> <span class="fu">max</span>(sel_props_i)]</span>
-<span id="cb174-33"><a href="other-useful.html#cb174-33" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(proto_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb174-34"><a href="other-useful.html#cb174-34" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(proto_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb174-35"><a href="other-useful.html#cb174-35" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">is.numeric</span>(css_results<span class="sc">$</span>y) <span class="sc">|</span> <span class="fu">is.integer</span>(css_results<span class="sc">$</span>y)){</span>
-<span id="cb174-36"><a href="other-useful.html#cb174-36" tabindex="-1"></a>                <span class="co"># Break tie by looking at marginal correlations</span></span>
-<span id="cb174-37"><a href="other-useful.html#cb174-37" tabindex="-1"></a>                corrs_i <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">cor</span>(css_results<span class="sc">$</span>X[, proto_i], css_results<span class="sc">$</span>y)[, <span class="dv">1</span>]</span>
-<span id="cb174-38"><a href="other-useful.html#cb174-38" tabindex="-1"></a>                corrs_i <span class="ot">&lt;-</span> <span class="fu">abs</span>(corrs_i)</span>
-<span id="cb174-39"><a href="other-useful.html#cb174-39" tabindex="-1"></a>                proto_i <span class="ot">&lt;-</span> proto_i[corrs_i <span class="sc">==</span> <span class="fu">max</span>(corrs_i)]</span>
-<span id="cb174-40"><a href="other-useful.html#cb174-40" tabindex="-1"></a>            }</span>
-<span id="cb174-41"><a href="other-useful.html#cb174-41" tabindex="-1"></a>        }</span>
-<span id="cb174-42"><a href="other-useful.html#cb174-42" tabindex="-1"></a>        <span class="co"># If there is still a tie, break by choosing the first feature of those</span></span>
-<span id="cb174-43"><a href="other-useful.html#cb174-43" tabindex="-1"></a>        <span class="co"># remaining</span></span>
-<span id="cb174-44"><a href="other-useful.html#cb174-44" tabindex="-1"></a>        prototypes[i] <span class="ot">&lt;-</span> proto_i[<span class="dv">1</span>]</span>
-<span id="cb174-45"><a href="other-useful.html#cb174-45" tabindex="-1"></a>        <span class="fu">names</span>(prototypes)[i] <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>X)[proto_i]</span>
-<span id="cb174-46"><a href="other-useful.html#cb174-46" tabindex="-1"></a>    }</span>
-<span id="cb174-47"><a href="other-useful.html#cb174-47" tabindex="-1"></a></span>
-<span id="cb174-48"><a href="other-useful.html#cb174-48" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb174-49"><a href="other-useful.html#cb174-49" tabindex="-1"></a></span>
-<span id="cb174-50"><a href="other-useful.html#cb174-50" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(prototypes))</span>
-<span id="cb174-51"><a href="other-useful.html#cb174-51" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes)))</span>
-<span id="cb174-52"><a href="other-useful.html#cb174-52" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototypes) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(prototypes)))</span>
-<span id="cb174-53"><a href="other-useful.html#cb174-53" tabindex="-1"></a></span>
-<span id="cb174-54"><a href="other-useful.html#cb174-54" tabindex="-1"></a>    <span class="fu">return</span>(prototypes)</span>
-<span id="cb174-55"><a href="other-useful.html#cb174-55" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb174-29"><a href="other-useful.html#cb174-29" tabindex="-1"></a>    feat_sel_props <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
+<span id="cb174-30"><a href="other-useful.html#cb174-30" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_selected_clusts){</span>
+<span id="cb174-31"><a href="other-useful.html#cb174-31" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> selected_clusts[[i]]</span>
+<span id="cb174-32"><a href="other-useful.html#cb174-32" tabindex="-1"></a>        sel_props_i <span class="ot">&lt;-</span> feat_sel_props[clust_i]</span>
+<span id="cb174-33"><a href="other-useful.html#cb174-33" tabindex="-1"></a>        proto_i <span class="ot">&lt;-</span> clust_i[sel_props_i <span class="sc">==</span> <span class="fu">max</span>(sel_props_i)]</span>
+<span id="cb174-34"><a href="other-useful.html#cb174-34" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(proto_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb174-35"><a href="other-useful.html#cb174-35" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(proto_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb174-36"><a href="other-useful.html#cb174-36" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">is.numeric</span>(css_results<span class="sc">$</span>y) <span class="sc">|</span> <span class="fu">is.integer</span>(css_results<span class="sc">$</span>y)){</span>
+<span id="cb174-37"><a href="other-useful.html#cb174-37" tabindex="-1"></a>                <span class="co"># Break tie by looking at marginal correlations</span></span>
+<span id="cb174-38"><a href="other-useful.html#cb174-38" tabindex="-1"></a>                corrs_i <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">cor</span>(css_results<span class="sc">$</span>X[, proto_i], css_results<span class="sc">$</span>y)[, <span class="dv">1</span>]</span>
+<span id="cb174-39"><a href="other-useful.html#cb174-39" tabindex="-1"></a>                corrs_i <span class="ot">&lt;-</span> <span class="fu">abs</span>(corrs_i)</span>
+<span id="cb174-40"><a href="other-useful.html#cb174-40" tabindex="-1"></a>                proto_i <span class="ot">&lt;-</span> proto_i[corrs_i <span class="sc">==</span> <span class="fu">max</span>(corrs_i)]</span>
+<span id="cb174-41"><a href="other-useful.html#cb174-41" tabindex="-1"></a>            }</span>
+<span id="cb174-42"><a href="other-useful.html#cb174-42" tabindex="-1"></a>        }</span>
+<span id="cb174-43"><a href="other-useful.html#cb174-43" tabindex="-1"></a>        <span class="co"># If there is still a tie, break by choosing the first feature of those</span></span>
+<span id="cb174-44"><a href="other-useful.html#cb174-44" tabindex="-1"></a>        <span class="co"># remaining</span></span>
+<span id="cb174-45"><a href="other-useful.html#cb174-45" tabindex="-1"></a>        prototypes[i] <span class="ot">&lt;-</span> proto_i[<span class="dv">1</span>]</span>
+<span id="cb174-46"><a href="other-useful.html#cb174-46" tabindex="-1"></a>        <span class="fu">names</span>(prototypes)[i] <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>X)[proto_i]</span>
+<span id="cb174-47"><a href="other-useful.html#cb174-47" tabindex="-1"></a>    }</span>
+<span id="cb174-48"><a href="other-useful.html#cb174-48" tabindex="-1"></a></span>
+<span id="cb174-49"><a href="other-useful.html#cb174-49" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb174-50"><a href="other-useful.html#cb174-50" tabindex="-1"></a></span>
+<span id="cb174-51"><a href="other-useful.html#cb174-51" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(prototypes))</span>
+<span id="cb174-52"><a href="other-useful.html#cb174-52" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes)))</span>
+<span id="cb174-53"><a href="other-useful.html#cb174-53" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototypes) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(prototypes)))</span>
+<span id="cb174-54"><a href="other-useful.html#cb174-54" tabindex="-1"></a></span>
+<span id="cb174-55"><a href="other-useful.html#cb174-55" tabindex="-1"></a>    <span class="fu">return</span>(prototypes)</span>
+<span id="cb174-56"><a href="other-useful.html#cb174-56" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>()</code>:</p>
 <div class="sourceCode" id="cb175"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb175-1"><a href="other-useful.html#cb175-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"getSelectionPrototypes works"</span>, {</span>
 <span id="cb175-2"><a href="other-useful.html#cb175-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">67234</span>)</span>

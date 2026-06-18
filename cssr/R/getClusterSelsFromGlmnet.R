@@ -45,16 +45,20 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
         stopifnot(all(!is.na(feat_names)))
     }
 
-    # Largest selected set among all those in lasso_sets
-    max_length <- max(vapply(lasso_sets, length, integer(1)))
+    # Compute each set's length once (used both for max_length and the
+    # per-size subset below) instead of re-walking lengths every iteration (#58)
+    set_lengths <- lengths(lasso_sets)
 
-    # Preparing lists to store 
+    # Largest selected set among all those in lasso_sets
+    max_length <- max(set_lengths)
+
+    # Preparing lists to store
     selected_sets <- list()
     selected_clusts_list <- list()
-    
+
     for(j in 1:max_length){
         # Lasso selected set of size j
-        lasso_sets_j <- lasso_sets[lapply(lasso_sets, length) == j]
+        lasso_sets_j <- lasso_sets[set_lengths == j]
         # Are there any lasso selected sets of size j? (If not, we will skip to
         # the next j, and slot j in the list will be empty.)
         if(length(lasso_sets_j) > 0){

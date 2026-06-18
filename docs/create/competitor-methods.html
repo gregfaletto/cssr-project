@@ -632,46 +632,47 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb196-34"><a href="competitor-methods.html#cb196-34" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)</span>
 <span id="cb196-35"><a href="competitor-methods.html#cb196-35" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)</span>
 <span id="cb196-36"><a href="competitor-methods.html#cb196-36" tabindex="-1"></a></span>
-<span id="cb196-37"><a href="competitor-methods.html#cb196-37" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
-<span id="cb196-38"><a href="competitor-methods.html#cb196-38" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
-<span id="cb196-39"><a href="competitor-methods.html#cb196-39" tabindex="-1"></a></span>
-<span id="cb196-40"><a href="competitor-methods.html#cb196-40" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb196-41"><a href="competitor-methods.html#cb196-41" tabindex="-1"></a>            X_glmnet_i <span class="ot">&lt;-</span> x[, cluster_i]</span>
-<span id="cb196-42"><a href="competitor-methods.html#cb196-42" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb196-43"><a href="competitor-methods.html#cb196-43" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
-<span id="cb196-44"><a href="competitor-methods.html#cb196-44" tabindex="-1"></a>            </span>
-<span id="cb196-45"><a href="competitor-methods.html#cb196-45" tabindex="-1"></a>            <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"protolasso"</span>){</span>
-<span id="cb196-46"><a href="competitor-methods.html#cb196-46" tabindex="-1"></a>                prototype_ind_i <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> cluster_i)</span>
-<span id="cb196-47"><a href="competitor-methods.html#cb196-47" tabindex="-1"></a>                <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototype_ind_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb196-48"><a href="competitor-methods.html#cb196-48" tabindex="-1"></a>                prototype_i <span class="ot">&lt;-</span> prototypes[prototype_ind_i]</span>
-<span id="cb196-49"><a href="competitor-methods.html#cb196-49" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> x[, prototype_i]</span>
-<span id="cb196-50"><a href="competitor-methods.html#cb196-50" tabindex="-1"></a>            } <span class="cf">else</span> {</span>
-<span id="cb196-51"><a href="competitor-methods.html#cb196-51" tabindex="-1"></a>                <span class="fu">stopifnot</span>(type <span class="sc">==</span> <span class="st">"clusterRepLasso"</span>)</span>
-<span id="cb196-52"><a href="competitor-methods.html#cb196-52" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(x[, cluster_i])</span>
-<span id="cb196-53"><a href="competitor-methods.html#cb196-53" tabindex="-1"></a>            }</span>
-<span id="cb196-54"><a href="competitor-methods.html#cb196-54" tabindex="-1"></a>        }</span>
-<span id="cb196-55"><a href="competitor-methods.html#cb196-55" tabindex="-1"></a>        </span>
-<span id="cb196-56"><a href="competitor-methods.html#cb196-56" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(X_glmnet_i) <span class="sc">==</span> n)</span>
-<span id="cb196-57"><a href="competitor-methods.html#cb196-57" tabindex="-1"></a>        </span>
-<span id="cb196-58"><a href="competitor-methods.html#cb196-58" tabindex="-1"></a>        <span class="cf">if</span>(i <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb196-59"><a href="competitor-methods.html#cb196-59" tabindex="-1"></a>            X_glmnet <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(X_glmnet_i)</span>
-<span id="cb196-60"><a href="competitor-methods.html#cb196-60" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb196-61"><a href="competitor-methods.html#cb196-61" tabindex="-1"></a>            X_glmnet <span class="ot">&lt;-</span> <span class="fu">cbind</span>(X_glmnet, X_glmnet_i)</span>
-<span id="cb196-62"><a href="competitor-methods.html#cb196-62" tabindex="-1"></a>        }</span>
-<span id="cb196-63"><a href="competitor-methods.html#cb196-63" tabindex="-1"></a>    }</span>
-<span id="cb196-64"><a href="competitor-methods.html#cb196-64" tabindex="-1"></a>    </span>
-<span id="cb196-65"><a href="competitor-methods.html#cb196-65" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
+<span id="cb196-37"><a href="competitor-methods.html#cb196-37" tabindex="-1"></a>    X_glmnet_cols <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="fu">length</span>(clusters))</span>
+<span id="cb196-38"><a href="competitor-methods.html#cb196-38" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
+<span id="cb196-39"><a href="competitor-methods.html#cb196-39" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
+<span id="cb196-40"><a href="competitor-methods.html#cb196-40" tabindex="-1"></a></span>
+<span id="cb196-41"><a href="competitor-methods.html#cb196-41" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb196-42"><a href="competitor-methods.html#cb196-42" tabindex="-1"></a>            X_glmnet_i <span class="ot">&lt;-</span> x[, cluster_i]</span>
+<span id="cb196-43"><a href="competitor-methods.html#cb196-43" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb196-44"><a href="competitor-methods.html#cb196-44" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb196-45"><a href="competitor-methods.html#cb196-45" tabindex="-1"></a></span>
+<span id="cb196-46"><a href="competitor-methods.html#cb196-46" tabindex="-1"></a>            <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"protolasso"</span>){</span>
+<span id="cb196-47"><a href="competitor-methods.html#cb196-47" tabindex="-1"></a>                prototype_ind_i <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> cluster_i)</span>
+<span id="cb196-48"><a href="competitor-methods.html#cb196-48" tabindex="-1"></a>                <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototype_ind_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb196-49"><a href="competitor-methods.html#cb196-49" tabindex="-1"></a>                prototype_i <span class="ot">&lt;-</span> prototypes[prototype_ind_i]</span>
+<span id="cb196-50"><a href="competitor-methods.html#cb196-50" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> x[, prototype_i]</span>
+<span id="cb196-51"><a href="competitor-methods.html#cb196-51" tabindex="-1"></a>            } <span class="cf">else</span> {</span>
+<span id="cb196-52"><a href="competitor-methods.html#cb196-52" tabindex="-1"></a>                <span class="fu">stopifnot</span>(type <span class="sc">==</span> <span class="st">"clusterRepLasso"</span>)</span>
+<span id="cb196-53"><a href="competitor-methods.html#cb196-53" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(x[, cluster_i])</span>
+<span id="cb196-54"><a href="competitor-methods.html#cb196-54" tabindex="-1"></a>            }</span>
+<span id="cb196-55"><a href="competitor-methods.html#cb196-55" tabindex="-1"></a>        }</span>
+<span id="cb196-56"><a href="competitor-methods.html#cb196-56" tabindex="-1"></a></span>
+<span id="cb196-57"><a href="competitor-methods.html#cb196-57" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(X_glmnet_i) <span class="sc">==</span> n)</span>
+<span id="cb196-58"><a href="competitor-methods.html#cb196-58" tabindex="-1"></a></span>
+<span id="cb196-59"><a href="competitor-methods.html#cb196-59" tabindex="-1"></a>        X_glmnet_cols[[i]] <span class="ot">&lt;-</span> X_glmnet_i</span>
+<span id="cb196-60"><a href="competitor-methods.html#cb196-60" tabindex="-1"></a>    }</span>
+<span id="cb196-61"><a href="competitor-methods.html#cb196-61" tabindex="-1"></a>    <span class="co"># do.call(cbind, ...) reproduces cbind's exact type-promotion (and so</span></span>
+<span id="cb196-62"><a href="competitor-methods.html#cb196-62" tabindex="-1"></a>    <span class="co"># preserves the integer storage of an integer x) while avoiding the</span></span>
+<span id="cb196-63"><a href="competitor-methods.html#cb196-63" tabindex="-1"></a>    <span class="co"># O(n*k^2) copying of growing X_glmnet column by column (#58).</span></span>
+<span id="cb196-64"><a href="competitor-methods.html#cb196-64" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <span class="fu">do.call</span>(cbind, X_glmnet_cols)</span>
+<span id="cb196-65"><a href="competitor-methods.html#cb196-65" tabindex="-1"></a></span>
 <span id="cb196-66"><a href="competitor-methods.html#cb196-66" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
-<span id="cb196-67"><a href="competitor-methods.html#cb196-67" tabindex="-1"></a>    <span class="fu">colnames</span>(X_glmnet) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
-<span id="cb196-68"><a href="competitor-methods.html#cb196-68" tabindex="-1"></a></span>
-<span id="cb196-69"><a href="competitor-methods.html#cb196-69" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb196-70"><a href="competitor-methods.html#cb196-70" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_glmnet))</span>
-<span id="cb196-71"><a href="competitor-methods.html#cb196-71" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(X_glmnet) <span class="sc">==</span> n)</span>
-<span id="cb196-72"><a href="competitor-methods.html#cb196-72" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;=</span> p)</span>
-<span id="cb196-73"><a href="competitor-methods.html#cb196-73" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb196-74"><a href="competitor-methods.html#cb196-74" tabindex="-1"></a>    </span>
-<span id="cb196-75"><a href="competitor-methods.html#cb196-75" tabindex="-1"></a>    <span class="fu">return</span>(X_glmnet)</span>
-<span id="cb196-76"><a href="competitor-methods.html#cb196-76" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb196-67"><a href="competitor-methods.html#cb196-67" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
+<span id="cb196-68"><a href="competitor-methods.html#cb196-68" tabindex="-1"></a>    <span class="fu">colnames</span>(X_glmnet) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
+<span id="cb196-69"><a href="competitor-methods.html#cb196-69" tabindex="-1"></a></span>
+<span id="cb196-70"><a href="competitor-methods.html#cb196-70" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb196-71"><a href="competitor-methods.html#cb196-71" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_glmnet))</span>
+<span id="cb196-72"><a href="competitor-methods.html#cb196-72" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(X_glmnet) <span class="sc">==</span> n)</span>
+<span id="cb196-73"><a href="competitor-methods.html#cb196-73" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;=</span> p)</span>
+<span id="cb196-74"><a href="competitor-methods.html#cb196-74" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb196-75"><a href="competitor-methods.html#cb196-75" tabindex="-1"></a>    </span>
+<span id="cb196-76"><a href="competitor-methods.html#cb196-76" tabindex="-1"></a>    <span class="fu">return</span>(X_glmnet)</span>
+<span id="cb196-77"><a href="competitor-methods.html#cb196-77" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#checkGetXglmnetInputs">checkGetXglmnetInputs</a>()</code>:</p>
 <div class="sourceCode" id="cb197"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb197-1"><a href="competitor-methods.html#cb197-1" tabindex="-1"></a><span class="co">#' Verifies the inputs for getXglmnet.</span></span>
 <span id="cb197-2"><a href="competitor-methods.html#cb197-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -1025,9 +1026,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb200-216"><a href="competitor-methods.html#cb200-216" tabindex="-1"></a>                                    <span class="at">prototypes=</span>process<span class="sc">$</span>prototypes),</span>
 <span id="cb200-217"><a href="competitor-methods.html#cb200-217" tabindex="-1"></a>                         <span class="st">"!is.na(type) is not TRUE"</span>,</span>
 <span id="cb200-218"><a href="competitor-methods.html#cb200-218" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb200-219"><a href="competitor-methods.html#cb200-219" tabindex="-1"></a>  </span>
-<span id="cb200-220"><a href="competitor-methods.html#cb200-220" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 116 successes.</code></pre>
+<span id="cb200-219"><a href="competitor-methods.html#cb200-219" tabindex="-1"></a></span>
+<span id="cb200-220"><a href="competitor-methods.html#cb200-220" tabindex="-1"></a>  <span class="co"># do.call(cbind) preserves integer storage of an integer x (#58)</span></span>
+<span id="cb200-221"><a href="competitor-methods.html#cb200-221" tabindex="-1"></a>  x_int <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">ncol =</span> <span class="dv">3</span>)</span>
+<span id="cb200-222"><a href="competitor-methods.html#cb200-222" tabindex="-1"></a>  int_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">c1 =</span> <span class="dv">1</span><span class="dt">L</span>, <span class="at">c2 =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">c3 =</span> <span class="dv">3</span><span class="dt">L</span>)</span>
+<span id="cb200-223"><a href="competitor-methods.html#cb200-223" tabindex="-1"></a>  res_int <span class="ot">&lt;-</span> <a href="competitor-methods.html#getXglmnet">getXglmnet</a>(x_int, int_clusters, <span class="at">type =</span> <span class="st">"protolasso"</span>,</span>
+<span id="cb200-224"><a href="competitor-methods.html#cb200-224" tabindex="-1"></a>    <span class="at">prototypes =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="dv">2</span><span class="dt">L</span>, <span class="dv">3</span><span class="dt">L</span>))</span>
+<span id="cb200-225"><a href="competitor-methods.html#cb200-225" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res_int))</span>
+<span id="cb200-226"><a href="competitor-methods.html#cb200-226" tabindex="-1"></a></span>
+<span id="cb200-227"><a href="competitor-methods.html#cb200-227" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 117 successes.</code></pre>
 <p><code><a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>()</code>:</p>
 <div class="sourceCode" id="cb202"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb202-1"><a href="competitor-methods.html#cb202-1" tabindex="-1"></a><span class="co">#' Extracts selected clusters and cluster prototypes from the glmnet lasso</span></span>
 <span id="cb202-2"><a href="competitor-methods.html#cb202-2" tabindex="-1"></a><span class="co">#' output</span></span>
@@ -1074,40 +1082,44 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb202-43"><a href="competitor-methods.html#cb202-43" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names)))</span>
 <span id="cb202-44"><a href="competitor-methods.html#cb202-44" tabindex="-1"></a>    }</span>
 <span id="cb202-45"><a href="competitor-methods.html#cb202-45" tabindex="-1"></a></span>
-<span id="cb202-46"><a href="competitor-methods.html#cb202-46" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
-<span id="cb202-47"><a href="competitor-methods.html#cb202-47" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="fu">vapply</span>(lasso_sets, length, <span class="fu">integer</span>(<span class="dv">1</span>)))</span>
-<span id="cb202-48"><a href="competitor-methods.html#cb202-48" tabindex="-1"></a></span>
-<span id="cb202-49"><a href="competitor-methods.html#cb202-49" tabindex="-1"></a>    <span class="co"># Preparing lists to store </span></span>
-<span id="cb202-50"><a href="competitor-methods.html#cb202-50" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb202-51"><a href="competitor-methods.html#cb202-51" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb202-52"><a href="competitor-methods.html#cb202-52" tabindex="-1"></a>    </span>
-<span id="cb202-53"><a href="competitor-methods.html#cb202-53" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_length){</span>
-<span id="cb202-54"><a href="competitor-methods.html#cb202-54" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
-<span id="cb202-55"><a href="competitor-methods.html#cb202-55" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[<span class="fu">lapply</span>(lasso_sets, length) <span class="sc">==</span> j]</span>
-<span id="cb202-56"><a href="competitor-methods.html#cb202-56" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
-<span id="cb202-57"><a href="competitor-methods.html#cb202-57" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
-<span id="cb202-58"><a href="competitor-methods.html#cb202-58" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb202-59"><a href="competitor-methods.html#cb202-59" tabindex="-1"></a></span>
-<span id="cb202-60"><a href="competitor-methods.html#cb202-60" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
-<span id="cb202-61"><a href="competitor-methods.html#cb202-61" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
-<span id="cb202-62"><a href="competitor-methods.html#cb202-62" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
-<span id="cb202-63"><a href="competitor-methods.html#cb202-63" tabindex="-1"></a>            </span>
-<span id="cb202-64"><a href="competitor-methods.html#cb202-64" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
-<span id="cb202-65"><a href="competitor-methods.html#cb202-65" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
-<span id="cb202-66"><a href="competitor-methods.html#cb202-66" tabindex="-1"></a></span>
-<span id="cb202-67"><a href="competitor-methods.html#cb202-67" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
-<span id="cb202-68"><a href="competitor-methods.html#cb202-68" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
-<span id="cb202-69"><a href="competitor-methods.html#cb202-69" tabindex="-1"></a></span>
-<span id="cb202-70"><a href="competitor-methods.html#cb202-70" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
-<span id="cb202-71"><a href="competitor-methods.html#cb202-71" tabindex="-1"></a>        }</span>
-<span id="cb202-72"><a href="competitor-methods.html#cb202-72" tabindex="-1"></a>    }</span>
+<span id="cb202-46"><a href="competitor-methods.html#cb202-46" tabindex="-1"></a>    <span class="co"># Compute each set's length once (used both for max_length and the</span></span>
+<span id="cb202-47"><a href="competitor-methods.html#cb202-47" tabindex="-1"></a>    <span class="co"># per-size subset below) instead of re-walking lengths every iteration (#58)</span></span>
+<span id="cb202-48"><a href="competitor-methods.html#cb202-48" tabindex="-1"></a>    set_lengths <span class="ot">&lt;-</span> <span class="fu">lengths</span>(lasso_sets)</span>
+<span id="cb202-49"><a href="competitor-methods.html#cb202-49" tabindex="-1"></a></span>
+<span id="cb202-50"><a href="competitor-methods.html#cb202-50" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
+<span id="cb202-51"><a href="competitor-methods.html#cb202-51" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(set_lengths)</span>
+<span id="cb202-52"><a href="competitor-methods.html#cb202-52" tabindex="-1"></a></span>
+<span id="cb202-53"><a href="competitor-methods.html#cb202-53" tabindex="-1"></a>    <span class="co"># Preparing lists to store</span></span>
+<span id="cb202-54"><a href="competitor-methods.html#cb202-54" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb202-55"><a href="competitor-methods.html#cb202-55" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb202-56"><a href="competitor-methods.html#cb202-56" tabindex="-1"></a></span>
+<span id="cb202-57"><a href="competitor-methods.html#cb202-57" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>max_length){</span>
+<span id="cb202-58"><a href="competitor-methods.html#cb202-58" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
+<span id="cb202-59"><a href="competitor-methods.html#cb202-59" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[set_lengths <span class="sc">==</span> j]</span>
+<span id="cb202-60"><a href="competitor-methods.html#cb202-60" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
+<span id="cb202-61"><a href="competitor-methods.html#cb202-61" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
+<span id="cb202-62"><a href="competitor-methods.html#cb202-62" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb202-63"><a href="competitor-methods.html#cb202-63" tabindex="-1"></a></span>
+<span id="cb202-64"><a href="competitor-methods.html#cb202-64" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
+<span id="cb202-65"><a href="competitor-methods.html#cb202-65" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
+<span id="cb202-66"><a href="competitor-methods.html#cb202-66" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
+<span id="cb202-67"><a href="competitor-methods.html#cb202-67" tabindex="-1"></a>            </span>
+<span id="cb202-68"><a href="competitor-methods.html#cb202-68" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
+<span id="cb202-69"><a href="competitor-methods.html#cb202-69" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
+<span id="cb202-70"><a href="competitor-methods.html#cb202-70" tabindex="-1"></a></span>
+<span id="cb202-71"><a href="competitor-methods.html#cb202-71" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
+<span id="cb202-72"><a href="competitor-methods.html#cb202-72" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
 <span id="cb202-73"><a href="competitor-methods.html#cb202-73" tabindex="-1"></a></span>
-<span id="cb202-74"><a href="competitor-methods.html#cb202-74" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb202-75"><a href="competitor-methods.html#cb202-75" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb202-76"><a href="competitor-methods.html#cb202-76" tabindex="-1"></a></span>
-<span id="cb202-77"><a href="competitor-methods.html#cb202-77" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
-<span id="cb202-78"><a href="competitor-methods.html#cb202-78" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
-<span id="cb202-79"><a href="competitor-methods.html#cb202-79" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb202-74"><a href="competitor-methods.html#cb202-74" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
+<span id="cb202-75"><a href="competitor-methods.html#cb202-75" tabindex="-1"></a>        }</span>
+<span id="cb202-76"><a href="competitor-methods.html#cb202-76" tabindex="-1"></a>    }</span>
+<span id="cb202-77"><a href="competitor-methods.html#cb202-77" tabindex="-1"></a></span>
+<span id="cb202-78"><a href="competitor-methods.html#cb202-78" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb202-79"><a href="competitor-methods.html#cb202-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb202-80"><a href="competitor-methods.html#cb202-80" tabindex="-1"></a></span>
+<span id="cb202-81"><a href="competitor-methods.html#cb202-81" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
+<span id="cb202-82"><a href="competitor-methods.html#cb202-82" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
+<span id="cb202-83"><a href="competitor-methods.html#cb202-83" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>()</code>:</p>
 <div class="sourceCode" id="cb203"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb203-1"><a href="competitor-methods.html#cb203-1" tabindex="-1"></a><span class="co">#' Converts a selected set from X_glmnet to selected sets and selected clusters</span></span>
 <span id="cb203-2"><a href="competitor-methods.html#cb203-2" tabindex="-1"></a><span class="co">#' from the original feature space of X.</span></span>
