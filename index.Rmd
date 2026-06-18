@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.16",
+    Version = "0.1.17",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -8974,10 +8974,10 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
 #'
 #' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
 #' cluster stability selection) by cross-validation.
-#' @param X An n x p numeric matrix containing the p >= 2 features/predictors
-#' that will be used by cluster stability selection. (Unlike the other
-#' X-accepting functions, getLassoLambda requires a matrix and does not coerce a
-#' data.frame.)
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors that will be used by cluster stability
+#' selection.
 #' @param y The response; an n-dimensional numeric or integer vector. (Unlike
 #' in the more general css setup, this response must be real-valued since
 #' lambda will be determined using the lasso with cross-validation.)
@@ -9016,6 +9016,10 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(!is.na(lambda_choice))
     stopifnot(lambda_choice %in% c("min", "1se"))
 
+    # Accept a data.frame like the other X-accepting exports (#51): coerce to a
+    # matrix via the shared helper. clusters = list() makes the column-count
+    # guard inert (getLassoLambda has no clusters argument).
+    X <- coerceDataFrameToMatrix(X, clusters = list())
     stopifnot(is.matrix(X))
     stopifnot(is.numeric(X) | is.integer(X))
     n <- nrow(X)
@@ -9090,7 +9094,14 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_true(!is.na(ret))
   testthat::expect_equal(length(ret), 1)
   testthat::expect_true(ret >= 0)
-  
+
+  # data.frame X is now accepted (coerced internally), like the sibling exports (#51)
+  ret_df <- getLassoLambda(X = as.data.frame(x), y = y, lambda_choice = "1se", nfolds = 4)
+  testthat::expect_true(is.numeric(ret_df) | is.integer(ret_df))
+  testthat::expect_true(!is.na(ret_df))
+  testthat::expect_equal(length(ret_df), 1)
+  testthat::expect_true(ret_df >= 0)
+
   # Bad inputs
   testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
                          fixed=TRUE)

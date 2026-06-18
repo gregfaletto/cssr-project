@@ -4,10 +4,10 @@
 #'
 #' Chooses a lambda value for the lasso used on a subsample of size n/2 (as in
 #' cluster stability selection) by cross-validation.
-#' @param X An n x p numeric matrix containing the p >= 2 features/predictors
-#' that will be used by cluster stability selection. (Unlike the other
-#' X-accepting functions, getLassoLambda requires a matrix and does not coerce a
-#' data.frame.)
+#' @param X An n x p numeric matrix (preferably) or a data.frame (which will
+#' be coerced internally to a matrix by the function model.matrix) containing
+#' the p >= 2 features/predictors that will be used by cluster stability
+#' selection.
 #' @param y The response; an n-dimensional numeric or integer vector. (Unlike
 #' in the more general css setup, this response must be real-valued since
 #' lambda will be determined using the lasso with cross-validation.)
@@ -46,6 +46,10 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(!is.na(lambda_choice))
     stopifnot(lambda_choice %in% c("min", "1se"))
 
+    # Accept a data.frame like the other X-accepting exports (#51): coerce to a
+    # matrix via the shared helper. clusters = list() makes the column-count
+    # guard inert (getLassoLambda has no clusters argument).
+    X <- coerceDataFrameToMatrix(X, clusters = list())
     stopifnot(is.matrix(X))
     stopifnot(is.numeric(X) | is.integer(X))
     n <- nrow(X)
