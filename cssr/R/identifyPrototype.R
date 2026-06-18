@@ -18,6 +18,8 @@
 #' @return integer; the index of the feature identified as the prototype for
 #' the cluster.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 identifyPrototype <- function(cluster_members_i, x, y){
     # Check input
     stopifnot(is.integer(cluster_members_i))

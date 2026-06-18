@@ -7,6 +7,8 @@
 #' to at least cutoff will be selected by cluster stability selection. Must be
 #' between 0 and 1.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkCutoff <- function(cutoff){
     stopifnot(is.numeric(cutoff) | is.integer(cutoff))
     stopifnot(length(cutoff) == 1)

@@ -36,6 +36,8 @@
 #' selection. \emph{Journal of the Royal Statistical Society. Series B:
 #' Statistical Methodology}, 75(1), 55–80.
 #' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+#' @keywords internal
+#' @noRd
 createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
 
     # Check inputs

@@ -56,6 +56,8 @@
 #' \item{mu}{A length `n` numeric vector; the expected response given X, Z, and
 #' the true coefficient vector (equal to y minus the added noise).}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGenClusteredDataWeightedInputs <- function(p, k_unclustered, cluster_size,
         n_strong_cluster_vars, n_clusters, sig_clusters, rho_high, rho_low,
         beta_latent, beta_unclustered, snr, sigma_eps_sq){

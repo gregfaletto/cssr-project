@@ -26,6 +26,8 @@
 #' weights corresponding to each of the features in cluster_i. The weights
 #' will all be nonnegative and sum to 1.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getClustWeights <- function(cluster_i, weighting, feat_sel_props){
 
     stopifnot(is.integer(cluster_i) | is.numeric(cluster_i))

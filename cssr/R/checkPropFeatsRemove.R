@@ -8,6 +8,8 @@
 #' @param p The number of features; must be greater than 2 if prop_feats_remove
 #' is greater than 0.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkPropFeatsRemove <- function(prop_feats_remove, p){
     stopifnot(length(prop_feats_remove) == 1)
     stopifnot(is.numeric(prop_feats_remove) | is.integer(prop_feats_remove))

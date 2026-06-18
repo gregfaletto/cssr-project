@@ -40,6 +40,8 @@
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 formatClusters <- function(clusters=NA, p=-1, clust_names=NA, 
     get_prototypes=FALSE, x=NA, y=NA, R=NA){
 

@@ -6,6 +6,8 @@
 #' @param y Numeric response vector.
 #' @param n Number of observations of covariates; should match length of y.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkY <- function(y, n){
     stopifnot(all(!is.na(y)))
     stopifnot(is.numeric(y) | is.integer(y))

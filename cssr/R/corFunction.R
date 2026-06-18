@@ -10,6 +10,8 @@
 #' correlation between t and y (between 0 and 1), or 0 if either t or y has only
 #' one unique value.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 corFunction <- function(t, y){
     # Check inputs
     stopifnot(is.numeric(t) | is.integer(t))

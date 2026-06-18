@@ -26,6 +26,8 @@
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
 #' \url{https://doi.org/10.1093/biostatistics/kxv049}.
+#' @keywords internal
+#' @noRd
 getXglmnet <- function(x, clusters, type, prototypes=NA){
     
     # Check inputs

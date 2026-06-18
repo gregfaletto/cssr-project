@@ -20,6 +20,8 @@
 #' @return The provided max_num_clusts, coerced to an integer if needed, and
 #' coerced to be less than or equal to the total number of clusters.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
     stopifnot(length(max_num_clusts) == 1)
     if(!is.na(max_num_clusts)){

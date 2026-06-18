@@ -50,6 +50,8 @@
 #' Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
 #' \emph{arXiv preprint arXiv:2201.00494}.
 #' \url{https://arxiv.org/abs/2201.00494}.
+#' @keywords internal
+#' @noRd
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, newx=NA){
 

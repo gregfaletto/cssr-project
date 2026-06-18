@@ -31,6 +31,8 @@
 #' selection. \emph{Journal of the Royal Statistical Society. Series B:
 #' Statistical Methodology}, 75(1), 55–80.
 #' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+#' @keywords internal
+#' @noRd
 getSubsamps <- function(n, B, sampling_type){
     subsamples <- list()
     for(i in 1:B){

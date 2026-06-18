@@ -6,6 +6,8 @@
 #' @param sampling_type A character vector; either "SS" or "MB". "MB" is not
 #' supported yet.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkSamplingType <- function(sampling_type){
     stopifnot(is.character(sampling_type))
     stopifnot(length(sampling_type) == 1)

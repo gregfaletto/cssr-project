@@ -15,6 +15,8 @@
 #' selection). In the case of a tie, the tie is broken by choosing the feature
 #' most correlated with the response in the full data set provided to css.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelectionPrototypes <- function(css_results, selected_clusts){
     
     # Check inputs

@@ -12,6 +12,8 @@
 #' @param n_clusters The number of clusters; note that this is an upper bound
 #' on min_num_clusts
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
     stopifnot(length(min_num_clusts) == 1)
     stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))

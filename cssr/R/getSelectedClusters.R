@@ -52,6 +52,8 @@
 #' selected cluster, and it has the same name as the cluster it corresponds
 #' to.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     max_num_clusts){
     # Check input

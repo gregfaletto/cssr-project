@@ -66,6 +66,8 @@
 #' needed, and coerced to be less than or equal to the total number of clusters
 #' from the output of css_results.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
     min_num_clusts, max_num_clusts, trainX, trainY){
     # Check inputs

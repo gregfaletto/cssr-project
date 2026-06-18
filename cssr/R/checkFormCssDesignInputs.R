@@ -37,6 +37,8 @@
 #' provided max_num_clusts, coerced to an integer if needed, and coerced to be
 #' less than or equal to the total number of clusters.}
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
     min_num_clusts, max_num_clusts, newx){    
     stopifnot(inherits(css_results, "cssr"))

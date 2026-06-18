@@ -7,6 +7,8 @@
 #' sampling.type=="MB" the total number of subsamples will be `B`; for
 #' sampling_type="SS" the number of subsamples will be `2*B`.
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkB <- function(B){
     stopifnot(length(B) == 1)
     stopifnot(is.numeric(B) | is.integer(B))

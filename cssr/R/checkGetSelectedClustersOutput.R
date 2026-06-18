@@ -16,6 +16,8 @@
 #' @param p Integer; number of features in the data (all selected_feats should
 #' be in 1:p)
 #' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
 checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     weights, n_clusters, p){
     stopifnot(is.numeric(selected_clusts))
