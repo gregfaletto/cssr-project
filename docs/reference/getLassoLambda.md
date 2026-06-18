@@ -13,10 +13,10 @@ getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
 
 - X:
 
-  An n x p numeric matrix containing the p \>= 2 features/predictors
-  that will be used by cluster stability selection. (Unlike the other
-  X-accepting functions, getLassoLambda requires a matrix and does not
-  coerce a data.frame.)
+  An n x p numeric matrix (preferably) or a data.frame (which will be
+  coerced internally to a matrix by the function model.matrix)
+  containing the p \>= 2 features/predictors that will be used by
+  cluster stability selection.
 
 - y:
 

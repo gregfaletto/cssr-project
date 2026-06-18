@@ -4535,7 +4535,14 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_true(!is.na(ret))
   testthat::expect_equal(length(ret), 1)
   testthat::expect_true(ret >= 0)
-  
+
+  # data.frame X is now accepted (coerced internally), like the sibling exports (#51)
+  ret_df <- getLassoLambda(X = as.data.frame(x), y = y, lambda_choice = "1se", nfolds = 4)
+  testthat::expect_true(is.numeric(ret_df) | is.integer(ret_df))
+  testthat::expect_true(!is.na(ret_df))
+  testthat::expect_equal(length(ret_df), 1)
+  testthat::expect_true(ret_df >= 0)
+
   # Bad inputs
   testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
                          fixed=TRUE)
