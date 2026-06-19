@@ -466,9 +466,12 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
             }
         }
 
-        # Check output
-        stopifnot(all(names(subsamps_and_feats) == c("subsample",
-            "feats_to_keep")))
+        # Check output: every element is a named list(subsample, feats_to_keep).
+        # (The previous check ran on the unnamed OUTER list -> all(logical(0))
+        # -> vacuously TRUE; this validates the per-element invariant. #69)
+        stopifnot(all(vapply(subsamps_and_feats,
+            function(s) identical(names(s), c("subsample", "feats_to_keep")),
+            logical(1))))
 
         return(subsamps_and_feats)
     }
@@ -3076,6 +3079,18 @@ Now that the helper functions have been defined, we move on to tests for the mai
 Tests for `createSubsamples()`:
 
 ```{r}
+testthat::test_that("createSubsamples returns properly-named elements with feature removal (#69)", {
+  set.seed(692)
+  res <- createSubsamples(n = 30, p = 8, B = 5, sampling_type = "SS",
+                          prop_feats_remove = 0.3)
+  testthat::expect_equal(length(res), 2L * 5L)   # SS -> 2B elements
+  # Every element is a named list(subsample, feats_to_keep) -- the invariant the
+  # (now-meaningful) output stopifnot guards.
+  testthat::expect_true(all(vapply(res,
+      function(s) identical(names(s), c("subsample", "feats_to_keep")),
+      logical(1))))
+})
+
 testthat::test_that("createSubsamples works", {
   res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
                           prop_feats_remove=0)
@@ -3982,6 +3997,14 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
+        # Guard against an unbounded decrement if min_num_clusts exceeds the
+        # number of clusters: once every cluster is selected we can't select
+        # more, so stop (mirrors the max-loop's break) (#69). Unreachable via the
+        # public API (checkMinNumClusts enforces min_num_clusts <= n_clusters),
+        # but a defensive break for any internal caller.
+        if(length(selected_clusts) == length(clus_sel_props)){
+            break
+        }
         cutoff <- cutoff - 1/B
         selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
     }
@@ -4769,6 +4792,25 @@ testthat::test_that("getSelectedClusters works", {
                          length(res$selected_feats))
   testthat::expect_equal(length(names(res$selected_feats)),
                          length(unique(names(res$selected_feats))))
+})
+
+testthat::test_that("getSelectedClusters does not hang when min_num_clusts > n_clusters (#69)", {
+  # Minimal cssr object (same pattern as the #42 test) with 2 clusters.
+  # min_num_clusts = 5 exceeds the 2 available clusters: pre-#69 the min-loop
+  # decrements the cutoff forever; post-#69 the guard breaks once all clusters
+  # are selected, so checkSelectedClusters warns and the function returns them.
+  B <- 10
+  clusters <- list(c1 = 1:2, c2 = 3:4)
+  clus_sel_mat <- cbind(c1 = rep(1, B), c2 = c(rep(1, B - 1), 0))
+  feat_sel_mat <- cbind(X1 = rep(1, B), X2 = rep(1, B),
+                        X3 = c(rep(1, B - 1), 0), X4 = c(rep(1, B - 1), 0))
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+  testthat::expect_warning(
+    res <- getSelectedClusters(obj, weighting = "simple_avg", cutoff = 0,
+                               min_num_clusts = 5L, max_num_clusts = NA),
+    "Returning fewer than min_num_clusts", fixed = TRUE)
+  testthat::expect_equal(length(res$selected_clusts), 2L)  # both clusters, no hang
 })
 
 testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)", {

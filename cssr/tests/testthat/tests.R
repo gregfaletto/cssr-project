@@ -995,6 +995,18 @@ testthat::test_that("checkGetClusterSelMatrixInput works", {
   
 })
 
+testthat::test_that("createSubsamples returns properly-named elements with feature removal (#69)", {
+  set.seed(692)
+  res <- createSubsamples(n = 30, p = 8, B = 5, sampling_type = "SS",
+                          prop_feats_remove = 0.3)
+  testthat::expect_equal(length(res), 2L * 5L)   # SS -> 2B elements
+  # Every element is a named list(subsample, feats_to_keep) -- the invariant the
+  # (now-meaningful) output stopifnot guards.
+  testthat::expect_true(all(vapply(res,
+      function(s) identical(names(s), c("subsample", "feats_to_keep")),
+      logical(1))))
+})
+
 testthat::test_that("createSubsamples works", {
   res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
                           prop_feats_remove=0)
@@ -1981,6 +1993,25 @@ testthat::test_that("getSelectedClusters works", {
                          length(res$selected_feats))
   testthat::expect_equal(length(names(res$selected_feats)),
                          length(unique(names(res$selected_feats))))
+})
+
+testthat::test_that("getSelectedClusters does not hang when min_num_clusts > n_clusters (#69)", {
+  # Minimal cssr object (same pattern as the #42 test) with 2 clusters.
+  # min_num_clusts = 5 exceeds the 2 available clusters: pre-#69 the min-loop
+  # decrements the cutoff forever; post-#69 the guard breaks once all clusters
+  # are selected, so checkSelectedClusters warns and the function returns them.
+  B <- 10
+  clusters <- list(c1 = 1:2, c2 = 3:4)
+  clus_sel_mat <- cbind(c1 = rep(1, B), c2 = c(rep(1, B - 1), 0))
+  feat_sel_mat <- cbind(X1 = rep(1, B), X2 = rep(1, B),
+                        X3 = c(rep(1, B - 1), 0), X4 = c(rep(1, B - 1), 0))
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+  testthat::expect_warning(
+    res <- getSelectedClusters(obj, weighting = "simple_avg", cutoff = 0,
+                               min_num_clusts = 5L, max_num_clusts = NA),
+    "Returning fewer than min_num_clusts", fixed = TRUE)
+  testthat::expect_equal(length(res$selected_clusts), 2L)  # both clusters, no hang
 })
 
 testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)", {
