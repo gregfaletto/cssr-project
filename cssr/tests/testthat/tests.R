@@ -4855,6 +4855,37 @@ testthat::test_that("getSelectionPrototypes works", {
 
 })
 
+testthat::test_that("getSelectionPrototypes handles a constant tied column without crashing (#68)", {
+  set.seed(680)
+  n <- 20L; p <- 4L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  X[, 2] <- 3.5                       # feature 2 is a CONSTANT column
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + stats::rnorm(n)       # y correlated with feature 1 (varying)
+  # feat_sel_mat: features 1 and 2 tie at selection proportion 0.5 (both
+  # "selected" in the same 5 of 10 subsamples), forcing the tie-break path.
+  B <- 10L
+  M <- matrix(0L, nrow = B, ncol = p)
+  M[1:5, 1] <- 1L
+  M[1:5, 2] <- 1L
+  css_results <- structure(list(X = X, y = y, feat_sel_mat = M), class = "cssr")
+  # Pre-fix: cor(X[, c(1,2)], y) -> c(<corr>, NA) -> max NA -> stopifnot abort.
+  proto <- getSelectionPrototypes(css_results, selected_clusts = list(c(1L, 2L)))
+  testthat::expect_false(is.na(proto))
+  testthat::expect_identical(unname(proto), 1L)   # the varying, y-correlated member
+
+  # All-constant tied cluster: must not crash, picks the first deterministically.
+  # (suppressWarnings: the names-assignment emits a pre-existing "number of items
+  # to replace..." warning when proto_i stays length>1; not introduced by this
+  # fix, unrelated to #68.)
+  X2 <- X; X2[, 3] <- 2.0; X2[, 4] <- 9.0
+  M2 <- matrix(0L, nrow = B, ncol = p); M2[1:5, 3] <- 1L; M2[1:5, 4] <- 1L
+  css2 <- structure(list(X = X2, y = y, feat_sel_mat = M2), class = "cssr")
+  proto2 <- suppressWarnings(
+      getSelectionPrototypes(css2, selected_clusts = list(c(3L, 4L))))
+  testthat::expect_identical(unname(proto2), 3L)
+})
+
 testthat::test_that("printCssDf works", {
   set.seed(67234)
   
