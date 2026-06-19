@@ -34,7 +34,7 @@
 #' @keywords internal
 #' @noRd
 getSubsamps <- function(n, B, sampling_type){
-    subsamples <- list()
+    subsamples <- vector("list", B)
     for(i in 1:B){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }

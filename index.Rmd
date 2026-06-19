@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.18",
+    Version = "0.1.19",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -435,7 +435,8 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     } else{
         # In this case, we generate subsamples as well as logical vectors
         # of features to keep
-        subsamps_and_feats <- list()
+        subsamps_and_feats <- vector("list",
+            if(sampling_type == "SS") 2L*B else B)
         subsamples <- getSubsamps(n, B, sampling_type)
         for(i in 1:B){
             # Logical p-vector, where each entry is TRUE with probability
@@ -500,7 +501,7 @@ Notice that `createSubsamples()` calls some helper functions to check the inputs
 #' @keywords internal
 #' @noRd
 getSubsamps <- function(n, B, sampling_type){
-    subsamples <- list()
+    subsamples <- vector("list", B)
     for(i in 1:B){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }
@@ -7280,19 +7281,14 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     noise_mat <- matrix(stats::rnorm(n*n_clusters*cluster_size, mean=0,
         sd=sqrt(noise_var)), n, n_clusters*cluster_size)
 
-    # Create matrix of proxies
-    proxy_mat <- matrix(as.numeric(NA), n, n_clusters*cluster_size)
-    if(n_clusters > 1){
-        for(i in 1:n_clusters){
-            first_ind <- (i - 1)*cluster_size + 1
-            last_ind <- i*cluster_size
-            proxy_mat[, first_ind:last_ind] <- Z[, i] +
-                noise_mat[, first_ind:last_ind]
-        }
-    } else{
-        stopifnot(ncol(noise_mat) == cluster_size)
-        proxy_mat[, 1:cluster_size] <- Z + noise_mat
-    }
+    # Create matrix of proxies. Each cluster's cluster_size proxies are its
+    # latent Z column plus the matching noise columns (#58); column-expand Z to
+    # the noise block layout in one vectorized add (replaces the per-cluster
+    # block loop; noise_mat was already drawn above, so RNG order is unchanged).
+    # For n_clusters == 1, genZmuY returns Z as a bare numeric vector, and
+    # as.matrix(Z) promotes it to a one-column matrix before the column-expand.
+    col_clust <- rep(1:n_clusters, each = cluster_size)
+    proxy_mat <- as.matrix(Z)[, col_clust, drop = FALSE] + noise_mat
 
     return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
         n_clusters))
@@ -9576,9 +9572,10 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
     stopifnot(all(lengths(selected_clusts) >= 1))
 
     prototypes <- rep(as.integer(NA), n_selected_clusts)
+    feat_sel_props <- colMeans(css_results$feat_sel_mat)
     for(i in 1:n_selected_clusts){
         clust_i <- selected_clusts[[i]]
-        sel_props_i <- colMeans(css_results$feat_sel_mat)[clust_i]
+        sel_props_i <- feat_sel_props[clust_i]
         proto_i <- clust_i[sel_props_i == max(sel_props_i)]
         stopifnot(length(proto_i) >= 1)
         if(length(proto_i) > 1){
@@ -11401,6 +11398,7 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
     n <- nrow(x)
     p <- ncol(x)
 
+    X_glmnet_cols <- vector("list", length(clusters))
     for(i in 1:length(clusters)){
         cluster_i <- clusters[[i]]
 
@@ -11408,7 +11406,7 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
             X_glmnet_i <- x[, cluster_i]
         } else{
             stopifnot(length(cluster_i) > 1)
-            
+
             if(type == "protolasso"){
                 prototype_ind_i <- which(prototypes %in% cluster_i)
                 stopifnot(length(prototype_ind_i) == 1)
@@ -11419,16 +11417,16 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
                 X_glmnet_i <- rowMeans(x[, cluster_i])
             }
         }
-        
+
         stopifnot(length(X_glmnet_i) == n)
-        
-        if(i == 1){
-            X_glmnet <- as.matrix(X_glmnet_i)
-        } else{
-            X_glmnet <- cbind(X_glmnet, X_glmnet_i)
-        }
+
+        X_glmnet_cols[[i]] <- X_glmnet_i
     }
-    
+    # do.call(cbind, ...) reproduces cbind's exact type-promotion (and so
+    # preserves the integer storage of an integer x) while avoiding the
+    # O(n*k^2) copying of growing X_glmnet column by column (#58).
+    X_glmnet <- do.call(cbind, X_glmnet_cols)
+
     stopifnot(ncol(X_glmnet) == length(clusters))
     stopifnot(ncol(X_glmnet) == length(clusters))
     colnames(X_glmnet) <- character()
@@ -11806,7 +11804,14 @@ testthat::test_that("getXglmnet works", {
                                     prototypes=process$prototypes),
                          "!is.na(type) is not TRUE",
                          fixed=TRUE)
-  
+
+  # do.call(cbind) preserves integer storage of an integer x (#58)
+  x_int <- matrix(1:12, nrow = 4, ncol = 3)
+  int_clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
+  res_int <- getXglmnet(x_int, int_clusters, type = "protolasso",
+    prototypes = c(1L, 2L, 3L))
+  testthat::expect_true(is.integer(res_int))
+
 })
 ```
 
@@ -11859,16 +11864,20 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
         stopifnot(all(!is.na(feat_names)))
     }
 
-    # Largest selected set among all those in lasso_sets
-    max_length <- max(vapply(lasso_sets, length, integer(1)))
+    # Compute each set's length once (used both for max_length and the
+    # per-size subset below) instead of re-walking lengths every iteration (#58)
+    set_lengths <- lengths(lasso_sets)
 
-    # Preparing lists to store 
+    # Largest selected set among all those in lasso_sets
+    max_length <- max(set_lengths)
+
+    # Preparing lists to store
     selected_sets <- list()
     selected_clusts_list <- list()
-    
+
     for(j in 1:max_length){
         # Lasso selected set of size j
-        lasso_sets_j <- lasso_sets[lapply(lasso_sets, length) == j]
+        lasso_sets_j <- lasso_sets[set_lengths == j]
         # Are there any lasso selected sets of size j? (If not, we will skip to
         # the next j, and slot j in the list will be empty.)
         if(length(lasso_sets_j) > 0){

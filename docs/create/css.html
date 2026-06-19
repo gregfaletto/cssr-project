@@ -443,45 +443,46 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb11-46"><a href="css.html#cb11-46" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
 <span id="cb11-47"><a href="css.html#cb11-47" tabindex="-1"></a>        <span class="co"># In this case, we generate subsamples as well as logical vectors</span></span>
 <span id="cb11-48"><a href="css.html#cb11-48" tabindex="-1"></a>        <span class="co"># of features to keep</span></span>
-<span id="cb11-49"><a href="css.html#cb11-49" tabindex="-1"></a>        subsamps_and_feats <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb11-50"><a href="css.html#cb11-50" tabindex="-1"></a>        subsamples <span class="ot">&lt;-</span> <a href="css.html#getSubsamps">getSubsamps</a>(n, B, sampling_type)</span>
-<span id="cb11-51"><a href="css.html#cb11-51" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B){</span>
-<span id="cb11-52"><a href="css.html#cb11-52" tabindex="-1"></a>            <span class="co"># Logical p-vector, where each entry is TRUE with probability</span></span>
-<span id="cb11-53"><a href="css.html#cb11-53" tabindex="-1"></a>            <span class="co"># 1 - prop_feats_remove</span></span>
-<span id="cb11-54"><a href="css.html#cb11-54" tabindex="-1"></a>            feats_to_keep_i <span class="ot">&lt;-</span> <span class="fu">as.logical</span>(stats<span class="sc">::</span><span class="fu">rbinom</span>(<span class="at">n=</span>p, <span class="at">size=</span><span class="dv">1</span>,</span>
-<span id="cb11-55"><a href="css.html#cb11-55" tabindex="-1"></a>                <span class="at">prob=</span><span class="dv">1</span> <span class="sc">-</span> prop_feats_remove))</span>
-<span id="cb11-56"><a href="css.html#cb11-56" tabindex="-1"></a>            <span class="co"># Make sure at least two entries are equal to TRUE (so that at</span></span>
-<span id="cb11-57"><a href="css.html#cb11-57" tabindex="-1"></a>            <span class="co"># least two features are present for every subsample)--if not,</span></span>
-<span id="cb11-58"><a href="css.html#cb11-58" tabindex="-1"></a>            <span class="co"># randomly choose features to add</span></span>
-<span id="cb11-59"><a href="css.html#cb11-59" tabindex="-1"></a>            <span class="cf">while</span>(<span class="fu">sum</span>(feats_to_keep_i) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
-<span id="cb11-60"><a href="css.html#cb11-60" tabindex="-1"></a>                false_inds <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="sc">!</span>feats_to_keep_i)</span>
-<span id="cb11-61"><a href="css.html#cb11-61" tabindex="-1"></a>                sel_feat <span class="ot">&lt;-</span> <span class="fu">sample</span>(false_inds, <span class="at">size=</span><span class="dv">1</span>)</span>
-<span id="cb11-62"><a href="css.html#cb11-62" tabindex="-1"></a>                feats_to_keep_i[sel_feat] <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
-<span id="cb11-63"><a href="css.html#cb11-63" tabindex="-1"></a>            }</span>
-<span id="cb11-64"><a href="css.html#cb11-64" tabindex="-1"></a>            subsamps_and_feats[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">subsample=</span>subsamples[[i]],</span>
-<span id="cb11-65"><a href="css.html#cb11-65" tabindex="-1"></a>                <span class="at">feats_to_keep=</span>feats_to_keep_i)</span>
-<span id="cb11-66"><a href="css.html#cb11-66" tabindex="-1"></a>        }</span>
-<span id="cb11-67"><a href="css.html#cb11-67" tabindex="-1"></a></span>
-<span id="cb11-68"><a href="css.html#cb11-68" tabindex="-1"></a>        <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
-<span id="cb11-69"><a href="css.html#cb11-69" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(subsamples) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
-<span id="cb11-70"><a href="css.html#cb11-70" tabindex="-1"></a>            <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B){</span>
-<span id="cb11-71"><a href="css.html#cb11-71" tabindex="-1"></a>                <span class="co"># Keep the same features as in the other subsample (this</span></span>
-<span id="cb11-72"><a href="css.html#cb11-72" tabindex="-1"></a>                <span class="co"># ensures that the theoretical guarantee of Shah and Samworth</span></span>
-<span id="cb11-73"><a href="css.html#cb11-73" tabindex="-1"></a>                <span class="co"># 2013 remains valid on every individual pair of subsamples)</span></span>
-<span id="cb11-74"><a href="css.html#cb11-74" tabindex="-1"></a>                subsamps_and_feats[[B <span class="sc">+</span> i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">subsample=</span>subsamples[[B <span class="sc">+</span> i]],</span>
-<span id="cb11-75"><a href="css.html#cb11-75" tabindex="-1"></a>                    <span class="at">feats_to_keep=</span>subsamps_and_feats[[i]]<span class="sc">$</span>feats_to_keep)</span>
-<span id="cb11-76"><a href="css.html#cb11-76" tabindex="-1"></a>            }</span>
-<span id="cb11-77"><a href="css.html#cb11-77" tabindex="-1"></a>        }</span>
-<span id="cb11-78"><a href="css.html#cb11-78" tabindex="-1"></a></span>
-<span id="cb11-79"><a href="css.html#cb11-79" tabindex="-1"></a>        <span class="co"># Check output</span></span>
-<span id="cb11-80"><a href="css.html#cb11-80" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">names</span>(subsamps_and_feats) <span class="sc">==</span> <span class="fu">c</span>(<span class="st">"subsample"</span>,</span>
-<span id="cb11-81"><a href="css.html#cb11-81" tabindex="-1"></a>            <span class="st">"feats_to_keep"</span>)))</span>
-<span id="cb11-82"><a href="css.html#cb11-82" tabindex="-1"></a></span>
-<span id="cb11-83"><a href="css.html#cb11-83" tabindex="-1"></a>        <span class="fu">return</span>(subsamps_and_feats)</span>
-<span id="cb11-84"><a href="css.html#cb11-84" tabindex="-1"></a>    }</span>
-<span id="cb11-85"><a href="css.html#cb11-85" tabindex="-1"></a>    <span class="co"># Shouldn't be possible to reach this part of function</span></span>
-<span id="cb11-86"><a href="css.html#cb11-86" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"createSubsamples failed to return anything"</span>)</span>
-<span id="cb11-87"><a href="css.html#cb11-87" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb11-49"><a href="css.html#cb11-49" tabindex="-1"></a>        subsamps_and_feats <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>,</span>
+<span id="cb11-50"><a href="css.html#cb11-50" tabindex="-1"></a>            <span class="cf">if</span>(sampling_type <span class="sc">==</span> <span class="st">"SS"</span>) <span class="dv">2</span><span class="dt">L</span><span class="sc">*</span>B <span class="cf">else</span> B)</span>
+<span id="cb11-51"><a href="css.html#cb11-51" tabindex="-1"></a>        subsamples <span class="ot">&lt;-</span> <a href="css.html#getSubsamps">getSubsamps</a>(n, B, sampling_type)</span>
+<span id="cb11-52"><a href="css.html#cb11-52" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B){</span>
+<span id="cb11-53"><a href="css.html#cb11-53" tabindex="-1"></a>            <span class="co"># Logical p-vector, where each entry is TRUE with probability</span></span>
+<span id="cb11-54"><a href="css.html#cb11-54" tabindex="-1"></a>            <span class="co"># 1 - prop_feats_remove</span></span>
+<span id="cb11-55"><a href="css.html#cb11-55" tabindex="-1"></a>            feats_to_keep_i <span class="ot">&lt;-</span> <span class="fu">as.logical</span>(stats<span class="sc">::</span><span class="fu">rbinom</span>(<span class="at">n=</span>p, <span class="at">size=</span><span class="dv">1</span>,</span>
+<span id="cb11-56"><a href="css.html#cb11-56" tabindex="-1"></a>                <span class="at">prob=</span><span class="dv">1</span> <span class="sc">-</span> prop_feats_remove))</span>
+<span id="cb11-57"><a href="css.html#cb11-57" tabindex="-1"></a>            <span class="co"># Make sure at least two entries are equal to TRUE (so that at</span></span>
+<span id="cb11-58"><a href="css.html#cb11-58" tabindex="-1"></a>            <span class="co"># least two features are present for every subsample)--if not,</span></span>
+<span id="cb11-59"><a href="css.html#cb11-59" tabindex="-1"></a>            <span class="co"># randomly choose features to add</span></span>
+<span id="cb11-60"><a href="css.html#cb11-60" tabindex="-1"></a>            <span class="cf">while</span>(<span class="fu">sum</span>(feats_to_keep_i) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
+<span id="cb11-61"><a href="css.html#cb11-61" tabindex="-1"></a>                false_inds <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="sc">!</span>feats_to_keep_i)</span>
+<span id="cb11-62"><a href="css.html#cb11-62" tabindex="-1"></a>                sel_feat <span class="ot">&lt;-</span> <span class="fu">sample</span>(false_inds, <span class="at">size=</span><span class="dv">1</span>)</span>
+<span id="cb11-63"><a href="css.html#cb11-63" tabindex="-1"></a>                feats_to_keep_i[sel_feat] <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb11-64"><a href="css.html#cb11-64" tabindex="-1"></a>            }</span>
+<span id="cb11-65"><a href="css.html#cb11-65" tabindex="-1"></a>            subsamps_and_feats[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">subsample=</span>subsamples[[i]],</span>
+<span id="cb11-66"><a href="css.html#cb11-66" tabindex="-1"></a>                <span class="at">feats_to_keep=</span>feats_to_keep_i)</span>
+<span id="cb11-67"><a href="css.html#cb11-67" tabindex="-1"></a>        }</span>
+<span id="cb11-68"><a href="css.html#cb11-68" tabindex="-1"></a></span>
+<span id="cb11-69"><a href="css.html#cb11-69" tabindex="-1"></a>        <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
+<span id="cb11-70"><a href="css.html#cb11-70" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(subsamples) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
+<span id="cb11-71"><a href="css.html#cb11-71" tabindex="-1"></a>            <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B){</span>
+<span id="cb11-72"><a href="css.html#cb11-72" tabindex="-1"></a>                <span class="co"># Keep the same features as in the other subsample (this</span></span>
+<span id="cb11-73"><a href="css.html#cb11-73" tabindex="-1"></a>                <span class="co"># ensures that the theoretical guarantee of Shah and Samworth</span></span>
+<span id="cb11-74"><a href="css.html#cb11-74" tabindex="-1"></a>                <span class="co"># 2013 remains valid on every individual pair of subsamples)</span></span>
+<span id="cb11-75"><a href="css.html#cb11-75" tabindex="-1"></a>                subsamps_and_feats[[B <span class="sc">+</span> i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">subsample=</span>subsamples[[B <span class="sc">+</span> i]],</span>
+<span id="cb11-76"><a href="css.html#cb11-76" tabindex="-1"></a>                    <span class="at">feats_to_keep=</span>subsamps_and_feats[[i]]<span class="sc">$</span>feats_to_keep)</span>
+<span id="cb11-77"><a href="css.html#cb11-77" tabindex="-1"></a>            }</span>
+<span id="cb11-78"><a href="css.html#cb11-78" tabindex="-1"></a>        }</span>
+<span id="cb11-79"><a href="css.html#cb11-79" tabindex="-1"></a></span>
+<span id="cb11-80"><a href="css.html#cb11-80" tabindex="-1"></a>        <span class="co"># Check output</span></span>
+<span id="cb11-81"><a href="css.html#cb11-81" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">names</span>(subsamps_and_feats) <span class="sc">==</span> <span class="fu">c</span>(<span class="st">"subsample"</span>,</span>
+<span id="cb11-82"><a href="css.html#cb11-82" tabindex="-1"></a>            <span class="st">"feats_to_keep"</span>)))</span>
+<span id="cb11-83"><a href="css.html#cb11-83" tabindex="-1"></a></span>
+<span id="cb11-84"><a href="css.html#cb11-84" tabindex="-1"></a>        <span class="fu">return</span>(subsamps_and_feats)</span>
+<span id="cb11-85"><a href="css.html#cb11-85" tabindex="-1"></a>    }</span>
+<span id="cb11-86"><a href="css.html#cb11-86" tabindex="-1"></a>    <span class="co"># Shouldn't be possible to reach this part of function</span></span>
+<span id="cb11-87"><a href="css.html#cb11-87" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"createSubsamples failed to return anything"</span>)</span>
+<span id="cb11-88"><a href="css.html#cb11-88" tabindex="-1"></a>}</span></code></pre></div>
 <p>Notice that <code><a href="css.html#createSubsamples">createSubsamples</a>()</code> calls some helper functions to check the inputs (again, these are specified later in the helper functions section). <code><a href="css.html#createSubsamples">createSubsamples</a>()</code> also calls the workhorse function <code><a href="css.html#getSubsamps">getSubsamps</a>()</code> to generate a list of subsamples.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="css.html#cb12-1" tabindex="-1"></a><span class="co">#' Generate list of subsamples</span></span>
 <span id="cb12-2"><a href="css.html#cb12-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -504,7 +505,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb12-19"><a href="css.html#cb12-19" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
 <span id="cb12-20"><a href="css.html#cb12-20" tabindex="-1"></a><span class="co">#' @noRd</span></span>
 <span id="cb12-21"><a href="css.html#cb12-21" tabindex="-1"></a><span id="getSubsamps">getSubsamps</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(n, B, sampling_type){</span>
-<span id="cb12-22"><a href="css.html#cb12-22" tabindex="-1"></a>    subsamples <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb12-22"><a href="css.html#cb12-22" tabindex="-1"></a>    subsamples <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, B)</span>
 <span id="cb12-23"><a href="css.html#cb12-23" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>B){</span>
 <span id="cb12-24"><a href="css.html#cb12-24" tabindex="-1"></a>        subsamples[[i]] <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">sample.int</span>(<span class="at">n=</span>n, <span class="at">size=</span><span class="fu">floor</span>(n<span class="sc">/</span><span class="dv">2</span>), <span class="at">replace=</span><span class="cn">FALSE</span>))</span>
 <span id="cb12-25"><a href="css.html#cb12-25" tabindex="-1"></a>    }</span>

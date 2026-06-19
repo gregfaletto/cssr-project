@@ -36,6 +36,7 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
     n <- nrow(x)
     p <- ncol(x)
 
+    X_glmnet_cols <- vector("list", length(clusters))
     for(i in 1:length(clusters)){
         cluster_i <- clusters[[i]]
 
@@ -43,7 +44,7 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
             X_glmnet_i <- x[, cluster_i]
         } else{
             stopifnot(length(cluster_i) > 1)
-            
+
             if(type == "protolasso"){
                 prototype_ind_i <- which(prototypes %in% cluster_i)
                 stopifnot(length(prototype_ind_i) == 1)
@@ -54,16 +55,16 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
                 X_glmnet_i <- rowMeans(x[, cluster_i])
             }
         }
-        
+
         stopifnot(length(X_glmnet_i) == n)
-        
-        if(i == 1){
-            X_glmnet <- as.matrix(X_glmnet_i)
-        } else{
-            X_glmnet <- cbind(X_glmnet, X_glmnet_i)
-        }
+
+        X_glmnet_cols[[i]] <- X_glmnet_i
     }
-    
+    # do.call(cbind, ...) reproduces cbind's exact type-promotion (and so
+    # preserves the integer storage of an integer x) while avoiding the
+    # O(n*k^2) copying of growing X_glmnet column by column (#58).
+    X_glmnet <- do.call(cbind, X_glmnet_cols)
+
     stopifnot(ncol(X_glmnet) == length(clusters))
     stopifnot(ncol(X_glmnet) == length(clusters))
     colnames(X_glmnet) <- character()

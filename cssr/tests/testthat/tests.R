@@ -6203,7 +6203,14 @@ testthat::test_that("getXglmnet works", {
                                     prototypes=process$prototypes),
                          "!is.na(type) is not TRUE",
                          fixed=TRUE)
-  
+
+  # do.call(cbind) preserves integer storage of an integer x (#58)
+  x_int <- matrix(1:12, nrow = 4, ncol = 3)
+  int_clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
+  res_int <- getXglmnet(x_int, int_clusters, type = "protolasso",
+    prototypes = c(1L, 2L, 3L))
+  testthat::expect_true(is.integer(res_int))
+
 })
 
 testthat::test_that("getSelectedSets works", {

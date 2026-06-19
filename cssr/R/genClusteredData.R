@@ -98,19 +98,14 @@ genClusteredData <- function(n, p, k_unclustered, cluster_size, n_clusters=1,
     noise_mat <- matrix(stats::rnorm(n*n_clusters*cluster_size, mean=0,
         sd=sqrt(noise_var)), n, n_clusters*cluster_size)
 
-    # Create matrix of proxies
-    proxy_mat <- matrix(as.numeric(NA), n, n_clusters*cluster_size)
-    if(n_clusters > 1){
-        for(i in 1:n_clusters){
-            first_ind <- (i - 1)*cluster_size + 1
-            last_ind <- i*cluster_size
-            proxy_mat[, first_ind:last_ind] <- Z[, i] +
-                noise_mat[, first_ind:last_ind]
-        }
-    } else{
-        stopifnot(ncol(noise_mat) == cluster_size)
-        proxy_mat[, 1:cluster_size] <- Z + noise_mat
-    }
+    # Create matrix of proxies. Each cluster's cluster_size proxies are its
+    # latent Z column plus the matching noise columns (#58); column-expand Z to
+    # the noise block layout in one vectorized add (replaces the per-cluster
+    # block loop; noise_mat was already drawn above, so RNG order is unchanged).
+    # For n_clusters == 1, genZmuY returns Z as a bare numeric vector, and
+    # as.matrix(Z) promotes it to a one-column matrix before the column-expand.
+    col_clust <- rep(1:n_clusters, each = cluster_size)
+    proxy_mat <- as.matrix(Z)[, col_clust, drop = FALSE] + noise_mat
 
     return(finalizeGenClusteredData(proxy_mat, other_X, y, mu, Z, n, p,
         n_clusters))

@@ -61,7 +61,8 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     } else{
         # In this case, we generate subsamples as well as logical vectors
         # of features to keep
-        subsamps_and_feats <- list()
+        subsamps_and_feats <- vector("list",
+            if(sampling_type == "SS") 2L*B else B)
         subsamples <- getSubsamps(n, B, sampling_type)
         for(i in 1:B){
             # Logical p-vector, where each entry is TRUE with probability
