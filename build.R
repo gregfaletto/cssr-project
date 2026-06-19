@@ -27,6 +27,14 @@
 # hand-edited, so delete it first for a clean, deterministic regenerate.
 if (fs::dir_exists("cssr")) fs::dir_delete("cssr")
 
+# Prune orphaned reference pages (#53). pkgdown::build_site() (via
+# litr::add_pkgdown) never deletes stale docs/reference/*.html, and
+# build.R doesn't either, so a removed/renamed/@noRd'd function leaves an
+# orphan that also pollutes docs/search.json and docs/sitemap.xml. Deleting
+# the reference dir before the render makes build_site() rebuild it from the
+# current topics only -- and regenerate the search index + sitemap clean.
+if (fs::dir_exists("docs/reference")) fs::dir_delete("docs/reference")
+
 litr::render("index.Rmd", minimal_eval = FALSE)
 
 # Guard: only touch the published book if a fresh one was actually built, so a
