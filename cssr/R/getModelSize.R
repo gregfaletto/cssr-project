@@ -9,7 +9,7 @@
 #' 
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
-#' the p >= 2 features/predictors.
+#' the p >= 2 features/predictors. Must not contain missing (`NA`) values.
 #' @param y A length-n numeric vector containing the responses; `y[i]` is the
 #' response corresponding to observation `X[i, ]`. (Note that for the css
 #' function, y does not have to be a numeric response, but for this function,
@@ -58,12 +58,12 @@ getModelSize <- function(X, y, clusters, alpha = 1){
     stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
+    checkNoNAs(X, "X")
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
-    stopifnot(all(!is.na(X)))
     stopifnot(is.numeric(X) | is.integer(X))
     n <- nrow(X)
 

@@ -21,6 +21,20 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
     "the number of columns changed", fixed = TRUE)
 })
 
+testthat::test_that("checkNoNAs flags NA in a matrix or data.frame and passes clean input", {
+  m_ok <- matrix(as.numeric(1:8), nrow = 4, ncol = 2)
+  testthat::expect_identical(checkNoNAs(m_ok, "X"), m_ok)   # returns input invisibly
+  m_na <- m_ok; m_na[2, 1] <- NA
+  testthat::expect_error(checkNoNAs(m_na, "X"),
+    "must not contain missing (NA) values", fixed = TRUE)
+  # data.frame with a numeric NA is caught too (before any coercion).
+  df_na <- data.frame(a = c(1, NA, 3), b = c(4, 5, 6))
+  testthat::expect_error(checkNoNAs(df_na, "X"),
+    "must not contain missing (NA) values", fixed = TRUE)
+  # arg_name appears in the message.
+  testthat::expect_error(checkNoNAs(m_na, "newx"), "newx", fixed = TRUE)
+})
+
 testthat::test_that("checkCssClustersInput works", {
   
   # Intentionally don't provide clusters for all feature, mix up formatting,
@@ -4591,6 +4605,19 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=4, alpha=0),
                          "alpha > 0 is not TRUE", fixed=TRUE)
 
+  # An NA in the design matrix now yields a friendly message (#56) rather than
+  # falling through to a cryptic glmnet-level error.
+  x_na <- x; x_na[2, 1] <- NA
+  testthat::expect_error(getLassoLambda(X=x_na, y=y),
+                         "must not contain missing (NA) values", fixed=TRUE)
+  # A data.frame with a numeric NA must error with the same message BEFORE
+  # coercion: model.matrix's na.action=na.omit would otherwise silently drop
+  # the NA row and the failure would surface downstream (length mismatch), not
+  # as this message. This case pins the pre-coercion placement of checkNoNAs.
+  df_na <- as.data.frame(x); df_na[2, 1] <- NA
+  testthat::expect_error(getLassoLambda(X=df_na, y=y),
+                         "must not contain missing (NA) values", fixed=TRUE)
+
 })
 
 testthat::test_that("getModelSize works", {
@@ -5446,6 +5473,11 @@ testthat::test_that("cssSelect works", {
                          fixed=TRUE)
   testthat::expect_error(cssSelect(X=x, y=y, alpha=NA_real_),
                          "!is.na(alpha) is not TRUE", fixed=TRUE)
+
+  # An NA in the design matrix yields the shared friendly message (#56).
+  x_na <- x; x_na[2, 1] <- NA
+  testthat::expect_error(cssSelect(X=x_na, y=y),
+                         "must not contain missing (NA) values", fixed=TRUE)
 })
 
 testthat::test_that("cssSelect threads alpha through to selection", {

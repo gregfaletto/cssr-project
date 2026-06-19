@@ -36,7 +36,8 @@ getCssDesign(
   is omitted getCssDesign will return a design matrix of cluster
   representatives formed from the train_inds observations from the
   matrix X provided to css. (If no train_inds were provided to css, newX
-  must be provided to getCssDesign.) Default is NA.
+  must be provided to getCssDesign.) Default is NA. Must not contain
+  missing (`NA`) values.
 
 - weighting:
 

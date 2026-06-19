@@ -39,12 +39,12 @@
 processClusterLassoInputs <- function(X, y, clusters, nlambda){
 
     stopifnot(is.matrix(X) | is.data.frame(X))
+    checkNoNAs(X, "X")
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
-    stopifnot(all(!is.na(X)))
 
     feat_names <- as.character(NA)
     if(!is.null(colnames(X))){

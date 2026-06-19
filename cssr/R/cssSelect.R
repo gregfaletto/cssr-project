@@ -13,7 +13,7 @@
 #' in one call to css.
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
-#' the p >= 2 features/predictors.
+#' the p >= 2 features/predictors. Must not contain missing (`NA`) values.
 #' @param y A length-n numeric vector containing the responses; `y[i]` is the
 #' response corresponding to observation `X[i, ]`. (Note that for the css
 #' function, y does not have to be a numeric response, but for this function,
@@ -96,14 +96,13 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
-    stopifnot(all(!is.na(X)))
+    checkNoNAs(X, "X")
 
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X <- coerceDataFrameToMatrix(X, clusters, convert_phrase = "the data.frame X")
 
     stopifnot(is.matrix(X))
-    stopifnot(all(!is.na(X)))
 
     if(!is.numeric(y) & !is.integer(y)){
         stop("The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")

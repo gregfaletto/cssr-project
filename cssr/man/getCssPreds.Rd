@@ -24,7 +24,7 @@ be coerced internally to a matrix by the function model.matrix) containing
 the data that will be used to generate predictions. Must contain the same
 features (in the same number of columns) as the matrix provided to css, and
 if the columns of testX are labeled, the names must match the variable names
-provided to css.}
+provided to css. Must not contain missing (\code{NA}) values.}
 
 \item{weighting}{Character; determines how to calculate the weights to
 combine features from the selected clusters into weighted averages, called

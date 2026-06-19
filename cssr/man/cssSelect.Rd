@@ -19,7 +19,7 @@ cssSelect(
 \arguments{
 \item{X}{An n x p numeric matrix (preferably) or a data.frame (which will
 be coerced internally to a matrix by the function model.matrix) containing
-the p >= 2 features/predictors.}
+the p >= 2 features/predictors. Must not contain missing (\code{NA}) values.}
 
 \item{y}{A length-n numeric vector containing the responses; \code{y[i]} is the
 response corresponding to observation \code{X[i, ]}. (Note that for the css

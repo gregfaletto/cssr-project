@@ -7,7 +7,7 @@
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
 #' the p >= 2 features/predictors that will be used by cluster stability
-#' selection.
+#' selection. Must not contain missing (`NA`) values.
 #' @param y The response; an n-dimensional numeric or integer vector. (Unlike
 #' in the more general css setup, this response must be real-valued since
 #' lambda will be determined using the lasso with cross-validation.)
@@ -45,6 +45,8 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(length(lambda_choice) == 1)
     stopifnot(!is.na(lambda_choice))
     stopifnot(lambda_choice %in% c("min", "1se"))
+
+    checkNoNAs(X, "X")
 
     # Accept a data.frame like the other X-accepting exports (#51): coerce to a
     # matrix via the shared helper. clusters = list() makes the column-count

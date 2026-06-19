@@ -16,7 +16,7 @@ getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
   An n x p numeric matrix (preferably) or a data.frame (which will be
   coerced internally to a matrix by the function model.matrix)
   containing the p \>= 2 features/predictors that will be used by
-  cluster stability selection.
+  cluster stability selection. Must not contain missing (`NA`) values.
 
 - y:
 

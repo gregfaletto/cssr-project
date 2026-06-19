@@ -4,7 +4,7 @@
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
-#' p >= 2 features/predictors
+#' p >= 2 features/predictors. Must not contain missing (`NA`) values.
 #' @param y The response; A length n numeric (or integer) real-valued vector.
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of 1:p). (If there is only one
