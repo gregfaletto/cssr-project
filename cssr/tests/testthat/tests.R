@@ -284,6 +284,23 @@ testthat::test_that("identifyPrototype works", {
 
 })
 
+testthat::test_that("identifyPrototype handles a constant cluster member silently (#59)", {
+  # A constant column has undefined correlation; corFunction returned 0, and the
+  # vectorized cor() path must too -- and SILENTLY (base cor() warns "the
+  # standard deviation is zero" on a constant column; identifyPrototype now
+  # suppresses that to preserve corFunction's silent-0 contract).
+  n <- 12
+  set.seed(7321)
+  varying <- stats::rnorm(n)
+  # Column 1 is constant; column 2 equals y (perfectly correlated).
+  x <- cbind(rep(1.5, n), varying)
+  y <- varying
+  # The prototype must be the varying member (2), never the constant column (1).
+  testthat::expect_identical(identifyPrototype(c(1L, 2L), x, y), 2L)
+  # And no "standard deviation is zero" warning may leak.
+  testthat::expect_silent(identifyPrototype(c(1L, 2L), x, y))
+})
+
 testthat::test_that("getPrototypes works", {
   n <- 10
   p <- 5
