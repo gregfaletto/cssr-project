@@ -28,7 +28,7 @@ observations for model estimation. If this is the case, then when newX is
 omitted getCssDesign will return a design matrix of cluster representatives
 formed from the train_inds observations from the matrix X provided to css.
 (If no train_inds were provided to css, newX must be provided to
-getCssDesign.) Default is NA.}
+getCssDesign.) Default is NA. Must not contain missing (\code{NA}) values.}
 
 \item{weighting}{Character; determines how to calculate the weights to
 combine features from the selected clusters into weighted averages, called

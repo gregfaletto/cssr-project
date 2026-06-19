@@ -24,7 +24,8 @@ cssPredict(
 containing the p >= 2 features/predictors. The data from X_train_selec and
 y_train_selec will be split into two parts; half of the data will be used for
 feature selection by cluster stability selection, and half will be used for
-estimating a linear model on the selected cluster representatives.}
+estimating a linear model on the selected cluster representatives. Must not
+contain missing (\code{NA}) values.}
 
 \item{y_train_selec}{A length-n numeric vector containing the responses;
 \code{y[i]} is the response corresponding to observation \code{X[i, ]}. Unlke the more

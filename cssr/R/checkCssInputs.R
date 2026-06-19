@@ -92,6 +92,7 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     prop_feats_remove, train_inds, num_cores){
 
     stopifnot(is.matrix(X) | is.data.frame(X))
+    checkNoNAs(X, "X")
 
     clust_names <- as.character(NA)
     if(!is.null(names(clusters)) & is.list(clusters)){
@@ -102,7 +103,6 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     X <- coerceDataFrameToMatrix(X, clusters)
 
     stopifnot(is.matrix(X))
-    stopifnot(all(!is.na(X)))
 
     feat_names <- as.character(NA)
     if(!is.null(colnames(X))){

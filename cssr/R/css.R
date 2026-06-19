@@ -8,7 +8,7 @@
 #'
 #' @param X An n x p numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
-#' p >= 2 features/predictors.
+#' p >= 2 features/predictors. Must not contain missing (`NA`) values.
 #' @param y The response; can be anything that takes the form of an
 #' n-dimensional vector, with the ith entry corresponding to the ith row of X.
 #' Typically (and for default `fitfun = cssLasso`), `y` should be an n-dimensional

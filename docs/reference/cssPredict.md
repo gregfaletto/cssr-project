@@ -37,7 +37,8 @@ cssPredict(
   X_train_selec and y_train_selec will be split into two parts; half of
   the data will be used for feature selection by cluster stability
   selection, and half will be used for estimating a linear model on the
-  selected cluster representatives.
+  selected cluster representatives. Must not contain missing (`NA`)
+  values.
 
 - y_train_selec:
 

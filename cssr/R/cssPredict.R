@@ -18,7 +18,8 @@
 #' containing the p >= 2 features/predictors. The data from X_train_selec and
 #' y_train_selec will be split into two parts; half of the data will be used for
 #' feature selection by cluster stability selection, and half will be used for
-#' estimating a linear model on the selected cluster representatives.
+#' estimating a linear model on the selected cluster representatives. Must not
+#' contain missing (`NA`) values.
 #' @param y_train_selec A length-n numeric vector containing the responses;
 #' `y[i]` is the response corresponding to observation `X[i, ]`. Unlke the more
 #' general setup of css, y_train_selec must be real-valued because predictions
@@ -111,14 +112,13 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(alpha <= 1)
 
     stopifnot(is.matrix(X_train_selec) | is.data.frame(X_train_selec))
-    stopifnot(all(!is.na(X_train_selec)))
+    checkNoNAs(X_train_selec, "X_train_selec")
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X_train_selec <- coerceDataFrameToMatrix(X_train_selec, clusters,
         arg_name = "X_train_selec")
 
     stopifnot(is.matrix(X_train_selec))
-    stopifnot(all(!is.na(X_train_selec)))
 
     n <- nrow(X_train_selec)
 

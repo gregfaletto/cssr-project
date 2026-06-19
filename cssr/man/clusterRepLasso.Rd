@@ -9,7 +9,7 @@ clusterRepLasso(X, y, clusters = list(), nlambda = 100)
 \arguments{
 \item{X}{An n x p numeric matrix (preferably) or a data.frame (which will
 be coerced internally to a matrix by the function model.matrix) containing
-p >= 2 features/predictors}
+p >= 2 features/predictors. Must not contain missing (\code{NA}) values.}
 
 \item{y}{The response; A length n numeric (or integer) real-valued vector.}
 

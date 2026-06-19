@@ -10,7 +10,7 @@ getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
 \item{X}{An n x p numeric matrix (preferably) or a data.frame (which will
 be coerced internally to a matrix by the function model.matrix) containing
 the p >= 2 features/predictors that will be used by cluster stability
-selection.}
+selection. Must not contain missing (\code{NA}) values.}
 
 \item{y}{The response; an n-dimensional numeric or integer vector. (Unlike
 in the more general css setup, this response must be real-valued since

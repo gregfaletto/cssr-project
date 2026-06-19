@@ -22,6 +22,8 @@
 #' @noRd
 checkXInputResults <- function(newx, css_X){
 
+    checkNoNAs(newx, "newx")
+
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     newx <- coerceDataFrameToMatrix(newx, clusters = list(), arg_name = "newx")
 
@@ -38,7 +40,6 @@ checkXInputResults <- function(newx, css_X){
     }
 
     stopifnot(is.matrix(newx))
-    stopifnot(all(!is.na(newx)))
 
     n <- nrow(newx)
     p <- ncol(newx)

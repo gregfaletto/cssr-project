@@ -14,7 +14,8 @@ protolasso(X, y, clusters = list(), nlambda = 100)
 
   An n x p numeric matrix (preferably) or a data.frame (which will be
   coerced internally to a matrix by the function model.matrix)
-  containing p \>= 2 features/predictors
+  containing p \>= 2 features/predictors. Must not contain missing
+  (`NA`) values.
 
 - y:
 
