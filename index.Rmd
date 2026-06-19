@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.20",
+    Version = "0.1.21",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -861,7 +861,7 @@ Below, we specify some of the helper functions for `css()`, which are less impor
     * `checkClusters()` verifies that the output of `formatClusters()` is as expected.
     * `getPrototypes()` identifies the prototypes of each cluster--the feature within each cluster that has the largest marginal sample correlation with `y`.
       - `identifyPrototype()` is the workhorse of `getPrototypes()`, identifying the prototype given a single cluster.
-        * `corFunction()` is a helper function called within `identifyPrototype()` to calculate the absolute value of the correlation between two vectors.
+        * `corFunction()` computes the absolute value of the correlation between two vectors -- the scalar rule that `identifyPrototype()` now applies in vectorized form (a single `cor()` call across all cluster members).
   - `checkSamplingType()` ensures that the input `sampling_type` is as expected. 
   - `checkB()` ensures that the input `B` is as expected.
   - `checkPropFeatsRemove()` ensures that the input `prop_feats_remove` is as expected.
@@ -1867,7 +1867,20 @@ identifyPrototype <- function(cluster_members_i, x, y){
     # metric purposes by choosing the one most highly correlated
     # with y
 
-    cors_i <- apply(x[, cluster_members_i], 2, corFunction, y=y)
+    # All cluster-member correlations in one cor() call (corFunction did one
+    # per member, re-standardizing y each time). Replicate corFunction's rules:
+    # a constant column (or constant y) has undefined correlation -> 0. A
+    # vectorized cor() can differ from the per-column path in the last ULP and
+    # so flip which.max on a near-tie -> a different (equally-valid) prototype.
+    if(length(unique(y)) == 1){
+        warning("The second argument to corFunction only had one unique entry")
+    }
+    # suppressWarnings: base cor() emits "the standard deviation is zero" for a
+    # constant column; corFunction returned 0 silently, so muffle ONLY the
+    # cor() call (the explicit constant-y warning above is kept).
+    cors_i <- suppressWarnings(abs(stats::cor(x[, cluster_members_i, drop = FALSE], y)))
+    cors_i <- as.numeric(cors_i)
+    cors_i[is.na(cors_i)] <- 0
     max_index_i <- which.max(cors_i)[1]
 
     stopifnot(length(max_index_i) == 1)
@@ -1975,6 +1988,23 @@ testthat::test_that("identifyPrototype works", {
 
   testthat::expect_true(res %in% c(2L, 3L))
 
+})
+
+testthat::test_that("identifyPrototype handles a constant cluster member silently (#59)", {
+  # A constant column has undefined correlation; corFunction returned 0, and the
+  # vectorized cor() path must too -- and SILENTLY (base cor() warns "the
+  # standard deviation is zero" on a constant column; identifyPrototype now
+  # suppresses that to preserve corFunction's silent-0 contract).
+  n <- 12
+  set.seed(7321)
+  varying <- stats::rnorm(n)
+  # Column 1 is constant; column 2 equals y (perfectly correlated).
+  x <- cbind(rep(1.5, n), varying)
+  y <- varying
+  # The prototype must be the varying member (2), never the constant column (1).
+  testthat::expect_identical(identifyPrototype(c(1L, 2L), x, y), 2L)
+  # And no "standard deviation is zero" warning may leak.
+  testthat::expect_silent(identifyPrototype(c(1L, 2L), x, y))
 })
 ```
 
