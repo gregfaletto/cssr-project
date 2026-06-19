@@ -36,9 +36,14 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
         stopifnot(length(proto_i) >= 1)
         if(length(proto_i) > 1){
             if(is.numeric(css_results$y) | is.integer(css_results$y)){
-                # Break tie by looking at marginal correlations
-                corrs_i <- stats::cor(css_results$X[, proto_i], css_results$y)[, 1]
-                corrs_i <- abs(corrs_i)
+                # Break tie by marginal correlation. suppressWarnings + NA->0
+                # mirrors corFunction / identifyPrototype (#59): a constant
+                # column has undefined correlation (cor() returns NA with a
+                # "standard deviation is zero" warning) -- treat it as 0 so it
+                # never wins the tie-break and never poisons max() (#68).
+                corrs_i <- suppressWarnings(abs(stats::cor(
+                    css_results$X[, proto_i, drop = FALSE], css_results$y)[, 1]))
+                corrs_i[is.na(corrs_i)] <- 0
                 proto_i <- proto_i[corrs_i == max(corrs_i)]
             }
         }
