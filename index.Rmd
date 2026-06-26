@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.22",
+    Version = "0.1.23",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -7449,6 +7449,8 @@ checkGenClusteredDataInputsPre <- function(sig_clusters, n_clusters,
     # rather than 2.
     stopifnot(n_clusters >= 1)
 
+    stopifnot(is.numeric(cluster_size) | is.integer(cluster_size))
+    stopifnot(cluster_size == round(cluster_size))
     stopifnot(cluster_size >= 2)
 }
 
@@ -7475,6 +7477,8 @@ checkGenClusteredDataInputsPost <- function(p, k_unclustered, cluster_size,
     stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
 
+    stopifnot(is.numeric(p) | is.integer(p))
+    stopifnot(p == round(p))
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
 
     # Same as make_sparse_blocked_linear_model_random, but ith coefficient
@@ -7665,7 +7669,7 @@ testthat::test_that("checkGenClusteredDataInputs works", {
                          "n_clusters >= 1 is not TRUE", fixed=TRUE)
   
   testthat::expect_error(checkGenClusteredDataInputs(p=19, k_unclustered=2,
-                                                  cluster_size=.3, n_clusters=3,
+                                                  cluster_size=1, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
@@ -7817,6 +7821,13 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 #' @noRd
 genZmuY <- function(n, p, k_unclustered, cluster_size, n_clusters, sig_clusters,
     beta_latent, beta_unclustered, snr, sigma_eps_sq){
+    # Reject n < 2 up front: n = 1 collapses orig_feat_mat[, cols] to a vector
+    # (no drop=FALSE below), which fails downstream with a cryptic "incorrect
+    # number of dimensions". n is not validated by the shared input checkers, so
+    # guard it here -- the one point every generator funnels through (#70).
+    stopifnot(is.numeric(n) | is.integer(n))
+    stopifnot(n == round(n))
+    stopifnot(n >= 2)
     # Generate Z, weak signal features, and noise features (total of
     # p - n_clusters*(cluster_size - 1)) features)
     p_orig_feat_mat <- p - n_clusters*(cluster_size - 1)
@@ -8127,7 +8138,7 @@ testthat::test_that("genClusteredData works", {
                          "n_clusters >= 1 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(genClusteredData(n=5, p=19, k_unclustered=2,
-                                                  cluster_size=.3, n_clusters=3,
+                                                  cluster_size=1, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
@@ -9036,6 +9047,31 @@ up front rather than silently passing the old lean check and failing later
 inside `genZmuY()`.
 
 ```{r}
+testthat::test_that("genClusteredData* reject n < 2 and non-integer cluster_size / p (#70)", {
+  ok <- list(n = 10, p = 8, k_unclustered = 2, cluster_size = 3, n_clusters = 1,
+             sig_clusters = 1, sigma_eps_sq = 1)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(n = 1L))),
+                         "n >= 2", fixed = TRUE)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(cluster_size = 2.5))),
+                         "cluster_size == round(cluster_size)", fixed = TRUE)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(p = 8.5))),
+                         "p == round(p)", fixed = TRUE)
+  # n = 2 is the tight boundary -- it must still WORK (locks the threshold
+  # against a future "n >= 3" / "> 2" regression).
+  res2 <- do.call(genClusteredData, utils::modifyList(ok, list(n = 2L)))
+  testthat::expect_equal(nrow(res2$X), 2L)
+  # The shared genZmuY n-guard and the shared Pre cluster_size check cover the
+  # weighted generators too:
+  wok <- list(n = 1L, p = 8, k_unclustered = 2, cluster_size = 3, n_clusters = 1,
+              n_strong_cluster_vars = 2, sig_clusters = 1, rho_high = 0.8,
+              rho_low = 0.2, sigma_eps_sq = 1)
+  testthat::expect_error(do.call(genClusteredDataWeighted, wok),
+                         "n >= 2", fixed = TRUE)
+  testthat::expect_error(
+    do.call(genClusteredDataWeighted, utils::modifyList(wok, list(n = 10L, cluster_size = 2.5))),
+    "cluster_size == round(cluster_size)", fixed = TRUE)
+})
+
 testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq type (#35)", {
   # Newly rejected (these previously slipped past the weighted validators' lean
   # checks and only failed later, cryptically, inside genZmuY).

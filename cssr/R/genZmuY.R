@@ -57,6 +57,13 @@
 #' @noRd
 genZmuY <- function(n, p, k_unclustered, cluster_size, n_clusters, sig_clusters,
     beta_latent, beta_unclustered, snr, sigma_eps_sq){
+    # Reject n < 2 up front: n = 1 collapses orig_feat_mat[, cols] to a vector
+    # (no drop=FALSE below), which fails downstream with a cryptic "incorrect
+    # number of dimensions". n is not validated by the shared input checkers, so
+    # guard it here -- the one point every generator funnels through (#70).
+    stopifnot(is.numeric(n) | is.integer(n))
+    stopifnot(n == round(n))
+    stopifnot(n >= 2)
     # Generate Z, weak signal features, and noise features (total of
     # p - n_clusters*(cluster_size - 1)) features)
     p_orig_feat_mat <- p - n_clusters*(cluster_size - 1)

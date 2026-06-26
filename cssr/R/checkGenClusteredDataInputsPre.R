@@ -27,6 +27,8 @@ checkGenClusteredDataInputsPre <- function(sig_clusters, n_clusters,
     # rather than 2.
     stopifnot(n_clusters >= 1)
 
+    stopifnot(is.numeric(cluster_size) | is.integer(cluster_size))
+    stopifnot(cluster_size == round(cluster_size))
     stopifnot(cluster_size >= 2)
 }
 
@@ -53,6 +55,8 @@ checkGenClusteredDataInputsPost <- function(p, k_unclustered, cluster_size,
     stopifnot(k_unclustered >= 1)
     stopifnot(k_unclustered == round(k_unclustered))
 
+    stopifnot(is.numeric(p) | is.integer(p))
+    stopifnot(p == round(p))
     stopifnot(p >= n_clusters*cluster_size + k_unclustered)
 
     # Same as make_sparse_blocked_linear_model_random, but ith coefficient
