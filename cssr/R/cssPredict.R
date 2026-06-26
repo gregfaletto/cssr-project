@@ -104,12 +104,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     stopifnot(is.logical(auto_select_size))
 
     # Validate alpha up front (before the NA-lambda branch and bundling below);
-    # see cssSelect for the ordering rationale. Mirrors getLassoLambda.
-    stopifnot(is.numeric(alpha) | is.integer(alpha))
-    stopifnot(length(alpha) == 1)
-    stopifnot(!is.na(alpha))
-    stopifnot(alpha > 0)
-    stopifnot(alpha <= 1)
+    # see cssSelect for the ordering rationale.
+    checkAlpha(alpha)
 
     stopifnot(is.matrix(X_train_selec) | is.data.frame(X_train_selec))
     checkNoNAs(X_train_selec, "X_train_selec")

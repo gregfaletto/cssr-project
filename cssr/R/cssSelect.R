@@ -88,12 +88,8 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     # below (a user-supplied non-NA lambda skips getLassoLambda and therefore
     # its own alpha check) and before the bundling step, so that an invalid or
     # NA alpha is caught here with a clear message rather than deep inside the
-    # subsampling loop. Mirrors the validation in getLassoLambda.
-    stopifnot(is.numeric(alpha) | is.integer(alpha))
-    stopifnot(length(alpha) == 1)
-    stopifnot(!is.na(alpha))
-    stopifnot(alpha > 0)
-    stopifnot(alpha <= 1)
+    # subsampling loop.
+    checkAlpha(alpha)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
     checkNoNAs(X, "X")

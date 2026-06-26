@@ -506,6 +506,20 @@ testthat::test_that("checkB works", {
                            fixed=TRUE)
 })
 
+testthat::test_that("checkAlpha validates alpha in (0, 1] (#72)", {
+  testthat::expect_null(checkAlpha(1))
+  testthat::expect_null(checkAlpha(0.5))
+  testthat::expect_error(checkAlpha("0.5"),
+                         "is.numeric(alpha) | is.integer(alpha) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkAlpha(c(0.5, 0.6)),
+                         "length(alpha) == 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkAlpha(NA_real_), "!is.na(alpha) is not TRUE",
+                         fixed=TRUE)
+  testthat::expect_error(checkAlpha(0), "alpha > 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkAlpha(1.5), "alpha <= 1 is not TRUE", fixed=TRUE)
+})
+
 testthat::test_that("checkPropFeatsRemove works", {
   testthat::expect_null(checkPropFeatsRemove(0, 5))
   testthat::expect_null(checkPropFeatsRemove(.3, 10))
