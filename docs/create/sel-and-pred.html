@@ -1675,28 +1675,34 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb127-21"><a href="sel-and-pred.html#cb127-21" tabindex="-1"></a><span id="checkNewXProvided">checkNewXProvided</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(trainX, css_results){</span>
 <span id="cb127-22"><a href="sel-and-pred.html#cb127-22" tabindex="-1"></a>    newXProvided <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
 <span id="cb127-23"><a href="sel-and-pred.html#cb127-23" tabindex="-1"></a></span>
-<span id="cb127-24"><a href="sel-and-pred.html#cb127-24" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainX)) <span class="sc">&amp;</span> <span class="fu">length</span>(trainX) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb127-25"><a href="sel-and-pred.html#cb127-25" tabindex="-1"></a>        newXProvided <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
-<span id="cb127-26"><a href="sel-and-pred.html#cb127-26" tabindex="-1"></a>        trainX <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(trainX, css_results<span class="sc">$</span>X)<span class="sc">$</span>newx</span>
-<span id="cb127-27"><a href="sel-and-pred.html#cb127-27" tabindex="-1"></a>        </span>
-<span id="cb127-28"><a href="sel-and-pred.html#cb127-28" tabindex="-1"></a>        n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
-<span id="cb127-29"><a href="sel-and-pred.html#cb127-29" tabindex="-1"></a>        <span class="co"># A single-row newX is fine -- the design is just one row of cluster</span></span>
-<span id="cb127-30"><a href="sel-and-pred.html#cb127-30" tabindex="-1"></a>        <span class="co"># representatives, and getCssPreds/cssPredict already accept a 1-row test</span></span>
-<span id="cb127-31"><a href="sel-and-pred.html#cb127-31" tabindex="-1"></a>        <span class="co"># set -- so don't require more than one row here (#44).</span></span>
-<span id="cb127-32"><a href="sel-and-pred.html#cb127-32" tabindex="-1"></a>        <span class="fu">stopifnot</span>(n_train <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb127-33"><a href="sel-and-pred.html#cb127-33" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb127-34"><a href="sel-and-pred.html#cb127-34" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb127-35"><a href="sel-and-pred.html#cb127-35" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix"</span>)</span>
-<span id="cb127-36"><a href="sel-and-pred.html#cb127-36" tabindex="-1"></a>        }</span>
-<span id="cb127-37"><a href="sel-and-pred.html#cb127-37" tabindex="-1"></a>        trainX <span class="ot">&lt;-</span> css_results<span class="sc">$</span>X[css_results<span class="sc">$</span>train_inds, ]</span>
-<span id="cb127-38"><a href="sel-and-pred.html#cb127-38" tabindex="-1"></a>    } </span>
-<span id="cb127-39"><a href="sel-and-pred.html#cb127-39" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(trainX))</span>
-<span id="cb127-40"><a href="sel-and-pred.html#cb127-40" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(trainX) <span class="sc">|</span> <span class="fu">is.integer</span>(trainX))</span>
-<span id="cb127-41"><a href="sel-and-pred.html#cb127-41" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainX)))</span>
-<span id="cb127-42"><a href="sel-and-pred.html#cb127-42" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(trainX) <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
-<span id="cb127-43"><a href="sel-and-pred.html#cb127-43" tabindex="-1"></a></span>
-<span id="cb127-44"><a href="sel-and-pred.html#cb127-44" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">newX=</span>trainX, <span class="at">newXProvided=</span>newXProvided))</span>
-<span id="cb127-45"><a href="sel-and-pred.html#cb127-45" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb127-24"><a href="sel-and-pred.html#cb127-24" tabindex="-1"></a>    <span class="co"># "Was newX provided?" -- distinguish the scalar NA default (length 1) from</span></span>
+<span id="cb127-25"><a href="sel-and-pred.html#cb127-25" tabindex="-1"></a>    <span class="co"># a real design matrix (length &gt; 1). NOT all(!is.na(trainX)): that read an</span></span>
+<span id="cb127-26"><a href="sel-and-pred.html#cb127-26" tabindex="-1"></a>    <span class="co"># NA-CONTAINING matrix as "not provided" and silently fell back to</span></span>
+<span id="cb127-27"><a href="sel-and-pred.html#cb127-27" tabindex="-1"></a>    <span class="co"># train_inds, bypassing checkXInputResults' checkNoNAs. With just length &gt; 1,</span></span>
+<span id="cb127-28"><a href="sel-and-pred.html#cb127-28" tabindex="-1"></a>    <span class="co"># an NA-containing newX now enters the provided branch and errors clearly,</span></span>
+<span id="cb127-29"><a href="sel-and-pred.html#cb127-29" tabindex="-1"></a>    <span class="co"># while NA (the default) still falls back to train_inds (#71).</span></span>
+<span id="cb127-30"><a href="sel-and-pred.html#cb127-30" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(trainX) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb127-31"><a href="sel-and-pred.html#cb127-31" tabindex="-1"></a>        newXProvided <span class="ot">&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb127-32"><a href="sel-and-pred.html#cb127-32" tabindex="-1"></a>        trainX <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(trainX, css_results<span class="sc">$</span>X)<span class="sc">$</span>newx</span>
+<span id="cb127-33"><a href="sel-and-pred.html#cb127-33" tabindex="-1"></a>        </span>
+<span id="cb127-34"><a href="sel-and-pred.html#cb127-34" tabindex="-1"></a>        n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
+<span id="cb127-35"><a href="sel-and-pred.html#cb127-35" tabindex="-1"></a>        <span class="co"># A single-row newX is fine -- the design is just one row of cluster</span></span>
+<span id="cb127-36"><a href="sel-and-pred.html#cb127-36" tabindex="-1"></a>        <span class="co"># representatives, and getCssPreds/cssPredict already accept a 1-row test</span></span>
+<span id="cb127-37"><a href="sel-and-pred.html#cb127-37" tabindex="-1"></a>        <span class="co"># set -- so don't require more than one row here (#44).</span></span>
+<span id="cb127-38"><a href="sel-and-pred.html#cb127-38" tabindex="-1"></a>        <span class="fu">stopifnot</span>(n_train <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb127-39"><a href="sel-and-pred.html#cb127-39" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb127-40"><a href="sel-and-pred.html#cb127-40" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb127-41"><a href="sel-and-pred.html#cb127-41" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix"</span>)</span>
+<span id="cb127-42"><a href="sel-and-pred.html#cb127-42" tabindex="-1"></a>        }</span>
+<span id="cb127-43"><a href="sel-and-pred.html#cb127-43" tabindex="-1"></a>        trainX <span class="ot">&lt;-</span> css_results<span class="sc">$</span>X[css_results<span class="sc">$</span>train_inds, ]</span>
+<span id="cb127-44"><a href="sel-and-pred.html#cb127-44" tabindex="-1"></a>    } </span>
+<span id="cb127-45"><a href="sel-and-pred.html#cb127-45" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(trainX))</span>
+<span id="cb127-46"><a href="sel-and-pred.html#cb127-46" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(trainX) <span class="sc">|</span> <span class="fu">is.integer</span>(trainX))</span>
+<span id="cb127-47"><a href="sel-and-pred.html#cb127-47" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainX)))</span>
+<span id="cb127-48"><a href="sel-and-pred.html#cb127-48" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(trainX) <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb127-49"><a href="sel-and-pred.html#cb127-49" tabindex="-1"></a></span>
+<span id="cb127-50"><a href="sel-and-pred.html#cb127-50" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">newX=</span>trainX, <span class="at">newXProvided=</span>newXProvided))</span>
+<span id="cb127-51"><a href="sel-and-pred.html#cb127-51" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>()</code></p>
 <div class="sourceCode" id="cb128"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb128-1"><a href="sel-and-pred.html#cb128-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that inputs to several functions are as expected,</span></span>
 <span id="cb128-2"><a href="sel-and-pred.html#cb128-2" tabindex="-1"></a><span class="co">#' and modify inputs if needed</span></span>
@@ -1934,92 +1940,100 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb131-55"><a href="sel-and-pred.html#cb131-55" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res<span class="sc">$</span>newX))</span>
 <span id="cb131-56"><a href="sel-and-pred.html#cb131-56" tabindex="-1"></a>  </span>
 <span id="cb131-57"><a href="sel-and-pred.html#cb131-57" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_false</span>(res<span class="sc">$</span>newXProvided)</span>
-<span id="cb131-58"><a href="sel-and-pred.html#cb131-58" tabindex="-1"></a>  </span>
-<span id="cb131-59"><a href="sel-and-pred.html#cb131-59" tabindex="-1"></a>  <span class="co"># Try not providing training indices and omitting newx--should get error</span></span>
-<span id="cb131-60"><a href="sel-and-pred.html#cb131-60" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(<span class="cn">NA</span>, css_res),</span>
-<span id="cb131-61"><a href="sel-and-pred.html#cb131-61" tabindex="-1"></a>                         <span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb131-62"><a href="sel-and-pred.html#cb131-62" tabindex="-1"></a>  </span>
-<span id="cb131-63"><a href="sel-and-pred.html#cb131-63" tabindex="-1"></a>  <span class="co"># Try naming variables</span></span>
-<span id="cb131-64"><a href="sel-and-pred.html#cb131-64" tabindex="-1"></a></span>
-<span id="cb131-65"><a href="sel-and-pred.html#cb131-65" tabindex="-1"></a>  <span class="fu">colnames</span>(x_select) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
-<span id="cb131-66"><a href="sel-and-pred.html#cb131-66" tabindex="-1"></a>  css_res_named <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>x_select, <span class="at">y=</span>y_select, <span class="at">lambda=</span><span class="fl">0.01</span>,</span>
-<span id="cb131-67"><a href="sel-and-pred.html#cb131-67" tabindex="-1"></a>                       <span class="at">clusters=</span>good_clusters, <span class="at">B =</span> <span class="dv">10</span>)</span>
-<span id="cb131-68"><a href="sel-and-pred.html#cb131-68" tabindex="-1"></a></span>
-<span id="cb131-69"><a href="sel-and-pred.html#cb131-69" tabindex="-1"></a>  <span class="co"># Named variables for css matrix but not new one--should get a warning</span></span>
-<span id="cb131-70"><a href="sel-and-pred.html#cb131-70" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_warning</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named),</span>
-<span id="cb131-71"><a href="sel-and-pred.html#cb131-71" tabindex="-1"></a>                           <span class="st">"New X provided had no variable names (column names) even though the X provided to css did."</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb131-58"><a href="sel-and-pred.html#cb131-58" tabindex="-1"></a></span>
+<span id="cb131-59"><a href="sel-and-pred.html#cb131-59" tabindex="-1"></a>  <span class="co"># An NA-containing newX was previously read as "not provided" (the</span></span>
+<span id="cb131-60"><a href="sel-and-pred.html#cb131-60" tabindex="-1"></a>  <span class="co"># all(!is.na) sentinel) and silently replaced by the train_inds data; it is</span></span>
+<span id="cb131-61"><a href="sel-and-pred.html#cb131-61" tabindex="-1"></a>  <span class="co"># now treated as provided and rejected by checkNoNAs (#71).</span></span>
+<span id="cb131-62"><a href="sel-and-pred.html#cb131-62" tabindex="-1"></a>  x_na <span class="ot">&lt;-</span> x_new</span>
+<span id="cb131-63"><a href="sel-and-pred.html#cb131-63" tabindex="-1"></a>  x_na[<span class="dv">3</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb131-64"><a href="sel-and-pred.html#cb131-64" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_na, css_res_train),</span>
+<span id="cb131-65"><a href="sel-and-pred.html#cb131-65" tabindex="-1"></a>                         <span class="st">"must not contain missing (NA) values"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb131-66"><a href="sel-and-pred.html#cb131-66" tabindex="-1"></a>  </span>
+<span id="cb131-67"><a href="sel-and-pred.html#cb131-67" tabindex="-1"></a>  <span class="co"># Try not providing training indices and omitting newx--should get error</span></span>
+<span id="cb131-68"><a href="sel-and-pred.html#cb131-68" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(<span class="cn">NA</span>, css_res),</span>
+<span id="cb131-69"><a href="sel-and-pred.html#cb131-69" tabindex="-1"></a>                         <span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb131-70"><a href="sel-and-pred.html#cb131-70" tabindex="-1"></a>  </span>
+<span id="cb131-71"><a href="sel-and-pred.html#cb131-71" tabindex="-1"></a>  <span class="co"># Try naming variables</span></span>
 <span id="cb131-72"><a href="sel-and-pred.html#cb131-72" tabindex="-1"></a></span>
-<span id="cb131-73"><a href="sel-and-pred.html#cb131-73" tabindex="-1"></a>  <span class="co"># Try mismatching variable names</span></span>
-<span id="cb131-74"><a href="sel-and-pred.html#cb131-74" tabindex="-1"></a>  <span class="fu">colnames</span>(x_new) <span class="ot">&lt;-</span> LETTERS[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>]</span>
-<span id="cb131-75"><a href="sel-and-pred.html#cb131-75" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named),</span>
-<span id="cb131-76"><a href="sel-and-pred.html#cb131-76" tabindex="-1"></a>                         <span class="st">"identical(feat_names, colnames(css_X)) is not TRUE"</span>,</span>
-<span id="cb131-77"><a href="sel-and-pred.html#cb131-77" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb131-78"><a href="sel-and-pred.html#cb131-78" tabindex="-1"></a></span>
-<span id="cb131-79"><a href="sel-and-pred.html#cb131-79" tabindex="-1"></a>  <span class="fu">colnames</span>(x_new) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb131-73"><a href="sel-and-pred.html#cb131-73" tabindex="-1"></a>  <span class="fu">colnames</span>(x_select) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb131-74"><a href="sel-and-pred.html#cb131-74" tabindex="-1"></a>  css_res_named <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>x_select, <span class="at">y=</span>y_select, <span class="at">lambda=</span><span class="fl">0.01</span>,</span>
+<span id="cb131-75"><a href="sel-and-pred.html#cb131-75" tabindex="-1"></a>                       <span class="at">clusters=</span>good_clusters, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb131-76"><a href="sel-and-pred.html#cb131-76" tabindex="-1"></a></span>
+<span id="cb131-77"><a href="sel-and-pred.html#cb131-77" tabindex="-1"></a>  <span class="co"># Named variables for css matrix but not new one--should get a warning</span></span>
+<span id="cb131-78"><a href="sel-and-pred.html#cb131-78" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_warning</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named),</span>
+<span id="cb131-79"><a href="sel-and-pred.html#cb131-79" tabindex="-1"></a>                           <span class="st">"New X provided had no variable names (column names) even though the X provided to css did."</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb131-80"><a href="sel-and-pred.html#cb131-80" tabindex="-1"></a></span>
-<span id="cb131-81"><a href="sel-and-pred.html#cb131-81" tabindex="-1"></a>  res_named <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named)</span>
-<span id="cb131-82"><a href="sel-and-pred.html#cb131-82" tabindex="-1"></a></span>
-<span id="cb131-83"><a href="sel-and-pred.html#cb131-83" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_named))</span>
-<span id="cb131-84"><a href="sel-and-pred.html#cb131-84" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_named), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
-<span id="cb131-85"><a href="sel-and-pred.html#cb131-85" tabindex="-1"></a>  </span>
-<span id="cb131-86"><a href="sel-and-pred.html#cb131-86" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">abs</span>(x_new <span class="sc">-</span> res_named<span class="sc">$</span>newX) <span class="sc">&lt;</span> <span class="dv">10</span><span class="sc">^</span>(<span class="sc">-</span><span class="dv">9</span>)))</span>
-<span id="cb131-87"><a href="sel-and-pred.html#cb131-87" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_named<span class="sc">$</span>newXProvided)</span>
+<span id="cb131-81"><a href="sel-and-pred.html#cb131-81" tabindex="-1"></a>  <span class="co"># Try mismatching variable names</span></span>
+<span id="cb131-82"><a href="sel-and-pred.html#cb131-82" tabindex="-1"></a>  <span class="fu">colnames</span>(x_new) <span class="ot">&lt;-</span> LETTERS[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>]</span>
+<span id="cb131-83"><a href="sel-and-pred.html#cb131-83" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named),</span>
+<span id="cb131-84"><a href="sel-and-pred.html#cb131-84" tabindex="-1"></a>                         <span class="st">"identical(feat_names, colnames(css_X)) is not TRUE"</span>,</span>
+<span id="cb131-85"><a href="sel-and-pred.html#cb131-85" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb131-86"><a href="sel-and-pred.html#cb131-86" tabindex="-1"></a></span>
+<span id="cb131-87"><a href="sel-and-pred.html#cb131-87" tabindex="-1"></a>  <span class="fu">colnames</span>(x_new) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
 <span id="cb131-88"><a href="sel-and-pred.html#cb131-88" tabindex="-1"></a></span>
-<span id="cb131-89"><a href="sel-and-pred.html#cb131-89" tabindex="-1"></a>  <span class="co"># Try data.frame input to css and checkNewXProvided</span></span>
+<span id="cb131-89"><a href="sel-and-pred.html#cb131-89" tabindex="-1"></a>  res_named <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_new, css_res_named)</span>
 <span id="cb131-90"><a href="sel-and-pred.html#cb131-90" tabindex="-1"></a></span>
-<span id="cb131-91"><a href="sel-and-pred.html#cb131-91" tabindex="-1"></a>  X_df <span class="ot">&lt;-</span> datasets<span class="sc">::</span>mtcars</span>
-<span id="cb131-92"><a href="sel-and-pred.html#cb131-92" tabindex="-1"></a></span>
-<span id="cb131-93"><a href="sel-and-pred.html#cb131-93" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X_df)</span>
-<span id="cb131-94"><a href="sel-and-pred.html#cb131-94" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(n)</span>
-<span id="cb131-95"><a href="sel-and-pred.html#cb131-95" tabindex="-1"></a></span>
-<span id="cb131-96"><a href="sel-and-pred.html#cb131-96" tabindex="-1"></a>  selec_inds <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span>)</span>
-<span id="cb131-97"><a href="sel-and-pred.html#cb131-97" tabindex="-1"></a>  fit_inds <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, selec_inds)</span>
+<span id="cb131-91"><a href="sel-and-pred.html#cb131-91" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_named))</span>
+<span id="cb131-92"><a href="sel-and-pred.html#cb131-92" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_named), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
+<span id="cb131-93"><a href="sel-and-pred.html#cb131-93" tabindex="-1"></a>  </span>
+<span id="cb131-94"><a href="sel-and-pred.html#cb131-94" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">abs</span>(x_new <span class="sc">-</span> res_named<span class="sc">$</span>newX) <span class="sc">&lt;</span> <span class="dv">10</span><span class="sc">^</span>(<span class="sc">-</span><span class="dv">9</span>)))</span>
+<span id="cb131-95"><a href="sel-and-pred.html#cb131-95" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_named<span class="sc">$</span>newXProvided)</span>
+<span id="cb131-96"><a href="sel-and-pred.html#cb131-96" tabindex="-1"></a></span>
+<span id="cb131-97"><a href="sel-and-pred.html#cb131-97" tabindex="-1"></a>  <span class="co"># Try data.frame input to css and checkNewXProvided</span></span>
 <span id="cb131-98"><a href="sel-and-pred.html#cb131-98" tabindex="-1"></a></span>
-<span id="cb131-99"><a href="sel-and-pred.html#cb131-99" tabindex="-1"></a>  css_res_df <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_df[selec_inds, ], <span class="at">y=</span>y[selec_inds], <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
-<span id="cb131-100"><a href="sel-and-pred.html#cb131-100" tabindex="-1"></a>  res_df <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)</span>
-<span id="cb131-101"><a href="sel-and-pred.html#cb131-101" tabindex="-1"></a></span>
-<span id="cb131-102"><a href="sel-and-pred.html#cb131-102" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_df))</span>
-<span id="cb131-103"><a href="sel-and-pred.html#cb131-103" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_df), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
-<span id="cb131-104"><a href="sel-and-pred.html#cb131-104" tabindex="-1"></a>  </span>
-<span id="cb131-105"><a href="sel-and-pred.html#cb131-105" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-106"><a href="sel-and-pred.html#cb131-106" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-107"><a href="sel-and-pred.html#cb131-107" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res_df<span class="sc">$</span>newX), <span class="fu">length</span>(fit_inds))</span>
-<span id="cb131-108"><a href="sel-and-pred.html#cb131-108" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res_df<span class="sc">$</span>newX), <span class="fu">ncol</span>(css_res_df<span class="sc">$</span>X))</span>
-<span id="cb131-109"><a href="sel-and-pred.html#cb131-109" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-110"><a href="sel-and-pred.html#cb131-110" tabindex="-1"></a>  </span>
-<span id="cb131-111"><a href="sel-and-pred.html#cb131-111" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.logical</span>(res_df<span class="sc">$</span>newXProvided))</span>
-<span id="cb131-112"><a href="sel-and-pred.html#cb131-112" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_df<span class="sc">$</span>newXProvided), <span class="dv">1</span>)</span>
-<span id="cb131-113"><a href="sel-and-pred.html#cb131-113" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_df<span class="sc">$</span>newXProvided))</span>
-<span id="cb131-114"><a href="sel-and-pred.html#cb131-114" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_df<span class="sc">$</span>newXProvided)</span>
-<span id="cb131-115"><a href="sel-and-pred.html#cb131-115" tabindex="-1"></a>  </span>
-<span id="cb131-116"><a href="sel-and-pred.html#cb131-116" tabindex="-1"></a>  <span class="co"># Try again with X as a dataframe with factors (number of columns of final</span></span>
-<span id="cb131-117"><a href="sel-and-pred.html#cb131-117" tabindex="-1"></a>  <span class="co"># design matrix after one-hot encoding factors won't match number of columns</span></span>
-<span id="cb131-118"><a href="sel-and-pred.html#cb131-118" tabindex="-1"></a>  <span class="co"># of X_df)</span></span>
-<span id="cb131-119"><a href="sel-and-pred.html#cb131-119" tabindex="-1"></a>  X_df<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>cyl)</span>
-<span id="cb131-120"><a href="sel-and-pred.html#cb131-120" tabindex="-1"></a>  X_df<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>vs)</span>
-<span id="cb131-121"><a href="sel-and-pred.html#cb131-121" tabindex="-1"></a>  X_df<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>am)</span>
-<span id="cb131-122"><a href="sel-and-pred.html#cb131-122" tabindex="-1"></a>  X_df<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>gear)</span>
-<span id="cb131-123"><a href="sel-and-pred.html#cb131-123" tabindex="-1"></a>  X_df<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>carb)</span>
-<span id="cb131-124"><a href="sel-and-pred.html#cb131-124" tabindex="-1"></a></span>
-<span id="cb131-125"><a href="sel-and-pred.html#cb131-125" tabindex="-1"></a>  css_res_df <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_df[selec_inds, ], <span class="at">y=</span>y[selec_inds], <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
-<span id="cb131-126"><a href="sel-and-pred.html#cb131-126" tabindex="-1"></a>  res_df <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)</span>
-<span id="cb131-127"><a href="sel-and-pred.html#cb131-127" tabindex="-1"></a></span>
-<span id="cb131-128"><a href="sel-and-pred.html#cb131-128" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_df))</span>
-<span id="cb131-129"><a href="sel-and-pred.html#cb131-129" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_df), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
-<span id="cb131-130"><a href="sel-and-pred.html#cb131-130" tabindex="-1"></a>  </span>
-<span id="cb131-131"><a href="sel-and-pred.html#cb131-131" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-132"><a href="sel-and-pred.html#cb131-132" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-133"><a href="sel-and-pred.html#cb131-133" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res_df<span class="sc">$</span>newX), <span class="fu">length</span>(fit_inds))</span>
-<span id="cb131-134"><a href="sel-and-pred.html#cb131-134" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res_df<span class="sc">$</span>newX), <span class="fu">ncol</span>(css_res_df<span class="sc">$</span>X))</span>
-<span id="cb131-135"><a href="sel-and-pred.html#cb131-135" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res_df<span class="sc">$</span>newX))</span>
-<span id="cb131-136"><a href="sel-and-pred.html#cb131-136" tabindex="-1"></a>  </span>
-<span id="cb131-137"><a href="sel-and-pred.html#cb131-137" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.logical</span>(res_df<span class="sc">$</span>newXProvided))</span>
-<span id="cb131-138"><a href="sel-and-pred.html#cb131-138" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_df<span class="sc">$</span>newXProvided), <span class="dv">1</span>)</span>
-<span id="cb131-139"><a href="sel-and-pred.html#cb131-139" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_df<span class="sc">$</span>newXProvided))</span>
-<span id="cb131-140"><a href="sel-and-pred.html#cb131-140" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_df<span class="sc">$</span>newXProvided)</span>
-<span id="cb131-141"><a href="sel-and-pred.html#cb131-141" tabindex="-1"></a>  </span>
-<span id="cb131-142"><a href="sel-and-pred.html#cb131-142" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 52 successes.</code></pre>
+<span id="cb131-99"><a href="sel-and-pred.html#cb131-99" tabindex="-1"></a>  X_df <span class="ot">&lt;-</span> datasets<span class="sc">::</span>mtcars</span>
+<span id="cb131-100"><a href="sel-and-pred.html#cb131-100" tabindex="-1"></a></span>
+<span id="cb131-101"><a href="sel-and-pred.html#cb131-101" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X_df)</span>
+<span id="cb131-102"><a href="sel-and-pred.html#cb131-102" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(n)</span>
+<span id="cb131-103"><a href="sel-and-pred.html#cb131-103" tabindex="-1"></a></span>
+<span id="cb131-104"><a href="sel-and-pred.html#cb131-104" tabindex="-1"></a>  selec_inds <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span>)</span>
+<span id="cb131-105"><a href="sel-and-pred.html#cb131-105" tabindex="-1"></a>  fit_inds <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, selec_inds)</span>
+<span id="cb131-106"><a href="sel-and-pred.html#cb131-106" tabindex="-1"></a></span>
+<span id="cb131-107"><a href="sel-and-pred.html#cb131-107" tabindex="-1"></a>  css_res_df <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_df[selec_inds, ], <span class="at">y=</span>y[selec_inds], <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb131-108"><a href="sel-and-pred.html#cb131-108" tabindex="-1"></a>  res_df <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)</span>
+<span id="cb131-109"><a href="sel-and-pred.html#cb131-109" tabindex="-1"></a></span>
+<span id="cb131-110"><a href="sel-and-pred.html#cb131-110" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_df))</span>
+<span id="cb131-111"><a href="sel-and-pred.html#cb131-111" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_df), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
+<span id="cb131-112"><a href="sel-and-pred.html#cb131-112" tabindex="-1"></a>  </span>
+<span id="cb131-113"><a href="sel-and-pred.html#cb131-113" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-114"><a href="sel-and-pred.html#cb131-114" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-115"><a href="sel-and-pred.html#cb131-115" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res_df<span class="sc">$</span>newX), <span class="fu">length</span>(fit_inds))</span>
+<span id="cb131-116"><a href="sel-and-pred.html#cb131-116" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res_df<span class="sc">$</span>newX), <span class="fu">ncol</span>(css_res_df<span class="sc">$</span>X))</span>
+<span id="cb131-117"><a href="sel-and-pred.html#cb131-117" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-118"><a href="sel-and-pred.html#cb131-118" tabindex="-1"></a>  </span>
+<span id="cb131-119"><a href="sel-and-pred.html#cb131-119" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.logical</span>(res_df<span class="sc">$</span>newXProvided))</span>
+<span id="cb131-120"><a href="sel-and-pred.html#cb131-120" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_df<span class="sc">$</span>newXProvided), <span class="dv">1</span>)</span>
+<span id="cb131-121"><a href="sel-and-pred.html#cb131-121" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_df<span class="sc">$</span>newXProvided))</span>
+<span id="cb131-122"><a href="sel-and-pred.html#cb131-122" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_df<span class="sc">$</span>newXProvided)</span>
+<span id="cb131-123"><a href="sel-and-pred.html#cb131-123" tabindex="-1"></a>  </span>
+<span id="cb131-124"><a href="sel-and-pred.html#cb131-124" tabindex="-1"></a>  <span class="co"># Try again with X as a dataframe with factors (number of columns of final</span></span>
+<span id="cb131-125"><a href="sel-and-pred.html#cb131-125" tabindex="-1"></a>  <span class="co"># design matrix after one-hot encoding factors won't match number of columns</span></span>
+<span id="cb131-126"><a href="sel-and-pred.html#cb131-126" tabindex="-1"></a>  <span class="co"># of X_df)</span></span>
+<span id="cb131-127"><a href="sel-and-pred.html#cb131-127" tabindex="-1"></a>  X_df<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>cyl)</span>
+<span id="cb131-128"><a href="sel-and-pred.html#cb131-128" tabindex="-1"></a>  X_df<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>vs)</span>
+<span id="cb131-129"><a href="sel-and-pred.html#cb131-129" tabindex="-1"></a>  X_df<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>am)</span>
+<span id="cb131-130"><a href="sel-and-pred.html#cb131-130" tabindex="-1"></a>  X_df<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>gear)</span>
+<span id="cb131-131"><a href="sel-and-pred.html#cb131-131" tabindex="-1"></a>  X_df<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(X_df<span class="sc">$</span>carb)</span>
+<span id="cb131-132"><a href="sel-and-pred.html#cb131-132" tabindex="-1"></a></span>
+<span id="cb131-133"><a href="sel-and-pred.html#cb131-133" tabindex="-1"></a>  css_res_df <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_df[selec_inds, ], <span class="at">y=</span>y[selec_inds], <span class="at">lambda=</span><span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb131-134"><a href="sel-and-pred.html#cb131-134" tabindex="-1"></a>  res_df <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(X_df[fit_inds, ], css_res_df)</span>
+<span id="cb131-135"><a href="sel-and-pred.html#cb131-135" tabindex="-1"></a></span>
+<span id="cb131-136"><a href="sel-and-pred.html#cb131-136" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res_df))</span>
+<span id="cb131-137"><a href="sel-and-pred.html#cb131-137" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res_df), <span class="fu">c</span>(<span class="st">"newX"</span>, <span class="st">"newXProvided"</span>))</span>
+<span id="cb131-138"><a href="sel-and-pred.html#cb131-138" tabindex="-1"></a>  </span>
+<span id="cb131-139"><a href="sel-and-pred.html#cb131-139" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.numeric</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-140"><a href="sel-and-pred.html#cb131-140" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.matrix</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-141"><a href="sel-and-pred.html#cb131-141" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">nrow</span>(res_df<span class="sc">$</span>newX), <span class="fu">length</span>(fit_inds))</span>
+<span id="cb131-142"><a href="sel-and-pred.html#cb131-142" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">ncol</span>(res_df<span class="sc">$</span>newX), <span class="fu">ncol</span>(css_res_df<span class="sc">$</span>X))</span>
+<span id="cb131-143"><a href="sel-and-pred.html#cb131-143" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_null</span>(<span class="fu">colnames</span>(res_df<span class="sc">$</span>newX))</span>
+<span id="cb131-144"><a href="sel-and-pred.html#cb131-144" tabindex="-1"></a>  </span>
+<span id="cb131-145"><a href="sel-and-pred.html#cb131-145" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.logical</span>(res_df<span class="sc">$</span>newXProvided))</span>
+<span id="cb131-146"><a href="sel-and-pred.html#cb131-146" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res_df<span class="sc">$</span>newXProvided), <span class="dv">1</span>)</span>
+<span id="cb131-147"><a href="sel-and-pred.html#cb131-147" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_df<span class="sc">$</span>newXProvided))</span>
+<span id="cb131-148"><a href="sel-and-pred.html#cb131-148" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(res_df<span class="sc">$</span>newXProvided)</span>
+<span id="cb131-149"><a href="sel-and-pred.html#cb131-149" tabindex="-1"></a>  </span>
+<span id="cb131-150"><a href="sel-and-pred.html#cb131-150" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 53 successes.</code></pre>
 <p><code><a href="sel-and-pred.html#formCssDesign">formCssDesign</a>()</code>:</p>
 <div class="sourceCode" id="cb133"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb133-1"><a href="sel-and-pred.html#cb133-1" tabindex="-1"></a><span class="co">#' Create design matrix of cluster representatives from matrix of raw features</span></span>
 <span id="cb133-2"><a href="sel-and-pred.html#cb133-2" tabindex="-1"></a><span class="co">#' using results of css function</span></span>

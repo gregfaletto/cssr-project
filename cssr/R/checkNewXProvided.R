@@ -23,7 +23,13 @@
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
-    if(all(!is.na(trainX)) & length(trainX) > 1){
+    # "Was newX provided?" -- distinguish the scalar NA default (length 1) from
+    # a real design matrix (length > 1). NOT all(!is.na(trainX)): that read an
+    # NA-CONTAINING matrix as "not provided" and silently fell back to
+    # train_inds, bypassing checkXInputResults' checkNoNAs. With just length > 1,
+    # an NA-containing newX now enters the provided branch and errors clearly,
+    # while NA (the default) still falls back to train_inds (#71).
+    if(length(trainX) > 1){
         newXProvided <- TRUE
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         

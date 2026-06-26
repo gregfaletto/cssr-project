@@ -2330,6 +2330,14 @@ testthat::test_that("checkNewXProvided works", {
   testthat::expect_null(colnames(res$newX))
   
   testthat::expect_false(res$newXProvided)
+
+  # An NA-containing newX was previously read as "not provided" (the
+  # all(!is.na) sentinel) and silently replaced by the train_inds data; it is
+  # now treated as provided and rejected by checkNoNAs (#71).
+  x_na <- x_new
+  x_na[3, 2] <- NA
+  testthat::expect_error(checkNewXProvided(x_na, css_res_train),
+                         "must not contain missing (NA) values", fixed = TRUE)
   
   # Try not providing training indices and omitting newx--should get error
   testthat::expect_error(checkNewXProvided(NA, css_res),
