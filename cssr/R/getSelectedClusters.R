@@ -76,6 +76,14 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 
     # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
+        # Guard against an unbounded decrement if min_num_clusts exceeds the
+        # number of clusters: once every cluster is selected we can't select
+        # more, so stop (mirrors the max-loop's break) (#69). Unreachable via the
+        # public API (checkMinNumClusts enforces min_num_clusts <= n_clusters),
+        # but a defensive break for any internal caller.
+        if(length(selected_clusts) == length(clus_sel_props)){
+            break
+        }
         cutoff <- cutoff - 1/B
         selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
     }

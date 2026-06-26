@@ -92,9 +92,12 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
             }
         }
 
-        # Check output
-        stopifnot(all(names(subsamps_and_feats) == c("subsample",
-            "feats_to_keep")))
+        # Check output: every element is a named list(subsample, feats_to_keep).
+        # (The previous check ran on the unnamed OUTER list -> all(logical(0))
+        # -> vacuously TRUE; this validates the per-element invariant. #69)
+        stopifnot(all(vapply(subsamps_and_feats,
+            function(s) identical(names(s), c("subsample", "feats_to_keep")),
+            logical(1))))
 
         return(subsamps_and_feats)
     }

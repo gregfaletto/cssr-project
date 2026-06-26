@@ -474,15 +474,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb11-77"><a href="css.html#cb11-77" tabindex="-1"></a>            }</span>
 <span id="cb11-78"><a href="css.html#cb11-78" tabindex="-1"></a>        }</span>
 <span id="cb11-79"><a href="css.html#cb11-79" tabindex="-1"></a></span>
-<span id="cb11-80"><a href="css.html#cb11-80" tabindex="-1"></a>        <span class="co"># Check output</span></span>
-<span id="cb11-81"><a href="css.html#cb11-81" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">names</span>(subsamps_and_feats) <span class="sc">==</span> <span class="fu">c</span>(<span class="st">"subsample"</span>,</span>
-<span id="cb11-82"><a href="css.html#cb11-82" tabindex="-1"></a>            <span class="st">"feats_to_keep"</span>)))</span>
-<span id="cb11-83"><a href="css.html#cb11-83" tabindex="-1"></a></span>
-<span id="cb11-84"><a href="css.html#cb11-84" tabindex="-1"></a>        <span class="fu">return</span>(subsamps_and_feats)</span>
-<span id="cb11-85"><a href="css.html#cb11-85" tabindex="-1"></a>    }</span>
-<span id="cb11-86"><a href="css.html#cb11-86" tabindex="-1"></a>    <span class="co"># Shouldn't be possible to reach this part of function</span></span>
-<span id="cb11-87"><a href="css.html#cb11-87" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"createSubsamples failed to return anything"</span>)</span>
-<span id="cb11-88"><a href="css.html#cb11-88" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb11-80"><a href="css.html#cb11-80" tabindex="-1"></a>        <span class="co"># Check output: every element is a named list(subsample, feats_to_keep).</span></span>
+<span id="cb11-81"><a href="css.html#cb11-81" tabindex="-1"></a>        <span class="co"># (The previous check ran on the unnamed OUTER list -&gt; all(logical(0))</span></span>
+<span id="cb11-82"><a href="css.html#cb11-82" tabindex="-1"></a>        <span class="co"># -&gt; vacuously TRUE; this validates the per-element invariant. #69)</span></span>
+<span id="cb11-83"><a href="css.html#cb11-83" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">vapply</span>(subsamps_and_feats,</span>
+<span id="cb11-84"><a href="css.html#cb11-84" tabindex="-1"></a>            <span class="cf">function</span>(s) <span class="fu">identical</span>(<span class="fu">names</span>(s), <span class="fu">c</span>(<span class="st">"subsample"</span>, <span class="st">"feats_to_keep"</span>)),</span>
+<span id="cb11-85"><a href="css.html#cb11-85" tabindex="-1"></a>            <span class="fu">logical</span>(<span class="dv">1</span>))))</span>
+<span id="cb11-86"><a href="css.html#cb11-86" tabindex="-1"></a></span>
+<span id="cb11-87"><a href="css.html#cb11-87" tabindex="-1"></a>        <span class="fu">return</span>(subsamps_and_feats)</span>
+<span id="cb11-88"><a href="css.html#cb11-88" tabindex="-1"></a>    }</span>
+<span id="cb11-89"><a href="css.html#cb11-89" tabindex="-1"></a>    <span class="co"># Shouldn't be possible to reach this part of function</span></span>
+<span id="cb11-90"><a href="css.html#cb11-90" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"createSubsamples failed to return anything"</span>)</span>
+<span id="cb11-91"><a href="css.html#cb11-91" tabindex="-1"></a>}</span></code></pre></div>
 <p>Notice that <code><a href="css.html#createSubsamples">createSubsamples</a>()</code> calls some helper functions to check the inputs (again, these are specified later in the helper functions section). <code><a href="css.html#createSubsamples">createSubsamples</a>()</code> also calls the workhorse function <code><a href="css.html#getSubsamps">getSubsamps</a>()</code> to generate a list of subsamples.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="css.html#cb12-1" tabindex="-1"></a><span class="co">#' Generate list of subsamples</span></span>
 <span id="cb12-2"><a href="css.html#cb12-2" tabindex="-1"></a><span class="co">#'</span></span>
