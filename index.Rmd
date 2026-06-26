@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.23",
+    Version = "0.1.24",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -5103,7 +5103,13 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
-    if(all(!is.na(trainX)) & length(trainX) > 1){
+    # "Was newX provided?" -- distinguish the scalar NA default (length 1) from
+    # a real design matrix (length > 1). NOT all(!is.na(trainX)): that read an
+    # NA-CONTAINING matrix as "not provided" and silently fell back to
+    # train_inds, bypassing checkXInputResults' checkNoNAs. With just length > 1,
+    # an NA-containing newX now enters the provided branch and errors clearly,
+    # while NA (the default) still falls back to train_inds (#71).
+    if(length(trainX) > 1){
         newXProvided <- TRUE
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         
@@ -5374,6 +5380,14 @@ testthat::test_that("checkNewXProvided works", {
   testthat::expect_null(colnames(res$newX))
   
   testthat::expect_false(res$newXProvided)
+
+  # An NA-containing newX was previously read as "not provided" (the
+  # all(!is.na) sentinel) and silently replaced by the train_inds data; it is
+  # now treated as provided and rejected by checkNoNAs (#71).
+  x_na <- x_new
+  x_na[3, 2] <- NA
+  testthat::expect_error(checkNewXProvided(x_na, css_res_train),
+                         "must not contain missing (NA) values", fixed = TRUE)
   
   # Try not providing training indices and omitting newx--should get error
   testthat::expect_error(checkNewXProvided(NA, css_res),
