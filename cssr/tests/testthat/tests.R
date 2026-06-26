@@ -3784,7 +3784,7 @@ testthat::test_that("checkGenClusteredDataInputs works", {
                          "n_clusters >= 1 is not TRUE", fixed=TRUE)
   
   testthat::expect_error(checkGenClusteredDataInputs(p=19, k_unclustered=2,
-                                                  cluster_size=.3, n_clusters=3,
+                                                  cluster_size=1, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
@@ -4042,7 +4042,7 @@ testthat::test_that("genClusteredData works", {
                          "n_clusters >= 1 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(genClusteredData(n=5, p=19, k_unclustered=2,
-                                                  cluster_size=.3, n_clusters=3,
+                                                  cluster_size=1, n_clusters=3,
                                                   sig_clusters=2, rho=.8,
                                                   beta_latent=1.5,
                                                   beta_unclustered=-2, snr=1,
@@ -4526,6 +4526,31 @@ testthat::test_that("genClusteredDataWeightedRandom output is byte-stable (chara
     c(sumX=sum(ret$X), sumY=sum(ret$y), sumZ=sum(ret$Z), sumMu=sum(ret$mu)),
     c(sumX = -28.8273582900822, sumY = -10.2198990332918, sumZ = 0.586596841562748,
       sumMu = -5.15679097838167))
+})
+
+testthat::test_that("genClusteredData* reject n < 2 and non-integer cluster_size / p (#70)", {
+  ok <- list(n = 10, p = 8, k_unclustered = 2, cluster_size = 3, n_clusters = 1,
+             sig_clusters = 1, sigma_eps_sq = 1)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(n = 1L))),
+                         "n >= 2", fixed = TRUE)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(cluster_size = 2.5))),
+                         "cluster_size == round(cluster_size)", fixed = TRUE)
+  testthat::expect_error(do.call(genClusteredData, utils::modifyList(ok, list(p = 8.5))),
+                         "p == round(p)", fixed = TRUE)
+  # n = 2 is the tight boundary -- it must still WORK (locks the threshold
+  # against a future "n >= 3" / "> 2" regression).
+  res2 <- do.call(genClusteredData, utils::modifyList(ok, list(n = 2L)))
+  testthat::expect_equal(nrow(res2$X), 2L)
+  # The shared genZmuY n-guard and the shared Pre cluster_size check cover the
+  # weighted generators too:
+  wok <- list(n = 1L, p = 8, k_unclustered = 2, cluster_size = 3, n_clusters = 1,
+              n_strong_cluster_vars = 2, sig_clusters = 1, rho_high = 0.8,
+              rho_low = 0.2, sigma_eps_sq = 1)
+  testthat::expect_error(do.call(genClusteredDataWeighted, wok),
+                         "n >= 2", fixed = TRUE)
+  testthat::expect_error(
+    do.call(genClusteredDataWeighted, utils::modifyList(wok, list(n = 10L, cluster_size = 2.5))),
+    "cluster_size == round(cluster_size)", fixed = TRUE)
 })
 
 testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq type (#35)", {
