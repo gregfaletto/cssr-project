@@ -61,11 +61,7 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(nfolds == round(nfolds))
     stopifnot(nfolds > 3)
 
-    stopifnot(is.numeric(alpha) | is.integer(alpha))
-    stopifnot(length(alpha) == 1)
-    stopifnot(!is.na(alpha))
-    stopifnot(alpha > 0)
-    stopifnot(alpha <= 1)
+    checkAlpha(alpha)
 
     # Since we are using the lasso, we require y to be a real-valued response
     # (unlike for the general cluster stability selection procedure, where y

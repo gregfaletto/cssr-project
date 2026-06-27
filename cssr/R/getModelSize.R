@@ -48,14 +48,10 @@
 #' @export
 getModelSize <- function(X, y, clusters, alpha = 1){
 
-    # Validate alpha (mirrors getLassoLambda); (0, 1]. alpha is threaded into
-    # the cv.glmnet fit below so the model-size estimate uses the same
-    # elastic-net mixing as feature selection.
-    stopifnot(is.numeric(alpha) | is.integer(alpha))
-    stopifnot(length(alpha) == 1)
-    stopifnot(!is.na(alpha))
-    stopifnot(alpha > 0)
-    stopifnot(alpha <= 1)
+    # Validate alpha (a single number in (0, 1]). alpha is threaded into the
+    # cv.glmnet fit below so the model-size estimate uses the same elastic-net
+    # mixing as feature selection.
+    checkAlpha(alpha)
 
     stopifnot(is.matrix(X) | is.data.frame(X))
     checkNoNAs(X, "X")
