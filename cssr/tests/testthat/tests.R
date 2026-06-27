@@ -233,29 +233,6 @@ testthat::test_that("checkClusters works", {
                          fixed=TRUE)
 })
 
-testthat::test_that("corFunction works", {
-  testthat::expect_identical(corFunction(rep(1, 10), 1:10), 0)
-  testthat::expect_identical(corFunction(rep(1.2, 5), 1:5), 0)
-  
-  set.seed(23451)
-  
-  x <- stats::rnorm(8)
-  y <- stats::rnorm(8)
-  testthat::expect_identical(corFunction(x, y), abs(stats::cor(x, y)))
-  testthat::expect_warning(corFunction(1:5, rep(1.2, 5)),
-                           "The second argument to corFunction only had one unique entry",
-                           fixed=TRUE)
-  testthat::expect_error(corFunction("1", "2"),
-                         "is.numeric(t) | is.integer(t) is not TRUE",
-                         fixed=TRUE)
-  testthat::expect_error(corFunction(3:8, "2"),
-                         "is.numeric(y) | is.integer(y) is not TRUE",
-                         fixed=TRUE)
-  testthat::expect_error(corFunction(3:8, 1:2),
-                         "length(t) == length(y) is not TRUE",
-                         fixed=TRUE)
-})
-
 testthat::test_that("identifyPrototype works", {
   testthat::expect_identical(identifyPrototype(10L, "a", 5), 10L)
   n <- 10
@@ -285,10 +262,10 @@ testthat::test_that("identifyPrototype works", {
 })
 
 testthat::test_that("identifyPrototype handles a constant cluster member silently (#59)", {
-  # A constant column has undefined correlation; corFunction returned 0, and the
-  # vectorized cor() path must too -- and SILENTLY (base cor() warns "the
-  # standard deviation is zero" on a constant column; identifyPrototype now
-  # suppresses that to preserve corFunction's silent-0 contract).
+  # A constant column has undefined correlation; the vectorized cor() path
+  # returns 0 for it -- and SILENTLY (base cor() warns "the standard deviation
+  # is zero" on a constant column; identifyPrototype now suppresses that to
+  # preserve the silent-0 contract).
   n <- 12
   set.seed(7321)
   varying <- stats::rnorm(n)
@@ -299,6 +276,29 @@ testthat::test_that("identifyPrototype handles a constant cluster member silentl
   testthat::expect_identical(identifyPrototype(c(1L, 2L), x, y), 2L)
   # And no "standard deviation is zero" warning may leak.
   testthat::expect_silent(identifyPrototype(c(1L, 2L), x, y))
+})
+
+testthat::test_that("identifyPrototype warns on a constant response y (#67)", {
+  # Moved from the removed helper's test: a constant y makes every
+  # cluster-member correlation undefined, and identifyPrototype warns.
+  set.seed(5417)
+  X <- matrix(stats::rnorm(8 * 2), nrow = 8, ncol = 2)
+  y_const <- rep(2.5, 8)
+  testthat::expect_warning(
+    identifyPrototype(c(1L, 2L), X, y_const),
+    "identifyPrototype: the response y has only one unique value",
+    fixed = TRUE)
+})
+
+testthat::test_that("identifyPrototype selects by absolute correlation (#67)", {
+  # The prototype is the member with the largest ABSOLUTE correlation with y, so
+  # a near-perfectly NEGATIVELY correlated member must beat a weak positive one.
+  set.seed(6708)
+  n <- 20
+  y <- stats::rnorm(n)
+  X <- cbind(-y, y + stats::rnorm(n, sd = 4))  # col 1: cor=-1; col 2: weak +cor
+  # abs() => col 1 (|cor|=1) wins despite its negative sign.
+  testthat::expect_identical(identifyPrototype(c(1L, 2L), X, y), 1L)
 })
 
 testthat::test_that("getPrototypes works", {

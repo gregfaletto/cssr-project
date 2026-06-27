@@ -32,17 +32,16 @@ identifyPrototype <- function(cluster_members_i, x, y){
     # metric purposes by choosing the one most highly correlated
     # with y
 
-    # All cluster-member correlations in one cor() call (corFunction did one
-    # per member, re-standardizing y each time). Replicate corFunction's rules:
-    # a constant column (or constant y) has undefined correlation -> 0. A
-    # vectorized cor() can differ from the per-column path in the last ULP and
-    # so flip which.max on a near-tie -> a different (equally-valid) prototype.
+    # All cluster-member correlations in one cor() call. A constant column (or
+    # constant y) has undefined correlation -> treat as 0. (A whole-matrix
+    # cor() can differ from a per-column loop in the last ULP and so flip
+    # which.max on a near-tie -> a different but equally-valid prototype.)
     if(length(unique(y)) == 1){
-        warning("The second argument to corFunction only had one unique entry")
+        warning("identifyPrototype: the response y has only one unique value")
     }
     # suppressWarnings: base cor() emits "the standard deviation is zero" for a
-    # constant column; corFunction returned 0 silently, so muffle ONLY the
-    # cor() call (the explicit constant-y warning above is kept).
+    # constant column; we want a silent 0 there, so muffle ONLY the cor() call
+    # (the explicit constant-y warning above is kept).
     cors_i <- suppressWarnings(abs(stats::cor(x[, cluster_members_i, drop = FALSE], y)))
     cors_i <- as.numeric(cors_i)
     cors_i[is.na(cors_i)] <- 0
