@@ -69,13 +69,14 @@ genClusteredDataWeightedRandom(
 - rho_high:
 
   Integer or numeric; the maximum correlation of the proxies in each
-  cluster with each other. Default is 1.
+  cluster with the latent variable. rho_high cannot equal 0 and must be
+  at least as large as rho_low. Default is 1.
 
 - rho_low:
 
   Integer or numeric; the minimum correlation of the proxies in each
-  cluster with each other. rho_low cannot equal 0 and must be no larger
-  than rho_high. Default is 0.5.
+  cluster with the latent variable. rho_low cannot equal 0 and must be
+  no larger than rho_high. Default is 0.5.
 
 - beta_latent:
 

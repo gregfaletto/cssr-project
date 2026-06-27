@@ -31,13 +31,13 @@ getCssDesign(
   representatives. Must contain the same features (in the same number of
   columns) as the X matrix provided to css, and if the columns of newX
   are labeled, the names must match the variable names provided to css.
-  newX may be omitted if train_inds were provided to css to set aside
-  observations for model estimation. If this is the case, then when newX
-  is omitted getCssDesign will return a design matrix of cluster
-  representatives formed from the train_inds observations from the
-  matrix X provided to css. (If no train_inds were provided to css, newX
-  must be provided to getCssDesign.) Default is NA. Must not contain
-  missing (`NA`) values.
+  Must not contain missing (`NA`) values. newX may be omitted if
+  train_inds were provided to css to set aside observations for model
+  estimation. If this is the case, then when newX is omitted
+  getCssDesign will return a design matrix of cluster representatives
+  formed from the train_inds observations from the matrix X provided to
+  css. (If no train_inds were provided to css, newX must be provided to
+  getCssDesign.) Default is NA.
 
 - weighting:
 

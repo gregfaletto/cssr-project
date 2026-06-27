@@ -59,9 +59,9 @@ genClusteredDataWeighted(
 - n_strong_cluster_vars:
 
   Integer or numeric; among the cluster_size proxies in each cluster,
-  the first n_strong_cluster_vars will have a high covariance (rho_high)
-  with the latent variable and the next cluster_size -
-  n_strong_cluster_vars will have a low covariance (rho_low) with the
+  the first n_strong_cluster_vars will have a high correlation
+  (rho_high) with the latent variable and the next cluster_size -
+  n_strong_cluster_vars will have a low correlation (rho_low) with the
   latent variable.
 
 - n_clusters:

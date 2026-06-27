@@ -80,12 +80,13 @@ getCssPreds(
   clusters. trainX is only necessary to provide if no train_inds were
   designated in the css function call to set aside observations for
   model estimation (though even if train_inds was provided, trainX and
-  trianY will be used for model estimation if they are both provided to
+  trainY will be used for model estimation if they are both provided to
   getCssPreds). Must contain the same features (in the same number of
   columns) as the matrix provided to css, and if the columns of trainX
   are labeled, the names must match the variable names provided to css.
-  Default is NA (in which case getCssPreds uses the observations from
-  the train_inds that were provided to css to estimate a linear model).
+  Must not contain missing (`NA`) values. Default is NA (in which case
+  getCssPreds uses the observations from the train_inds that were
+  provided to css to estimate a linear model).
 
 - trainY:
 

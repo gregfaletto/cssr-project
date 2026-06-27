@@ -1413,6 +1413,17 @@ testthat::test_that("css works", {
 
 })
 
+testthat::test_that("css errors on an X containing NA (#74)", {
+  set.seed(8642)
+  X <- matrix(stats::rnorm(20 * 4), nrow = 20, ncol = 4)
+  X[3, 2] <- NA
+  y <- stats::rnorm(20)
+  testthat::expect_error(
+    css(X = X, y = y, lambda = 0.01),
+    "must not contain missing (NA) values",
+    fixed = TRUE)
+})
+
 testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isolated (#12)", {
   set.seed(99)
   x_rng <- matrix(stats::rnorm(40 * 8), nrow=40, ncol=8)
