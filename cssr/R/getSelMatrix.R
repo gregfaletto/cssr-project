@@ -112,9 +112,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
         }
 
         if(!is.integer(res_list[[i]])){
-            print(paste("failed on iteration", i))
-            print(res_list[[i]])
-            stop("Something seems to be wrong with the feature selection method (fitfun failed to return an integer vector)")
+            stop(fitfunFailureMessage(res_list[[i]], i))
         }
         stopifnot(length(res_list[[i]]) <= p & length(res_list[[i]]) > 0)
         stopifnot(all(!is.na(res_list[[i]])))
