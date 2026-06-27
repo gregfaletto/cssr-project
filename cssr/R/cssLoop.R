@@ -39,7 +39,12 @@
 cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     # Check inputs
     stopifnot(is.matrix(x))
-    stopifnot(all(!is.na(x)))
+    # NOTE: x is intentionally NOT re-scanned for NAs here. cssLoop is @noRd and
+    # called only by getSelMatrix (via mclapply), which already validates that
+    # the full x is NA-free once before the 2*B-subsample loop. Re-scanning the
+    # whole n x p matrix every subsample was ~5s of pure redundant work at
+    # n=p=2000 (#60); the upstream check makes it unnecessary on every reachable
+    # path.
 
     colnames(x) <- character()
     n <- nrow(x)

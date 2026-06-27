@@ -77,9 +77,14 @@
 #' real-valued, because `getCssPreds()` using ordinary least squares regression to
 #' generate predictions.) If `train_inds` is not provided, all of the observations
 #' in the provided data set will be used for feature selection.
-#' @param num_cores Optional; an integer. If using parallel processing, the
-#' number of cores to use for parallel processing (`num_cores` will be supplied
-#' internally as the `mc.cores` argument of `parallel::mclapply()`).
+#' @param num_cores Optional; an integer. The number of cores to use for
+#' parallel processing (supplied internally as the `mc.cores` argument of
+#' `parallel::mclapply()`). The per-subsample feature-selection loop is the
+#' dominant cost and is embarrassingly parallel, so on a multi-core Unix or
+#' macOS machine setting `num_cores > 1` gives a substantial speedup; the result
+#' is identical regardless of `num_cores` (per-subsample seeds are fixed).
+#' Forking is unavailable on Windows, where `mclapply` runs serially. Default is
+#' 1 (serial).
 #' @return A list containing the following items:
 #' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
 #' \item{`clus_sel_mat`}{A `B` (or `2*B` for SS sampling) x `length(clusters)` numeric (binary) matrix. `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
@@ -123,6 +128,12 @@
 #' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
 #'   B = 10)
 #' print(res)
+#' # On a multi-core Unix/macOS machine, set num_cores for a substantial
+#' # speedup (identical results; mclapply runs serially on Windows):
+#' \donttest{
+#' res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10, num_cores = min(2L, parallel::detectCores()))
+#' }
 #' @export
 css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sampling_type = "SS", B = ifelse(sampling_type == "MB", 100L, 50L),

@@ -98,9 +98,14 @@ real-valued, because \code{getCssPreds()} using ordinary least squares regressio
 generate predictions.) If \code{train_inds} is not provided, all of the observations
 in the provided data set will be used for feature selection.}
 
-\item{num_cores}{Optional; an integer. If using parallel processing, the
-number of cores to use for parallel processing (\code{num_cores} will be supplied
-internally as the \code{mc.cores} argument of \code{parallel::mclapply()}).}
+\item{num_cores}{Optional; an integer. The number of cores to use for
+parallel processing (supplied internally as the \code{mc.cores} argument of
+\code{parallel::mclapply()}). The per-subsample feature-selection loop is the
+dominant cost and is embarrassingly parallel, so on a multi-core Unix or
+macOS machine setting \code{num_cores > 1} gives a substantial speedup; the result
+is identical regardless of \code{num_cores} (per-subsample seeds are fixed).
+Forking is unavailable on Windows, where \code{mclapply} runs serially. Default is
+1 (serial).}
 }
 \value{
 A list containing the following items:
@@ -128,6 +133,12 @@ clusters <- list(cluster1 = 1:4)
 res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
   B = 10)
 print(res)
+# On a multi-core Unix/macOS machine, set num_cores for a substantial
+# speedup (identical results; mclapply runs serially on Windows):
+\donttest{
+res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10, num_cores = min(2L, parallel::detectCores()))
+}
 }
 \references{
 Faletto, G., & Bien, J. (2022). Cluster Stability Selection.
