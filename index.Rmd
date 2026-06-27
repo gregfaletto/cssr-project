@@ -111,7 +111,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.25",
+    Version = "0.1.26",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -634,9 +634,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
         }
 
         if(!is.integer(res_list[[i]])){
-            print(paste("failed on iteration", i))
-            print(res_list[[i]])
-            stop("Something seems to be wrong with the feature selection method (fitfun failed to return an integer vector)")
+            stop(fitfunFailureMessage(res_list[[i]], i))
         }
         stopifnot(length(res_list[[i]]) <= p & length(res_list[[i]]) > 0)
         stopifnot(all(!is.na(res_list[[i]])))
@@ -2697,6 +2695,55 @@ testthat::test_that("checkCssLoopOutput works", {
                          "The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample",
                          fixed=TRUE)
 
+})
+```
+
+
+`fitfunFailureMessage()` builds the informative error that `getSelMatrix()` raises when a subsample's `fitfun` result is not a valid integer vector (reached only under parallel forking, where the failure arrives as a captured `try-error`):
+
+```{r}
+#' Build an informative error for a subsample whose fitfun result is invalid
+#'
+#' Reached only when cssLoop failed on a subsample and parallel::mclapply
+#' (forking; the serial path propagates the error directly) captured the failure
+#' as a try-error. Surfaces the underlying cause in the error condition rather
+#' than printing it to stdout.
+#' @param result The offending element of getSelMatrix's res_list (a try-error
+#' under forking; the class branch is a defensive fallback).
+#' @param i Integer; the index of the subsample that failed.
+#' @return A length-one character string suitable for stop().
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+fitfunFailureMessage <- function(result, i){
+    if(inherits(result, "try-error")){
+        paste0("The feature selection method (fitfun) failed on subsample ", i,
+            ": ", conditionMessage(attr(result, "condition")))
+    } else{
+        paste0("The feature selection method (fitfun) returned an object of ",
+            "class ", paste(class(result), collapse = "/"), " on subsample ", i,
+            "; it must return an integer vector of selected feature indices.")
+    }
+}
+```
+
+Tests for `fitfunFailureMessage()`:
+
+```{r}
+testthat::test_that("fitfunFailureMessage surfaces the cause and subsample index (#73)", {
+  # try-error path: the wrapped condition message is surfaced (this is what
+  # getSelMatrix actually receives from mclapply under forking).
+  te <- structure("Error\n", class = "try-error",
+    condition = simpleError("fitfun returned a character vector"))
+  msg <- fitfunFailureMessage(te, 4L)
+  testthat::expect_match(msg, "subsample 4", fixed = TRUE)
+  testthat::expect_match(msg, "fitfun returned a character vector", fixed = TRUE)
+  # defensive non-try-error fallback: the class is reported.
+  msg2 <- fitfunFailureMessage("not an integer vector", 2L)
+  testthat::expect_match(msg2, "class character", fixed = TRUE)
+  testthat::expect_match(msg2, "subsample 2", fixed = TRUE)
+  testthat::expect_match(msg2, "integer vector of selected feature indices",
+    fixed = TRUE)
 })
 ```
 

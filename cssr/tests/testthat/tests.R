@@ -750,6 +750,22 @@ testthat::test_that("checkCssLoopOutput works", {
 
 })
 
+testthat::test_that("fitfunFailureMessage surfaces the cause and subsample index (#73)", {
+  # try-error path: the wrapped condition message is surfaced (this is what
+  # getSelMatrix actually receives from mclapply under forking).
+  te <- structure("Error\n", class = "try-error",
+    condition = simpleError("fitfun returned a character vector"))
+  msg <- fitfunFailureMessage(te, 4L)
+  testthat::expect_match(msg, "subsample 4", fixed = TRUE)
+  testthat::expect_match(msg, "fitfun returned a character vector", fixed = TRUE)
+  # defensive non-try-error fallback: the class is reported.
+  msg2 <- fitfunFailureMessage("not an integer vector", 2L)
+  testthat::expect_match(msg2, "class character", fixed = TRUE)
+  testthat::expect_match(msg2, "subsample 2", fixed = TRUE)
+  testthat::expect_match(msg2, "integer vector of selected feature indices",
+    fixed = TRUE)
+})
+
 testthat::test_that("checkCssLassoInputs works", {
   set.seed(761)
   
