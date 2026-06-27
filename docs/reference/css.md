@@ -134,10 +134,15 @@ css(
 
 - num_cores:
 
-  Optional; an integer. If using parallel processing, the number of
-  cores to use for parallel processing (`num_cores` will be supplied
-  internally as the `mc.cores` argument of
+  Optional; an integer. The number of cores to use for parallel
+  processing (supplied internally as the `mc.cores` argument of
   [`parallel::mclapply()`](https://rdrr.io/r/parallel/mclapply.html)).
+  The per-subsample feature-selection loop is the dominant cost and is
+  embarrassingly parallel, so on a multi-core Unix or macOS machine
+  setting `num_cores > 1` gives a substantial speedup; the result is
+  identical regardless of `num_cores` (per-subsample seeds are fixed).
+  Forking is unavailable on Windows, where `mclapply` runs serially.
+  Default is 1 (serial).
 
 ## Value
 
@@ -226,4 +231,10 @@ print(res)
 #> 6        c4             7         0.95         1
 #> 7        c7            10         0.90         1
 #> 8        c8            11         0.90         1
+# On a multi-core Unix/macOS machine, set num_cores for a substantial
+# speedup (identical results; mclapply runs serially on Windows):
+# \donttest{
+res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+  B = 10, num_cores = min(2L, parallel::detectCores()))
+# }
 ```

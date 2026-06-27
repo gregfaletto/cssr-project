@@ -11,7 +11,7 @@ of feature selection indicators as well as cluster selection indicators."></head
 
     <a class="navbar-brand me-2" href="../index.html">cssr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.26</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.27</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -159,9 +159,14 @@ in the provided data set will be used for feature selection.</p></dd>
 
 
 <dt id="arg-num-cores">num_cores<a class="anchor" aria-label="anchor" href="#arg-num-cores"></a></dt>
-<dd><p>Optional; an integer. If using parallel processing, the
-number of cores to use for parallel processing (<code>num_cores</code> will be supplied
-internally as the <code>mc.cores</code> argument of <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>).</p></dd>
+<dd><p>Optional; an integer. The number of cores to use for
+parallel processing (supplied internally as the <code>mc.cores</code> argument of
+<code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>). The per-subsample feature-selection loop is the
+dominant cost and is embarrassingly parallel, so on a multi-core Unix or
+macOS machine setting <code>num_cores &gt; 1</code> gives a substantial speedup; the result
+is identical regardless of <code>num_cores</code> (per-subsample seeds are fixed).
+Forking is unavailable on Windows, where <code>mclapply</code> runs serially. Default is
+1 (serial).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -234,6 +239,12 @@ Linear Models via Coordinate Descent. <em>Journal of Statistical Software</em>,
 <span class="r-out co"><span class="r-pr">#&gt;</span> 6        c4             7         0.95         1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 7        c7            10         0.90         1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 8        c8            11         0.90         1</span>
+<span class="r-in"><span><span class="co"># On a multi-core Unix/macOS machine, set num_cores for a substantial</span></span></span>
+<span class="r-in"><span><span class="co"># speedup (identical results; mclapply runs serially on Windows):</span></span></span>
+<span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+<span class="r-in"><span><span class="va">res_par</span> <span class="op">&lt;-</span> <span class="fu">css</span><span class="op">(</span>X <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">X</span>, y <span class="op">=</span> <span class="va">data</span><span class="op">$</span><span class="va">y</span>, lambda <span class="op">=</span> <span class="fl">0.01</span>, clusters <span class="op">=</span> <span class="va">clusters</span>,</span></span>
+<span class="r-in"><span>  B <span class="op">=</span> <span class="fl">10</span>, num_cores <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="fl">2L</span>, <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
