@@ -102,11 +102,13 @@ We will define the functions in this package in steps.
 
 Before proceeding to the actual functionality of the package, we start by specifying the information needed in the DESCRIPTION file of the R package.
 
-```{r package-setup, message=FALSE, results='hide'}
+```{r render-setup, echo=FALSE}
 # Render determinism (issue #22): suppress testthat's random praise emoji
 # (sample()-drawn) so the litr "create" book output is reproducible.
 options(cli.unicode = FALSE)
+```
 
+```{r package-setup, message=FALSE, results='hide'}
 usethis::create_package(
   path = ".",
   fields = list(
@@ -2022,7 +2024,7 @@ Now that `css()` has been defined, we write functions to work with the output of
 
 * `getCssSelections()` takes in the results of `css()` along with user-defined parameters on how to select clusters (a minimum or maximum number of clusters to select, along with a cutoff for cluster selection proportions) and selects clusters as well as features from those clusters.
 * `getCssDesign()` takes in the same inputs as `getCssSelections()` along with an unlabeled test matrix of features X (containing the same features as the X matrix provided originally to `css()`). It uses the results from `css()` to select clusters like `getCssSelections()`, then it uses a user-selected weighting scheme to compute weighted averages of the cluster members. It returns a test matrix of cluster representatives, which can be used for downstream predictive tasks.
-* Finally, `getCssPreds()` has the same inputs as `getCssPreds()` *FIX THIS TYPO*, except it also accepts a set of labeled training data (where the response must be real-valued). `getCssPreds()` selects clusters, forms matrices of cluster representatives on the training and test data, uses the training matrix of cluster representatives (along with the vector of responses for the training data) to estimate a linear model via ordinary least squares, and finally generates predictions on the test data using this linear model.
+* Finally, `getCssPreds()` has the same inputs as `getCssDesign()`, except it also accepts a set of labeled training data (where the response must be real-valued). `getCssPreds()` selects clusters, forms matrices of cluster representatives on the training and test data, uses the training matrix of cluster representatives (along with the vector of responses for the training data) to estimate a linear model via ordinary least squares, and finally generates predictions on the test data using this linear model.
 
 As in the previous section, we first define each function and then define the helper functions called by that function. As before, the tests for these functions are collected in the Tests chapters at the end of this document (the **Tests** part).
 
@@ -13770,39 +13772,27 @@ testthat::test_that("clusterRepLasso works", {
 
 # Documenting the package and adding README and pkgdown website
 
-We finish by running commands that will document the package.
+At build time we generate the package's reference documentation, README, and pkgdown website: `litr::document()` writes the `man/` pages and `NAMESPACE`; the README is rendered from `source-files/README.Rmd` (its two figures copied into `man/figures/`); the `CITATION` file is installed so `citation("cssr")` and the pkgdown "Citation" page cite the paper (arXiv:2201.00494); and `litr::add_pkgdown()` builds the site.
 
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 litr::document() # <-- use instead of devtools::document()
 ```
 
-## Add README
-
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 litr::add_readme("../source-files/README.Rmd")
 ```
 
-Let's move the two images that we refer to in the README into `man/figures`.  This is based on the "Images and figures" section of the man page for `pkgdown::build_home_index()`.
-
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 fs::dir_create("man/figures")
 fs::file_copy("../source-files/stability-selection-diagram.png", "man/figures")
 fs::file_copy("../source-files/sel_props.png", "man/figures")
 ```
 
-
-## Add CITATION
-
-So `citation("cssr")` and the pkgdown "Citation" page recommend the paper (arXiv:2201.00494):
-
-```{r}
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 fs::dir_create("inst")
 fs::file_copy("../source-files/CITATION", "inst/CITATION", overwrite = TRUE)
 ```
 
-
-## Add pkdgown site
-
-```{r add-pkgdown, results='hide', message=FALSE}
+```{r add-pkgdown, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 litr::add_pkgdown("../source-files/_pkgdown.yml")
 ```
