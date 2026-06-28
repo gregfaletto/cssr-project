@@ -11,15 +11,15 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/gregfaletto/cssr-project/tree/main/cssr/DESCRIPTION)
+[`inst/CITATION`](https://github.com/gregfaletto/cssr-project/tree/main/cssr/inst/CITATION)
 
-Faletto G, Bien J (2026). *cssr: Cluster Stability Selection*. R package
-version 0.1.27, <https://gregfaletto.github.io/cssr-project/>.
+Faletto, G., & Bien, J. (2022). Cluster Stability Selection. arXiv
+preprint arXiv:2201.00494. https://arxiv.org/abs/2201.00494
 
-    @Manual{,
-      title = {cssr: Cluster Stability Selection},
+    @Article{,
+      title = {Cluster Stability Selection},
       author = {Gregory Faletto and Jacob Bien},
-      year = {2026},
-      note = {R package version 0.1.27},
-      url = {https://gregfaletto.github.io/cssr-project/},
+      journal = {arXiv preprint arXiv:2201.00494},
+      year = {2022},
+      url = {https://arxiv.org/abs/2201.00494},
     }
