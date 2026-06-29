@@ -78,8 +78,10 @@ head(preds_full)
 ```
 
 Alternatively, if you ran [`css()`](../reference/css.md) without
-`train_inds`, supply the downstream training data directly through
-`trainX`/`trainY`:
+`train_inds`, you can supply the downstream training data directly
+through `trainX`/`trainY`. As with `train_inds`, this should ideally be
+data not used in the selection step (here we reuse `X_train` just to
+keep the example short):
 
 ``` r
 css_no_train <- css(X_train, y_train, lambda, clusters = clusters)
@@ -101,8 +103,8 @@ formed:
 - `"weighted_avg"` — a weighted average with weights inferred from the
   selection proportions, so noisier proxies get less weight. Best when
   the members’ noise levels vary.
-- `"sparse"` — use a single member (the cluster prototype), like the
-  protolasso. Simplest, but discards the other members.
+- `"sparse"` — use a single member (the most-selected one), in the
+  spirit of the protolasso. Simplest, but discards the other members.
 
 ``` r
 for (w in c("simple_avg", "weighted_avg", "sparse")) {

@@ -27,12 +27,12 @@ The package ships the two competitor methods that [Faletto and Bien
 clusters of correlated features, but differently:
 
 - [`protolasso()`](../reference/protolasso.md) ([Reid and Tibshirani,
-  2016](https://doi.org/10.1515/sagmb-2017-0027)) picks a single
+  2016](https://doi.org/10.1093/biostatistics/kxv049)) picks a single
   *prototype* from each cluster and then runs the lasso.
 - [`clusterRepLasso()`](../reference/clusterRepLasso.md) ([Bühlmann et
-  al., 2013](https://doi.org/10.1111/j.1467-9868.2012.01072.x)) replaces
-  each cluster with its *average* (a cluster representative) and then
-  runs the lasso.
+  al., 2013](https://doi.org/10.1016/j.jspi.2013.05.019)) replaces each
+  cluster with its *average* (a cluster representative) and then runs
+  the lasso.
 
 ``` r
 proto <- protolasso(X, y, clusters)
