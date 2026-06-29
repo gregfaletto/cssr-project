@@ -8710,7 +8710,47 @@ testthat::test_that("formCssDesign works", {
   testthat::expect_equal(ncol(res), length(css_res$clusters))
   testthat::expect_true(all(colnames(res) %in% names(css_res$clusters)))
   testthat::expect_true(all(names(css_res$clusters) %in% colnames(res)))
-  
+
+  # Value-level checks: pin every entry of the design matrix to a hand-computed
+  # value across all three weighting schemes (#101). The structural checks above
+  # would pass for a wrong-but-well-shaped design (column misalignment,
+  # transposed/reversed weights, or one cluster's weights applied to another).
+  feat_sel_props <- colMeans(css_res$feat_sel_mat)
+  for (w in c("simple_avg", "weighted_avg", "sparse")) {
+    des <- formCssDesign(css_res, weighting = w, cutoff = 0, min_num_clusts = 1, newx = x_new)
+    wts <- getSelectedClusters(css_res, weighting = w, cutoff = 0,
+                               min_num_clusts = 1, max_num_clusts = NA)$weights
+    # exported-path equivalence (getCssDesign just forwards to formCssDesign)
+    testthat::expect_equal(
+      getCssDesign(css_res, newX = x_new, weighting = w, cutoff = 0, min_num_clusts = 1), des)
+    for (name in names(wts)) {
+      clust <- css_res$clusters[[name]]
+      w_i <- wts[[name]]
+      sp <- feat_sel_props[clust]
+      # (1) APPLICATION: weights applied to the correct columns, correct orientation, correct cluster
+      testthat::expect_equal(des[, name],
+        as.numeric(x_new[, clust, drop = FALSE] %*% w_i), info = paste(w, name))
+      # (2) SEMANTIC anchor per scheme (independent of getSelectedClusters$weights)
+      if (w == "simple_avg") {
+        testthat::expect_equal(des[, name], rowMeans(x_new[, clust, drop = FALSE]), info = name)
+      } else if (w == "weighted_avg") {
+        if (sum(sp) > 0) {
+          testthat::expect_equal(unname(w_i), unname(sp / sum(sp)), info = name)
+        } else {
+          testthat::expect_equal(unname(w_i), rep(1 / length(clust), length(clust)), info = name)
+        }
+      } else { # sparse: equal weight on the member(s) tied at max(sp); else equal weights
+        if (sum(sp) > 0) {
+          maxes <- sp == max(sp)
+          testthat::expect_equal(des[, name],
+            as.numeric(rowMeans(x_new[, clust[maxes], drop = FALSE])), info = name)
+        } else {
+          testthat::expect_equal(des[, name], rowMeans(x_new[, clust, drop = FALSE]), info = name)
+        }
+      }
+    }
+  }
+
   # Add training indices
   css_res_train <- css(X=x_select, y=y_select, lambda=0.01,
                        clusters=good_clusters, B=10, train_inds=6:10)
