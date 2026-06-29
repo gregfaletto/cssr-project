@@ -7162,16 +7162,13 @@ testthat::test_that("getClusterSelMatrix works", {
   testthat::expect_true(all(is.integer(res)))
   testthat::expect_true(all(res %in% c(0, 1)))
 
-  clust_2 <- good_clusters[[2]]
-  
-  any_one <- rowSums(good_res[, clust_2]) > 0
-  if(any(any_one)){
-    testthat::expect_true(all(res[any_one, 2] == 1))
-  }
-
-  all_zeros <- rowSums(good_res[, clust_2]) == 0
-  if(any(all_zeros)){
-    testthat::expect_true(all(res[all_zeros, 2] == 0))
+  # (#105, L12) Value-pin EVERY cluster column (not just cluster 2): each column
+  # must equal the "at least one member of that cluster was selected" indicator.
+  # This pins the full feat2clus mapping/ordering that the #57 rowsum refactor
+  # relies on, including the singleton cluster (drop=FALSE keeps it a matrix).
+  for(j in seq_along(good_clusters)){
+    testthat::expect_equal(res[, j],
+        as.integer(rowSums(good_res[, good_clusters[[j]], drop=FALSE]) > 0))
   }
 
   # Single-cluster case (#57): t(clust_counts > 0L) collapses to one column
@@ -7634,6 +7631,29 @@ testthat::test_that("getClustWeights works", {
                                              weighting="simple_avg",
                                              feat_sel_props=sel_props),
                              rep(0.25, 4))
+
+  # (#105, L11) Zero-selection fallback: when every member of the cluster has
+  # selection proportion 0 (so sum(sel_props) == 0), both "sparse" and
+  # "weighted_avg" must fall back to equal weights rep(1/n, n) rather than
+  # dividing by zero.
+  zero_props <- c(0, 0, 0, 0.5, 0.8)
+  testthat::expect_identical(getClustWeights(cluster_i=c(1L, 2L, 3L),
+                                             weighting="sparse",
+                                             feat_sel_props=zero_props),
+                             rep(1/3, 3))
+  testthat::expect_identical(getClustWeights(cluster_i=c(1L, 2L, 3L),
+                                             weighting="weighted_avg",
+                                             feat_sel_props=zero_props),
+                             rep(1/3, 3))
+
+  # (#105, L11) Sparse tie-split: when two cluster members tie for the top
+  # selection proportion, "sparse" splits the weight equally between them (and
+  # gives 0 to the rest) rather than arbitrarily picking one.
+  tie_props <- c(0.9, 0.9, 0.3, 0.5, 0.8)
+  testthat::expect_identical(getClustWeights(cluster_i=c(1L, 2L, 3L),
+                                             weighting="sparse",
+                                             feat_sel_props=tie_props),
+                             c(0.5, 0.5, 0))
 })
 ```
 
@@ -9687,6 +9707,39 @@ testthat::test_that("getCssPreds works", {
   testthat::expect_true(all(!is.na(res_ok)))
   testthat::expect_equal(length(res_ok), 7)
 
+  # (#105, L9) The value-producing calls above only exercise the default
+  # weighting="weighted_avg"; cover "sparse" and "simple_avg" too on the
+  # trainX/trainY path. Each weighting must return a finite numeric vector of
+  # length nrow(x_pred).
+  preds_by_w <- list()
+  for(w in c("weighted_avg", "sparse", "simple_avg")){
+    preds_w <- getCssPreds(css_res, testX=x_pred, weighting=w, trainX=x_train,
+                           trainY=y_train)
+    testthat::expect_true(is.numeric(preds_w))
+    testthat::expect_true(all(!is.na(preds_w)))
+    testthat::expect_equal(length(preds_w), nrow(x_pred))
+    preds_by_w[[w]] <- preds_w
+  }
+  # getCssPreds already enforces finiteness internally, so "didn't error" is
+  # nearly vacuous; pin the behavior by requiring the three weightings to
+  # produce mutually different predictions.
+  testthat::expect_false(isTRUE(all.equal(preds_by_w[["weighted_avg"]],
+                                          preds_by_w[["sparse"]])))
+  testthat::expect_false(isTRUE(all.equal(preds_by_w[["weighted_avg"]],
+                                          preds_by_w[["simple_avg"]])))
+  testthat::expect_false(isTRUE(all.equal(preds_by_w[["sparse"]],
+                                          preds_by_w[["simple_avg"]])))
+
+  # (#105, L10a) trainY OLS-response contract. A non-numeric trainY is caught
+  # upstream by checkGetCssPredsInputs' stopifnot(is.numeric(trainY)) (which
+  # shadows getCssPreds' own "must be real-valued" guard -- that guard is dead
+  # code, flagged for a future cleanup), so the message is the stopifnot text.
+  testthat::expect_error(
+    getCssPreds(css_res, testX=x_pred, trainX=x_train,
+                trainY=factor(sample(letters[1:3], nrow(x_train),
+                                     replace=TRUE))),
+    "is.numeric(trainY) is not TRUE", fixed=TRUE)
+
   ##### Try other bad inputs
 
   testthat::expect_error(getCssPreds(css_res, testX=x_pred, cutoff=-0.5,
@@ -9772,10 +9825,27 @@ testthat::test_that("getCssPreds works", {
   # Things should still work if new x is not provided
 
   res <- getCssPreds(css_res_train, testX=x_pred)
-  
+
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 7)
+
+  # (#105, L9) Same weighting coverage ("sparse"/"simple_avg" plus the default)
+  # on the train_inds (no-trainX) path, and the same mutual-difference pin.
+  preds_by_w_ti <- list()
+  for(w in c("weighted_avg", "sparse", "simple_avg")){
+    preds_w_ti <- getCssPreds(css_res_train, testX=x_pred, weighting=w)
+    testthat::expect_true(is.numeric(preds_w_ti))
+    testthat::expect_true(all(!is.na(preds_w_ti)))
+    testthat::expect_equal(length(preds_w_ti), nrow(x_pred))
+    preds_by_w_ti[[w]] <- preds_w_ti
+  }
+  testthat::expect_false(isTRUE(all.equal(preds_by_w_ti[["weighted_avg"]],
+                                          preds_by_w_ti[["sparse"]])))
+  testthat::expect_false(isTRUE(all.equal(preds_by_w_ti[["weighted_avg"]],
+                                          preds_by_w_ti[["simple_avg"]])))
+  testthat::expect_false(isTRUE(all.equal(preds_by_w_ti[["sparse"]],
+                                          preds_by_w_ti[["simple_avg"]])))
 
   # Try not providing training indices and omitting newX--should get error
   testthat::expect_error(getCssPreds(css_res, testX=x_pred),
@@ -9864,6 +9934,23 @@ testthat::test_that("getCssPreds works", {
   testthat::expect_true(all(!is.na(res_df)))
   testthat::expect_true(is.numeric(res_df))
   testthat::expect_equal(length(res_df), length(test_inds))
+
+  # (#105, L10b) Reachable real-valued-y guard on the train_inds (no-trainX)
+  # path: when css was fit on a non-real-valued y (here a character response,
+  # which css accepts because validation is delegated to fitfun), getCssPreds
+  # cannot fit the OLS model from css_results$y[train_inds] and must error. The
+  # custom fitfun's formals must match cssLasso's (X, y, lambda) exactly. Seeded
+  # last so this RNG-consuming css() call does not shift any earlier draws.
+  set.seed(10510)
+  n_chr <- 12
+  X_chr <- matrix(stats::rnorm(n_chr*6), nrow=n_chr, ncol=6)
+  y_chr <- as.character(sample(letters, n_chr, replace=TRUE))
+  fitfun_chr <- function(X, y, lambda) 1:2
+  css_res_chr <- css(X_chr, y_chr, lambda=0.01, train_inds=8:12,
+                     fitfun=fitfun_chr, B=10)
+  testthat::expect_error(
+    getCssPreds(css_res_chr, testX=matrix(stats::rnorm(3*6), nrow=3, ncol=6)),
+    "Can't generate predictions from the data", fixed=TRUE)
 
 })
 ```
