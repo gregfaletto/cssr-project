@@ -292,7 +292,7 @@ corFitfun <- function(X, y, lambda){
   }
   
 css_output_cor <- css(X, y, lambda=8, clusters=list("Z_cluster"=1:10),
-  fitfun=testFitfun, B=10)
+  fitfun=corFitfun, B=10)
 
 str(css_output_cor)
   
