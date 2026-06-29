@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="8 Tests for the core &lt;a href='css.html#css'&gt;css&lt;/a&gt;() functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-06-28">
+<meta name="date" content="2026-06-29">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -189,20 +189,48 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb83-21"><a href="tests-for-the-core-css-functions.html#cb83-21" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 6 successes.</code></pre>
 <p>Tests for <code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code>:</p>
-<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="tests-for-the-core-css-functions.html#cb85-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkNoNAs flags NA in a matrix or data.frame and passes clean input"</span>, {</span>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="tests-for-the-core-css-functions.html#cb85-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and passes clean input"</span>, {</span>
 <span id="cb85-2"><a href="tests-for-the-core-css-functions.html#cb85-2" tabindex="-1"></a>  m_ok <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">as.numeric</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
 <span id="cb85-3"><a href="tests-for-the-core-css-functions.html#cb85-3" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_ok, <span class="st">"X"</span>), m_ok)   <span class="co"># returns input invisibly</span></span>
 <span id="cb85-4"><a href="tests-for-the-core-css-functions.html#cb85-4" tabindex="-1"></a>  m_na <span class="ot">&lt;-</span> m_ok; m_na[<span class="dv">2</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
 <span id="cb85-5"><a href="tests-for-the-core-css-functions.html#cb85-5" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_na, <span class="st">"X"</span>),</span>
-<span id="cb85-6"><a href="tests-for-the-core-css-functions.html#cb85-6" tabindex="-1"></a>    <span class="st">"must not contain missing (NA) values"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-6"><a href="tests-for-the-core-css-functions.html#cb85-6" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb85-7"><a href="tests-for-the-core-css-functions.html#cb85-7" tabindex="-1"></a>  <span class="co"># data.frame with a numeric NA is caught too (before any coercion).</span></span>
 <span id="cb85-8"><a href="tests-for-the-core-css-functions.html#cb85-8" tabindex="-1"></a>  df_na <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">a =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="cn">NA</span>, <span class="dv">3</span>), <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>))</span>
 <span id="cb85-9"><a href="tests-for-the-core-css-functions.html#cb85-9" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(df_na, <span class="st">"X"</span>),</span>
-<span id="cb85-10"><a href="tests-for-the-core-css-functions.html#cb85-10" tabindex="-1"></a>    <span class="st">"must not contain missing (NA) values"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-10"><a href="tests-for-the-core-css-functions.html#cb85-10" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb85-11"><a href="tests-for-the-core-css-functions.html#cb85-11" tabindex="-1"></a>  <span class="co"># arg_name appears in the message.</span></span>
 <span id="cb85-12"><a href="tests-for-the-core-css-functions.html#cb85-12" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_na, <span class="st">"newx"</span>), <span class="st">"newx"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb85-13"><a href="tests-for-the-core-css-functions.html#cb85-13" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## Test passed with 4 successes.</code></pre>
+<span id="cb85-13"><a href="tests-for-the-core-css-functions.html#cb85-13" tabindex="-1"></a></span>
+<span id="cb85-14"><a href="tests-for-the-core-css-functions.html#cb85-14" tabindex="-1"></a>  <span class="co"># Non-finite values are rejected too (#99): is.na(Inf) is FALSE, so the</span></span>
+<span id="cb85-15"><a href="tests-for-the-core-css-functions.html#cb85-15" tabindex="-1"></a>  <span class="co"># previous bare is.na() check let Inf/-Inf slip through into glmnet and the</span></span>
+<span id="cb85-16"><a href="tests-for-the-core-css-functions.html#cb85-16" tabindex="-1"></a>  <span class="co"># cluster-representative averaging, silently corrupting results.</span></span>
+<span id="cb85-17"><a href="tests-for-the-core-css-functions.html#cb85-17" tabindex="-1"></a>  m_inf <span class="ot">&lt;-</span> m_ok; m_inf[<span class="dv">2</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">Inf</span></span>
+<span id="cb85-18"><a href="tests-for-the-core-css-functions.html#cb85-18" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_inf, <span class="st">"X"</span>), <span class="st">"non-finite"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-19"><a href="tests-for-the-core-css-functions.html#cb85-19" tabindex="-1"></a>  m_neginf <span class="ot">&lt;-</span> m_ok; m_neginf[<span class="dv">3</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="sc">-</span><span class="cn">Inf</span></span>
+<span id="cb85-20"><a href="tests-for-the-core-css-functions.html#cb85-20" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_neginf, <span class="st">"X"</span>), <span class="st">"non-finite"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-21"><a href="tests-for-the-core-css-functions.html#cb85-21" tabindex="-1"></a>  <span class="co"># NaN is caught by is.na() (is.na(NaN) is TRUE).</span></span>
+<span id="cb85-22"><a href="tests-for-the-core-css-functions.html#cb85-22" tabindex="-1"></a>  m_nan <span class="ot">&lt;-</span> m_ok; m_nan[<span class="dv">1</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">NaN</span></span>
+<span id="cb85-23"><a href="tests-for-the-core-css-functions.html#cb85-23" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(m_nan, <span class="st">"X"</span>),</span>
+<span id="cb85-24"><a href="tests-for-the-core-css-functions.html#cb85-24" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-25"><a href="tests-for-the-core-css-functions.html#cb85-25" tabindex="-1"></a>  <span class="co"># data.frame with Inf in a numeric column is rejected too.</span></span>
+<span id="cb85-26"><a href="tests-for-the-core-css-functions.html#cb85-26" tabindex="-1"></a>  df_inf <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">a =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="cn">Inf</span>, <span class="dv">3</span>), <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>))</span>
+<span id="cb85-27"><a href="tests-for-the-core-css-functions.html#cb85-27" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(df_inf, <span class="st">"X"</span>), <span class="st">"non-finite"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb85-28"><a href="tests-for-the-core-css-functions.html#cb85-28" tabindex="-1"></a></span>
+<span id="cb85-29"><a href="tests-for-the-core-css-functions.html#cb85-29" tabindex="-1"></a>  <span class="co"># A finite data.frame passes through unchanged.</span></span>
+<span id="cb85-30"><a href="tests-for-the-core-css-functions.html#cb85-30" tabindex="-1"></a>  df_ok <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">a =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>), <span class="at">b =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>))</span>
+<span id="cb85-31"><a href="tests-for-the-core-css-functions.html#cb85-31" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(df_ok, <span class="st">"X"</span>), df_ok)</span>
+<span id="cb85-32"><a href="tests-for-the-core-css-functions.html#cb85-32" tabindex="-1"></a>  <span class="co"># A data.frame with non-numeric (factor/character) columns plus clean numeric</span></span>
+<span id="cb85-33"><a href="tests-for-the-core-css-functions.html#cb85-33" tabindex="-1"></a>  <span class="co"># columns still passes: the is.infinite() check is per-numeric-column, so it</span></span>
+<span id="cb85-34"><a href="tests-for-the-core-css-functions.html#cb85-34" tabindex="-1"></a>  <span class="co"># must not false-positive on non-numeric columns.</span></span>
+<span id="cb85-35"><a href="tests-for-the-core-css-functions.html#cb85-35" tabindex="-1"></a>  df_mixed <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb85-36"><a href="tests-for-the-core-css-functions.html#cb85-36" tabindex="-1"></a>    <span class="at">f =</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="st">"x"</span>, <span class="st">"y"</span>, <span class="st">"z"</span>)),</span>
+<span id="cb85-37"><a href="tests-for-the-core-css-functions.html#cb85-37" tabindex="-1"></a>    <span class="at">s =</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>),</span>
+<span id="cb85-38"><a href="tests-for-the-core-css-functions.html#cb85-38" tabindex="-1"></a>    <span class="at">n =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>),</span>
+<span id="cb85-39"><a href="tests-for-the-core-css-functions.html#cb85-39" tabindex="-1"></a>    <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb85-40"><a href="tests-for-the-core-css-functions.html#cb85-40" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<a href="css.html#checkNoNAs">checkNoNAs</a>(df_mixed, <span class="st">"X"</span>), df_mixed)</span>
+<span id="cb85-41"><a href="tests-for-the-core-css-functions.html#cb85-41" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 10 successes.</code></pre>
 <p>tests for checkCssClustersInput:</p>
 <div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="tests-for-the-core-css-functions.html#cb87-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkCssClustersInput works"</span>, {</span>
 <span id="cb87-2"><a href="tests-for-the-core-css-functions.html#cb87-2" tabindex="-1"></a>  </span>
@@ -1637,7 +1665,7 @@ elastic-net selected set is a strict superset of the lasso selected set:</p>
 <span id="cb137-190"><a href="tests-for-the-core-css-functions.html#cb137-190" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">20</span>)</span>
 <span id="cb137-191"><a href="tests-for-the-core-css-functions.html#cb137-191" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
 <span id="cb137-192"><a href="tests-for-the-core-css-functions.html#cb137-192" tabindex="-1"></a>    <a href="css.html#css">css</a>(<span class="at">X =</span> X, <span class="at">y =</span> y, <span class="at">lambda =</span> <span class="fl">0.01</span>),</span>
-<span id="cb137-193"><a href="tests-for-the-core-css-functions.html#cb137-193" tabindex="-1"></a>    <span class="st">"must not contain missing (NA) values"</span>,</span>
+<span id="cb137-193"><a href="tests-for-the-core-css-functions.html#cb137-193" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>,</span>
 <span id="cb137-194"><a href="tests-for-the-core-css-functions.html#cb137-194" tabindex="-1"></a>    <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb137-195"><a href="tests-for-the-core-css-functions.html#cb137-195" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 57 successes.</code></pre>

@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="9 Tests for selection and prediction functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-06-28">
+<meta name="date" content="2026-06-29">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1068,7 +1068,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb166-62"><a href="tests-for-selection-and-prediction-functions.html#cb166-62" tabindex="-1"></a>  x_na <span class="ot">&lt;-</span> x_new</span>
 <span id="cb166-63"><a href="tests-for-selection-and-prediction-functions.html#cb166-63" tabindex="-1"></a>  x_na[<span class="dv">3</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
 <span id="cb166-64"><a href="tests-for-selection-and-prediction-functions.html#cb166-64" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(x_na, css_res_train),</span>
-<span id="cb166-65"><a href="tests-for-selection-and-prediction-functions.html#cb166-65" tabindex="-1"></a>                         <span class="st">"must not contain missing (NA) values"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb166-65"><a href="tests-for-selection-and-prediction-functions.html#cb166-65" tabindex="-1"></a>                         <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb166-66"><a href="tests-for-selection-and-prediction-functions.html#cb166-66" tabindex="-1"></a>  </span>
 <span id="cb166-67"><a href="tests-for-selection-and-prediction-functions.html#cb166-67" tabindex="-1"></a>  <span class="co"># Try not providing training indices and omitting newx--should get error</span></span>
 <span id="cb166-68"><a href="tests-for-selection-and-prediction-functions.html#cb166-68" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(<span class="cn">NA</span>, css_res),</span>
@@ -2616,6 +2616,50 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ##  1. \-litr (local) <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(...)
 ##  2.   \-stats::predict.lm(model, newdata = df_test)
 ## Test passed with 36 successes.</code></pre>
+<p>A cross-cutting integration test pinning the bug fixed in #99: a single
+non-finite (<code>Inf</code>) cell used to slip silently through <code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code>
+(<code>is.na(Inf)</code> is <code>FALSE</code>) into <code>glmnet</code> and the cluster-representative averaging
+– corrupting selection proportions and predictions with no error. Both the
+<code><a href="css.html#css">css</a>()</code> selection path and the <code><a href="sel-and-pred.html#getCssPreds">getCssPreds</a>()</code> prediction path must now error at
+the gate.</p>
+<div class="sourceCode" id="cb178"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb178-1"><a href="tests-for-selection-and-prediction-functions.html#cb178-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"css and getCssPreds reject non-finite (Inf) inputs (#99)"</span>, {</span>
+<span id="cb178-2"><a href="tests-for-selection-and-prediction-functions.html#cb178-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">99001</span>)</span>
+<span id="cb178-3"><a href="tests-for-selection-and-prediction-functions.html#cb178-3" tabindex="-1"></a></span>
+<span id="cb178-4"><a href="tests-for-selection-and-prediction-functions.html#cb178-4" tabindex="-1"></a>  X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">10</span> <span class="sc">*</span> <span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">10</span>, <span class="at">ncol =</span> <span class="dv">6</span>)</span>
+<span id="cb178-5"><a href="tests-for-selection-and-prediction-functions.html#cb178-5" tabindex="-1"></a>  y <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">10</span>)</span>
+<span id="cb178-6"><a href="tests-for-selection-and-prediction-functions.html#cb178-6" tabindex="-1"></a>  good_clusters <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="st">"red"</span> <span class="ot">=</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="st">"blue"</span> <span class="ot">=</span> <span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>, <span class="st">"green"</span> <span class="ot">=</span> <span class="dv">5</span>)</span>
+<span id="cb178-7"><a href="tests-for-selection-and-prediction-functions.html#cb178-7" tabindex="-1"></a></span>
+<span id="cb178-8"><a href="tests-for-selection-and-prediction-functions.html#cb178-8" tabindex="-1"></a>  <span class="co"># One Inf cell in the css design matrix now errors (previously: silent</span></span>
+<span id="cb178-9"><a href="tests-for-selection-and-prediction-functions.html#cb178-9" tabindex="-1"></a>  <span class="co"># corruption of the selection proportions).</span></span>
+<span id="cb178-10"><a href="tests-for-selection-and-prediction-functions.html#cb178-10" tabindex="-1"></a>  X_inf <span class="ot">&lt;-</span> X</span>
+<span id="cb178-11"><a href="tests-for-selection-and-prediction-functions.html#cb178-11" tabindex="-1"></a>  X_inf[<span class="dv">3</span>, <span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="cn">Inf</span></span>
+<span id="cb178-12"><a href="tests-for-selection-and-prediction-functions.html#cb178-12" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
+<span id="cb178-13"><a href="tests-for-selection-and-prediction-functions.html#cb178-13" tabindex="-1"></a>    <a href="css.html#css">css</a>(<span class="at">X =</span> X_inf, <span class="at">y =</span> y, <span class="at">lambda =</span> <span class="fl">0.01</span>, <span class="at">clusters =</span> good_clusters, <span class="at">B =</span> <span class="dv">10</span>),</span>
+<span id="cb178-14"><a href="tests-for-selection-and-prediction-functions.html#cb178-14" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb178-15"><a href="tests-for-selection-and-prediction-functions.html#cb178-15" tabindex="-1"></a></span>
+<span id="cb178-16"><a href="tests-for-selection-and-prediction-functions.html#cb178-16" tabindex="-1"></a>  <span class="co"># A valid css fit; then an Inf in testX passed to getCssPreds must error too.</span></span>
+<span id="cb178-17"><a href="tests-for-selection-and-prediction-functions.html#cb178-17" tabindex="-1"></a>  <span class="co"># testX is gated via checkGetCssPredsInputs -&gt; <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(testX) -&gt;</span></span>
+<span id="cb178-18"><a href="tests-for-selection-and-prediction-functions.html#cb178-18" tabindex="-1"></a>  <span class="co"># <a href="css.html#checkNoNAs">checkNoNAs</a>(newx, "newx"), so the message names "newx", not "testX"; assert</span></span>
+<span id="cb178-19"><a href="tests-for-selection-and-prediction-functions.html#cb178-19" tabindex="-1"></a>  <span class="co"># the stable non-finite substring instead.</span></span>
+<span id="cb178-20"><a href="tests-for-selection-and-prediction-functions.html#cb178-20" tabindex="-1"></a>  css_res <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X =</span> X, <span class="at">y =</span> y, <span class="at">lambda =</span> <span class="fl">0.01</span>, <span class="at">clusters =</span> good_clusters, <span class="at">B =</span> <span class="dv">10</span>)</span>
+<span id="cb178-21"><a href="tests-for-selection-and-prediction-functions.html#cb178-21" tabindex="-1"></a></span>
+<span id="cb178-22"><a href="tests-for-selection-and-prediction-functions.html#cb178-22" tabindex="-1"></a>  x_train <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">8</span> <span class="sc">*</span> <span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">8</span>, <span class="at">ncol =</span> <span class="dv">6</span>)</span>
+<span id="cb178-23"><a href="tests-for-selection-and-prediction-functions.html#cb178-23" tabindex="-1"></a>  y_train <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">8</span>)</span>
+<span id="cb178-24"><a href="tests-for-selection-and-prediction-functions.html#cb178-24" tabindex="-1"></a>  x_pred <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">7</span> <span class="sc">*</span> <span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">7</span>, <span class="at">ncol =</span> <span class="dv">6</span>)</span>
+<span id="cb178-25"><a href="tests-for-selection-and-prediction-functions.html#cb178-25" tabindex="-1"></a></span>
+<span id="cb178-26"><a href="tests-for-selection-and-prediction-functions.html#cb178-26" tabindex="-1"></a>  <span class="co"># Sanity: clean inputs still predict finite values.</span></span>
+<span id="cb178-27"><a href="tests-for-selection-and-prediction-functions.html#cb178-27" tabindex="-1"></a>  preds_ok <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_res, <span class="at">testX =</span> x_pred, <span class="at">trainX =</span> x_train,</span>
+<span id="cb178-28"><a href="tests-for-selection-and-prediction-functions.html#cb178-28" tabindex="-1"></a>                          <span class="at">trainY =</span> y_train)</span>
+<span id="cb178-29"><a href="tests-for-selection-and-prediction-functions.html#cb178-29" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(preds_ok)))</span>
+<span id="cb178-30"><a href="tests-for-selection-and-prediction-functions.html#cb178-30" tabindex="-1"></a></span>
+<span id="cb178-31"><a href="tests-for-selection-and-prediction-functions.html#cb178-31" tabindex="-1"></a>  x_pred_inf <span class="ot">&lt;-</span> x_pred</span>
+<span id="cb178-32"><a href="tests-for-selection-and-prediction-functions.html#cb178-32" tabindex="-1"></a>  x_pred_inf[<span class="dv">1</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">Inf</span></span>
+<span id="cb178-33"><a href="tests-for-selection-and-prediction-functions.html#cb178-33" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
+<span id="cb178-34"><a href="tests-for-selection-and-prediction-functions.html#cb178-34" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_res, <span class="at">testX =</span> x_pred_inf, <span class="at">trainX =</span> x_train,</span>
+<span id="cb178-35"><a href="tests-for-selection-and-prediction-functions.html#cb178-35" tabindex="-1"></a>                <span class="at">trainY =</span> y_train),</span>
+<span id="cb178-36"><a href="tests-for-selection-and-prediction-functions.html#cb178-36" tabindex="-1"></a>    <span class="st">"must not contain missing"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb178-37"><a href="tests-for-selection-and-prediction-functions.html#cb178-37" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 3 successes.</code></pre>
 </div>
             </section>
 </div>

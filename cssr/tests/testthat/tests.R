@@ -21,18 +21,46 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
     "the number of columns changed", fixed = TRUE)
 })
 
-testthat::test_that("checkNoNAs flags NA in a matrix or data.frame and passes clean input", {
+testthat::test_that("checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and passes clean input", {
   m_ok <- matrix(as.numeric(1:8), nrow = 4, ncol = 2)
   testthat::expect_identical(checkNoNAs(m_ok, "X"), m_ok)   # returns input invisibly
   m_na <- m_ok; m_na[2, 1] <- NA
   testthat::expect_error(checkNoNAs(m_na, "X"),
-    "must not contain missing (NA) values", fixed = TRUE)
+    "must not contain missing", fixed = TRUE)
   # data.frame with a numeric NA is caught too (before any coercion).
   df_na <- data.frame(a = c(1, NA, 3), b = c(4, 5, 6))
   testthat::expect_error(checkNoNAs(df_na, "X"),
-    "must not contain missing (NA) values", fixed = TRUE)
+    "must not contain missing", fixed = TRUE)
   # arg_name appears in the message.
   testthat::expect_error(checkNoNAs(m_na, "newx"), "newx", fixed = TRUE)
+
+  # Non-finite values are rejected too (#99): is.na(Inf) is FALSE, so the
+  # previous bare is.na() check let Inf/-Inf slip through into glmnet and the
+  # cluster-representative averaging, silently corrupting results.
+  m_inf <- m_ok; m_inf[2, 1] <- Inf
+  testthat::expect_error(checkNoNAs(m_inf, "X"), "non-finite", fixed = TRUE)
+  m_neginf <- m_ok; m_neginf[3, 2] <- -Inf
+  testthat::expect_error(checkNoNAs(m_neginf, "X"), "non-finite", fixed = TRUE)
+  # NaN is caught by is.na() (is.na(NaN) is TRUE).
+  m_nan <- m_ok; m_nan[1, 1] <- NaN
+  testthat::expect_error(checkNoNAs(m_nan, "X"),
+    "must not contain missing", fixed = TRUE)
+  # data.frame with Inf in a numeric column is rejected too.
+  df_inf <- data.frame(a = c(1, Inf, 3), b = c(4, 5, 6))
+  testthat::expect_error(checkNoNAs(df_inf, "X"), "non-finite", fixed = TRUE)
+
+  # A finite data.frame passes through unchanged.
+  df_ok <- data.frame(a = c(1, 2, 3), b = c(4, 5, 6))
+  testthat::expect_identical(checkNoNAs(df_ok, "X"), df_ok)
+  # A data.frame with non-numeric (factor/character) columns plus clean numeric
+  # columns still passes: the is.infinite() check is per-numeric-column, so it
+  # must not false-positive on non-numeric columns.
+  df_mixed <- data.frame(
+    f = factor(c("x", "y", "z")),
+    s = c("a", "b", "c"),
+    n = c(1, 2, 3),
+    stringsAsFactors = FALSE)
+  testthat::expect_identical(checkNoNAs(df_mixed, "X"), df_mixed)
 })
 
 testthat::test_that("checkCssClustersInput works", {
@@ -1436,7 +1464,7 @@ testthat::test_that("css errors on an X containing NA (#74)", {
   y <- stats::rnorm(20)
   testthat::expect_error(
     css(X = X, y = y, lambda = 0.01),
-    "must not contain missing (NA) values",
+    "must not contain missing",
     fixed = TRUE)
 })
 
@@ -2378,7 +2406,7 @@ testthat::test_that("checkNewXProvided works", {
   x_na <- x_new
   x_na[3, 2] <- NA
   testthat::expect_error(checkNewXProvided(x_na, css_res_train),
-                         "must not contain missing (NA) values", fixed = TRUE)
+                         "must not contain missing", fixed = TRUE)
   
   # Try not providing training indices and omitting newx--should get error
   testthat::expect_error(checkNewXProvided(NA, css_res),
@@ -3756,6 +3784,44 @@ testthat::test_that("getCssPreds works", {
 
 })
 
+testthat::test_that("css and getCssPreds reject non-finite (Inf) inputs (#99)", {
+  set.seed(99001)
+
+  X <- matrix(stats::rnorm(10 * 6), nrow = 10, ncol = 6)
+  y <- stats::rnorm(10)
+  good_clusters <- list("red" = 1:2, "blue" = 3:4, "green" = 5)
+
+  # One Inf cell in the css design matrix now errors (previously: silent
+  # corruption of the selection proportions).
+  X_inf <- X
+  X_inf[3, 2] <- Inf
+  testthat::expect_error(
+    css(X = X_inf, y = y, lambda = 0.01, clusters = good_clusters, B = 10),
+    "must not contain missing", fixed = TRUE)
+
+  # A valid css fit; then an Inf in testX passed to getCssPreds must error too.
+  # testX is gated via checkGetCssPredsInputs -> checkXInputResults(testX) ->
+  # checkNoNAs(newx, "newx"), so the message names "newx", not "testX"; assert
+  # the stable non-finite substring instead.
+  css_res <- css(X = X, y = y, lambda = 0.01, clusters = good_clusters, B = 10)
+
+  x_train <- matrix(stats::rnorm(8 * 6), nrow = 8, ncol = 6)
+  y_train <- stats::rnorm(8)
+  x_pred <- matrix(stats::rnorm(7 * 6), nrow = 7, ncol = 6)
+
+  # Sanity: clean inputs still predict finite values.
+  preds_ok <- getCssPreds(css_res, testX = x_pred, trainX = x_train,
+                          trainY = y_train)
+  testthat::expect_true(all(is.finite(preds_ok)))
+
+  x_pred_inf <- x_pred
+  x_pred_inf[1, 1] <- Inf
+  testthat::expect_error(
+    getCssPreds(css_res, testX = x_pred_inf, trainX = x_train,
+                trainY = y_train),
+    "must not contain missing", fixed = TRUE)
+})
+
 testthat::test_that("checkGenClusteredDataInputs works", {
   set.seed(7612)
 
@@ -4731,14 +4797,14 @@ testthat::test_that("getLassoLambda works", {
   # falling through to a cryptic glmnet-level error.
   x_na <- x; x_na[2, 1] <- NA
   testthat::expect_error(getLassoLambda(X=x_na, y=y),
-                         "must not contain missing (NA) values", fixed=TRUE)
+                         "must not contain missing", fixed=TRUE)
   # A data.frame with a numeric NA must error with the same message BEFORE
   # coercion: model.matrix's na.action=na.omit would otherwise silently drop
   # the NA row and the failure would surface downstream (length mismatch), not
   # as this message. This case pins the pre-coercion placement of checkNoNAs.
   df_na <- as.data.frame(x); df_na[2, 1] <- NA
   testthat::expect_error(getLassoLambda(X=df_na, y=y),
-                         "must not contain missing (NA) values", fixed=TRUE)
+                         "must not contain missing", fixed=TRUE)
 
 })
 
@@ -5630,7 +5696,7 @@ testthat::test_that("cssSelect works", {
   # An NA in the design matrix yields the shared friendly message (#56).
   x_na <- x; x_na[2, 1] <- NA
   testthat::expect_error(cssSelect(X=x_na, y=y),
-                         "must not contain missing (NA) values", fixed=TRUE)
+                         "must not contain missing", fixed=TRUE)
 })
 
 testthat::test_that("cssSelect threads alpha through to selection", {

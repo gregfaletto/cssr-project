@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-06-28">
+<meta name="date" content="2026-06-29">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -937,8 +937,8 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb22-38"><a href="css.html#cb22-38" tabindex="-1"></a>    }</span>
 <span id="cb22-39"><a href="css.html#cb22-39" tabindex="-1"></a>    X</span>
 <span id="cb22-40"><a href="css.html#cb22-40" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code> guards a design matrix against missing values, before any data.frame coercion:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="css.html#cb23-1" tabindex="-1"></a><span class="co">#' Error if a design matrix contains missing (NA) values</span></span>
+<p><code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code> guards a design matrix against missing and non-finite values, before any data.frame coercion:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="css.html#cb23-1" tabindex="-1"></a><span class="co">#' Error if a design matrix contains missing or non-finite values</span></span>
 <span id="cb23-2"><a href="css.html#cb23-2" tabindex="-1"></a><span class="co">#'</span></span>
 <span id="cb23-3"><a href="css.html#cb23-3" tabindex="-1"></a><span class="co">#' Shared guard for the X-accepting entry points. Checks the ORIGINAL input</span></span>
 <span id="cb23-4"><a href="css.html#cb23-4" tabindex="-1"></a><span class="co">#' (matrix or data.frame) so a data.frame's NAs are caught before</span></span>
@@ -952,13 +952,22 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb23-12"><a href="css.html#cb23-12" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
 <span id="cb23-13"><a href="css.html#cb23-13" tabindex="-1"></a><span class="co">#' @noRd</span></span>
 <span id="cb23-14"><a href="css.html#cb23-14" tabindex="-1"></a><span id="checkNoNAs">checkNoNAs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">arg_name =</span> <span class="st">"X"</span>){</span>
-<span id="cb23-15"><a href="css.html#cb23-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(X))){</span>
-<span id="cb23-16"><a href="css.html#cb23-16" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"The provided "</span>, arg_name,</span>
-<span id="cb23-17"><a href="css.html#cb23-17" tabindex="-1"></a>            <span class="st">" must not contain missing (NA) values; please remove or impute them "</span>,</span>
-<span id="cb23-18"><a href="css.html#cb23-18" tabindex="-1"></a>            <span class="st">"before calling this function."</span>), <span class="at">call. =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb23-19"><a href="css.html#cb23-19" tabindex="-1"></a>    }</span>
-<span id="cb23-20"><a href="css.html#cb23-20" tabindex="-1"></a>    <span class="fu">invisible</span>(X)</span>
-<span id="cb23-21"><a href="css.html#cb23-21" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb23-15"><a href="css.html#cb23-15" tabindex="-1"></a>    has_na <span class="ot">&lt;-</span> <span class="fu">any</span>(<span class="fu">is.na</span>(X))</span>
+<span id="cb23-16"><a href="css.html#cb23-16" tabindex="-1"></a>    has_inf <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">is.data.frame</span>(X)){</span>
+<span id="cb23-17"><a href="css.html#cb23-17" tabindex="-1"></a>        <span class="fu">any</span>(<span class="fu">vapply</span>(X, <span class="cf">function</span>(col) <span class="fu">is.numeric</span>(col) <span class="sc">&amp;&amp;</span> <span class="fu">any</span>(<span class="fu">is.infinite</span>(col)),</span>
+<span id="cb23-18"><a href="css.html#cb23-18" tabindex="-1"></a>            <span class="fu">logical</span>(<span class="dv">1</span>)))</span>
+<span id="cb23-19"><a href="css.html#cb23-19" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">is.numeric</span>(X)){</span>
+<span id="cb23-20"><a href="css.html#cb23-20" tabindex="-1"></a>        <span class="fu">any</span>(<span class="fu">is.infinite</span>(X))</span>
+<span id="cb23-21"><a href="css.html#cb23-21" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb23-22"><a href="css.html#cb23-22" tabindex="-1"></a>        <span class="cn">FALSE</span></span>
+<span id="cb23-23"><a href="css.html#cb23-23" tabindex="-1"></a>    }</span>
+<span id="cb23-24"><a href="css.html#cb23-24" tabindex="-1"></a>    <span class="cf">if</span>(has_na <span class="sc">||</span> has_inf){</span>
+<span id="cb23-25"><a href="css.html#cb23-25" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"The provided "</span>, arg_name,</span>
+<span id="cb23-26"><a href="css.html#cb23-26" tabindex="-1"></a>            <span class="st">" must not contain missing (NA) or non-finite (Inf) values; please "</span>,</span>
+<span id="cb23-27"><a href="css.html#cb23-27" tabindex="-1"></a>            <span class="st">"remove or impute them before calling this function."</span>), <span class="at">call. =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb23-28"><a href="css.html#cb23-28" tabindex="-1"></a>    }</span>
+<span id="cb23-29"><a href="css.html#cb23-29" tabindex="-1"></a>    <span class="fu">invisible</span>(X)</span>
+<span id="cb23-30"><a href="css.html#cb23-30" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkCssInputs">checkCssInputs</a>()</code>:</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="css.html#cb24-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that inputs to the function `<a href="css.html#css">css</a>()` are as expected,</span></span>
 <span id="cb24-2"><a href="css.html#cb24-2" tabindex="-1"></a><span class="co">#' and modify inputs if needed</span></span>
