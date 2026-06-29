@@ -7,7 +7,7 @@
 #' @param weighting Character; determines how to calculate the weights to
 #' combine features from the selected clusters into weighted averages, called
 #' cluster representatives. Must be one of "sparse", "weighted_avg", or
-#' "simple_avg'.
+#' "simple_avg".
 #' @param cutoff Numeric; css will return only those clusters with selection
 #' proportions equal to at least cutoff. Must be between 0 and 1.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
