@@ -454,8 +454,11 @@ testthat::test_that("formatClusters works", {
                          "length(clusters) == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
 
+  # Out-of-range cluster index is now caught up front by checkFormatClustersInput
+  # (#104, L3) with a message naming the offending index and p, instead of the
+  # downstream cryptic length(all_clustered_feats) == p stopifnot.
   testthat::expect_error(formatClusters(list(5:8), p=7),
-                         "length(all_clustered_feats) == p is not TRUE",
+                         "Cluster index 8 exceeds the number of features (p = 7).",
                          fixed=TRUE)
 
   testthat::expect_error(formatClusters(list(2:3, as.integer(NA)), p=10),
@@ -1227,6 +1230,25 @@ testthat::test_that("getSelMatrix works", {
                       fitfun=cssLasso),
                       "length(res_list) == nrow(res) is not TRUE",
                       fixed=TRUE)
+})
+
+testthat::test_that("getSelMatrix detects a killed parallel worker (#104)", {
+  set.seed(98623)
+  x <- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
+  y <- stats::rnorm(25)
+  subsamps_object <- createSubsamples(n=25, p=6, B=12, sampling_type="SS",
+                                      prop_feats_remove=0)
+
+  # Simulate a worker that was killed: mclapply returns a list containing NULL.
+  testthat::local_mocked_bindings(
+    mclapply = function(...) list(NULL),
+    .package = "parallel")
+
+  testthat::expect_error(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=12, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=1,
+                 fitfun=cssLasso),
+    "parallel worker failed")
 })
 
 testthat::test_that("cssLasso works", {
@@ -2524,7 +2546,22 @@ testthat::test_that("checkNewXProvided works", {
   testthat::expect_equal(length(res_df$newXProvided), 1)
   testthat::expect_true(!is.na(res_df$newXProvided))
   testthat::expect_true(res_df$newXProvided)
-  
+
+  # (#104, L5) Dispatch on the NA-sentinel default, not a length() heuristic.
+  # css_res_train has train_inds, so the OLD length()-based code silently fell
+  # back to that training data for these misclassified inputs; they must now be
+  # treated as "provided".
+  # A bare numeric vector (length > 1) is not a valid design matrix and now
+  # errors clearly instead of failing later on a cryptic is.matrix() stopifnot.
+  testthat::expect_error(
+    checkNewXProvided(stats::rnorm(5), css_res_train),
+    "newX must be a matrix or data.frame", fixed=TRUE)
+  # A one-column data.frame (length 1) used to be misread as "not provided" and
+  # silently replaced by the train_inds data; it now enters the provided branch
+  # and errors (here on a feature-name/column mismatch) rather than falling back.
+  testthat::expect_error(
+    checkNewXProvided(data.frame(a=stats::rnorm(8)), css_res_train))
+
 })
 
 testthat::test_that("checkFormCssDesignInputs works", {
@@ -3681,7 +3718,27 @@ testthat::test_that("getCssPreds works", {
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 7)
-  
+
+  # (#104, L6) The OLS adequacy guard must account for the lm() intercept. At the
+  # default cutoff the training design has one column per cluster; css_res has 4
+  # clusters (red, blue, green, and feature 6 as a singleton). With exactly 4
+  # training rows, lm(y ~ .) is rank-deficient (4 observations vs 4 cluster
+  # coefficients + an intercept), so getCssPreds must now error rather than
+  # silently fit a rank-deficient model with NA coefficients.
+  x_train_eq <- matrix(stats::rnorm(4*6), nrow=4, ncol=6)
+  y_train_eq <- stats::rnorm(4)
+  testthat::expect_error(
+    getCssPreds(css_res, testX=x_pred, trainX=x_train_eq, trainY=y_train_eq),
+    "one more training observation than the number of clusters", fixed=TRUE)
+  # One extra training row (5 observations vs 4 coefficients + intercept) is
+  # enough, and predictions are produced normally.
+  x_train_ok <- matrix(stats::rnorm(5*6), nrow=5, ncol=6)
+  y_train_ok <- stats::rnorm(5)
+  res_ok <- getCssPreds(css_res, testX=x_pred, trainX=x_train_ok,
+                        trainY=y_train_ok)
+  testthat::expect_true(all(!is.na(res_ok)))
+  testthat::expect_equal(length(res_ok), 7)
+
   ##### Try other bad inputs
 
   testthat::expect_error(getCssPreds(css_res, testX=x_pred, cutoff=-0.5,
@@ -3819,7 +3876,11 @@ testthat::test_that("getCssPreds works", {
   y <- stats::rnorm(n)
 
   selec_inds <- 1:round(n/3)
-  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 17)
+  # 18 (not 17) training rows: once the factor columns below are one-hot encoded
+  # the design has 17 cluster representatives, and the OLS adequacy guard (#104,
+  # L6) now requires strictly more training rows than clusters (the lm()
+  # intercept), so 17 == 17 would (correctly) error.
+  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 18)
   test_inds <- setdiff(1:n, c(selec_inds, train_inds))
 
   css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
@@ -4942,6 +5003,46 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_error(getLassoLambda(X=df_na, y=y),
                          "must not contain missing", fixed=TRUE)
 
+  # (#104, L7) When n is too small for even 3-fold cross-validation, error
+  # clearly here instead of crashing inside cv.glmnet ("nfolds must be bigger
+  # than 3"). With n = 4 and the default nfolds = 10, n_sample rounds to 2 (< 3).
+  testthat::expect_error(
+    getLassoLambda(X=matrix(stats::rnorm(4*5), nrow=4, ncol=5),
+                   y=stats::rnorm(4)),
+    "is too small to choose lambda", fixed=TRUE)
+
+})
+
+testthat::test_that("out-of-range cluster indices error via css/protolasso (#104)", {
+  set.seed(104105)
+  X <- matrix(stats::rnorm(20*8), nrow=20, ncol=8)
+  y <- stats::rnorm(20)
+
+  # Bare-vector clusters with an index beyond p (= 5 here).
+  testthat::expect_error(
+    css(X[, 1:5], y, lambda=0.01, clusters=c(1, 2, 99)),
+    "Cluster index 99 exceeds the number of features (p = 5).", fixed=TRUE)
+
+  # List clusters routed through protolasso.
+  testthat::expect_error(
+    protolasso(X[, 1:5], y, clusters=list(c(1, 2, 99))),
+    "Cluster index 99 exceeds the number of features (p = 5).", fixed=TRUE)
+})
+
+testthat::test_that("css reports a too-small sample size clearly (#104)", {
+  set.seed(104104)
+
+  # No train_inds: the message must blame the sample size, not training indices.
+  testthat::expect_error(
+    css(matrix(stats::rnorm(15), nrow=3, ncol=5), stats::rnorm(3), lambda=0.01),
+    "is too small", fixed=TRUE)
+
+  # When train_inds leave fewer than 4 observations for selection, the original
+  # "Too many training indices" branch still fires.
+  testthat::expect_error(
+    css(matrix(stats::rnorm(10*5), nrow=10, ncol=5), stats::rnorm(10),
+        lambda=0.01, train_inds=1:7),
+    "Too many training indices provided", fixed=TRUE)
 })
 
 testthat::test_that("getModelSize works", {
@@ -5035,8 +5136,10 @@ testthat::test_that("getModelSize works", {
                          "length(clusters) == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
 
+  # Out-of-range cluster index now caught up front by checkFormatClustersInput
+  # (#104, L3); x has 11 columns, so index 50 is out of range.
   testthat::expect_error(getModelSize(X=x, y=y, clusters=6:50),
-                         "length(all_clustered_feats) == p is not TRUE",
+                         "Cluster index 50 exceeds the number of features (p = 11).",
                          fixed=TRUE)
 
   testthat::expect_error(getModelSize(X=x, y=y,

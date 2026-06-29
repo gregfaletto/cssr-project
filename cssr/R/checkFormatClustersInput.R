@@ -135,6 +135,21 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
         }
     }
 
+    # Bounds-check cluster indices against p now that clusters has been
+    # normalized to a list (covers list, bare-vector, and R-derived clusters).
+    # Guarded by p > 0 because formatClusters defaults p = -1 (a sentinel that
+    # disables the p-dependent checks); seq_along is empty for an empty clusters
+    # and any NA-containing input has already errored at the top of this
+    # function, so every element here is a non-empty integer vector.
+    if(p > 0){
+        for(i in seq_along(clusters)){
+            if(any(clusters[[i]] > p)){
+                stop(paste0("Cluster index ", max(clusters[[i]]),
+                    " exceeds the number of features (p = ", p, ")."), call. = FALSE)
+            }
+        }
+    }
+
     stopifnot(is.list(clusters))
 
     return(clusters)

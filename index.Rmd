@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.29",
+    Version = "0.1.30",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -351,7 +351,11 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sel_inds <- setdiff(1:n, train_inds)
     n_sel <- length(sel_inds)
     if(n_sel < 4){
-        stop("Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)")
+        if(length(train_inds) == 0){
+            stop(paste0("Sample size n = ", n, " is too small; css needs at least 4 observations for feature selection."))
+        } else {
+            stop("Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)")
+        }
     }
 
     subsamps_object <- createSubsamples(n_sel, p, B, sampling_type,
@@ -626,6 +630,15 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
         FUN=function(i) cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
             fitfun=fitfun, seed=seeds[i]),
         mc.cores=num_cores)
+
+    # mclapply returns NULL for any subsample whose worker was killed (e.g. the
+    # OS out-of-memory killer). That NULL is distinct from a legitimate
+    # integer(0) "selected nothing" result, so catch it here rather than letting
+    # the assembly loop's length(res_list[[i]]) == 0 branch silently record it as
+    # a zero row (which would bias the selection proportions).
+    if(any(vapply(res_list, is.null, logical(1)))){
+        stop("A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error.")
+    }
 
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
     if(sampling_type=="SS"){
@@ -1471,6 +1484,21 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
                         stop("Invalid R matrix with overlapping clusters (clusters must not be overlapping)")
                     }
                 }
+            }
+        }
+    }
+
+    # Bounds-check cluster indices against p now that clusters has been
+    # normalized to a list (covers list, bare-vector, and R-derived clusters).
+    # Guarded by p > 0 because formatClusters defaults p = -1 (a sentinel that
+    # disables the p-dependent checks); seq_along is empty for an empty clusters
+    # and any NA-containing input has already errored at the top of this
+    # function, so every element here is a non-empty integer vector.
+    if(p > 0){
+        for(i in seq_along(clusters)){
+            if(any(clusters[[i]] > p)){
+                stop(paste0("Cluster index ", max(clusters[[i]]),
+                    " exceeds the number of features (p = ", p, ")."), call. = FALSE)
             }
         }
     }
@@ -2848,13 +2876,24 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
-    # "Was newX provided?" -- distinguish the scalar NA default (length 1) from
-    # a real design matrix (length > 1). NOT all(!is.na(trainX)): that read an
-    # NA-CONTAINING matrix as "not provided" and silently fell back to
-    # train_inds, bypassing checkXInputResults' checkNoNAs. With just length > 1,
-    # an NA-containing newX now enters the provided branch and errors clearly,
-    # while NA (the default) still falls back to train_inds (#71).
-    if(length(trainX) > 1){
+    # "Was newX provided?" -- the documented default for trainX is the scalar NA
+    # sentinel, so treat trainX as provided UNLESS it is exactly that default
+    # (an atomic, length-1 NA). A previous length()-based heuristic
+    # (length(trainX) > 1) misclassified a numeric vector or a one-column
+    # data.frame (length 1) as "not provided" and silently fell back to
+    # train_inds. The is.atomic/length/is.na test instead routes any matrix or
+    # data.frame to the provided branch -- including an NA-CONTAINING matrix
+    # (length > 1, so the is.na operand is short-circuited and never collapses a
+    # multi-element matrix to a length-1 logical), which is then rejected by
+    # checkXInputResults' checkNoNAs rather than silently replaced by the
+    # train_inds data (#71).
+    if(!(is.atomic(trainX) && length(trainX) == 1 && is.na(trainX))){
+        # trainX was provided -- it must be a matrix or data.frame (a bare
+        # vector is not a valid design and used to fail with a cryptic
+        # is.matrix() stopifnot downstream).
+        if(!(is.matrix(trainX) || is.data.frame(trainX))){
+            stop("newX must be a matrix or data.frame with the same columns as the X provided to css().", call. = FALSE)
+        }
         newXProvided <- TRUE
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         
@@ -3277,12 +3316,16 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
         clust_X_names <- colnames(train_X_clusters)
     }
 
-    # Fit linear model on training data via OLS
-    if(nrow(train_X_clusters) < ncol(train_X_clusters)){
+    # Fit linear model on training data via OLS. lm(y ~ .) adds an intercept, so
+    # the fit is rank-deficient unless there are strictly more training
+    # observations than clusters (nrow >= ncol + 1); guard with <= so the
+    # n_train == n_clusters boundary errors clearly instead of silently fitting a
+    # rank-deficient model with NA coefficients.
+    if(nrow(train_X_clusters) <= ncol(train_X_clusters)){
         err_mess <- paste("css not provided with enough indices to fit OLS model for predictions (number of training indices: ",
             nrow(train_X_clusters), ", number of clusters: ",
             ncol(train_X_clusters),
-            "). Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices.",
+            "). The OLS model includes an intercept, so it needs at least one more training observation than the number of clusters. Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices.",
             sep="")
         stop(err_mess)
     }
@@ -4447,7 +4490,16 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     # so that each individual lasso fit is of size floor(n/2)
 
     n_sample <- min(round(n/2*nfolds/(nfolds - 1)), n)
-    nfolds <- min(nfolds, n_sample)
+    # n_sample is the number of observations actually passed to cv.glmnet. If it
+    # is too small for even 3-fold CV, error clearly here (reporting the
+    # requested nfolds) instead of letting cv.glmnet crash with "nfolds must be
+    # bigger than 3". Otherwise clamp nfolds into [3, n_sample] so we never end
+    # up below glmnet's minimum or above the available sample size.
+    if(n_sample < 3){
+        stop(paste0("Sample size n = ", n, " is too small to choose lambda by ", nfolds,
+            "-fold cross-validation; supply a larger n, a smaller nfolds, or lambda directly."))
+    }
+    nfolds <- max(3L, min(nfolds, n_sample))
 
     inds_size <- sample(1:n, n_sample)
     size_results <- glmnet::cv.glmnet(x=X[inds_size, ], y=y[inds_size],
@@ -6192,8 +6244,11 @@ testthat::test_that("formatClusters works", {
                          "length(clusters) == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
 
+  # Out-of-range cluster index is now caught up front by checkFormatClustersInput
+  # (#104, L3) with a message naming the offending index and p, instead of the
+  # downstream cryptic length(all_clustered_feats) == p stopifnot.
   testthat::expect_error(formatClusters(list(5:8), p=7),
-                         "length(all_clustered_feats) == p is not TRUE",
+                         "Cluster index 8 exceeds the number of features (p = 7).",
                          fixed=TRUE)
 
   testthat::expect_error(formatClusters(list(2:3, as.integer(NA)), p=10),
@@ -7026,6 +7081,32 @@ testthat::test_that("getSelMatrix works", {
                       fitfun=cssLasso),
                       "length(res_list) == nrow(res) is not TRUE",
                       fixed=TRUE)
+})
+```
+
+A killed parallel worker makes `parallel::mclapply()` return `NULL` for that
+subsample. That `NULL` is distinct from a legitimate `integer(0)` ("selected
+nothing") result, so `getSelMatrix()` must error rather than silently record a
+zero row (which would bias the selection proportions) (#104, L8):
+
+```{r}
+testthat::test_that("getSelMatrix detects a killed parallel worker (#104)", {
+  set.seed(98623)
+  x <- matrix(stats::rnorm(25*6), nrow=25, ncol=6)
+  y <- stats::rnorm(25)
+  subsamps_object <- createSubsamples(n=25, p=6, B=12, sampling_type="SS",
+                                      prop_feats_remove=0)
+
+  # Simulate a worker that was killed: mclapply returns a list containing NULL.
+  testthat::local_mocked_bindings(
+    mclapply = function(...) list(NULL),
+    .package = "parallel")
+
+  testthat::expect_error(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=12, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=1,
+                 fitfun=cssLasso),
+    "parallel worker failed")
 })
 ```
 
@@ -8389,7 +8470,22 @@ testthat::test_that("checkNewXProvided works", {
   testthat::expect_equal(length(res_df$newXProvided), 1)
   testthat::expect_true(!is.na(res_df$newXProvided))
   testthat::expect_true(res_df$newXProvided)
-  
+
+  # (#104, L5) Dispatch on the NA-sentinel default, not a length() heuristic.
+  # css_res_train has train_inds, so the OLD length()-based code silently fell
+  # back to that training data for these misclassified inputs; they must now be
+  # treated as "provided".
+  # A bare numeric vector (length > 1) is not a valid design matrix and now
+  # errors clearly instead of failing later on a cryptic is.matrix() stopifnot.
+  testthat::expect_error(
+    checkNewXProvided(stats::rnorm(5), css_res_train),
+    "newX must be a matrix or data.frame", fixed=TRUE)
+  # A one-column data.frame (length 1) used to be misread as "not provided" and
+  # silently replaced by the train_inds data; it now enters the provided branch
+  # and errors (here on a feature-name/column mismatch) rather than falling back.
+  testthat::expect_error(
+    checkNewXProvided(data.frame(a=stats::rnorm(8)), css_res_train))
+
 })
 ```
 
@@ -9570,7 +9666,27 @@ testthat::test_that("getCssPreds works", {
   testthat::expect_true(all(!is.na(res)))
   testthat::expect_true(is.numeric(res))
   testthat::expect_equal(length(res), 7)
-  
+
+  # (#104, L6) The OLS adequacy guard must account for the lm() intercept. At the
+  # default cutoff the training design has one column per cluster; css_res has 4
+  # clusters (red, blue, green, and feature 6 as a singleton). With exactly 4
+  # training rows, lm(y ~ .) is rank-deficient (4 observations vs 4 cluster
+  # coefficients + an intercept), so getCssPreds must now error rather than
+  # silently fit a rank-deficient model with NA coefficients.
+  x_train_eq <- matrix(stats::rnorm(4*6), nrow=4, ncol=6)
+  y_train_eq <- stats::rnorm(4)
+  testthat::expect_error(
+    getCssPreds(css_res, testX=x_pred, trainX=x_train_eq, trainY=y_train_eq),
+    "one more training observation than the number of clusters", fixed=TRUE)
+  # One extra training row (5 observations vs 4 coefficients + intercept) is
+  # enough, and predictions are produced normally.
+  x_train_ok <- matrix(stats::rnorm(5*6), nrow=5, ncol=6)
+  y_train_ok <- stats::rnorm(5)
+  res_ok <- getCssPreds(css_res, testX=x_pred, trainX=x_train_ok,
+                        trainY=y_train_ok)
+  testthat::expect_true(all(!is.na(res_ok)))
+  testthat::expect_equal(length(res_ok), 7)
+
   ##### Try other bad inputs
 
   testthat::expect_error(getCssPreds(css_res, testX=x_pred, cutoff=-0.5,
@@ -9708,7 +9824,11 @@ testthat::test_that("getCssPreds works", {
   y <- stats::rnorm(n)
 
   selec_inds <- 1:round(n/3)
-  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 17)
+  # 18 (not 17) training rows: once the factor columns below are one-hot encoded
+  # the design has 17 cluster representatives, and the OLS adequacy guard (#104,
+  # L6) now requires strictly more training rows than clusters (the lm()
+  # intercept), so 17 == 17 would (correctly) error.
+  train_inds <- (max(selec_inds) + 1):(max(selec_inds) + 18)
   test_inds <- setdiff(1:n, c(selec_inds, train_inds))
 
   css_res_df <- css(X=X_df[c(selec_inds, train_inds), ],
@@ -10888,6 +11008,59 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_error(getLassoLambda(X=df_na, y=y),
                          "must not contain missing", fixed=TRUE)
 
+  # (#104, L7) When n is too small for even 3-fold cross-validation, error
+  # clearly here instead of crashing inside cv.glmnet ("nfolds must be bigger
+  # than 3"). With n = 4 and the default nfolds = 10, n_sample rounds to 2 (< 3).
+  testthat::expect_error(
+    getLassoLambda(X=matrix(stats::rnorm(4*5), nrow=4, ncol=5),
+                   y=stats::rnorm(4)),
+    "is too small to choose lambda", fixed=TRUE)
+
+})
+```
+
+Out-of-range cluster indices are caught up front (#104, L3) through the public
+`css()` and `protolasso()` entry points -- covering a bare-vector clusters
+argument (which is wrapped into a list after the per-element validation loop) and
+a list clusters argument:
+
+```{r}
+testthat::test_that("out-of-range cluster indices error via css/protolasso (#104)", {
+  set.seed(104105)
+  X <- matrix(stats::rnorm(20*8), nrow=20, ncol=8)
+  y <- stats::rnorm(20)
+
+  # Bare-vector clusters with an index beyond p (= 5 here).
+  testthat::expect_error(
+    css(X[, 1:5], y, lambda=0.01, clusters=c(1, 2, 99)),
+    "Cluster index 99 exceeds the number of features (p = 5).", fixed=TRUE)
+
+  # List clusters routed through protolasso.
+  testthat::expect_error(
+    protolasso(X[, 1:5], y, clusters=list(c(1, 2, 99))),
+    "Cluster index 99 exceeds the number of features (p = 5).", fixed=TRUE)
+})
+```
+
+`css()` reports a too-small sample size clearly (#104, L4) instead of the
+misleading "Too many training indices provided" when no training indices were
+supplied:
+
+```{r}
+testthat::test_that("css reports a too-small sample size clearly (#104)", {
+  set.seed(104104)
+
+  # No train_inds: the message must blame the sample size, not training indices.
+  testthat::expect_error(
+    css(matrix(stats::rnorm(15), nrow=3, ncol=5), stats::rnorm(3), lambda=0.01),
+    "is too small", fixed=TRUE)
+
+  # When train_inds leave fewer than 4 observations for selection, the original
+  # "Too many training indices" branch still fires.
+  testthat::expect_error(
+    css(matrix(stats::rnorm(10*5), nrow=10, ncol=5), stats::rnorm(10),
+        lambda=0.01, train_inds=1:7),
+    "Too many training indices provided", fixed=TRUE)
 })
 ```
 
@@ -10985,8 +11158,10 @@ testthat::test_that("getModelSize works", {
                          "length(clusters) == length(unique(clusters)) is not TRUE",
                          fixed=TRUE)
 
+  # Out-of-range cluster index now caught up front by checkFormatClustersInput
+  # (#104, L3); x has 11 columns, so index 50 is out of range.
   testthat::expect_error(getModelSize(X=x, y=y, clusters=6:50),
-                         "length(all_clustered_feats) == p is not TRUE",
+                         "Cluster index 50 exceeds the number of features (p = 11).",
                          fixed=TRUE)
 
   testthat::expect_error(getModelSize(X=x, y=y,

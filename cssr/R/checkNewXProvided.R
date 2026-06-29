@@ -23,13 +23,24 @@
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
 
-    # "Was newX provided?" -- distinguish the scalar NA default (length 1) from
-    # a real design matrix (length > 1). NOT all(!is.na(trainX)): that read an
-    # NA-CONTAINING matrix as "not provided" and silently fell back to
-    # train_inds, bypassing checkXInputResults' checkNoNAs. With just length > 1,
-    # an NA-containing newX now enters the provided branch and errors clearly,
-    # while NA (the default) still falls back to train_inds (#71).
-    if(length(trainX) > 1){
+    # "Was newX provided?" -- the documented default for trainX is the scalar NA
+    # sentinel, so treat trainX as provided UNLESS it is exactly that default
+    # (an atomic, length-1 NA). A previous length()-based heuristic
+    # (length(trainX) > 1) misclassified a numeric vector or a one-column
+    # data.frame (length 1) as "not provided" and silently fell back to
+    # train_inds. The is.atomic/length/is.na test instead routes any matrix or
+    # data.frame to the provided branch -- including an NA-CONTAINING matrix
+    # (length > 1, so the is.na operand is short-circuited and never collapses a
+    # multi-element matrix to a length-1 logical), which is then rejected by
+    # checkXInputResults' checkNoNAs rather than silently replaced by the
+    # train_inds data (#71).
+    if(!(is.atomic(trainX) && length(trainX) == 1 && is.na(trainX))){
+        # trainX was provided -- it must be a matrix or data.frame (a bare
+        # vector is not a valid design and used to fail with a cryptic
+        # is.matrix() stopifnot downstream).
+        if(!(is.matrix(trainX) || is.data.frame(trainX))){
+            stop("newX must be a matrix or data.frame with the same columns as the X provided to css().", call. = FALSE)
+        }
         newXProvided <- TRUE
         trainX <- checkXInputResults(trainX, css_results$X)$newx
         

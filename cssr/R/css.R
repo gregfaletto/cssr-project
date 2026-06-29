@@ -161,7 +161,11 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sel_inds <- setdiff(1:n, train_inds)
     n_sel <- length(sel_inds)
     if(n_sel < 4){
-        stop("Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)")
+        if(length(train_inds) == 0){
+            stop(paste0("Sample size n = ", n, " is too small; css needs at least 4 observations for feature selection."))
+        } else {
+            stop("Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)")
+        }
     }
 
     subsamps_object <- createSubsamples(n_sel, p, B, sampling_type,

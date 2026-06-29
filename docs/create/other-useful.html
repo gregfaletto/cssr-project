@@ -1127,21 +1127,30 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb69-74"><a href="other-useful.html#cb69-74" tabindex="-1"></a>    <span class="co"># so that each individual lasso fit is of size floor(n/2)</span></span>
 <span id="cb69-75"><a href="other-useful.html#cb69-75" tabindex="-1"></a></span>
 <span id="cb69-76"><a href="other-useful.html#cb69-76" tabindex="-1"></a>    n_sample <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span><span class="sc">*</span>nfolds<span class="sc">/</span>(nfolds <span class="sc">-</span> <span class="dv">1</span>)), n)</span>
-<span id="cb69-77"><a href="other-useful.html#cb69-77" tabindex="-1"></a>    nfolds <span class="ot">&lt;-</span> <span class="fu">min</span>(nfolds, n_sample)</span>
-<span id="cb69-78"><a href="other-useful.html#cb69-78" tabindex="-1"></a></span>
-<span id="cb69-79"><a href="other-useful.html#cb69-79" tabindex="-1"></a>    inds_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, n_sample)</span>
-<span id="cb69-80"><a href="other-useful.html#cb69-80" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
-<span id="cb69-81"><a href="other-useful.html#cb69-81" tabindex="-1"></a>        <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nfolds=</span>nfolds, <span class="at">alpha=</span>alpha)</span>
-<span id="cb69-82"><a href="other-useful.html#cb69-82" tabindex="-1"></a></span>
-<span id="cb69-83"><a href="other-useful.html#cb69-83" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">"lambda."</span>, lambda_choice, <span class="at">sep=</span><span class="st">""</span>)]]</span>
-<span id="cb69-84"><a href="other-useful.html#cb69-84" tabindex="-1"></a></span>
-<span id="cb69-85"><a href="other-useful.html#cb69-85" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb69-86"><a href="other-useful.html#cb69-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb69-87"><a href="other-useful.html#cb69-87" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
-<span id="cb69-88"><a href="other-useful.html#cb69-88" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb69-89"><a href="other-useful.html#cb69-89" tabindex="-1"></a></span>
-<span id="cb69-90"><a href="other-useful.html#cb69-90" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
-<span id="cb69-91"><a href="other-useful.html#cb69-91" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb69-77"><a href="other-useful.html#cb69-77" tabindex="-1"></a>    <span class="co"># n_sample is the number of observations actually passed to cv.glmnet. If it</span></span>
+<span id="cb69-78"><a href="other-useful.html#cb69-78" tabindex="-1"></a>    <span class="co"># is too small for even 3-fold CV, error clearly here (reporting the</span></span>
+<span id="cb69-79"><a href="other-useful.html#cb69-79" tabindex="-1"></a>    <span class="co"># requested nfolds) instead of letting cv.glmnet crash with "nfolds must be</span></span>
+<span id="cb69-80"><a href="other-useful.html#cb69-80" tabindex="-1"></a>    <span class="co"># bigger than 3". Otherwise clamp nfolds into [3, n_sample] so we never end</span></span>
+<span id="cb69-81"><a href="other-useful.html#cb69-81" tabindex="-1"></a>    <span class="co"># up below glmnet's minimum or above the available sample size.</span></span>
+<span id="cb69-82"><a href="other-useful.html#cb69-82" tabindex="-1"></a>    <span class="cf">if</span>(n_sample <span class="sc">&lt;</span> <span class="dv">3</span>){</span>
+<span id="cb69-83"><a href="other-useful.html#cb69-83" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"Sample size n = "</span>, n, <span class="st">" is too small to choose lambda by "</span>, nfolds,</span>
+<span id="cb69-84"><a href="other-useful.html#cb69-84" tabindex="-1"></a>            <span class="st">"-fold cross-validation; supply a larger n, a smaller nfolds, or lambda directly."</span>))</span>
+<span id="cb69-85"><a href="other-useful.html#cb69-85" tabindex="-1"></a>    }</span>
+<span id="cb69-86"><a href="other-useful.html#cb69-86" tabindex="-1"></a>    nfolds <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">3</span><span class="dt">L</span>, <span class="fu">min</span>(nfolds, n_sample))</span>
+<span id="cb69-87"><a href="other-useful.html#cb69-87" tabindex="-1"></a></span>
+<span id="cb69-88"><a href="other-useful.html#cb69-88" tabindex="-1"></a>    inds_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, n_sample)</span>
+<span id="cb69-89"><a href="other-useful.html#cb69-89" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
+<span id="cb69-90"><a href="other-useful.html#cb69-90" tabindex="-1"></a>        <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nfolds=</span>nfolds, <span class="at">alpha=</span>alpha)</span>
+<span id="cb69-91"><a href="other-useful.html#cb69-91" tabindex="-1"></a></span>
+<span id="cb69-92"><a href="other-useful.html#cb69-92" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">"lambda."</span>, lambda_choice, <span class="at">sep=</span><span class="st">""</span>)]]</span>
+<span id="cb69-93"><a href="other-useful.html#cb69-93" tabindex="-1"></a></span>
+<span id="cb69-94"><a href="other-useful.html#cb69-94" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb69-95"><a href="other-useful.html#cb69-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb69-96"><a href="other-useful.html#cb69-96" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
+<span id="cb69-97"><a href="other-useful.html#cb69-97" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb69-98"><a href="other-useful.html#cb69-98" tabindex="-1"></a></span>
+<span id="cb69-99"><a href="other-useful.html#cb69-99" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
+<span id="cb69-100"><a href="other-useful.html#cb69-100" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#getModelSize">getModelSize</a>()</code>:</p>
 <div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="other-useful.html#cb70-1" tabindex="-1"></a><span class="co">#' Automated estimation of model size</span></span>
 <span id="cb70-2"><a href="other-useful.html#cb70-2" tabindex="-1"></a><span class="co">#'</span></span>

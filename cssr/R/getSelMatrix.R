@@ -92,6 +92,15 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
             fitfun=fitfun, seed=seeds[i]),
         mc.cores=num_cores)
 
+    # mclapply returns NULL for any subsample whose worker was killed (e.g. the
+    # OS out-of-memory killer). That NULL is distinct from a legitimate
+    # integer(0) "selected nothing" result, so catch it here rather than letting
+    # the assembly loop's length(res_list[[i]]) == 0 branch silently record it as
+    # a zero row (which would bias the selection proportions).
+    if(any(vapply(res_list, is.null, logical(1)))){
+        stop("A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error.")
+    }
+
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
     if(sampling_type=="SS"){
         res <- matrix(0L, 2*B, p)
