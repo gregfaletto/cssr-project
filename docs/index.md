@@ -324,7 +324,22 @@ getCssSelections(css_output, cutoff=0.5, min_num_clusts=3, max_num_clusts=7)
 
 # For more information…
 
-Thank you for reading this far! I intend to add more to the vigenette
-later. For now, you can learn more about the package by reading the
-bookdown that defines the package
-[here](https://gregfaletto.github.io/cssr-project/create/).
+Thank you for reading this far! To go further:
+
+- **Prediction** —
+  [`vignette("prediction", "cssr")`](articles/prediction.md) walks
+  through predicting `y` for new observations using cluster
+  representatives ([`cssPredict()`](reference/cssPredict.md),
+  [`css()`](reference/css.md) +
+  [`getCssPreds()`](reference/getCssPreds.md),
+  [`getCssDesign()`](reference/getCssDesign.md), and the weighting
+  schemes).
+- **Advanced usage** —
+  [`vignette("advanced-usage", "cssr")`](articles/advanced-usage.md)
+  covers the competitor methods
+  ([`protolasso()`](reference/protolasso.md),
+  [`clusterRepLasso()`](reference/clusterRepLasso.md)), the data
+  generators used in the paper’s simulations, and other helpers.
+- The [bookdown that defines the
+  package](https://gregfaletto.github.io/cssr-project/create/) contains
+  the fully annotated source.
