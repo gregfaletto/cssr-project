@@ -1,0 +1,107 @@
+---
+title: "Prediction with cluster representatives"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Prediction with cluster representatives}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+The getting-started guide (the package [home page](https://gregfaletto.github.io/cssr-project/)) shows how to *select* features and clusters with cluster stability selection. This vignette shows how to use a fitted model to **predict** the response for new observations.
+
+Cluster stability selection predicts by forming **cluster representatives** — weighted averages of the members of each selected cluster — and fitting ordinary least squares on those representatives. Because each cluster member is a noisy proxy for the same underlying signal, averaging the members estimates that signal better than any single member would, which tends to improve prediction. (See [Faletto and Bien, 2022](https://arxiv.org/abs/2201.00494).)
+
+```{r setup}
+library(cssr)
+set.seed(983219)
+
+# Data with a cluster of 10 correlated proxies (features 1-10), split into a
+# training set and a test set.
+data <- genClusteredData(n = 120, p = 40, cluster_size = 10,
+                         k_unclustered = 10, snr = 3)
+
+X_train <- data$X[1:80, ]
+y_train <- data$y[1:80]
+X_test  <- data$X[81:120, ]
+y_test  <- data$y[81:120]
+
+clusters <- list("Z_cluster" = 1:10)
+```
+
+## The quick way: `cssPredict()`
+
+`cssPredict()` runs the whole pipeline — selection, cluster-representative formation, the downstream regression, and prediction — in a single call. It is the easiest way to get predictions.
+
+```{r}
+preds <- cssPredict(X_train, y_train, X_test, clusters)
+head(preds)
+
+# Test-set root mean squared error
+sqrt(mean((preds - y_test)^2))
+```
+
+## More control: `css()` + `getCssPreds()`
+
+As in the getting-started guide, `css()` does the expensive stability-selection step once; you can then reuse its output. To predict, `getCssPreds()` forms the cluster representatives and fits the downstream ordinary-least-squares model.
+
+That regression needs its own training data, kept separate from the data used for selection. The simplest way is to reserve some rows with `css()`'s `train_inds` argument — those rows are held out of the selection step and used only to fit the downstream model.
+
+```{r}
+lambda <- getLassoLambda(X_train, y_train)
+
+# Reserve rows 1-40 to fit the downstream model; the rest drive selection.
+css_output <- css(X_train, y_train, lambda, clusters = clusters,
+                  train_inds = 1:40)
+
+preds_full <- getCssPreds(css_output, testX = X_test,
+                          weighting = "weighted_avg", cutoff = 0.3)
+head(preds_full)
+```
+
+Alternatively, if you ran `css()` without `train_inds`, you can supply the downstream training data directly through `trainX`/`trainY`. As with `train_inds`, this should ideally be data not used in the selection step (here we reuse `X_train` just to keep the example short):
+
+```{r}
+css_no_train <- css(X_train, y_train, lambda, clusters = clusters)
+
+preds_ext <- getCssPreds(css_no_train, testX = X_test, trainX = X_train,
+                         trainY = y_train, weighting = "weighted_avg",
+                         cutoff = 0.3)
+head(preds_ext)
+```
+
+## Weighting schemes
+
+The `weighting` argument controls how cluster representatives are formed:
+
+* `"simple_avg"` — a plain (equally weighted) average of the cluster members. Optimal when the proxies are equally noisy.
+* `"weighted_avg"` — a weighted average with weights inferred from the selection proportions, so noisier proxies get less weight. Best when the members' noise levels vary.
+* `"sparse"` — use a single member (the most-selected one), in the spirit of the protolasso. Simplest, but discards the other members.
+
+```{r}
+for (w in c("simple_avg", "weighted_avg", "sparse")) {
+  p <- getCssPreds(css_output, testX = X_test, weighting = w, cutoff = 0.3)
+  cat(sprintf("%-12s test RMSE: %.3f\n", w, sqrt(mean((p - y_test)^2))))
+}
+```
+
+## Just the design matrix: `getCssDesign()`
+
+If you would rather build your own downstream model (anything other than OLS), `getCssDesign()` returns the matrix of cluster representatives for new data, which you can pass to any modeling function.
+
+```{r}
+X_test_reps <- getCssDesign(css_output, newX = X_test,
+                            weighting = "weighted_avg", cutoff = 0.3)
+
+# One column per selected cluster
+dim(X_test_reps)
+head(X_test_reps)
+```
+
+## See also
+
+* The [getting-started guide](https://gregfaletto.github.io/cssr-project/) for selecting features and clusters.
+* `vignette("advanced-usage", "cssr")` for competitor methods, the data generators, and other helpers.

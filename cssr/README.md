@@ -332,107 +332,15 @@ getCssSelections(css_output, cutoff=0.5, min_num_clusts=3, max_num_clusts=7)
 
 # For more information…
 
-Thank you for reading this far! I intend to add more to the vigenette
-later. For now, you can learn more about the package by reading the
-bookdown that defines the package
-[here](https://gregfaletto.github.io/cssr-project/create/).
+Thank you for reading this far! To go further:
 
-<!-- vignette incomplete past this point... -->
-
-<!-- Here's a brief summary of how cluster stability selection works: besides the data $(X, y)$, cluster stability selection also requires a "base" feature selection method, and can also accept a tuning parameter for that method. (The default feature selection method is the lasso, which as tuning parameter lambda.) Cluster stability selection takes a large number $B$ of subsamples of size $n/2$ and runs the feature selection method on each subsample, yielding $B$ selected sets. -->
-
-<!-- ```{r} -->
-
-<!-- clusters <- list("Z_clust"=1:10, 36:40) -->
-
-<!-- # Wrapper functions (easy!) -->
-
-<!-- n_test <- 50 -->
-
-<!-- n <- 80 -->
-
-<!-- p <- 40 -->
-
-<!-- testx <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
-
-<!-- cssPredict(X, y, testx, clusters) -->
-
-<!-- # Get a good lambda -->
-
-<!-- lambda <- getLassoLambda(X, y) -->
-
-<!-- # clusters <- list(1:10, 46:40) -->
-
-<!-- # clusters <- 1:10 -->
-
-<!-- inds <- 1:40 -->
-
-<!-- results <- css(X=X, y=y, lambda=lambda -->
-
-<!--                , clusters=clusters -->
-
-<!--                # , clusters=list() -->
-
-<!--                # , clusters=1:10 -->
-
-<!--                # , sampling.type = "SS" -->
-
-<!--                # B = 100, -->
-
-<!--                # , prop_feats_remove = .5 -->
-
-<!--                , train_inds = inds -->
-
-<!-- ) -->
-
-<!-- str(results) -->
-
-<!-- predictions <- results |> getCssPreds(testX = testx, weighting="sparse", -->
-
-<!--                                       cutoff=0.3 -->
-
-<!--                                       , min_num_clusts=1 -->
-
-<!--                                       , max_num_clusts=3 -->
-
-<!-- ) -->
-
-<!-- predictions -->
-
-<!-- train_x <- matrix(rnorm(n_test*p), nrow=n_test, ncol=p) -->
-
-<!-- train_y <- rnorm(n_test) -->
-
-<!-- preds2 <- results |> getCssPreds(testX = testx, weighting="sparse", -->
-
-<!--                                  cutoff=0.3, min_num_clusts=1, max_num_clusts=3, -->
-
-<!--                                  trainX=train_x -->
-
-<!--                                  , trainY=train_y) -->
-
-<!-- preds2 -->
-
-<!-- selections <- results |> getCssSelections(weighting="sparse", cutoff=0.3 -->
-
-<!--                                           # , min_num_clusts=1 -->
-
-<!--                                           # , max_num_clusts=3 -->
-
-<!-- ) -->
-
-<!-- str(selections) -->
-
-<!-- selections$selected_clusts -->
-
-<!-- selections$selected_feats -->
-
-<!-- print(results, cutoff=0.3, max_num_clusts=5) -->
-
-<!-- x_design <- results |> getCssDesign(testx, weighting="weighted_avg", cutoff=0.3, -->
-
-<!--   min_num_clusts=1, max_num_clusts=3) -->
-
-<!-- str(x_design) -->
-
-<!-- ``` -->
+- **Prediction** — `vignette("prediction", "cssr")` walks through
+  predicting `y` for new observations using cluster representatives
+  (`cssPredict()`, `css()` + `getCssPreds()`, `getCssDesign()`, and the
+  weighting schemes).
+- **Advanced usage** — `vignette("advanced-usage", "cssr")` covers the
+  competitor methods (`protolasso()`, `clusterRepLasso()`), the data
+  generators used in the paper’s simulations, and other helpers.
+- The [bookdown that defines the
+  package](https://gregfaletto.github.io/cssr-project/create/) contains
+  the fully annotated source.
