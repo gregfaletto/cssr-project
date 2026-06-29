@@ -103,6 +103,10 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     if(!is.numeric(y) & !is.integer(y)){
         stop("The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")
     }
+    # Reject a non-finite y here (after the domain message above, so that
+    # message is preserved) so the default lambda=NA -> getLassoLambda path
+    # fails fast rather than per-subsample later.
+    checkFiniteY(y, "y")
 
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){

@@ -109,6 +109,9 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 
     stopifnot(is.matrix(X_train_selec) | is.data.frame(X_train_selec))
     checkNoNAs(X_train_selec, "X_train_selec")
+    # Reject a non-finite y on the default path (lands after the numeric check
+    # at the top of the function, so the factor-y message there is preserved).
+    checkFiniteY(y_train_selec, "y_train_selec")
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X_train_selec <- coerceDataFrameToMatrix(X_train_selec, clusters,
