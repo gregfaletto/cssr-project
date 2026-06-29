@@ -151,7 +151,7 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     # Check output
     stopifnot(is.numeric(predictions) | is.integer(predictions))
     stopifnot(length(predictions) == n)
-    stopifnot(all(!is.na(predictions)))
+    stopifnot(all(is.finite(predictions)))
 
     return(predictions)
 }
