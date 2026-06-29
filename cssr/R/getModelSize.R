@@ -64,12 +64,10 @@ getModelSize <- function(X, y, clusters, alpha = 1){
     n <- nrow(X)
 
     # Since the model size will be determined by cross-validation, the provided
-    # y must be real-valued (this should be checked internally in other
-    # functions before getModelSize is called, but this check is here just in
-    # case).
-    if(!is.numeric(y) & !is.integer(y)){
-        stop("getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.")
-    }
+    # y must be real-valued and finite (this should be checked internally in
+    # other functions before getModelSize is called, but this check is here just
+    # in case).
+    checkFiniteY(y, "y")
     stopifnot(length(y) == n)
 
     # Check clusters argument

@@ -66,8 +66,10 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     # Since we are using the lasso, we require y to be a real-valued response
     # (unlike for the general cluster stability selection procedure, where y
     # can have a more general format as long as a suitable feature selection
-    # function is provided by the user)
-    stopifnot(is.numeric(y) | is.integer(y))
+    # function is provided by the user). checkFiniteY also rejects NA/NaN/Inf
+    # here, BEFORE the random subsample below, so a non-finite y fails fast and
+    # deterministically rather than only when the bad value lands in the draw.
+    checkFiniteY(y, "y")
     stopifnot(n == length(y))
 
     # Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),

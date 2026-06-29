@@ -9,7 +9,7 @@
 #' @keywords internal
 #' @noRd
 checkY <- function(y, n){
-    stopifnot(all(!is.na(y)))
+    stopifnot(all(is.finite(y)))
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(length(unique(y)) > 1)
     stopifnot(length(n) == 1)

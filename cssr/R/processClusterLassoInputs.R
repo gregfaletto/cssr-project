@@ -60,7 +60,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
 
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(n == length(y))
-    stopifnot(all(!is.na(y)))
+    stopifnot(all(is.finite(y)))
 
     # Check clusters argument
     clusters <- checkCssClustersInput(clusters)

@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.28",
+    Version = "0.1.29",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -965,6 +965,36 @@ checkNoNAs <- function(X, arg_name = "X"){
 }
 ```
 
+`checkFiniteY()` guards a response vector against missing and non-finite values, before any lasso entry point fits on it:
+
+```{r}
+#' Error if a response vector contains missing or non-finite values
+#'
+#' Shared guard for the y-accepting lasso entry points. Requires a numeric
+#' (or integer) y and rejects any NA/NaN/Inf, so the lasso paths fail fast and
+#' deterministically (getLassoLambda fits cv.glmnet on a RANDOM subsample, so a
+#' non-finite y would otherwise error only when the bad value happened to be
+#' drawn). Mirrors checkNoNAs()'s message for consistency.
+#' @param y A numeric (real-valued) vector.
+#' @param arg_name Character; the argument name as it should appear in the
+#' error message. Default "y".
+#' @return Invisibly, `y` (unchanged) -- called for its side effect.
+#' @keywords internal
+#' @noRd
+checkFiniteY <- function(y, arg_name = "y"){
+    if(!(is.numeric(y) | is.integer(y))){
+        stop(paste0("The provided ", arg_name,
+            " must be a numeric (real-valued) vector."), call. = FALSE)
+    }
+    if(any(!is.finite(y))){
+        stop(paste0("The provided ", arg_name,
+            " must not contain missing (NA) or non-finite (Inf) values; please ",
+            "remove or impute them before calling this function."), call. = FALSE)
+    }
+    invisible(y)
+}
+```
+
 `checkCssInputs()`:
 
 ```{r}
@@ -1463,7 +1493,7 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
 #' @keywords internal
 #' @noRd
 checkY <- function(y, n){
-    stopifnot(all(!is.na(y)))
+    stopifnot(all(is.finite(y)))
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(length(unique(y)) > 1)
     stopifnot(length(n) == 1)
@@ -1960,6 +1990,9 @@ checkCssLassoInputs <- function(X, y, lambda){
 
     if(!is.numeric(y) & !is.integer(y)){
         stop("For method cssLasso, y must be a numeric or integer vector.")
+    }
+    if(any(!is.finite(y))){
+        stop("For method cssLasso, y must not contain missing (NA) or non-finite (Inf) values.")
     }
     if(is.matrix(y)){
         stop("For method cssLasso, y must be a numeric vector (inputted y was a matrix).")
@@ -4404,8 +4437,10 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     # Since we are using the lasso, we require y to be a real-valued response
     # (unlike for the general cluster stability selection procedure, where y
     # can have a more general format as long as a suitable feature selection
-    # function is provided by the user)
-    stopifnot(is.numeric(y) | is.integer(y))
+    # function is provided by the user). checkFiniteY also rejects NA/NaN/Inf
+    # here, BEFORE the random subsample below, so a non-finite y fails fast and
+    # deterministically rather than only when the bad value lands in the draw.
+    checkFiniteY(y, "y")
     stopifnot(n == length(y))
 
     # Sample size to use: inflate n/2 by a factor of nfolds/(nfolds - 1),
@@ -4496,12 +4531,10 @@ getModelSize <- function(X, y, clusters, alpha = 1){
     n <- nrow(X)
 
     # Since the model size will be determined by cross-validation, the provided
-    # y must be real-valued (this should be checked internally in other
-    # functions before getModelSize is called, but this check is here just in
-    # case).
-    if(!is.numeric(y) & !is.integer(y)){
-        stop("getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.")
-    }
+    # y must be real-valued and finite (this should be checked internally in
+    # other functions before getModelSize is called, but this check is here just
+    # in case).
+    checkFiniteY(y, "y")
     stopifnot(length(y) == n)
 
     # Check clusters argument
@@ -4887,6 +4920,10 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
     if(!is.numeric(y) & !is.integer(y)){
         stop("The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)")
     }
+    # Reject a non-finite y here (after the domain message above, so that
+    # message is preserved) so the default lambda=NA -> getLassoLambda path
+    # fails fast rather than per-subsample later.
+    checkFiniteY(y, "y")
 
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
@@ -5033,6 +5070,9 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 
     stopifnot(is.matrix(X_train_selec) | is.data.frame(X_train_selec))
     checkNoNAs(X_train_selec, "X_train_selec")
+    # Reject a non-finite y on the default path (lands after the numeric check
+    # at the top of the function, so the factor-y message there is preserved).
+    checkFiniteY(y_train_selec, "y_train_selec")
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X_train_selec <- coerceDataFrameToMatrix(X_train_selec, clusters,
@@ -5260,7 +5300,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
 
     stopifnot(is.numeric(y) | is.integer(y))
     stopifnot(n == length(y))
-    stopifnot(all(!is.na(y)))
+    stopifnot(all(is.finite(y)))
 
     # Check clusters argument
     clusters <- checkCssClustersInput(clusters)
@@ -5726,6 +5766,41 @@ testthat::test_that("checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and p
 })
 ```
 
+Tests for `checkFiniteY()`:
+
+```{r}
+testthat::test_that("checkFiniteY accepts finite numeric/integer y and rejects non-finite or non-numeric y (#100)", {
+  # Finite numeric and integer y pass, returning the input invisibly.
+  y_num <- as.numeric(1:8) * 0.5
+  testthat::expect_identical(checkFiniteY(y_num, "y"), y_num)
+  y_int <- 1L:8L
+  testthat::expect_identical(checkFiniteY(y_int, "y"), y_int)
+  testthat::expect_invisible(checkFiniteY(y_num, "y"))
+
+  # NA, NaN, Inf, -Inf each error with the non-finite message.
+  testthat::expect_error(checkFiniteY(c(1, NA, 3), "y"),
+    "must not contain missing (NA) or non-finite (Inf) values", fixed = TRUE)
+  testthat::expect_error(checkFiniteY(c(1, NaN, 3), "y"),
+    "must not contain missing (NA) or non-finite (Inf) values", fixed = TRUE)
+  testthat::expect_error(checkFiniteY(c(1, Inf, 3), "y"),
+    "must not contain missing (NA) or non-finite (Inf) values", fixed = TRUE)
+  testthat::expect_error(checkFiniteY(c(1, -Inf, 3), "y"),
+    "must not contain missing (NA) or non-finite (Inf) values", fixed = TRUE)
+
+  # A non-numeric (logical/character) y errors with the numeric message.
+  testthat::expect_error(checkFiniteY(c(TRUE, FALSE, TRUE), "y"),
+    "must be a numeric (real-valued) vector", fixed = TRUE)
+  testthat::expect_error(checkFiniteY(c("a", "b"), "y"),
+    "must be a numeric (real-valued) vector", fixed = TRUE)
+
+  # arg_name is interpolated into both messages.
+  testthat::expect_error(checkFiniteY(c(1, Inf), "y_train_selec"),
+    "The provided y_train_selec must not contain missing", fixed = TRUE)
+  testthat::expect_error(checkFiniteY(c(TRUE, FALSE), "y_train_selec"),
+    "The provided y_train_selec must be a numeric", fixed = TRUE)
+})
+```
+
 tests for checkCssClustersInput:
 
 ```{r}
@@ -5809,7 +5884,10 @@ testthat::test_that("checkY works", {
                          fixed=TRUE)
   testthat::expect_error(checkY(1:7, -7), "n > 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkY(rep(as.numeric(NA), 13), 13),
-                         "all(!is.na(y)) is not TRUE", fixed=TRUE)
+                         "all(is.finite(y)) is not TRUE", fixed=TRUE)
+  # Inf is now rejected too (previously all(!is.na(y)) missed it) (#100)
+  testthat::expect_error(checkY(c(1, Inf, 3), 3),
+                         "all(is.finite(y)) is not TRUE", fixed=TRUE)
   testthat::expect_error(checkY(rep(5.2, 9), 9),
                          "length(unique(y)) > 1 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkY(c(TRUE, FALSE, TRUE), 3),
@@ -9674,6 +9752,73 @@ testthat::test_that("css and getCssPreds reject non-finite (Inf) inputs (#99)", 
 })
 ```
 
+The lasso entry points reject non-finite `y` (#100). Companion to the #99 test
+above (which guards `X`):
+
+```{r}
+testthat::test_that("the lasso entry points reject non-finite y (#100)", {
+  set.seed(100001)
+
+  X <- matrix(stats::rnorm(15 * 6), nrow = 15, ncol = 6)
+  y <- stats::rnorm(15)
+  good_clusters <- list("red" = 1:3, "green" = 4:6)
+  test_X <- matrix(stats::rnorm(7 * 6), nrow = 7, ncol = 6)
+
+  y_na <- y; y_na[4] <- NA
+  y_inf <- y; y_inf[9] <- Inf
+
+  # --- getLassoLambda nondeterminism pin -------------------------------------
+  # getLassoLambda fits cv.glmnet on a RANDOM subsample (sample(1:n, ...)), so
+  # before this fix a non-finite y in a single cell errored only on the draws
+  # that happened to include it. checkFiniteY runs BEFORE that sample(), so it
+  # must now error under EVERY seed -- never returning a stray lambda.
+  for(s in c(1L, 2L, 7L, 13L, 101L, 2024L)){
+    set.seed(s)
+    testthat::expect_error(getLassoLambda(X = X, y = y_na, nfolds = 4),
+      "must not contain missing", fixed = TRUE)
+    set.seed(s)
+    testthat::expect_error(getLassoLambda(X = X, y = y_inf, nfolds = 4),
+      "must not contain missing", fixed = TRUE)
+  }
+
+  # A clean y still returns a valid lambda (no success -> error regression).
+  set.seed(100002)
+  lam_ok <- getLassoLambda(X = X, y = y, nfolds = 4)
+  testthat::expect_true(is.numeric(lam_ok) && length(lam_ok) == 1 &&
+                          !is.na(lam_ok) && lam_ok >= 0)
+
+  # --- entry-point integration ----------------------------------------------
+  testthat::expect_error(cssSelect(X = X, y = y_na),
+    "must not contain missing", fixed = TRUE)
+  testthat::expect_error(cssPredict(X_train_selec = X, y_train_selec = y_na,
+                                    X_test = test_X),
+    "must not contain missing", fixed = TRUE)
+  testthat::expect_error(getModelSize(X = X, y = y_inf, clusters = good_clusters),
+    "must not contain missing", fixed = TRUE)
+
+  # protolasso / clusterRepLasso route through processClusterLassoInputs, whose
+  # stopifnot(all(is.finite(y))) now catches Inf (previously all(!is.na(y))).
+  testthat::expect_error(protolasso(X = X, y = y_inf, clusters = good_clusters),
+    "is.finite", fixed = TRUE)
+  testthat::expect_error(clusterRepLasso(X = X, y = y_inf,
+                                         clusters = good_clusters),
+    "is.finite", fixed = TRUE)
+
+  # css()'s default cssLasso path validates each random subsample via
+  # checkCssLassoInputs. A single non-finite cell would fire only on the
+  # subsamples that draw it; set enough Inf cells (> n - floor(n/2)) that EVERY
+  # size-floor(n/2) subsample must contain one, so css errors deterministically.
+  y_many_inf <- y; y_many_inf[1:9] <- Inf
+  testthat::expect_error(
+    css(X = X, y = y_many_inf, lambda = 0.01, clusters = good_clusters, B = 10),
+    "non-finite", fixed = TRUE)
+
+  # Clean finite y still selects without error.
+  res_ok <- cssSelect(X = X, y = y, clusters = good_clusters)
+  testthat::expect_true(is.list(res_ok))
+})
+```
+
 # Tests for other useful functions
 
 Tests for `checkGenClusteredDataInputs()`
@@ -10652,7 +10797,7 @@ testthat::test_that("getLassoLambda works", {
                          "n == length(y) is not TRUE", fixed=TRUE)
   
   testthat::expect_error(getLassoLambda(X=x, y=TRUE),
-                         "is.numeric(y) | is.integer(y) is not TRUE",
+                         "must be a numeric (real-valued) vector",
                          fixed=TRUE)
 
   # Error has quotation marks in it
@@ -10786,7 +10931,7 @@ testthat::test_that("getModelSize works", {
                          "length(y) == n is not TRUE", fixed=TRUE)
 
   testthat::expect_error(getModelSize(X=x, y=FALSE, clusters=good_clusters),
-                         "getModelSize is trying to determine max_num_clusts using the lasso with cross-validation, but the y provided to getModelSize was not real-valued.",
+                         "must be a numeric (real-valued) vector",
                          fixed=TRUE)
 
   testthat::expect_error(getModelSize(X=x, y=y, clusters=list(3:7, 7:10)),
