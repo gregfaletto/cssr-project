@@ -6,7 +6,7 @@
 #' @param weighting Character; determines how to calculate the weights to
 #' combine features from the selected clusters into weighted averages, called
 #' cluster representatives. Must be one of "sparse", "weighted_avg", or
-#' "simple_avg'.
+#' "simple_avg".
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd

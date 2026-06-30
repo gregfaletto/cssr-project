@@ -9,7 +9,7 @@
 #' @param weighting Character; determines how to calculate the weights for
 #' individual features within the selected clusters. Only those features with
 #' nonzero weight within the selected clusters will be returned. Must be one of
-#' "sparse", "weighted_avg", or "simple_avg'. For "sparse", all the weight is
+#' "sparse", "weighted_avg", or "simple_avg". For "sparse", all the weight is
 #' put on the most frequently
 #' selected individual cluster member (or divided equally among all the clusters
 #' that are tied for the top selection proportion if there is a tie). For

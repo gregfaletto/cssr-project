@@ -33,7 +33,7 @@ newX must be provided to getCssDesign.) Default is NA.}
 \item{weighting}{Character; determines how to calculate the weights to
 combine features from the selected clusters into weighted averages, called
 cluster representatives. Must be one of "sparse", "weighted_avg", or
-"simple_avg'. For "sparse", all the weight is put on the most frequently
+"simple_avg". For "sparse", all the weight is put on the most frequently
 selected individual cluster member (or divided equally among all the clusters
 that are tied for the top selection proportion if there is a tie). For
 "weighted_avg", the weight used for each cluster member is calculated in

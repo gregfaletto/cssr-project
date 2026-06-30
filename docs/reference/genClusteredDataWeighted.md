@@ -54,7 +54,7 @@ genClusteredDataWeighted(
 
   Integer or numeric; for each of the n_clusters latent variables, X
   will contain cluster_size noisy proxies that are correlated with the
-  latent variable.
+  latent variable. Must be at least 2.
 
 - n_strong_cluster_vars:
 

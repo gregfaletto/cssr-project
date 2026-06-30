@@ -29,7 +29,7 @@ numeric vector.}
 
 \item{lambda}{A tuning parameter or set of tuning parameters that may be used
 by the feature selection method \code{fitfun}. In the default case when
-\code{fitfun = cssLasso}, lambda should be a numeric: the penalty to use for each
+\code{fitfun = cssLasso}, lambda is a nonnegative numeric (or a named \code{c(lambda, alpha)} for an elastic net fit; see \code{cssLasso}): the penalty to use for each
 lasso fit. (\code{css()} does not require lambda to be any particular object because
 for a user-specified feature selection method \code{fitfun}, lambda can be an
 arbitrary object. See the description of \code{fitfun} below.)}
@@ -63,7 +63,8 @@ forward stepwise selection or LARS and \code{lambda} could be the desired model
 size; or \code{fitfun} could be the elastic net and \code{lambda} could be a length-two
 vector specifying lambda and alpha. Default is \code{cssLasso}, an implementation
 of lasso (relying on the R package \code{glmnet}), where \code{lambda} must be a
-positive numeric specifying the L1 penalty for the \code{lasso}.}
+nonnegative numeric specifying the L1 penalty for the \code{lasso}, or a named
+length-2 vector \code{c(lambda, alpha)} for an elastic net fit (see \code{cssLasso}).}
 
 \item{sampling_type}{A character vector; either "SS" or "MB". For "MB",
 all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann

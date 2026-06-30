@@ -37,7 +37,7 @@ these features will be determined by beta_unclustered. Must be at least 1.}
 
 \item{cluster_size}{Integer or numeric; for each of the n_clusters latent
 variables, X will contain cluster_size noisy proxies that are correlated with
-the latent variable.}
+the latent variable. Must be at least 2.}
 
 \item{n_strong_cluster_vars}{Integer or numeric; among the cluster_size
 proxies in each cluster, the first n_strong_cluster_vars will have a high

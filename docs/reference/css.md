@@ -42,10 +42,11 @@ css(
 
   A tuning parameter or set of tuning parameters that may be used by the
   feature selection method `fitfun`. In the default case when
-  `fitfun = cssLasso`, lambda should be a numeric: the penalty to use
-  for each lasso fit. (`css()` does not require lambda to be any
-  particular object because for a user-specified feature selection
-  method `fitfun`, lambda can be an arbitrary object. See the
+  `fitfun = cssLasso`, lambda is a nonnegative numeric (or a named
+  `c(lambda, alpha)` for an elastic net fit; see `cssLasso`): the
+  penalty to use for each lasso fit. (`css()` does not require lambda to
+  be any particular object because for a user-specified feature
+  selection method `fitfun`, lambda can be an arbitrary object. See the
   description of `fitfun` below.)
 
 - clusters:
@@ -84,8 +85,9 @@ css(
   the desired model size; or `fitfun` could be the elastic net and
   `lambda` could be a length-two vector specifying lambda and alpha.
   Default is `cssLasso`, an implementation of lasso (relying on the R
-  package `glmnet`), where `lambda` must be a positive numeric
-  specifying the L1 penalty for the `lasso`.
+  package `glmnet`), where `lambda` must be a nonnegative numeric
+  specifying the L1 penalty for the `lasso`, or a named length-2 vector
+  `c(lambda, alpha)` for an elastic net fit (see `cssLasso`).
 
 - sampling_type:
 

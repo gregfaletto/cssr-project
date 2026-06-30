@@ -181,13 +181,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-8"><a href="css.html#cb5-8" tabindex="-1"></a><span class="co">#' size; or `fitfun` could be the elastic net and `lambda` could be a length-two</span></span>
 <span id="cb5-9"><a href="css.html#cb5-9" tabindex="-1"></a><span class="co">#' vector specifying lambda and alpha. Default is `cssLasso`, an implementation </span></span>
 <span id="cb5-10"><a href="css.html#cb5-10" tabindex="-1"></a><span class="co">#' of lasso (relying on the R package `glmnet`), where `lambda` must be a </span></span>
-<span id="cb5-11"><a href="css.html#cb5-11" tabindex="-1"></a><span class="co">#' positive numeric specifying the L1 penalty for the `lasso`.</span></span></code></pre>
+<span id="cb5-11"><a href="css.html#cb5-11" tabindex="-1"></a><span class="co">#' nonnegative numeric specifying the L1 penalty for the `lasso`, or a named</span></span>
+<span id="cb5-12"><a href="css.html#cb5-12" tabindex="-1"></a><span class="co">#' length-2 vector `c(lambda, alpha)` for an elastic net fit (see `cssLasso`).</span></span></code></pre>
 <legend class="chunklegend">param-fitfun</legend>
 </fieldset></div>
 <p>and</p>
 <div class="sourceCode" id="cb6"><fieldset id="param-lambda" class="chunkfield"> <pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-2"><a href="css.html#cb6-2" tabindex="-1"></a><span class="co">#' @param lambda A tuning parameter or set of tuning parameters that may be used</span></span>
 <span id="cb6-3"><a href="css.html#cb6-3" tabindex="-1"></a><span class="co">#' by the feature selection method `fitfun`. In the default case when</span></span>
-<span id="cb6-4"><a href="css.html#cb6-4" tabindex="-1"></a><span class="co">#' `fitfun = cssLasso`, lambda should be a numeric: the penalty to use for each</span></span>
+<span id="cb6-4"><a href="css.html#cb6-4" tabindex="-1"></a><span class="co">#' `fitfun = cssLasso`, lambda is a nonnegative numeric (or a named `c(lambda, alpha)` for an elastic net fit; see `cssLasso`): the penalty to use for each</span></span>
 <span id="cb6-5"><a href="css.html#cb6-5" tabindex="-1"></a><span class="co">#' lasso fit. (`<a href="css.html#css">css</a>()` does not require lambda to be any particular object because</span></span>
 <span id="cb6-6"><a href="css.html#cb6-6" tabindex="-1"></a><span class="co">#' for a user-specified feature selection method `fitfun`, lambda can be an</span></span>
 <span id="cb6-7"><a href="css.html#cb6-7" tabindex="-1"></a><span class="co">#' arbitrary object. See the description of `fitfun` below.)</span></span></code></pre>
@@ -694,7 +695,7 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="css.html#cb14-1" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"parallel"</span>)</span></code></pre></div>
 <pre><code>## v Adding parallel to 'Imports' field in DESCRIPTION.</code></pre>
 <pre><code>## [ ] Refer to functions with `parallel::fun()`.</code></pre>
-<p><code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> also uses a feature selection function <code>fitfun</code> as an input. <code>fitfun</code> can be provided by the user as an input to <code><a href="css.html#css">css</a>()</code>. We provide one default <code>fitfun</code>, <code><a href="css.html#cssLasso">cssLasso</a>()</code>, which works on a real-valued response y given a specified penalty parameter lambda &gt; 0. Both for its own importance and to show an example of a valid <code>fitfun</code>, we show <code><a href="css.html#cssLasso">cssLasso</a>()</code> here.</p>
+<p><code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> also uses a feature selection function <code>fitfun</code> as an input. <code>fitfun</code> can be provided by the user as an input to <code><a href="css.html#css">css</a>()</code>. We provide one default <code>fitfun</code>, <code><a href="css.html#cssLasso">cssLasso</a>()</code>, which works on a real-valued response y given a specified nonnegative penalty parameter lambda &gt;= 0. Both for its own importance and to show an example of a valid <code>fitfun</code>, we show <code><a href="css.html#cssLasso">cssLasso</a>()</code> here.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="css.html#cb17-1" tabindex="-1"></a><span class="co">#' Provided fitfun implementing the lasso</span></span>
 <span id="cb17-2"><a href="css.html#cb17-2" tabindex="-1"></a><span class="co">#'</span></span>
 <span id="cb17-3"><a href="css.html#cb17-3" tabindex="-1"></a><span class="co">#' Function used to select features with the lasso on each subsample in cluster</span></span>
@@ -1028,132 +1029,133 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb25-18"><a href="css.html#cb25-18" tabindex="-1"></a><span class="co">#' selection or LARS and lambda could be the desired model size; or fitfun could be the</span></span>
 <span id="cb25-19"><a href="css.html#cb25-19" tabindex="-1"></a><span class="co">#' elastic net and lambda could be a length-two vector specifying lambda and</span></span>
 <span id="cb25-20"><a href="css.html#cb25-20" tabindex="-1"></a><span class="co">#' alpha. Default is cssLasso, an implementation of lasso (relying on the R</span></span>
-<span id="cb25-21"><a href="css.html#cb25-21" tabindex="-1"></a><span class="co">#' package glmnet), where lambda must be a positive numeric specifying the L1</span></span>
-<span id="cb25-22"><a href="css.html#cb25-22" tabindex="-1"></a><span class="co">#' penalty for the lasso.</span></span>
-<span id="cb25-23"><a href="css.html#cb25-23" tabindex="-1"></a><span class="co">#' @param sampling_type A character vector; either "SS" or "MB". For "MB",</span></span>
-<span id="cb25-24"><a href="css.html#cb25-24" tabindex="-1"></a><span class="co">#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann</span></span>
-<span id="cb25-25"><a href="css.html#cb25-25" tabindex="-1"></a><span class="co">#' 2010). For "SS", in addition to these B subsamples, the B complementary pair</span></span>
-<span id="cb25-26"><a href="css.html#cb25-26" tabindex="-1"></a><span class="co">#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and</span></span>
-<span id="cb25-27"><a href="css.html#cb25-27" tabindex="-1"></a><span class="co">#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.</span></span>
-<span id="cb25-28"><a href="css.html#cb25-28" tabindex="-1"></a><span class="co">#' @param B Integer or numeric; the number of subsamples. Note: For</span></span>
-<span id="cb25-29"><a href="css.html#cb25-29" tabindex="-1"></a><span class="co">#' sampling.type=="MB" the total number of subsamples will be `B`; for</span></span>
-<span id="cb25-30"><a href="css.html#cb25-30" tabindex="-1"></a><span class="co">#' sampling_type="SS" the number of subsamples will be `2*B`. Default is 100</span></span>
-<span id="cb25-31"><a href="css.html#cb25-31" tabindex="-1"></a><span class="co">#' for sampling_type="MB" and 50 for sampling_type="SS".</span></span>
-<span id="cb25-32"><a href="css.html#cb25-32" tabindex="-1"></a><span class="co">#' @param prop_feats_remove Numeric; if prop_feats_remove is greater than 0,</span></span>
-<span id="cb25-33"><a href="css.html#cb25-33" tabindex="-1"></a><span class="co">#' then on each subsample, each feature is randomly dropped from the design</span></span>
-<span id="cb25-34"><a href="css.html#cb25-34" tabindex="-1"></a><span class="co">#' matrix that is provided to fitfun with probability prop_feats_remove</span></span>
-<span id="cb25-35"><a href="css.html#cb25-35" tabindex="-1"></a><span class="co">#' (independently across features). That is, in a typical subsample,</span></span>
-<span id="cb25-36"><a href="css.html#cb25-36" tabindex="-1"></a><span class="co">#' prop_feats_remove*p features will be dropped (though this number will vary).</span></span>
-<span id="cb25-37"><a href="css.html#cb25-37" tabindex="-1"></a><span class="co">#' This is similar in spirit (but distinct from) extended stability selection</span></span>
-<span id="cb25-38"><a href="css.html#cb25-38" tabindex="-1"></a><span class="co">#' (Beinrucker et. al. 2016); see their paper for some of the benefits of</span></span>
-<span id="cb25-39"><a href="css.html#cb25-39" tabindex="-1"></a><span class="co">#' dropping features (besides increasing computational speed and decreasing</span></span>
-<span id="cb25-40"><a href="css.html#cb25-40" tabindex="-1"></a><span class="co">#' memory requirements). For sampling_type="SS", the features dropped in</span></span>
-<span id="cb25-41"><a href="css.html#cb25-41" tabindex="-1"></a><span class="co">#' each complementary pair of subsamples are identical in order to ensure that</span></span>
-<span id="cb25-42"><a href="css.html#cb25-42" tabindex="-1"></a><span class="co">#' the theoretical guarantees of Faletto and Bien (2022) are retained within</span></span>
-<span id="cb25-43"><a href="css.html#cb25-43" tabindex="-1"></a><span class="co">#' each individual pair of subsamples. (Note that this feature is not</span></span>
-<span id="cb25-44"><a href="css.html#cb25-44" tabindex="-1"></a><span class="co">#' investigated either theoretically or in simulations by Faletto and Bien</span></span>
-<span id="cb25-45"><a href="css.html#cb25-45" tabindex="-1"></a><span class="co">#' 2022). Must be between 0 and 1. Default is 0.</span></span>
-<span id="cb25-46"><a href="css.html#cb25-46" tabindex="-1"></a><span class="co">#' @param train_inds Optional; an integer or numeric vector containing the</span></span>
-<span id="cb25-47"><a href="css.html#cb25-47" tabindex="-1"></a><span class="co">#' indices of observations in X and y to set aside for model training by the</span></span>
-<span id="cb25-48"><a href="css.html#cb25-48" tabindex="-1"></a><span class="co">#' function getCssPreds after feature selection. (This will only work if y is</span></span>
-<span id="cb25-49"><a href="css.html#cb25-49" tabindex="-1"></a><span class="co">#' real-valued, because getCssPreds using ordinary least squares regression to</span></span>
-<span id="cb25-50"><a href="css.html#cb25-50" tabindex="-1"></a><span class="co">#' generate predictions.) If train_inds is not provided, all of the observations</span></span>
-<span id="cb25-51"><a href="css.html#cb25-51" tabindex="-1"></a><span class="co">#' in the provided data set will be used for feature selection.</span></span>
-<span id="cb25-52"><a href="css.html#cb25-52" tabindex="-1"></a><span class="co">#' @param num_cores Optional; an integer. If using parallel processing, the</span></span>
-<span id="cb25-53"><a href="css.html#cb25-53" tabindex="-1"></a><span class="co">#' number of cores to use for parallel processing (num_cores will be supplied</span></span>
-<span id="cb25-54"><a href="css.html#cb25-54" tabindex="-1"></a><span class="co">#' internally as the mc.cores argument of parallel::mclapply).</span></span>
-<span id="cb25-55"><a href="css.html#cb25-55" tabindex="-1"></a><span class="co">#' @return A named list with the following elements: \item{feat_names}{A </span></span>
-<span id="cb25-56"><a href="css.html#cb25-56" tabindex="-1"></a><span class="co">#' character vector containing the column names of X (if the provided X</span></span>
-<span id="cb25-57"><a href="css.html#cb25-57" tabindex="-1"></a><span class="co">#' had column names). If the provided X did not have column names, feat_names</span></span>
-<span id="cb25-58"><a href="css.html#cb25-58" tabindex="-1"></a><span class="co">#' will be NA.} \item{X}{The provided X, converted to a matrix if it was</span></span>
-<span id="cb25-59"><a href="css.html#cb25-59" tabindex="-1"></a><span class="co">#' originally provided as a data.frame, and with feature names removed if they</span></span>
-<span id="cb25-60"><a href="css.html#cb25-60" tabindex="-1"></a><span class="co">#' had been provided.}\item{clusters}{A list of integer vectors; each vector</span></span>
-<span id="cb25-61"><a href="css.html#cb25-61" tabindex="-1"></a><span class="co">#' will contain the indices of a cluster of features. Any duplicated clusters</span></span>
-<span id="cb25-62"><a href="css.html#cb25-62" tabindex="-1"></a><span class="co">#' provided in the input will be removed.}</span></span>
-<span id="cb25-63"><a href="css.html#cb25-63" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb25-64"><a href="css.html#cb25-64" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb25-65"><a href="css.html#cb25-65" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb25-66"><a href="css.html#cb25-66" tabindex="-1"></a><span id="checkCssInputs">checkCssInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda, clusters, fitfun, sampling_type, B,</span>
-<span id="cb25-67"><a href="css.html#cb25-67" tabindex="-1"></a>    prop_feats_remove, train_inds, num_cores){</span>
-<span id="cb25-68"><a href="css.html#cb25-68" tabindex="-1"></a></span>
-<span id="cb25-69"><a href="css.html#cb25-69" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
-<span id="cb25-70"><a href="css.html#cb25-70" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
-<span id="cb25-71"><a href="css.html#cb25-71" tabindex="-1"></a></span>
-<span id="cb25-72"><a href="css.html#cb25-72" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb25-73"><a href="css.html#cb25-73" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
-<span id="cb25-74"><a href="css.html#cb25-74" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb25-75"><a href="css.html#cb25-75" tabindex="-1"></a>    }</span>
-<span id="cb25-76"><a href="css.html#cb25-76" tabindex="-1"></a></span>
-<span id="cb25-77"><a href="css.html#cb25-77" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
-<span id="cb25-78"><a href="css.html#cb25-78" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
-<span id="cb25-79"><a href="css.html#cb25-79" tabindex="-1"></a></span>
-<span id="cb25-80"><a href="css.html#cb25-80" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb25-81"><a href="css.html#cb25-81" tabindex="-1"></a></span>
-<span id="cb25-82"><a href="css.html#cb25-82" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb25-83"><a href="css.html#cb25-83" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
-<span id="cb25-84"><a href="css.html#cb25-84" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
-<span id="cb25-85"><a href="css.html#cb25-85" tabindex="-1"></a>    }</span>
-<span id="cb25-86"><a href="css.html#cb25-86" tabindex="-1"></a></span>
-<span id="cb25-87"><a href="css.html#cb25-87" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb25-88"><a href="css.html#cb25-88" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb25-89"><a href="css.html#cb25-89" tabindex="-1"></a></span>
-<span id="cb25-90"><a href="css.html#cb25-90" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
-<span id="cb25-91"><a href="css.html#cb25-91" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
-<span id="cb25-92"><a href="css.html#cb25-92" tabindex="-1"></a>    }</span>
-<span id="cb25-93"><a href="css.html#cb25-93" tabindex="-1"></a></span>
-<span id="cb25-94"><a href="css.html#cb25-94" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
-<span id="cb25-95"><a href="css.html#cb25-95" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(feat_names) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb25-96"><a href="css.html#cb25-96" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(feat_names) <span class="sc">==</span> p)</span>
-<span id="cb25-97"><a href="css.html#cb25-97" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb25-98"><a href="css.html#cb25-98" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">is.na</span>(feat_names))</span>
-<span id="cb25-99"><a href="css.html#cb25-99" tabindex="-1"></a>    }</span>
-<span id="cb25-100"><a href="css.html#cb25-100" tabindex="-1"></a></span>
-<span id="cb25-101"><a href="css.html#cb25-101" tabindex="-1"></a>    <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
-<span id="cb25-102"><a href="css.html#cb25-102" tabindex="-1"></a></span>
-<span id="cb25-103"><a href="css.html#cb25-103" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
-<span id="cb25-104"><a href="css.html#cb25-104" tabindex="-1"></a>    <span class="co"># Intentionally don't check y or lambda further to allow for flexibility--these</span></span>
-<span id="cb25-105"><a href="css.html#cb25-105" tabindex="-1"></a>    <span class="co"># inputs should be checked within fitfun.</span></span>
-<span id="cb25-106"><a href="css.html#cb25-106" tabindex="-1"></a></span>
-<span id="cb25-107"><a href="css.html#cb25-107" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
-<span id="cb25-108"><a href="css.html#cb25-108" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
-<span id="cb25-109"><a href="css.html#cb25-109" tabindex="-1"></a></span>
-<span id="cb25-110"><a href="css.html#cb25-110" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
-<span id="cb25-111"><a href="css.html#cb25-111" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
-<span id="cb25-112"><a href="css.html#cb25-112" tabindex="-1"></a>    <span class="co"># 1).</span></span>
-<span id="cb25-113"><a href="css.html#cb25-113" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span>p, <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
-<span id="cb25-114"><a href="css.html#cb25-114" tabindex="-1"></a></span>
-<span id="cb25-115"><a href="css.html#cb25-115" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">class</span>(fitfun) <span class="sc">==</span> <span class="st">"function"</span>)</span>
-<span id="cb25-116"><a href="css.html#cb25-116" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(fitfun) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb25-117"><a href="css.html#cb25-117" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">identical</span>(<span class="fu">formals</span>(fitfun), <span class="fu">formals</span>(cssLasso))){</span>
-<span id="cb25-118"><a href="css.html#cb25-118" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"fitfun must accept arguments named X, y, and lambda. Detected arguments to fitfun:"</span>,</span>
-<span id="cb25-119"><a href="css.html#cb25-119" tabindex="-1"></a>            <span class="fu">paste</span>(<span class="fu">names</span>(<span class="fu">formals</span>(fitfun)), <span class="at">collapse=</span><span class="st">", "</span>))</span>
-<span id="cb25-120"><a href="css.html#cb25-120" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
-<span id="cb25-121"><a href="css.html#cb25-121" tabindex="-1"></a>    }</span>
-<span id="cb25-122"><a href="css.html#cb25-122" tabindex="-1"></a></span>
-<span id="cb25-123"><a href="css.html#cb25-123" tabindex="-1"></a>    <a href="css.html#checkSamplingType">checkSamplingType</a>(sampling_type)</span>
-<span id="cb25-124"><a href="css.html#cb25-124" tabindex="-1"></a>    <a href="css.html#checkB">checkB</a>(B)</span>
-<span id="cb25-125"><a href="css.html#cb25-125" tabindex="-1"></a>    <a href="css.html#checkPropFeatsRemove">checkPropFeatsRemove</a>(prop_feats_remove, p)</span>
-<span id="cb25-126"><a href="css.html#cb25-126" tabindex="-1"></a></span>
-<span id="cb25-127"><a href="css.html#cb25-127" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(train_inds) <span class="sc">|</span> <span class="fu">is.integer</span>(train_inds))</span>
-<span id="cb25-128"><a href="css.html#cb25-128" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb25-129"><a href="css.html#cb25-129" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(train_inds)))</span>
-<span id="cb25-130"><a href="css.html#cb25-130" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">round</span>(train_inds) <span class="sc">==</span> train_inds))</span>
-<span id="cb25-131"><a href="css.html#cb25-131" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(train_inds)))</span>
-<span id="cb25-132"><a href="css.html#cb25-132" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(train_inds <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb25-133"><a href="css.html#cb25-133" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(train_inds <span class="sc">&lt;=</span> n))</span>
-<span id="cb25-134"><a href="css.html#cb25-134" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">&lt;=</span> n <span class="sc">-</span> <span class="dv">2</span>)</span>
-<span id="cb25-135"><a href="css.html#cb25-135" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb25-136"><a href="css.html#cb25-136" tabindex="-1"></a>    }</span>
-<span id="cb25-137"><a href="css.html#cb25-137" tabindex="-1"></a></span>
-<span id="cb25-138"><a href="css.html#cb25-138" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(num_cores) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb25-139"><a href="css.html#cb25-139" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(num_cores) <span class="sc">|</span> <span class="fu">is.numeric</span>(num_cores))</span>
-<span id="cb25-140"><a href="css.html#cb25-140" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(num_cores))</span>
-<span id="cb25-141"><a href="css.html#cb25-141" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">==</span> <span class="fu">round</span>(num_cores))</span>
-<span id="cb25-142"><a href="css.html#cb25-142" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb25-143"><a href="css.html#cb25-143" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&lt;=</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span>
-<span id="cb25-144"><a href="css.html#cb25-144" tabindex="-1"></a></span>
-<span id="cb25-145"><a href="css.html#cb25-145" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">feat_names=</span>feat_names, <span class="at">X=</span>X, <span class="at">clusters=</span>clusters))</span>
-<span id="cb25-146"><a href="css.html#cb25-146" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb25-21"><a href="css.html#cb25-21" tabindex="-1"></a><span class="co">#' package glmnet), where lambda is a nonnegative numeric specifying the L1</span></span>
+<span id="cb25-22"><a href="css.html#cb25-22" tabindex="-1"></a><span class="co">#' penalty for the lasso, or a named length-2 vector c(lambda, alpha) for an</span></span>
+<span id="cb25-23"><a href="css.html#cb25-23" tabindex="-1"></a><span class="co">#' elastic net fit.</span></span>
+<span id="cb25-24"><a href="css.html#cb25-24" tabindex="-1"></a><span class="co">#' @param sampling_type A character vector; either "SS" or "MB". For "MB",</span></span>
+<span id="cb25-25"><a href="css.html#cb25-25" tabindex="-1"></a><span class="co">#' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann</span></span>
+<span id="cb25-26"><a href="css.html#cb25-26" tabindex="-1"></a><span class="co">#' 2010). For "SS", in addition to these B subsamples, the B complementary pair</span></span>
+<span id="cb25-27"><a href="css.html#cb25-27" tabindex="-1"></a><span class="co">#' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and</span></span>
+<span id="cb25-28"><a href="css.html#cb25-28" tabindex="-1"></a><span class="co">#' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.</span></span>
+<span id="cb25-29"><a href="css.html#cb25-29" tabindex="-1"></a><span class="co">#' @param B Integer or numeric; the number of subsamples. Note: For</span></span>
+<span id="cb25-30"><a href="css.html#cb25-30" tabindex="-1"></a><span class="co">#' sampling.type=="MB" the total number of subsamples will be `B`; for</span></span>
+<span id="cb25-31"><a href="css.html#cb25-31" tabindex="-1"></a><span class="co">#' sampling_type="SS" the number of subsamples will be `2*B`. Default is 100</span></span>
+<span id="cb25-32"><a href="css.html#cb25-32" tabindex="-1"></a><span class="co">#' for sampling_type="MB" and 50 for sampling_type="SS".</span></span>
+<span id="cb25-33"><a href="css.html#cb25-33" tabindex="-1"></a><span class="co">#' @param prop_feats_remove Numeric; if prop_feats_remove is greater than 0,</span></span>
+<span id="cb25-34"><a href="css.html#cb25-34" tabindex="-1"></a><span class="co">#' then on each subsample, each feature is randomly dropped from the design</span></span>
+<span id="cb25-35"><a href="css.html#cb25-35" tabindex="-1"></a><span class="co">#' matrix that is provided to fitfun with probability prop_feats_remove</span></span>
+<span id="cb25-36"><a href="css.html#cb25-36" tabindex="-1"></a><span class="co">#' (independently across features). That is, in a typical subsample,</span></span>
+<span id="cb25-37"><a href="css.html#cb25-37" tabindex="-1"></a><span class="co">#' prop_feats_remove*p features will be dropped (though this number will vary).</span></span>
+<span id="cb25-38"><a href="css.html#cb25-38" tabindex="-1"></a><span class="co">#' This is similar in spirit (but distinct from) extended stability selection</span></span>
+<span id="cb25-39"><a href="css.html#cb25-39" tabindex="-1"></a><span class="co">#' (Beinrucker et. al. 2016); see their paper for some of the benefits of</span></span>
+<span id="cb25-40"><a href="css.html#cb25-40" tabindex="-1"></a><span class="co">#' dropping features (besides increasing computational speed and decreasing</span></span>
+<span id="cb25-41"><a href="css.html#cb25-41" tabindex="-1"></a><span class="co">#' memory requirements). For sampling_type="SS", the features dropped in</span></span>
+<span id="cb25-42"><a href="css.html#cb25-42" tabindex="-1"></a><span class="co">#' each complementary pair of subsamples are identical in order to ensure that</span></span>
+<span id="cb25-43"><a href="css.html#cb25-43" tabindex="-1"></a><span class="co">#' the theoretical guarantees of Faletto and Bien (2022) are retained within</span></span>
+<span id="cb25-44"><a href="css.html#cb25-44" tabindex="-1"></a><span class="co">#' each individual pair of subsamples. (Note that this feature is not</span></span>
+<span id="cb25-45"><a href="css.html#cb25-45" tabindex="-1"></a><span class="co">#' investigated either theoretically or in simulations by Faletto and Bien</span></span>
+<span id="cb25-46"><a href="css.html#cb25-46" tabindex="-1"></a><span class="co">#' 2022). Must be between 0 and 1. Default is 0.</span></span>
+<span id="cb25-47"><a href="css.html#cb25-47" tabindex="-1"></a><span class="co">#' @param train_inds Optional; an integer or numeric vector containing the</span></span>
+<span id="cb25-48"><a href="css.html#cb25-48" tabindex="-1"></a><span class="co">#' indices of observations in X and y to set aside for model training by the</span></span>
+<span id="cb25-49"><a href="css.html#cb25-49" tabindex="-1"></a><span class="co">#' function getCssPreds after feature selection. (This will only work if y is</span></span>
+<span id="cb25-50"><a href="css.html#cb25-50" tabindex="-1"></a><span class="co">#' real-valued, because getCssPreds using ordinary least squares regression to</span></span>
+<span id="cb25-51"><a href="css.html#cb25-51" tabindex="-1"></a><span class="co">#' generate predictions.) If train_inds is not provided, all of the observations</span></span>
+<span id="cb25-52"><a href="css.html#cb25-52" tabindex="-1"></a><span class="co">#' in the provided data set will be used for feature selection.</span></span>
+<span id="cb25-53"><a href="css.html#cb25-53" tabindex="-1"></a><span class="co">#' @param num_cores Optional; an integer. If using parallel processing, the</span></span>
+<span id="cb25-54"><a href="css.html#cb25-54" tabindex="-1"></a><span class="co">#' number of cores to use for parallel processing (num_cores will be supplied</span></span>
+<span id="cb25-55"><a href="css.html#cb25-55" tabindex="-1"></a><span class="co">#' internally as the mc.cores argument of parallel::mclapply).</span></span>
+<span id="cb25-56"><a href="css.html#cb25-56" tabindex="-1"></a><span class="co">#' @return A named list with the following elements: \item{feat_names}{A </span></span>
+<span id="cb25-57"><a href="css.html#cb25-57" tabindex="-1"></a><span class="co">#' character vector containing the column names of X (if the provided X</span></span>
+<span id="cb25-58"><a href="css.html#cb25-58" tabindex="-1"></a><span class="co">#' had column names). If the provided X did not have column names, feat_names</span></span>
+<span id="cb25-59"><a href="css.html#cb25-59" tabindex="-1"></a><span class="co">#' will be NA.} \item{X}{The provided X, converted to a matrix if it was</span></span>
+<span id="cb25-60"><a href="css.html#cb25-60" tabindex="-1"></a><span class="co">#' originally provided as a data.frame, and with feature names removed if they</span></span>
+<span id="cb25-61"><a href="css.html#cb25-61" tabindex="-1"></a><span class="co">#' had been provided.}\item{clusters}{A list of integer vectors; each vector</span></span>
+<span id="cb25-62"><a href="css.html#cb25-62" tabindex="-1"></a><span class="co">#' will contain the indices of a cluster of features. Any duplicated clusters</span></span>
+<span id="cb25-63"><a href="css.html#cb25-63" tabindex="-1"></a><span class="co">#' provided in the input will be removed.}</span></span>
+<span id="cb25-64"><a href="css.html#cb25-64" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb25-65"><a href="css.html#cb25-65" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb25-66"><a href="css.html#cb25-66" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb25-67"><a href="css.html#cb25-67" tabindex="-1"></a><span id="checkCssInputs">checkCssInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda, clusters, fitfun, sampling_type, B,</span>
+<span id="cb25-68"><a href="css.html#cb25-68" tabindex="-1"></a>    prop_feats_remove, train_inds, num_cores){</span>
+<span id="cb25-69"><a href="css.html#cb25-69" tabindex="-1"></a></span>
+<span id="cb25-70"><a href="css.html#cb25-70" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
+<span id="cb25-71"><a href="css.html#cb25-71" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
+<span id="cb25-72"><a href="css.html#cb25-72" tabindex="-1"></a></span>
+<span id="cb25-73"><a href="css.html#cb25-73" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb25-74"><a href="css.html#cb25-74" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
+<span id="cb25-75"><a href="css.html#cb25-75" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb25-76"><a href="css.html#cb25-76" tabindex="-1"></a>    }</span>
+<span id="cb25-77"><a href="css.html#cb25-77" tabindex="-1"></a></span>
+<span id="cb25-78"><a href="css.html#cb25-78" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
+<span id="cb25-79"><a href="css.html#cb25-79" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
+<span id="cb25-80"><a href="css.html#cb25-80" tabindex="-1"></a></span>
+<span id="cb25-81"><a href="css.html#cb25-81" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb25-82"><a href="css.html#cb25-82" tabindex="-1"></a></span>
+<span id="cb25-83"><a href="css.html#cb25-83" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb25-84"><a href="css.html#cb25-84" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
+<span id="cb25-85"><a href="css.html#cb25-85" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
+<span id="cb25-86"><a href="css.html#cb25-86" tabindex="-1"></a>    }</span>
+<span id="cb25-87"><a href="css.html#cb25-87" tabindex="-1"></a></span>
+<span id="cb25-88"><a href="css.html#cb25-88" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb25-89"><a href="css.html#cb25-89" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb25-90"><a href="css.html#cb25-90" tabindex="-1"></a></span>
+<span id="cb25-91"><a href="css.html#cb25-91" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
+<span id="cb25-92"><a href="css.html#cb25-92" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
+<span id="cb25-93"><a href="css.html#cb25-93" tabindex="-1"></a>    }</span>
+<span id="cb25-94"><a href="css.html#cb25-94" tabindex="-1"></a></span>
+<span id="cb25-95"><a href="css.html#cb25-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb25-96"><a href="css.html#cb25-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(feat_names) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb25-97"><a href="css.html#cb25-97" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(feat_names) <span class="sc">==</span> p)</span>
+<span id="cb25-98"><a href="css.html#cb25-98" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb25-99"><a href="css.html#cb25-99" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">is.na</span>(feat_names))</span>
+<span id="cb25-100"><a href="css.html#cb25-100" tabindex="-1"></a>    }</span>
+<span id="cb25-101"><a href="css.html#cb25-101" tabindex="-1"></a></span>
+<span id="cb25-102"><a href="css.html#cb25-102" tabindex="-1"></a>    <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
+<span id="cb25-103"><a href="css.html#cb25-103" tabindex="-1"></a></span>
+<span id="cb25-104"><a href="css.html#cb25-104" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
+<span id="cb25-105"><a href="css.html#cb25-105" tabindex="-1"></a>    <span class="co"># Intentionally don't check y or lambda further to allow for flexibility--these</span></span>
+<span id="cb25-106"><a href="css.html#cb25-106" tabindex="-1"></a>    <span class="co"># inputs should be checked within fitfun.</span></span>
+<span id="cb25-107"><a href="css.html#cb25-107" tabindex="-1"></a></span>
+<span id="cb25-108"><a href="css.html#cb25-108" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
+<span id="cb25-109"><a href="css.html#cb25-109" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
+<span id="cb25-110"><a href="css.html#cb25-110" tabindex="-1"></a></span>
+<span id="cb25-111"><a href="css.html#cb25-111" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
+<span id="cb25-112"><a href="css.html#cb25-112" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
+<span id="cb25-113"><a href="css.html#cb25-113" tabindex="-1"></a>    <span class="co"># 1).</span></span>
+<span id="cb25-114"><a href="css.html#cb25-114" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span>p, <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
+<span id="cb25-115"><a href="css.html#cb25-115" tabindex="-1"></a></span>
+<span id="cb25-116"><a href="css.html#cb25-116" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">class</span>(fitfun) <span class="sc">==</span> <span class="st">"function"</span>)</span>
+<span id="cb25-117"><a href="css.html#cb25-117" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(fitfun) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb25-118"><a href="css.html#cb25-118" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">identical</span>(<span class="fu">formals</span>(fitfun), <span class="fu">formals</span>(cssLasso))){</span>
+<span id="cb25-119"><a href="css.html#cb25-119" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"fitfun must accept arguments named X, y, and lambda. Detected arguments to fitfun:"</span>,</span>
+<span id="cb25-120"><a href="css.html#cb25-120" tabindex="-1"></a>            <span class="fu">paste</span>(<span class="fu">names</span>(<span class="fu">formals</span>(fitfun)), <span class="at">collapse=</span><span class="st">", "</span>))</span>
+<span id="cb25-121"><a href="css.html#cb25-121" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
+<span id="cb25-122"><a href="css.html#cb25-122" tabindex="-1"></a>    }</span>
+<span id="cb25-123"><a href="css.html#cb25-123" tabindex="-1"></a></span>
+<span id="cb25-124"><a href="css.html#cb25-124" tabindex="-1"></a>    <a href="css.html#checkSamplingType">checkSamplingType</a>(sampling_type)</span>
+<span id="cb25-125"><a href="css.html#cb25-125" tabindex="-1"></a>    <a href="css.html#checkB">checkB</a>(B)</span>
+<span id="cb25-126"><a href="css.html#cb25-126" tabindex="-1"></a>    <a href="css.html#checkPropFeatsRemove">checkPropFeatsRemove</a>(prop_feats_remove, p)</span>
+<span id="cb25-127"><a href="css.html#cb25-127" tabindex="-1"></a></span>
+<span id="cb25-128"><a href="css.html#cb25-128" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(train_inds) <span class="sc">|</span> <span class="fu">is.integer</span>(train_inds))</span>
+<span id="cb25-129"><a href="css.html#cb25-129" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb25-130"><a href="css.html#cb25-130" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(train_inds)))</span>
+<span id="cb25-131"><a href="css.html#cb25-131" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">round</span>(train_inds) <span class="sc">==</span> train_inds))</span>
+<span id="cb25-132"><a href="css.html#cb25-132" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(train_inds)))</span>
+<span id="cb25-133"><a href="css.html#cb25-133" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(train_inds <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb25-134"><a href="css.html#cb25-134" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(train_inds <span class="sc">&lt;=</span> n))</span>
+<span id="cb25-135"><a href="css.html#cb25-135" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">&lt;=</span> n <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb25-136"><a href="css.html#cb25-136" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(train_inds) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb25-137"><a href="css.html#cb25-137" tabindex="-1"></a>    }</span>
+<span id="cb25-138"><a href="css.html#cb25-138" tabindex="-1"></a></span>
+<span id="cb25-139"><a href="css.html#cb25-139" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(num_cores) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb25-140"><a href="css.html#cb25-140" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(num_cores) <span class="sc">|</span> <span class="fu">is.numeric</span>(num_cores))</span>
+<span id="cb25-141"><a href="css.html#cb25-141" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(num_cores))</span>
+<span id="cb25-142"><a href="css.html#cb25-142" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">==</span> <span class="fu">round</span>(num_cores))</span>
+<span id="cb25-143"><a href="css.html#cb25-143" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb25-144"><a href="css.html#cb25-144" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&lt;=</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span>
+<span id="cb25-145"><a href="css.html#cb25-145" tabindex="-1"></a></span>
+<span id="cb25-146"><a href="css.html#cb25-146" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">feat_names=</span>feat_names, <span class="at">X=</span>X, <span class="at">clusters=</span>clusters))</span>
+<span id="cb25-147"><a href="css.html#cb25-147" tabindex="-1"></a>}</span></code></pre></div>
 <p>checkCssClustersInput:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="css.html#cb26-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that clusters input to css is as expected</span></span>
 <span id="cb26-2"><a href="css.html#cb26-2" tabindex="-1"></a><span class="co">#'</span></span>
