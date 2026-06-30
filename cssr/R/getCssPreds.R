@@ -128,12 +128,16 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
         clust_X_names <- colnames(train_X_clusters)
     }
 
-    # Fit linear model on training data via OLS
-    if(nrow(train_X_clusters) < ncol(train_X_clusters)){
+    # Fit linear model on training data via OLS. lm(y ~ .) adds an intercept, so
+    # the fit is rank-deficient unless there are strictly more training
+    # observations than clusters (nrow >= ncol + 1); guard with <= so the
+    # n_train == n_clusters boundary errors clearly instead of silently fitting a
+    # rank-deficient model with NA coefficients.
+    if(nrow(train_X_clusters) <= ncol(train_X_clusters)){
         err_mess <- paste("css not provided with enough indices to fit OLS model for predictions (number of training indices: ",
             nrow(train_X_clusters), ", number of clusters: ",
             ncol(train_X_clusters),
-            "). Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices.",
+            "). The OLS model includes an intercept, so it needs at least one more training observation than the number of clusters. Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices.",
             sep="")
         stop(err_mess)
     }

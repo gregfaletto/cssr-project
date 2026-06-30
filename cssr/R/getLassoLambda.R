@@ -76,7 +76,16 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     # so that each individual lasso fit is of size floor(n/2)
 
     n_sample <- min(round(n/2*nfolds/(nfolds - 1)), n)
-    nfolds <- min(nfolds, n_sample)
+    # n_sample is the number of observations actually passed to cv.glmnet. If it
+    # is too small for even 3-fold CV, error clearly here (reporting the
+    # requested nfolds) instead of letting cv.glmnet crash with "nfolds must be
+    # bigger than 3". Otherwise clamp nfolds into [3, n_sample] so we never end
+    # up below glmnet's minimum or above the available sample size.
+    if(n_sample < 3){
+        stop(paste0("Sample size n = ", n, " is too small to choose lambda by ", nfolds,
+            "-fold cross-validation; supply a larger n, a smaller nfolds, or lambda directly."))
+    }
+    nfolds <- max(3L, min(nfolds, n_sample))
 
     inds_size <- sample(1:n, n_sample)
     size_results <- glmnet::cv.glmnet(x=X[inds_size, ], y=y[inds_size],
