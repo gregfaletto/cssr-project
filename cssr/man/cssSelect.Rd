@@ -76,11 +76,14 @@ elastic net fit used for feature selection in each subsample. Default is 1
 (in which case the penalty is the lasso).}
 }
 \value{
-A named list with two items. \item{selected_clusts}{A list of
-integer vectors; each vector contains the indices of one of the selected
-clusters.} \item{selected_feats}{An integer vector; the indices of the
-all of the selected features within all of the selected clusters (typically
-only one feature is selected from each cluster).}
+A named list with three items. \item{selected_clusts}{A named list of
+integer vectors; each vector contains the indices of the features in one of
+the selected clusters.} \item{selected_feats}{A named integer vector; the
+indices of the features with nonzero weights from all of the selected
+clusters.} \item{weights}{A named list of the same length as selected_clusts.
+Each list element \code{weights[[j]]} is a numeric vector of the weights to use for
+the jth selected cluster, and it has the same name as the cluster it
+corresponds to.}
 }
 \description{
 Takes in data X and y and returns a set of clusters (and a set of features)
