@@ -74,12 +74,16 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     n_sel_clusts <- length(weights)
 
+    if(n_sel_clusts == 0){
+        stop("No clusters were selected, so a design matrix / predictions cannot be formed; lower the cutoff or set min_num_clusts >= 1.")
+    }
+
     # Form matrix of cluster representatives of selected clusters
     X_clus_reps <- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
         ncol=n_sel_clusts)
     colnames(X_clus_reps) <- rep(as.character(NA), n_sel_clusts)
 
-    for(i in 1:n_sel_clusts){
+    for(i in seq_len(n_sel_clusts)){
         clust_i_name <- names(weights)[i]
 
         stopifnot(length(clust_i_name) == 1)

@@ -1608,7 +1608,9 @@ testthat::test_that("checkMinNumClusts works", {
   testthat::expect_null(checkMinNumClusts(1, 5, 4))
   testthat::expect_null(checkMinNumClusts(6, 6, 6))
   testthat::expect_null(checkMinNumClusts(3, 1932, 3))
-  
+  # min_num_clusts = 0 is now allowed (empty threshold selection)
+  testthat::expect_null(checkMinNumClusts(0, 13, 7))
+
   testthat::expect_error(checkMinNumClusts(c(2, 4), 5, 4),
                          "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts("3", "1932", "3"),
@@ -1620,10 +1622,10 @@ testthat::test_that("checkMinNumClusts works", {
   testthat::expect_error(checkMinNumClusts(as.numeric(NA), as.numeric(NA),
                                            as.numeric(NA)),
                          "!is.na(min_num_clusts) is not TRUE", fixed=TRUE)
-  testthat::expect_error(checkMinNumClusts(0, 13, 7),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(-1, 13, 7),
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(-1, 9, 8),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(6, 5, 5),
                          "min_num_clusts <= p is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(6, 7, 5),
@@ -1901,11 +1903,14 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
                          "all(selected_clusts <= 1) is not TRUE",
                          fixed=TRUE)
   
+  # An empty selection is now allowed (min_num_clusts=0), so length 0 no longer
+  # trips a guard; an unnamed empty selected_clusts is still rejected (it fails
+  # the names check before the length check would matter).
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=numeric(),
                                                        selected_feats=sel_feats,
                                                        weights=weights,
                                                        n_clusters=10, p=30),
-                         "length(selected_clusts) >= 1 is not TRUE",
+                         "!is.null(names(selected_clusts)) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
@@ -2298,15 +2303,51 @@ testthat::test_that("getCssSelections works", {
                          fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, cutoff=-.5),
                          "cutoff >= 0 is not TRUE", fixed=TRUE)
-  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
-  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, min_num_clusts=-1),
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, max_num_clusts=50),
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, max_num_clusts=4.5),
                          "max_num_clusts == round(max_num_clusts) is not TRUE",
                          fixed=TRUE)
+})
+
+testthat::test_that("min_num_clusts = 0 allows an empty threshold selection", {
+  # Deterministic empty-producing fixture: a fixed seed, all-singleton clusters
+  # (clusters = list(), so every feature is its own cluster), and a large lambda
+  # so the base lasso selects almost nothing. We assert that the maximum cluster
+  # selection proportion is below 1 - 1/(2*B) so that cutoff = 1 genuinely
+  # selects no cluster (otherwise the test would not exercise the empty path).
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+
+  testthat::expect_true(max(colMeans(css_res$clus_sel_mat)) < 1 - 1/(2*B))
+
+  # Selection path: getCssSelections returns a clean empty result. (weights is a
+  # NAMED empty list, so assert via length/type rather than expect_equal(.,list()).)
+  empty_sel <- getCssSelections(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_length(empty_sel$selected_clusts, 0)
+  testthat::expect_true(is.list(empty_sel$selected_clusts))
+  testthat::expect_length(empty_sel$selected_feats, 0)
+  testthat::expect_true(is.integer(empty_sel$selected_feats))
+  testthat::expect_length(empty_sel$weights, 0)
+  testthat::expect_true(is.list(empty_sel$weights))
+
+  # Design / prediction paths: one clear error (no design/predictions possible).
+  testthat::expect_error(getCssDesign(css_res, newX=x, cutoff=1,
+                                      min_num_clusts=0),
+                         "No clusters were selected", fixed=TRUE)
+  testthat::expect_error(getCssPreds(css_res, testX=x, trainX=x, trainY=y,
+                                     cutoff=1, min_num_clusts=0),
+                         "No clusters were selected", fixed=TRUE)
+
+  # Legacy regression: the default min_num_clusts = 1 still forces >= 1 cluster
+  # on the SAME fixture (the floor of 1 is unchanged).
+  legacy_sel <- getCssSelections(css_res, cutoff=1, min_num_clusts=1)
+  testthat::expect_equal(length(legacy_sel$selected_clusts), 1)
 })
 
 testthat::test_that("checkXInputResults works", {
@@ -2823,10 +2864,10 @@ testthat::test_that("checkFormCssDesignInputs works", {
   testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
                                                   weighting="weighted_avg",
                                                   cutoff=0.2,
-                                                  min_num_clusts=0,
+                                                  min_num_clusts=-1,
                                                   max_num_clusts=NA,
                                                   newx=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
                                                   weighting="weighted_avg",
@@ -3088,9 +3129,9 @@ testthat::test_that("formCssDesign works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=0,
+  testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=-1,
                                        newx=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=6,
                                        newx=x_new),
@@ -3296,9 +3337,9 @@ testthat::test_that("getCssDesign works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=0,
+  testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=-1,
                                        newX=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=6,
                                        newX=x_new),
@@ -3441,10 +3482,10 @@ testthat::test_that("checkGetCssPredsInputs works", {
 
   testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
                                                 weighting="simple_avg",
-                                                cutoff=0.1, min_num_clusts=0,
+                                                cutoff=0.1, min_num_clusts=-1,
                                                 max_num_clusts=NA,
                                                 trainX=x_train, trainY=y_train),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
                                                 weighting="weighted_avg",
@@ -3832,9 +3873,9 @@ testthat::test_that("getCssPreds works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=0,
+  testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=-1,
                                      trainX=x_train, trainY=y_train),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=10,
                                      trainX=x_train, trainY=y_train),

@@ -21,13 +21,13 @@
 #' @noRd
 checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     max_sel_prop){
-    if(n_sel_clusts == 0){
+    if(n_sel_clusts == 0 && min_num_clusts >= 1){
         err <- paste("No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, ",
             max_sel_prop, ")", sep="")
         stop(err)
     }
 
-    stopifnot(n_sel_clusts >= 1)
+    stopifnot(n_sel_clusts >= 0)
 
     # It may be impossible to get at least min_num_clusts or at most
     # max_num_clusts; if so, give a warning

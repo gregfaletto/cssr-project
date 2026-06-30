@@ -23,7 +23,7 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     stopifnot(is.numeric(selected_clusts))
     stopifnot(all(selected_clusts >= 0))
     stopifnot(all(selected_clusts <= 1))
-    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) >= 0)
     stopifnot(length(selected_clusts) <= n_clusters)
     stopifnot(length(names(selected_clusts)) ==
         length(unique(names(selected_clusts))))

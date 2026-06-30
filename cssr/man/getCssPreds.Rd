@@ -47,7 +47,8 @@ are used, if max_num_clusts is specified).}
 \item{min_num_clusts}{Integer or numeric; the minimum number of clusters to
 use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
 min_num_clusts clusters, the cutoff will be increased until at least
-min_num_clusts clusters are selected.) Default is 1.}
+min_num_clusts clusters are selected.) Default is 1. May be 0, but an empty
+selection then raises an error (no design/predictions possible).}
 
 \item{max_num_clusts}{Integer or numeric; the maximum number of clusters to
 use regardless of cutoff. (That is, if the chosen cutoff returns more than

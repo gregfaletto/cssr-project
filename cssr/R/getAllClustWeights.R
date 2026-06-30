@@ -34,7 +34,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     stopifnot(is.numeric(sel_clusters))
     p_ret <- length(sel_clusters)
     stopifnot(length(unique(names(sel_clusters))) == p_ret)
-    stopifnot(p_ret > 0)
+    stopifnot(p_ret >= 0)
 
     checkWeighting(weighting)
 
@@ -50,7 +50,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     # Identify weights
     weights <- list()
 
-    for(j in 1:p_ret){
+    for(j in seq_len(p_ret)){
         # Find the members of the cluster feature j is a member of
         cluster_j <- clusters[[names(sel_clusters)[j]]]
         # Get the weights for this cluster and add them to the list
@@ -65,7 +65,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     stopifnot(length(weights) == p_ret)
     stopifnot(is.list(weights))
 
-    for(i in 1:p_ret){
+    for(i in seq_len(p_ret)){
         stopifnot(length(clusters[[names(sel_clusters)[i]]]) ==
             length(weights[[i]]))
         stopifnot(all(weights[[i]] >= 0))

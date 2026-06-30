@@ -13,10 +13,8 @@
 #' lasso fit. (`css()` does not require lambda to be any particular object because
 #' for a user-specified feature selection method `fitfun`, lambda can be an
 #' arbitrary object. See the description of `fitfun` below.)
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
-#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
-#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @param sampling_type A character vector; either "SS" or "MB". For "MB",
 #' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
@@ -106,6 +104,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     if(sampling_type=="SS"){
         res <- matrix(0L, 2*B, p)
     } else if(sampling_type=="MB"){
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         res <- matrix(0L, B, p)
     } else{
         stop("!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res")
