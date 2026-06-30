@@ -109,7 +109,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
         }
     }
 
-    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) >= 0)
 
     clust_names <- names(selected_clusts)
 
@@ -130,7 +130,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     # Get selected features from each cluster (those features with nonzero
     # weights)
     selected_feats <- integer()
-    for(i in 1:n_sel_clusts){
+    for(i in seq_len(n_sel_clusts)){
         clus_i_name <- clust_names[i]
         clust_i <- clusters[[clus_i_name]]
         weights_i <- weights[[i]]

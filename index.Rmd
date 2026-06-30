@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.1.30",
+    Version = "0.1.31",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -219,10 +219,8 @@ and
 The number of subsamples is also up to the user:
 
 ```{r param-B}
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
-#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
-#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 ```
 
 
@@ -327,7 +325,7 @@ The function `css()` is specified below. (There are some extra details that I om
 #' }
 #' @export
 css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
-    sampling_type = "SS", B = ifelse(sampling_type == "MB", 100L, 50L),
+    sampling_type = "SS", B = 50L,
     prop_feats_remove = 0, train_inds = integer(), num_cores = 1L
     ){
 
@@ -453,6 +451,7 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     } else{
         # In this case, we generate subsamples as well as logical vectors
         # of features to keep
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         subsamps_and_feats <- vector("list",
             if(sampling_type == "SS") 2L*B else B)
         subsamples <- getSubsamps(n, B, sampling_type)
@@ -473,6 +472,7 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
                 feats_to_keep=feats_to_keep_i)
         }
 
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         if(sampling_type=="SS"){
             stopifnot(length(subsamples) == 2*B)
             for(i in 1:B){
@@ -528,6 +528,7 @@ getSubsamps <- function(n, B, sampling_type){
     }
     stopifnot(length(subsamples) == B)
     # TODO(gregfaletto): add support for sampling_type="MB"
+    # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
     if(sampling_type=="SS"){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the
@@ -645,6 +646,7 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     if(sampling_type=="SS"){
         res <- matrix(0L, 2*B, p)
     } else if(sampling_type=="MB"){
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         res <- matrix(0L, B, p)
     } else{
         stop("!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res")
@@ -1040,10 +1042,8 @@ checkFiniteY <- function(y, arg_name = "y"){
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
 #' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 #' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the total number of subsamples will be `B`; for
-#' sampling_type="SS" the number of subsamples will be `2*B`. Default is 100
-#' for sampling_type="MB" and 50 for sampling_type="SS".
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @param prop_feats_remove Numeric; if prop_feats_remove is greater than 0,
 #' then on each subsample, each feature is randomly dropped from the design
 #' matrix that is provided to fitfun with probability prop_feats_remove
@@ -1748,9 +1748,8 @@ checkSamplingType <- function(sampling_type){
 #' Helper function to confirm that the argument B to several functions is as
 #' expected
 #'
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the total number of subsamples will be `B`; for
-#' sampling_type="SS" the number of subsamples will be `2*B`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
@@ -2147,7 +2146,9 @@ As in the previous section, we first define each function and then define the he
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
 #' min_num_clusts clusters, the cutoff will be increased until at least
-#' min_num_clusts clusters are selected.) Default is 1.
+#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow
+#' a pure cutoff-based (threshold) selection that returns an empty set when no
+#' cluster's selection proportion meets the cutoff.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be decreased until at most
@@ -2194,11 +2195,11 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     # getSelectedClusters
     sel_clust_names <- names(sel_results$selected_clusts)
 
-    stopifnot(length(sel_clust_names) >= 1)
+    stopifnot(length(sel_clust_names) >= 0)
     stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
 
     sel_clusts <- list()
-    for(i in 1:length(sel_clust_names)){
+    for(i in seq_along(sel_clust_names)){
         sel_clusts[[i]] <- css_results$clusters[[sel_clust_names[i]]]
         names(sel_clusts)[i] <- sel_clust_names[i]
     }
@@ -2282,7 +2283,7 @@ checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
     stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
     stopifnot(!is.na(min_num_clusts))
     stopifnot(min_num_clusts == round(min_num_clusts))
-    stopifnot(min_num_clusts >= 1)
+    stopifnot(min_num_clusts >= 0)
     stopifnot(min_num_clusts <= p)
     stopifnot(min_num_clusts <= n_clusters)
 }
@@ -2439,7 +2440,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
         }
     }
 
-    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) >= 0)
 
     clust_names <- names(selected_clusts)
 
@@ -2460,7 +2461,7 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     # Get selected features from each cluster (those features with nonzero
     # weights)
     selected_feats <- integer()
-    for(i in 1:n_sel_clusts){
+    for(i in seq_len(n_sel_clusts)){
         clus_i_name <- clust_names[i]
         clust_i <- clusters[[clus_i_name]]
         weights_i <- weights[[i]]
@@ -2505,13 +2506,13 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 #' @noRd
 checkSelectedClusters <- function(n_sel_clusts, min_num_clusts, max_num_clusts,
     max_sel_prop){
-    if(n_sel_clusts == 0){
+    if(n_sel_clusts == 0 && min_num_clusts >= 1){
         err <- paste("No clusters selected with this cutoff (try a cutoff below the maximum cluster selection proportion, ",
             max_sel_prop, ")", sep="")
         stop(err)
     }
 
-    stopifnot(n_sel_clusts >= 1)
+    stopifnot(n_sel_clusts >= 0)
 
     # It may be impossible to get at least min_num_clusts or at most
     # max_num_clusts; if so, give a warning
@@ -2570,7 +2571,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     stopifnot(is.numeric(sel_clusters))
     p_ret <- length(sel_clusters)
     stopifnot(length(unique(names(sel_clusters))) == p_ret)
-    stopifnot(p_ret > 0)
+    stopifnot(p_ret >= 0)
 
     checkWeighting(weighting)
 
@@ -2586,7 +2587,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     # Identify weights
     weights <- list()
 
-    for(j in 1:p_ret){
+    for(j in seq_len(p_ret)){
         # Find the members of the cluster feature j is a member of
         cluster_j <- clusters[[names(sel_clusters)[j]]]
         # Get the weights for this cluster and add them to the list
@@ -2601,7 +2602,7 @@ getAllClustWeights <- function(css_results, sel_clusters, weighting){
     stopifnot(length(weights) == p_ret)
     stopifnot(is.list(weights))
 
-    for(i in 1:p_ret){
+    for(i in seq_len(p_ret)){
         stopifnot(length(clusters[[names(sel_clusters)[i]]]) ==
             length(weights[[i]]))
         stopifnot(all(weights[[i]] >= 0))
@@ -2726,7 +2727,7 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
     stopifnot(is.numeric(selected_clusts))
     stopifnot(all(selected_clusts >= 0))
     stopifnot(all(selected_clusts <= 1))
-    stopifnot(length(selected_clusts) >= 1)
+    stopifnot(length(selected_clusts) >= 0)
     stopifnot(length(selected_clusts) <= n_clusters)
     stopifnot(length(names(selected_clusts)) ==
         length(unique(names(selected_clusts))))
@@ -2784,7 +2785,8 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
 #' min_num_clusts clusters, the cutoff will be increased until at least
-#' min_num_clusts clusters are selected.) Default is 1.
+#' min_num_clusts clusters are selected.) Default is 1. May be 0, but an empty
+#' selection then raises an error (no design/predictions possible).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be decreased until at most
@@ -3068,12 +3070,16 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 
     n_sel_clusts <- length(weights)
 
+    if(n_sel_clusts == 0){
+        stop("No clusters were selected, so a design matrix / predictions cannot be formed; lower the cutoff or set min_num_clusts >= 1.")
+    }
+
     # Form matrix of cluster representatives of selected clusters
     X_clus_reps <- matrix(rep(as.numeric(NA), n*n_sel_clusts), nrow=n,
         ncol=n_sel_clusts)
     colnames(X_clus_reps) <- rep(as.character(NA), n_sel_clusts)
 
-    for(i in 1:n_sel_clusts){
+    for(i in seq_len(n_sel_clusts)){
         clust_i_name <- names(weights)[i]
 
         stopifnot(length(clust_i_name) == 1)
@@ -3222,7 +3228,8 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
 #' min_num_clusts clusters, the cutoff will be increased until at least
-#' min_num_clusts clusters are selected.) Default is 1.
+#' min_num_clusts clusters are selected.) Default is 1. May be 0, but an empty
+#' selection then raises an error (no design/predictions possible).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be decreased until at most
@@ -7498,7 +7505,9 @@ testthat::test_that("checkMinNumClusts works", {
   testthat::expect_null(checkMinNumClusts(1, 5, 4))
   testthat::expect_null(checkMinNumClusts(6, 6, 6))
   testthat::expect_null(checkMinNumClusts(3, 1932, 3))
-  
+  # min_num_clusts = 0 is now allowed (empty threshold selection)
+  testthat::expect_null(checkMinNumClusts(0, 13, 7))
+
   testthat::expect_error(checkMinNumClusts(c(2, 4), 5, 4),
                          "length(min_num_clusts) == 1 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts("3", "1932", "3"),
@@ -7510,10 +7519,10 @@ testthat::test_that("checkMinNumClusts works", {
   testthat::expect_error(checkMinNumClusts(as.numeric(NA), as.numeric(NA),
                                            as.numeric(NA)),
                          "!is.na(min_num_clusts) is not TRUE", fixed=TRUE)
-  testthat::expect_error(checkMinNumClusts(0, 13, 7),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(checkMinNumClusts(-1, 13, 7),
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(-1, 9, 8),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(6, 5, 5),
                          "min_num_clusts <= p is not TRUE", fixed=TRUE)
   testthat::expect_error(checkMinNumClusts(6, 7, 5),
@@ -7811,11 +7820,14 @@ testthat::test_that("checkGetSelectedClustersOutput works", {
                          "all(selected_clusts <= 1) is not TRUE",
                          fixed=TRUE)
   
+  # An empty selection is now allowed (min_num_clusts=0), so length 0 no longer
+  # trips a guard; an unnamed empty selected_clusts is still rejected (it fails
+  # the names check before the length check would matter).
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=numeric(),
                                                        selected_feats=sel_feats,
                                                        weights=weights,
                                                        n_clusters=10, p=30),
-                         "length(selected_clusts) >= 1 is not TRUE",
+                         "!is.null(names(selected_clusts)) is not TRUE",
                          fixed=TRUE)
   
   testthat::expect_error(checkGetSelectedClustersOutput(selected_clusts=sel_clusts,
@@ -8216,15 +8228,55 @@ testthat::test_that("getCssSelections works", {
                          fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, cutoff=-.5),
                          "cutoff >= 0 is not TRUE", fixed=TRUE)
-  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
-  testthat::expect_error(getCssSelections(css_res, min_num_clusts=0),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+  testthat::expect_error(getCssSelections(css_res, min_num_clusts=-1),
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, max_num_clusts=50),
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
   testthat::expect_error(getCssSelections(css_res, max_num_clusts=4.5),
                          "max_num_clusts == round(max_num_clusts) is not TRUE",
                          fixed=TRUE)
+})
+```
+
+Test for `min_num_clusts = 0` (empty threshold selection, issue #107):
+
+```{r}
+testthat::test_that("min_num_clusts = 0 allows an empty threshold selection", {
+  # Deterministic empty-producing fixture: a fixed seed, all-singleton clusters
+  # (clusters = list(), so every feature is its own cluster), and a large lambda
+  # so the base lasso selects almost nothing. We assert that the maximum cluster
+  # selection proportion is below 1 - 1/(2*B) so that cutoff = 1 genuinely
+  # selects no cluster (otherwise the test would not exercise the empty path).
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+
+  testthat::expect_true(max(colMeans(css_res$clus_sel_mat)) < 1 - 1/(2*B))
+
+  # Selection path: getCssSelections returns a clean empty result. (weights is a
+  # NAMED empty list, so assert via length/type rather than expect_equal(.,list()).)
+  empty_sel <- getCssSelections(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_length(empty_sel$selected_clusts, 0)
+  testthat::expect_true(is.list(empty_sel$selected_clusts))
+  testthat::expect_length(empty_sel$selected_feats, 0)
+  testthat::expect_true(is.integer(empty_sel$selected_feats))
+  testthat::expect_length(empty_sel$weights, 0)
+  testthat::expect_true(is.list(empty_sel$weights))
+
+  # Design / prediction paths: one clear error (no design/predictions possible).
+  testthat::expect_error(getCssDesign(css_res, newX=x, cutoff=1,
+                                      min_num_clusts=0),
+                         "No clusters were selected", fixed=TRUE)
+  testthat::expect_error(getCssPreds(css_res, testX=x, trainX=x, trainY=y,
+                                     cutoff=1, min_num_clusts=0),
+                         "No clusters were selected", fixed=TRUE)
+
+  # Legacy regression: the default min_num_clusts = 1 still forces >= 1 cluster
+  # on the SAME fixture (the floor of 1 is unchanged).
+  legacy_sel <- getCssSelections(css_res, cutoff=1, min_num_clusts=1)
+  testthat::expect_equal(length(legacy_sel$selected_clusts), 1)
 })
 ```
 
@@ -8753,10 +8805,10 @@ testthat::test_that("checkFormCssDesignInputs works", {
   testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
                                                   weighting="weighted_avg",
                                                   cutoff=0.2,
-                                                  min_num_clusts=0,
+                                                  min_num_clusts=-1,
                                                   max_num_clusts=NA,
                                                   newx=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(checkFormCssDesignInputs(css_results=css_res,
                                                   weighting="weighted_avg",
@@ -9023,9 +9075,9 @@ testthat::test_that("formCssDesign works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=0,
+  testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=-1,
                                        newx=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(formCssDesign(css_results=css_res, min_num_clusts=6,
                                        newx=x_new),
@@ -9237,9 +9289,9 @@ testthat::test_that("getCssDesign works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=0,
+  testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=-1,
                                        newX=x_new),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(getCssDesign(css_results=css_res, min_num_clusts=6,
                                        newX=x_new),
@@ -9387,10 +9439,10 @@ testthat::test_that("checkGetCssPredsInputs works", {
 
   testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
                                                 weighting="simple_avg",
-                                                cutoff=0.1, min_num_clusts=0,
+                                                cutoff=0.1, min_num_clusts=-1,
                                                 max_num_clusts=NA,
                                                 trainX=x_train, trainY=y_train),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(checkGetCssPredsInputs(css_res, testX=x_pred,
                                                 weighting="weighted_avg",
@@ -9782,9 +9834,9 @@ testthat::test_that("getCssPreds works", {
                          "is.numeric(min_num_clusts) | is.integer(min_num_clusts) is not TRUE",
                          fixed=TRUE)
 
-  testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=0,
+  testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=-1,
                                      trainX=x_train, trainY=y_train),
-                         "min_num_clusts >= 1 is not TRUE", fixed=TRUE)
+                         "min_num_clusts >= 0 is not TRUE", fixed=TRUE)
 
   testthat::expect_error(getCssPreds(css_res, testX=x_pred, min_num_clusts=10,
                                      trainX=x_train, trainY=y_train),

@@ -15,7 +15,7 @@ css(
   clusters = list(),
   fitfun = cssLasso,
   sampling_type = "SS",
-  B = ifelse(sampling_type == "MB", 100L, 50L),
+  B = 50L,
   prop_feats_remove = 0,
   train_inds = integer(),
   num_cores = 1L
@@ -100,10 +100,8 @@ css(
 
 - B:
 
-  Integer or numeric; the number of subsamples. Note: For
-  `sampling_type=="MB"` the total number of subsamples will be `B`; for
-  `sampling_type="SS"` the number of subsamples will be `2*B`. Default
-  is 100 for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+  Integer or numeric; the number of subsamples. For `sampling_type="SS"`
+  the number of subsamples will be `2*B`. Default is 50.
 
 - prop_feats_remove:
 

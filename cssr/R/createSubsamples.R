@@ -4,10 +4,8 @@
 #'
 #' @param n Integer or numeric; sample size of the data set.
 #' @param p Integer or numeric; number of features.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
-#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
-#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @param sampling_type A character vector; either "SS" or "MB". For "MB",
 #' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
@@ -61,6 +59,7 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
     } else{
         # In this case, we generate subsamples as well as logical vectors
         # of features to keep
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         subsamps_and_feats <- vector("list",
             if(sampling_type == "SS") 2L*B else B)
         subsamples <- getSubsamps(n, B, sampling_type)
@@ -81,6 +80,7 @@ createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){
                 feats_to_keep=feats_to_keep_i)
         }
 
+        # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
         if(sampling_type=="SS"){
             stopifnot(length(subsamples) == 2*B)
             for(i in 1:B){

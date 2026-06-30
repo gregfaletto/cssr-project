@@ -5,10 +5,8 @@
 #` Generate list of `B` (or `2*B` for sampling_type="SS") subsamples of size
 #` `n/2`
 #' @param n Integer or numeric; sample size of the data set.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
-#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
-#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @param sampling_type A character vector; either "SS" or "MB". For "MB",
 #' all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
@@ -40,6 +38,7 @@ getSubsamps <- function(n, B, sampling_type){
     }
     stopifnot(length(subsamples) == B)
     # TODO(gregfaletto): add support for sampling_type="MB"
+    # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
     if(sampling_type=="SS"){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the

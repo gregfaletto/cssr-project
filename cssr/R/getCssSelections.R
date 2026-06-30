@@ -26,7 +26,9 @@
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
 #' min_num_clusts clusters, the cutoff will be increased until at least
-#' min_num_clusts clusters are selected.) Default is 1.
+#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow
+#' a pure cutoff-based (threshold) selection that returns an empty set when no
+#' cluster's selection proportion meets the cutoff.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be decreased until at most
@@ -75,11 +77,11 @@ getCssSelections <- function(css_results, weighting="sparse", cutoff=0,
     # getSelectedClusters
     sel_clust_names <- names(sel_results$selected_clusts)
 
-    stopifnot(length(sel_clust_names) >= 1)
+    stopifnot(length(sel_clust_names) >= 0)
     stopifnot(all(sel_clust_names %in% names(css_results$clusters)))
 
     sel_clusts <- list()
-    for(i in 1:length(sel_clust_names)){
+    for(i in seq_along(sel_clust_names)){
         sel_clusts[[i]] <- css_results$clusters[[sel_clust_names[i]]]
         names(sel_clusts)[i] <- sel_clust_names[i]
     }

@@ -11,7 +11,7 @@ css(
   clusters = list(),
   fitfun = cssLasso,
   sampling_type = "SS",
-  B = ifelse(sampling_type == "MB", 100L, 50L),
+  B = 50L,
   prop_feats_remove = 0,
   train_inds = integer(),
   num_cores = 1L
@@ -72,10 +72,8 @@ all B subsamples are drawn randomly (as proposed by Meinshausen and Bühlmann
 subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.}
 
-\item{B}{Integer or numeric; the number of subsamples. Note: For
-\code{sampling_type=="MB"} the total number of subsamples will be \code{B}; for
-\code{sampling_type="SS"} the number of subsamples will be \code{2*B}. Default is 100
-for \code{sampling_type="MB"} and 50 for \code{sampling_type="SS"}.}
+\item{B}{Integer or numeric; the number of subsamples. For
+\code{sampling_type="SS"} the number of subsamples will be \code{2*B}. Default is 50.}
 
 \item{prop_feats_remove}{Numeric; if \code{prop_feats_remove} is greater than 0,
 then on each subsample, each feature is randomly dropped from the design

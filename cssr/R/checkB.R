@@ -3,9 +3,8 @@
 #' Helper function to confirm that the argument B to several functions is as
 #' expected
 #'
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' sampling.type=="MB" the total number of subsamples will be `B`; for
-#' sampling_type="SS" the number of subsamples will be `2*B`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd

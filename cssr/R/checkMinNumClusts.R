@@ -19,7 +19,7 @@ checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
     stopifnot(is.numeric(min_num_clusts) | is.integer(min_num_clusts))
     stopifnot(!is.na(min_num_clusts))
     stopifnot(min_num_clusts == round(min_num_clusts))
-    stopifnot(min_num_clusts >= 1)
+    stopifnot(min_num_clusts >= 0)
     stopifnot(min_num_clusts <= p)
     stopifnot(min_num_clusts <= n_clusters)
 }

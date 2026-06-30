@@ -54,10 +54,8 @@
 #' 2010). For "SS", in addition to these B subsamples, the B complementary pair
 #' subsamples will be drawn as well (see Faletto and Bien 2022 or Shah and
 #' Samworth 2013 for details). Default is "SS", and "MB" is not supported yet.
-#' @param B Integer or numeric; the number of subsamples. Note: For
-#' `sampling_type=="MB"` the total number of subsamples will be `B`; for
-#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 100
-#' for `sampling_type="MB"` and 50 for `sampling_type="SS"`.
+#' @param B Integer or numeric; the number of subsamples. For
+#' `sampling_type="SS"` the number of subsamples will be `2*B`. Default is 50.
 #' @param prop_feats_remove Numeric; if `prop_feats_remove` is greater than 0,
 #' then on each subsample, each feature is randomly dropped from the design
 #' matrix that is provided to `fitfun` with probability `prop_feats_remove`
@@ -137,7 +135,7 @@
 #' }
 #' @export
 css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
-    sampling_type = "SS", B = ifelse(sampling_type == "MB", 100L, 50L),
+    sampling_type = "SS", B = 50L,
     prop_feats_remove = 0, train_inds = integer(), num_cores = 1L
     ){
 
