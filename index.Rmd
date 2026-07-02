@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.2.1",
+    Version = "0.3.0",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -4899,6 +4899,228 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     df <- printCssDf(css_results=x, cutoff=cutoff,
         min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
     print.data.frame(df, ...)
+    invisible(x)
+}
+```
+
+## Ergonomic S3 accessors: `selected()` and `summary.cssr()`
+
+The functions above (`getCssSelections()`, `printCssDf()`, `print.cssr()`) already expose everything an end user needs, but they take the `cssr` object as `css_results` and return heterogeneous output. For a more idiomatic R experience -- mirroring the `selected()` and `summary.stabsel()` interface of the `stabs` package -- we add a small S3 layer on top of these internals. `selected()` is a generic accessor that returns the selected clusters (or features) from a fitted `cssr` object, and `summary.cssr()` returns a compact, computable overview object with its own print method. Both are thin wrappers over `getCssSelections()`/`printCssDf()`; they introduce no new methodology.
+
+`selected()` generic:
+
+```{r}
+#' Extract the selected clusters or features from cluster stability selection
+#'
+#' A convenient S3 accessor for the selected clusters (the default) or the
+#' selected features of a fitted `cssr` object, without re-running the
+#' (computationally expensive) subsampling. This is a thin wrapper around
+#' [getCssSelections()].
+#'
+#' Note that, unlike the `selected()` accessor in the \pkg{stabs} package (which
+#' returns the selected *variables*), the default here returns the selected
+#' *clusters* -- the natural unit of cluster stability selection. Pass
+#' `type = "features"` to obtain the flat integer vector of selected features
+#' instead.
+#'
+#' @param object An object of class "cssr" (the output of the function [css()]).
+#' @param ... Additional arguments passed to methods (currently unused).
+#' @return For the `cssr` method: if `type = "clusters"` (the default), a named
+#' list of integer vectors (each the indices of the features in one selected
+#' cluster; an empty list if no cluster is selected); if `type = "features"`, a
+#' named integer vector of the indices of the selected features (an empty integer
+#' vector if none).
+#' @author Gregory Faletto, Jacob Bien
+#' @references
+<<faletto2022>>
+#' @seealso [summary.cssr()] for an overview (counts plus a per-cluster table);
+#' [getCssSelections()] for the underlying selection (clusters, features, and
+#' weights together); [printCssDf()] and [print.cssr()] for the printed summary.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' # Selected clusters (the default):
+#' selected(res)
+#' # Selected features (a flat integer vector):
+#' selected(res, type = "features")
+#' @export
+selected <- function(object, ...){
+    UseMethod("selected")
+}
+```
+
+`selected.cssr()` method:
+
+```{r}
+#' @param type Character; either "clusters" (the default) to return the named
+#' list of selected clusters, or "features" to return the flat integer vector of
+#' selected features. May be abbreviated.
+#' @param cutoff Numeric; only those clusters with selection proportions equal to
+#' at least cutoff will be selected. Must be between 0 and 1. Default is 0 (in
+#' which case either all clusters are selected, or max_num_clusts are selected,
+#' if max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
+#' min_num_clusts clusters, the cutoff will be lowered until at least
+#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow
+#' a pure cutoff-based (threshold) selection that returns an empty result when no
+#' cluster's selection proportion meets the cutoff.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. (That is, if the chosen cutoff returns more than
+#' max_num_clusts clusters, the cutoff will be raised until at most
+#' max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param weighting Character; passed to [getCssSelections()] to determine the
+#' weights of individual features within the selected clusters. This affects
+#' ONLY `type = "features"` (it determines which cluster members have nonzero
+#' weight and are therefore returned); it is a no-op for `type = "clusters"`,
+#' whose selected clusters, selection proportions, and sizes do not depend on the
+#' weighting. Must be one of "sparse", "weighted_avg", or "simple_avg". See
+#' [getCssSelections()] for details. Default is "sparse".
+#' @rdname selected
+#' @export
+selected.cssr <- function(object, type=c("clusters", "features"), cutoff=0,
+    min_num_clusts=1, max_num_clusts=NA, weighting="sparse", ...){
+    stopifnot(inherits(object, "cssr"))
+    type <- match.arg(type)
+
+    # Thin wrapper: getCssSelections validates all inputs (checkCutoff,
+    # checkWeighting, checkMinNumClusts, checkMaxNumClusts) and cleanly returns
+    # empty results on an empty selection (e.g. cutoff = 1, min_num_clusts = 0).
+    sel <- getCssSelections(object, weighting=weighting, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+
+    if(type == "clusters"){
+        return(sel$selected_clusts)
+    }
+    return(sel$selected_feats)
+}
+```
+
+`summary.cssr()`:
+
+```{r}
+#' Summarize cluster stability selection output
+#'
+#' Produce a concise, computable overview of a fitted `cssr` object: a header
+#' with the number of selected clusters and features (at the given cutoff), a
+#' per-cluster table built on top of [printCssDf()], and a placeholder for
+#' per-family error rate (PFER) error-control content.
+#'
+#' The returned object has class "summary.cssr" and an accompanying print method
+#' ([print.summary.cssr()]). Its `table` element is exactly the data.frame
+#' returned by [printCssDf()]: one row per selected cluster, sorted by selection
+#' proportion, with columns ClustName, ClustProtoName (only if the features are
+#' named), ClustProtoNum, ClustSelProp (the cluster's selection proportion) and
+#' ClustSize.
+#'
+#' If the selection is empty (for example `cutoff = 1` with `min_num_clusts = 0`
+#' when no cluster reaches the cutoff), `summary.cssr` returns a well-formed
+#' zero-row object without error: `table` is NULL and the header reports
+#' "0 clusters / 0 features selected". In this case [printCssDf()] and its helper
+#' are deliberately NOT called, as they require at least one selected cluster.
+#'
+#' The `pfer` element is a documented placeholder (NA) reserved for error-control
+#' content to be filled in by a future release (issue #87).
+#'
+#' @param object An object of class "cssr" (the output of the function [css()]).
+#' @param cutoff Numeric; only those clusters with selection proportions equal to
+#' at least cutoff are summarized. Must be between 0 and 1. Default is 0 (in
+#' which case either all clusters are summarized, or max_num_clusts are, if
+#' max_num_clusts is specified).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' use regardless of cutoff. Default is 1. May be set to 0 to allow a pure
+#' cutoff-based (threshold) selection that can be empty.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' use regardless of cutoff. Default is NA (in which case max_num_clusts is
+#' ignored).
+#' @param weighting Character; passed to [getCssSelections()] to determine the
+#' selected features and hence the selected-feature count in the header. As in
+#' [selected()], it does NOT affect which clusters are selected or the
+#' per-cluster table. Must be one of "sparse", "weighted_avg", or "simple_avg".
+#' Default is "sparse".
+#' @param ... Additional arguments (currently unused).
+#' @return An object of class "summary.cssr": a named list with elements
+#' \item{n_selected_clusts}{Integer; the number of selected clusters.}
+#' \item{n_selected_feats}{Integer; the number of selected features.}
+#' \item{cutoff}{Numeric; the cutoff that was used.}
+#' \item{table}{A data.frame with one row per selected cluster (the output of
+#' [printCssDf()]), or NULL when the selection is empty.}
+#' \item{pfer}{A placeholder (NA) for per-family error rate error-control
+#' content, to be filled in by a future release (issue #87).}
+#' @author Gregory Faletto, Jacob Bien
+#' @seealso [selected()] to extract just the selected clusters or features;
+#' [getCssSelections()] for the underlying selection; [printCssDf()] for the
+#' per-cluster data.frame; [print.cssr()] for the analogous printed summary.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
+#'   B = 10)
+#' summary(res)
+#' @export
+summary.cssr <- function(object, cutoff=0, min_num_clusts=1, max_num_clusts=NA,
+    weighting="sparse", ...){
+    stopifnot(inherits(object, "cssr"))
+
+    # Selected clusters + features. getCssSelections validates all inputs
+    # (checkCutoff / checkWeighting / checkMinNumClusts / checkMaxNumClusts) and
+    # is empty-safe (a clean empty result when e.g. cutoff = 1 and
+    # min_num_clusts = 0).
+    sel <- getCssSelections(object, weighting=weighting, cutoff=cutoff,
+        min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+
+    n_selected_clusts <- length(sel$selected_clusts)
+    n_selected_feats <- length(sel$selected_feats)
+
+    # Empty-selection path: do NOT call printCssDf() / getSelectionPrototypes()
+    # here. Both assert at least one selected cluster (printCssDf: nrow >= 1;
+    # getSelectionPrototypes: n_selected_clusts >= 1) and so would die opaquely
+    # on an empty selection (#107). Return a well-formed zero-row summary.
+    if(n_selected_clusts >= 1){
+        clust_table <- printCssDf(object, cutoff=cutoff,
+            min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+    } else{
+        clust_table <- NULL
+    }
+
+    out <- list(n_selected_clusts=n_selected_clusts,
+        n_selected_feats=n_selected_feats, cutoff=cutoff,
+        table=clust_table, pfer=NA_real_)
+
+    class(out) <- "summary.cssr"
+
+    return(out)
+}
+```
+
+`print.summary.cssr()` (mirrors the `print.cssr()` S3-method pattern -- roxygen with `@export`, no `@examples`):
+
+```{r}
+#' @param x An object of class "summary.cssr" (the output of [summary.cssr()]).
+#' @rdname summary.cssr
+#' @export
+print.summary.cssr <- function(x, ...){
+    cat("Cluster stability selection summary\n")
+    cat(sprintf("%d cluster%s / %d feature%s selected at cutoff %s\n",
+        x$n_selected_clusts, if(x$n_selected_clusts == 1) "" else "s",
+        x$n_selected_feats, if(x$n_selected_feats == 1) "" else "s",
+        format(x$cutoff)))
+    if(is.null(x$table)){
+        cat("(no clusters selected at this cutoff)\n")
+    } else{
+        cat("\n")
+        print.data.frame(x$table, ...)
+    }
+    # PFER placeholder: error-control content to be filled in by issue #87.
+    cat(sprintf("\nPFER: %s (not yet implemented; see issue #87)\n",
+        format(x$pfer)))
     invisible(x)
 }
 ```
@@ -11862,6 +12084,172 @@ testthat::test_that("css runs with B = 1 (minimal subsampling)", {
   sel <- getCssSelections(css_b1)
   testthat::expect_identical(names(sel),
     c("selected_clusts", "selected_feats", "weights"))
+})
+```
+
+Tests for `selected()` / `selected.cssr()`:
+
+```{r}
+testthat::test_that("selected.cssr returns clusters and features", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  ref <- getCssSelections(css_res)
+
+  # type = "clusters" (the default): a named list of integer vectors, identical
+  # to getCssSelections()$selected_clusts at the same parameters.
+  clusts <- selected(css_res)
+  testthat::expect_true(is.list(clusts))
+  testthat::expect_identical(clusts, ref$selected_clusts)
+  testthat::expect_identical(selected(css_res, type="clusters"),
+                             ref$selected_clusts)
+
+  # type = "features": a flat integer vector, identical to
+  # getCssSelections()$selected_feats.
+  feats <- selected(css_res, type="features")
+  testthat::expect_true(is.integer(feats))
+  testthat::expect_identical(feats, ref$selected_feats)
+
+  # S3 dispatch: selected(obj) reaches selected.cssr().
+  testthat::expect_identical(selected(css_res), selected.cssr(css_res))
+
+  # Consistency with getCssSelections() at a nondefault cutoff and weighting
+  # (features path).
+  ref2 <- getCssSelections(css_res, weighting="simple_avg", cutoff=0.3)
+  testthat::expect_identical(
+    selected(css_res, type="features", weighting="simple_avg", cutoff=0.3),
+    ref2$selected_feats)
+
+  # Invalid inputs are rejected via the reused checks (checkCutoff /
+  # checkWeighting), same messages as getCssSelections().
+  testthat::expect_error(selected(css_res, cutoff=-0.5),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(selected(css_res, weighting="spasre"),
+    "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+    fixed=TRUE)
+})
+
+testthat::test_that("selected(type='clusters') is invariant to weighting", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  # weighting only affects individual-feature weights, never which clusters are
+  # selected: the type = "clusters" output is identical across weighting values.
+  sparse <- selected(css_res, type="clusters", weighting="sparse", cutoff=0.2)
+  wavg <- selected(css_res, type="clusters", weighting="weighted_avg",
+                   cutoff=0.2)
+  savg <- selected(css_res, type="clusters", weighting="simple_avg",
+                   cutoff=0.2)
+  testthat::expect_identical(sparse, wavg)
+  testthat::expect_identical(sparse, savg)
+
+  # By contrast the features path CAN depend on weighting: "simple_avg" returns
+  # every member of the selected clusters, so at least as many as "sparse".
+  feats_sparse <- selected(css_res, type="features", weighting="sparse",
+                           cutoff=0.2)
+  feats_savg <- selected(css_res, type="features", weighting="simple_avg",
+                         cutoff=0.2)
+  testthat::expect_true(length(feats_savg) >= length(feats_sparse))
+})
+```
+
+Tests for `summary.cssr()` / `print.summary.cssr()`:
+
+```{r}
+testthat::test_that("summary.cssr summarizes clusters, sizes, and header counts", {
+  set.seed(67234)
+  data <- genClusteredData(n=15, p=11, k_unclustered=2, cluster_size=3,
+                           n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
+  x <- data$X
+  y <- data$y
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  smry <- summary(css_res)
+  testthat::expect_true(inherits(smry, "summary.cssr"))
+
+  ref <- getCssSelections(css_res)
+  ref_df <- printCssDf(css_res)
+
+  # Header counts are consistent with getCssSelections().
+  testthat::expect_equal(smry$n_selected_clusts, length(ref$selected_clusts))
+  testthat::expect_equal(smry$n_selected_feats, length(ref$selected_feats))
+  testthat::expect_equal(smry$cutoff, 0)
+
+  # The per-cluster table IS printCssDf()'s data.frame (Theta-hat = ClustSelProp,
+  # plus ClustSize), so clusters / proportions / sizes all match.
+  testthat::expect_identical(smry$table, ref_df)
+  testthat::expect_equal(nrow(smry$table), 7)
+  testthat::expect_equal(smry$n_selected_clusts, nrow(smry$table))
+  testthat::expect_true(all(c("ClustName", "ClustSelProp", "ClustSize") %in%
+                             colnames(smry$table)))
+  testthat::expect_equal(smry$table[smry$table$ClustName=="red_cluster",
+                                    "ClustSize"], 3)
+  testthat::expect_equal(smry$table[smry$table$ClustName=="green_cluster",
+                                    "ClustSize"], 3)
+
+  # PFER placeholder present (to be filled in by #87).
+  testthat::expect_true("pfer" %in% names(smry))
+  testthat::expect_true(is.na(smry$pfer))
+
+  # print.summary.cssr runs, prints the header + table, returns x invisibly.
+  testthat::expect_invisible(print(smry))
+  ret <- print(smry)
+  testthat::expect_identical(ret, smry)
+  testthat::expect_output(print(smry), "selected at cutoff")
+  testthat::expect_output(print(smry), "ClustName")
+
+  # S3 dispatch: summary(obj) reaches summary.cssr().
+  testthat::expect_identical(summary(css_res), summary.cssr(css_res))
+
+  # Invalid cutoff rejected via the reused check.
+  testthat::expect_error(summary(css_res, cutoff=1.5),
+                         "cutoff <= 1 is not TRUE", fixed=TRUE)
+})
+```
+
+Test for the empty-selection path of `selected()` and `summary.cssr()` (issue
+#107): an empty selection must return clean empty output / a zero-row summary,
+NOT trip the `nrow >= 1` / `n_selected_clusts >= 1` assertions inside
+`printCssDf()` / `getSelectionPrototypes()`.
+
+```{r}
+testthat::test_that("selected() and summary() handle an empty selection", {
+  # Same empty-producing fixture as the getCssSelections #107 test: fixed seed,
+  # all-singleton clusters, and a large lambda so the base lasso selects almost
+  # nothing; cutoff = 1 with min_num_clusts = 0 then selects no cluster.
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+  testthat::expect_true(max(colMeans(css_res$clus_sel_mat)) < 1 - 1/(2*B))
+
+  # selected(): a clean empty list / empty integer vector, no error.
+  empty_clusts <- selected(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.list(empty_clusts))
+  testthat::expect_length(empty_clusts, 0)
+  empty_feats <- selected(css_res, type="features", cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.integer(empty_feats))
+  testthat::expect_length(empty_feats, 0)
+
+  # summary(): a well-formed zero-row summary (table NULL, "0 clusters" header),
+  # NOT an opaque stopifnot() failure from printCssDf/getSelectionPrototypes.
+  smry <- summary(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(inherits(smry, "summary.cssr"))
+  testthat::expect_equal(smry$n_selected_clusts, 0)
+  testthat::expect_equal(smry$n_selected_feats, 0)
+  testthat::expect_true(is.null(smry$table))
+
+  # print still works and reports 0 clusters / 0 features.
+  testthat::expect_invisible(print(smry))
+  testthat::expect_output(print(smry), "0 clusters / 0 features")
 })
 ```
 
