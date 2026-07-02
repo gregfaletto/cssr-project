@@ -44,3 +44,12 @@ stopifnot("litr::render did not produce _book/" = fs::dir_exists("_book"))
 if (fs::dir_exists("docs/create")) fs::dir_delete("docs/create")
 fs::dir_copy("_book", "docs/create")
 fs::dir_delete("_book")
+
+# Disable Jekyll on the published site. GitHub Pages for this repo is the legacy
+# branch build (main /docs), which runs Jekyll over docs/ by default. cssr's site
+# is static (the pkgdown site + the litr "create" book), and Jekyll's Liquid
+# parser can choke on generated content, failing the Pages build ("Page build
+# failed", as it did on the #117 merge). An empty .nojekyll at the site root
+# tells GitHub Pages to serve docs/ as-is and skip Jekyll entirely. litr's
+# add_pkgdown() does not emit one at the published root, so create it here.
+if (!fs::file_exists("docs/.nojekyll")) fs::file_create("docs/.nojekyll")
