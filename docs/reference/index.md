@@ -36,3 +36,8 @@
   cluster stability selection output to print
 - [`protolasso()`](protolasso.md) : Select features via the protolasso
   (Reid and Tibshirani 2016)
+- [`selected()`](selected.md) : Extract the selected clusters or
+  features from cluster stability selection
+- [`print(`*`<summary.cssr>`*`)`](summary.cssr.md)
+  [`summary(`*`<cssr>`*`)`](summary.cssr.md) : Summarize cluster
+  stability selection output

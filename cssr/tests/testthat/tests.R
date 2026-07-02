@@ -5773,6 +5773,157 @@ testthat::test_that("css runs with B = 1 (minimal subsampling)", {
     c("selected_clusts", "selected_feats", "weights"))
 })
 
+testthat::test_that("selected.cssr returns clusters and features", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  ref <- getCssSelections(css_res)
+
+  # type = "clusters" (the default): a named list of integer vectors, identical
+  # to getCssSelections()$selected_clusts at the same parameters.
+  clusts <- selected(css_res)
+  testthat::expect_true(is.list(clusts))
+  testthat::expect_identical(clusts, ref$selected_clusts)
+  testthat::expect_identical(selected(css_res, type="clusters"),
+                             ref$selected_clusts)
+
+  # type = "features": a flat integer vector, identical to
+  # getCssSelections()$selected_feats.
+  feats <- selected(css_res, type="features")
+  testthat::expect_true(is.integer(feats))
+  testthat::expect_identical(feats, ref$selected_feats)
+
+  # S3 dispatch: selected(obj) reaches selected.cssr().
+  testthat::expect_identical(selected(css_res), selected.cssr(css_res))
+
+  # Consistency with getCssSelections() at a nondefault cutoff and weighting
+  # (features path).
+  ref2 <- getCssSelections(css_res, weighting="simple_avg", cutoff=0.3)
+  testthat::expect_identical(
+    selected(css_res, type="features", weighting="simple_avg", cutoff=0.3),
+    ref2$selected_feats)
+
+  # Invalid inputs are rejected via the reused checks (checkCutoff /
+  # checkWeighting), same messages as getCssSelections().
+  testthat::expect_error(selected(css_res, cutoff=-0.5),
+                         "cutoff >= 0 is not TRUE", fixed=TRUE)
+  testthat::expect_error(selected(css_res, weighting="spasre"),
+    "Weighting must be a character and one of sparse, simple_avg, or weighted_avg",
+    fixed=TRUE)
+})
+
+testthat::test_that("selected(type='clusters') is invariant to weighting", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B = 10)
+
+  # weighting only affects individual-feature weights, never which clusters are
+  # selected: the type = "clusters" output is identical across weighting values.
+  sparse <- selected(css_res, type="clusters", weighting="sparse", cutoff=0.2)
+  wavg <- selected(css_res, type="clusters", weighting="weighted_avg",
+                   cutoff=0.2)
+  savg <- selected(css_res, type="clusters", weighting="simple_avg",
+                   cutoff=0.2)
+  testthat::expect_identical(sparse, wavg)
+  testthat::expect_identical(sparse, savg)
+
+  # By contrast the features path CAN depend on weighting: "simple_avg" returns
+  # every member of the selected clusters, so at least as many as "sparse".
+  feats_sparse <- selected(css_res, type="features", weighting="sparse",
+                           cutoff=0.2)
+  feats_savg <- selected(css_res, type="features", weighting="simple_avg",
+                         cutoff=0.2)
+  testthat::expect_true(length(feats_savg) >= length(feats_sparse))
+})
+
+testthat::test_that("summary.cssr summarizes clusters, sizes, and header counts", {
+  set.seed(67234)
+  data <- genClusteredData(n=15, p=11, k_unclustered=2, cluster_size=3,
+                           n_clusters=2, sig_clusters=1, sigma_eps_sq=10^(-6))
+  x <- data$X
+  y <- data$y
+  good_clusters <- list(red_cluster=1L:3L, green_cluster=4L:6L)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  smry <- summary(css_res)
+  testthat::expect_true(inherits(smry, "summary.cssr"))
+
+  ref <- getCssSelections(css_res)
+  ref_df <- printCssDf(css_res)
+
+  # Header counts are consistent with getCssSelections().
+  testthat::expect_equal(smry$n_selected_clusts, length(ref$selected_clusts))
+  testthat::expect_equal(smry$n_selected_feats, length(ref$selected_feats))
+  testthat::expect_equal(smry$cutoff, 0)
+
+  # The per-cluster table IS printCssDf()'s data.frame (Theta-hat = ClustSelProp,
+  # plus ClustSize), so clusters / proportions / sizes all match.
+  testthat::expect_identical(smry$table, ref_df)
+  testthat::expect_equal(nrow(smry$table), 7)
+  testthat::expect_equal(smry$n_selected_clusts, nrow(smry$table))
+  testthat::expect_true(all(c("ClustName", "ClustSelProp", "ClustSize") %in%
+                             colnames(smry$table)))
+  testthat::expect_equal(smry$table[smry$table$ClustName=="red_cluster",
+                                    "ClustSize"], 3)
+  testthat::expect_equal(smry$table[smry$table$ClustName=="green_cluster",
+                                    "ClustSize"], 3)
+
+  # PFER placeholder present (to be filled in by #87).
+  testthat::expect_true("pfer" %in% names(smry))
+  testthat::expect_true(is.na(smry$pfer))
+
+  # print.summary.cssr runs, prints the header + table, returns x invisibly.
+  testthat::expect_invisible(print(smry))
+  ret <- print(smry)
+  testthat::expect_identical(ret, smry)
+  testthat::expect_output(print(smry), "selected at cutoff")
+  testthat::expect_output(print(smry), "ClustName")
+
+  # S3 dispatch: summary(obj) reaches summary.cssr().
+  testthat::expect_identical(summary(css_res), summary.cssr(css_res))
+
+  # Invalid cutoff rejected via the reused check.
+  testthat::expect_error(summary(css_res, cutoff=1.5),
+                         "cutoff <= 1 is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("selected() and summary() handle an empty selection", {
+  # Same empty-producing fixture as the getCssSelections #107 test: fixed seed,
+  # all-singleton clusters, and a large lambda so the base lasso selects almost
+  # nothing; cutoff = 1 with min_num_clusts = 0 then selects no cluster.
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+  testthat::expect_true(max(colMeans(css_res$clus_sel_mat)) < 1 - 1/(2*B))
+
+  # selected(): a clean empty list / empty integer vector, no error.
+  empty_clusts <- selected(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.list(empty_clusts))
+  testthat::expect_length(empty_clusts, 0)
+  empty_feats <- selected(css_res, type="features", cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.integer(empty_feats))
+  testthat::expect_length(empty_feats, 0)
+
+  # summary(): a well-formed zero-row summary (table NULL, "0 clusters" header),
+  # NOT an opaque stopifnot() failure from printCssDf/getSelectionPrototypes.
+  smry <- summary(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(inherits(smry, "summary.cssr"))
+  testthat::expect_equal(smry$n_selected_clusts, 0)
+  testthat::expect_equal(smry$n_selected_feats, 0)
+  testthat::expect_true(is.null(smry$table))
+
+  # print still works and reports 0 clusters / 0 features.
+  testthat::expect_invisible(print(smry))
+  testthat::expect_output(print(smry), "0 clusters / 0 features")
+})
+
 testthat::test_that("cssSelect works", {
   set.seed(73212)
   

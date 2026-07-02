@@ -136,7 +136,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul>
 </li>
 <li class="chapter" data-level="4" data-path="sel-and-pred.html"><a href="sel-and-pred.html"><i class="fa fa-check"></i><b>4</b> Selection and prediction functions</a></li>
-<li class="chapter" data-level="5" data-path="other-useful.html"><a href="other-useful.html"><i class="fa fa-check"></i><b>5</b> Other useful functions</a></li>
+<li class="chapter" data-level="5" data-path="other-useful.html">
+<a href="other-useful.html"><i class="fa fa-check"></i><b>5</b> Other useful functions</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="other-useful.html"><a href="other-useful.html#ergonomic-s3-accessors-selected-and-summary.cssr"><i class="fa fa-check"></i><b>5.1</b> Ergonomic S3 accessors: <code><a href="other-useful.html#selected">selected</a>()</code> and <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code></a></li>
+</ul>
+</li>
 <li class="chapter" data-level="6" data-path="wrapper-functions.html"><a href="wrapper-functions.html"><i class="fa fa-check"></i><b>6</b> Convenient wrapper functions</a></li>
 <li class="chapter" data-level="7" data-path="competitor-methods.html"><a href="competitor-methods.html"><i class="fa fa-check"></i><b>7</b> Competitor Methods</a></li>
 <li class="part"><span><b>I Tests</b></span></li>
@@ -169,307 +174,307 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>The two main disadvantages of these functions are flexibility and computational efficiency. For simplicity of use, these functions do not provide as many options as the component functions they call (for example, <code>min_num_clusts</code> is not an available argument for these models). Further, both of these functions make (computationally intensive) calls to <code><a href="css.html#css">css</a>()</code> internally every time they are called, so these functions are not recommended for users who want to tinker with the model size and other parameters. Instead, it would be more efficient to call css once and then work with the output as desired using the other package functions, which are very efficient given the stored output from <code><a href="css.html#css">css</a>()</code>.</p>
 <p><code><a href="wrapper-functions.html#cssSelect">cssSelect</a>()</code> and <code><a href="wrapper-functions.html#cssPredict">cssPredict</a>()</code> have no new dependencies; they rely only on already-defined functions.</p>
 <p><code><a href="wrapper-functions.html#cssSelect">cssSelect</a>()</code>:</p>
-<div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb75-1"><a href="wrapper-functions.html#cb75-1" tabindex="-1"></a><span class="co">#' Obtain a selected set of clusters and features using cluster stability</span></span>
-<span id="cb75-2"><a href="wrapper-functions.html#cb75-2" tabindex="-1"></a><span class="co">#' selection</span></span>
-<span id="cb75-3"><a href="wrapper-functions.html#cb75-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb75-4"><a href="wrapper-functions.html#cb75-4" tabindex="-1"></a><span class="co">#' Takes in data X and y and returns a set of clusters (and a set of features)</span></span>
-<span id="cb75-5"><a href="wrapper-functions.html#cb75-5" tabindex="-1"></a><span class="co">#' that are useful for predicting y from the data in X. This is a wrapper</span></span>
-<span id="cb75-6"><a href="wrapper-functions.html#cb75-6" tabindex="-1"></a><span class="co">#' function for css and getCssSelections. Using cssSelect is simpler, but it</span></span>
-<span id="cb75-7"><a href="wrapper-functions.html#cb75-7" tabindex="-1"></a><span class="co">#' has fewer options, and it executes the full (computationally expensive)</span></span>
-<span id="cb75-8"><a href="wrapper-functions.html#cb75-8" tabindex="-1"></a><span class="co">#' subsampling procedured every time it is called. In contrast, css can be</span></span>
-<span id="cb75-9"><a href="wrapper-functions.html#cb75-9" tabindex="-1"></a><span class="co">#' called just once, and then getCssSelections can quickly return results using</span></span>
-<span id="cb75-10"><a href="wrapper-functions.html#cb75-10" tabindex="-1"></a><span class="co">#' different values of cutoff, max_num_clusts, etc. from the calculations done</span></span>
-<span id="cb75-11"><a href="wrapper-functions.html#cb75-11" tabindex="-1"></a><span class="co">#' in one call to css.</span></span>
-<span id="cb75-12"><a href="wrapper-functions.html#cb75-12" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb75-13"><a href="wrapper-functions.html#cb75-13" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb75-14"><a href="wrapper-functions.html#cb75-14" tabindex="-1"></a><span class="co">#' the p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
-<span id="cb75-15"><a href="wrapper-functions.html#cb75-15" tabindex="-1"></a><span class="co">#' @param y A length-n numeric vector containing the responses; `y[i]` is the</span></span>
-<span id="cb75-16"><a href="wrapper-functions.html#cb75-16" tabindex="-1"></a><span class="co">#' response corresponding to observation `X[i, ]`. (Note that for the css</span></span>
-<span id="cb75-17"><a href="wrapper-functions.html#cb75-17" tabindex="-1"></a><span class="co">#' function, y does not have to be a numeric response, but for this function,</span></span>
-<span id="cb75-18"><a href="wrapper-functions.html#cb75-18" tabindex="-1"></a><span class="co">#' the underlying selection procedure is the lasso, so y must be a real-valued</span></span>
-<span id="cb75-19"><a href="wrapper-functions.html#cb75-19" tabindex="-1"></a><span class="co">#' response.)</span></span>
-<span id="cb75-20"><a href="wrapper-functions.html#cb75-20" tabindex="-1"></a><span class="co">#' @param clusters Optional; either an integer vector of a list of integer</span></span>
-<span id="cb75-21"><a href="wrapper-functions.html#cb75-21" tabindex="-1"></a><span class="co">#' vectors; each vector should contain the indices of a cluster of features (a</span></span>
-<span id="cb75-22"><a href="wrapper-functions.html#cb75-22" tabindex="-1"></a><span class="co">#' subset of 1:p). (If there is only one cluster, clusters can either be a list</span></span>
-<span id="cb75-23"><a href="wrapper-functions.html#cb75-23" tabindex="-1"></a><span class="co">#' of length 1 or an integer vector.) All of the provided clusters must be</span></span>
-<span id="cb75-24"><a href="wrapper-functions.html#cb75-24" tabindex="-1"></a><span class="co">#' non-overlapping. Every feature not appearing in any cluster will be assumed</span></span>
-<span id="cb75-25"><a href="wrapper-functions.html#cb75-25" tabindex="-1"></a><span class="co">#' to be unclustered (that is, they  will be treated as if they are in a</span></span>
-<span id="cb75-26"><a href="wrapper-functions.html#cb75-26" tabindex="-1"></a><span class="co">#' "cluster" containing only themselves). If clusters is a list of length 0 (or</span></span>
-<span id="cb75-27"><a href="wrapper-functions.html#cb75-27" tabindex="-1"></a><span class="co">#' a list only containing clusters of length 1), then <a href="css.html#css">css</a>() returns the same</span></span>
-<span id="cb75-28"><a href="wrapper-functions.html#cb75-28" tabindex="-1"></a><span class="co">#' results as stability selection (so feat_sel_mat will be identical to</span></span>
-<span id="cb75-29"><a href="wrapper-functions.html#cb75-29" tabindex="-1"></a><span class="co">#' clus_sel_mat). Names for the clusters will be needed later; any clusters that</span></span>
-<span id="cb75-30"><a href="wrapper-functions.html#cb75-30" tabindex="-1"></a><span class="co">#' are not given names in the list clusters will be given names automatically by</span></span>
-<span id="cb75-31"><a href="wrapper-functions.html#cb75-31" tabindex="-1"></a><span class="co">#' css. </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
-<span id="cb75-32"><a href="wrapper-functions.html#cb75-32" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
-<span id="cb75-33"><a href="wrapper-functions.html#cb75-33" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
-<span id="cb75-34"><a href="wrapper-functions.html#cb75-34" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
-<span id="cb75-35"><a href="wrapper-functions.html#cb75-35" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package). To</span></span>
-<span id="cb75-36"><a href="wrapper-functions.html#cb75-36" tabindex="-1"></a><span class="co">#' get correct results in this case, please use model.matrix to convert the</span></span>
-<span id="cb75-37"><a href="wrapper-functions.html#cb75-37" tabindex="-1"></a><span class="co">#' data.frame to a numeric matrix on your own, then provide this matrix and</span></span>
-<span id="cb75-38"><a href="wrapper-functions.html#cb75-38" tabindex="-1"></a><span class="co">#' cluster assignments with respect to this matrix. Default is list() (so no</span></span>
-<span id="cb75-39"><a href="wrapper-functions.html#cb75-39" tabindex="-1"></a><span class="co">#' clusters are specified, and every feature is assumed to be in a "cluster"</span></span>
-<span id="cb75-40"><a href="wrapper-functions.html#cb75-40" tabindex="-1"></a><span class="co">#' containing only itself).</span></span>
-<span id="cb75-41"><a href="wrapper-functions.html#cb75-41" tabindex="-1"></a><span class="co">#' @param lambda Optional; the tuning parameter to be used by the lasso for</span></span>
-<span id="cb75-42"><a href="wrapper-functions.html#cb75-42" tabindex="-1"></a><span class="co">#' feature selection in each subsample. If lambda is not provided, cssSelect</span></span>
-<span id="cb75-43"><a href="wrapper-functions.html#cb75-43" tabindex="-1"></a><span class="co">#' will choose one automatically by cross-validation. Default is NA.</span></span>
-<span id="cb75-44"><a href="wrapper-functions.html#cb75-44" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; cssSelect will only select those clusters with</span></span>
-<span id="cb75-45"><a href="wrapper-functions.html#cb75-45" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
-<span id="cb75-46"><a href="wrapper-functions.html#cb75-46" tabindex="-1"></a><span class="co">#' Default is NA (in which case max_num_clusts are used).</span></span>
-<span id="cb75-47"><a href="wrapper-functions.html#cb75-47" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb75-48"><a href="wrapper-functions.html#cb75-48" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
-<span id="cb75-49"><a href="wrapper-functions.html#cb75-49" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
-<span id="cb75-50"><a href="wrapper-functions.html#cb75-50" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb75-51"><a href="wrapper-functions.html#cb75-51" tabindex="-1"></a><span class="co">#' either cutoff is used to choose the number of clusters, or if cutoff was also</span></span>
-<span id="cb75-52"><a href="wrapper-functions.html#cb75-52" tabindex="-1"></a><span class="co">#' unspecified, cssSelect chooses max_num_clusts by cross-validation).</span></span>
-<span id="cb75-53"><a href="wrapper-functions.html#cb75-53" tabindex="-1"></a><span class="co">#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be</span></span>
-<span id="cb75-54"><a href="wrapper-functions.html#cb75-54" tabindex="-1"></a><span class="co">#' automatically estimated using the lasso with cross-validation. Default is</span></span>
-<span id="cb75-55"><a href="wrapper-functions.html#cb75-55" tabindex="-1"></a><span class="co">#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is</span></span>
-<span id="cb75-56"><a href="wrapper-functions.html#cb75-56" tabindex="-1"></a><span class="co">#' provided. (If desired output is to return all clusters, you should set</span></span>
-<span id="cb75-57"><a href="wrapper-functions.html#cb75-57" tabindex="-1"></a><span class="co">#' auto_select_size to FALSE and do not provide cutoff or max_num_clusts.)</span></span>
-<span id="cb75-58"><a href="wrapper-functions.html#cb75-58" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.</span></span>
-<span id="cb75-59"><a href="wrapper-functions.html#cb75-59" tabindex="-1"></a><span class="co">#' Drives both the choice of lambda (when lambda is not provided) and the</span></span>
-<span id="cb75-60"><a href="wrapper-functions.html#cb75-60" tabindex="-1"></a><span class="co">#' elastic net fit used for feature selection in each subsample. Default is 1</span></span>
-<span id="cb75-61"><a href="wrapper-functions.html#cb75-61" tabindex="-1"></a><span class="co">#' (in which case the penalty is the lasso).</span></span>
-<span id="cb75-62"><a href="wrapper-functions.html#cb75-62" tabindex="-1"></a><span class="co">#' @return A named list with three items. \item{selected_clusts}{A named list of</span></span>
-<span id="cb75-63"><a href="wrapper-functions.html#cb75-63" tabindex="-1"></a><span class="co">#' integer vectors; each vector contains the indices of the features in one of</span></span>
-<span id="cb75-64"><a href="wrapper-functions.html#cb75-64" tabindex="-1"></a><span class="co">#' the selected clusters.} \item{selected_feats}{A named integer vector; the</span></span>
-<span id="cb75-65"><a href="wrapper-functions.html#cb75-65" tabindex="-1"></a><span class="co">#' indices of the features with nonzero weights from all of the selected</span></span>
-<span id="cb75-66"><a href="wrapper-functions.html#cb75-66" tabindex="-1"></a><span class="co">#' clusters.} \item{weights}{A named list of the same length as selected_clusts.</span></span>
-<span id="cb75-67"><a href="wrapper-functions.html#cb75-67" tabindex="-1"></a><span class="co">#' Each list element `weights[[j]]` is a numeric vector of the weights to use for</span></span>
-<span id="cb75-68"><a href="wrapper-functions.html#cb75-68" tabindex="-1"></a><span class="co">#' the jth selected cluster, and it has the same name as the cluster it</span></span>
-<span id="cb75-69"><a href="wrapper-functions.html#cb75-69" tabindex="-1"></a><span class="co">#' corresponds to.}</span></span>
-<span id="cb75-70"><a href="wrapper-functions.html#cb75-70" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb75-71"><a href="wrapper-functions.html#cb75-71" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb75-72"><a href="wrapper-functions.html#cb75-72" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb75-73"><a href="wrapper-functions.html#cb75-73" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 80, p = 11, k_unclustered = 2,</span></span>
-<span id="cb75-74"><a href="wrapper-functions.html#cb75-74" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb75-75"><a href="wrapper-functions.html#cb75-75" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb75-76"><a href="wrapper-functions.html#cb75-76" tabindex="-1"></a><span class="co">#' res &lt;- <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
-<span id="cb75-77"><a href="wrapper-functions.html#cb75-77" tabindex="-1"></a><span class="co">#' res$selected_feats</span></span>
-<span id="cb75-78"><a href="wrapper-functions.html#cb75-78" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb75-79"><a href="wrapper-functions.html#cb75-79" tabindex="-1"></a><span id="cssSelect">cssSelect</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters =</span> <span class="fu">list</span>(), <span class="at">lambda=</span><span class="cn">NA</span>, <span class="at">cutoff=</span><span class="cn">NA</span>,</span>
-<span id="cb75-80"><a href="wrapper-functions.html#cb75-80" tabindex="-1"></a>    <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">auto_select_size=</span><span class="cn">TRUE</span>, <span class="at">alpha=</span><span class="dv">1</span>){</span>
-<span id="cb75-81"><a href="wrapper-functions.html#cb75-81" tabindex="-1"></a></span>
-<span id="cb75-82"><a href="wrapper-functions.html#cb75-82" tabindex="-1"></a>    <span class="co"># Check inputs (most inputs will be checked by called functions)</span></span>
-<span id="cb75-83"><a href="wrapper-functions.html#cb75-83" tabindex="-1"></a></span>
-<span id="cb75-84"><a href="wrapper-functions.html#cb75-84" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(auto_select_size))</span>
-<span id="cb75-85"><a href="wrapper-functions.html#cb75-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(auto_select_size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb75-86"><a href="wrapper-functions.html#cb75-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(auto_select_size))</span>
-<span id="cb75-87"><a href="wrapper-functions.html#cb75-87" tabindex="-1"></a></span>
-<span id="cb75-88"><a href="wrapper-functions.html#cb75-88" tabindex="-1"></a>    <span class="co"># Validate alpha up front. This must happen before the NA-lambda branch</span></span>
-<span id="cb75-89"><a href="wrapper-functions.html#cb75-89" tabindex="-1"></a>    <span class="co"># below (a user-supplied non-NA lambda skips getLassoLambda and therefore</span></span>
-<span id="cb75-90"><a href="wrapper-functions.html#cb75-90" tabindex="-1"></a>    <span class="co"># its own alpha check) and before the bundling step, so that an invalid or</span></span>
-<span id="cb75-91"><a href="wrapper-functions.html#cb75-91" tabindex="-1"></a>    <span class="co"># NA alpha is caught here with a clear message rather than deep inside the</span></span>
-<span id="cb75-92"><a href="wrapper-functions.html#cb75-92" tabindex="-1"></a>    <span class="co"># subsampling loop.</span></span>
-<span id="cb75-93"><a href="wrapper-functions.html#cb75-93" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
-<span id="cb75-94"><a href="wrapper-functions.html#cb75-94" tabindex="-1"></a></span>
-<span id="cb75-95"><a href="wrapper-functions.html#cb75-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
-<span id="cb75-96"><a href="wrapper-functions.html#cb75-96" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
-<span id="cb75-97"><a href="wrapper-functions.html#cb75-97" tabindex="-1"></a></span>
-<span id="cb75-98"><a href="wrapper-functions.html#cb75-98" tabindex="-1"></a></span>
-<span id="cb75-99"><a href="wrapper-functions.html#cb75-99" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
-<span id="cb75-100"><a href="wrapper-functions.html#cb75-100" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters, <span class="at">convert_phrase =</span> <span class="st">"the data.frame X"</span>)</span>
-<span id="cb75-101"><a href="wrapper-functions.html#cb75-101" tabindex="-1"></a></span>
-<span id="cb75-102"><a href="wrapper-functions.html#cb75-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb75-103"><a href="wrapper-functions.html#cb75-103" tabindex="-1"></a></span>
-<span id="cb75-104"><a href="wrapper-functions.html#cb75-104" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
-<span id="cb75-105"><a href="wrapper-functions.html#cb75-105" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)"</span>)</span>
-<span id="cb75-106"><a href="wrapper-functions.html#cb75-106" tabindex="-1"></a>    }</span>
-<span id="cb75-107"><a href="wrapper-functions.html#cb75-107" tabindex="-1"></a>    <span class="co"># Reject a non-finite y here (after the domain message above, so that</span></span>
-<span id="cb75-108"><a href="wrapper-functions.html#cb75-108" tabindex="-1"></a>    <span class="co"># message is preserved) so the default lambda=NA -&gt; getLassoLambda path</span></span>
-<span id="cb75-109"><a href="wrapper-functions.html#cb75-109" tabindex="-1"></a>    <span class="co"># fails fast rather than per-subsample later.</span></span>
-<span id="cb75-110"><a href="wrapper-functions.html#cb75-110" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y, <span class="st">"y"</span>)</span>
-<span id="cb75-111"><a href="wrapper-functions.html#cb75-111" tabindex="-1"></a></span>
-<span id="cb75-112"><a href="wrapper-functions.html#cb75-112" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb75-113"><a href="wrapper-functions.html#cb75-113" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(lambda)){</span>
-<span id="cb75-114"><a href="wrapper-functions.html#cb75-114" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, <span class="at">alpha=</span>alpha)</span>
-<span id="cb75-115"><a href="wrapper-functions.html#cb75-115" tabindex="-1"></a>    }</span>
-<span id="cb75-116"><a href="wrapper-functions.html#cb75-116" tabindex="-1"></a></span>
-<span id="cb75-117"><a href="wrapper-functions.html#cb75-117" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
-<span id="cb75-118"><a href="wrapper-functions.html#cb75-118" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
-<span id="cb75-119"><a href="wrapper-functions.html#cb75-119" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
-<span id="cb75-120"><a href="wrapper-functions.html#cb75-120" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
-<span id="cb75-121"><a href="wrapper-functions.html#cb75-121" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
-<span id="cb75-122"><a href="wrapper-functions.html#cb75-122" tabindex="-1"></a>    }</span>
-<span id="cb75-123"><a href="wrapper-functions.html#cb75-123" tabindex="-1"></a></span>
-<span id="cb75-124"><a href="wrapper-functions.html#cb75-124" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(X, y, lambda, clusters)</span>
-<span id="cb75-125"><a href="wrapper-functions.html#cb75-125" tabindex="-1"></a></span>
-<span id="cb75-126"><a href="wrapper-functions.html#cb75-126" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
-<span id="cb75-127"><a href="wrapper-functions.html#cb75-127" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
-<span id="cb75-128"><a href="wrapper-functions.html#cb75-128" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
-<span id="cb75-129"><a href="wrapper-functions.html#cb75-129" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
-<span id="cb75-130"><a href="wrapper-functions.html#cb75-130" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results<span class="sc">$</span>clusters,</span>
-<span id="cb75-131"><a href="wrapper-functions.html#cb75-131" tabindex="-1"></a>                <span class="at">alpha=</span>alpha)</span>
-<span id="cb75-132"><a href="wrapper-functions.html#cb75-132" tabindex="-1"></a>        }</span>
-<span id="cb75-133"><a href="wrapper-functions.html#cb75-133" tabindex="-1"></a>    }</span>
-<span id="cb75-134"><a href="wrapper-functions.html#cb75-134" tabindex="-1"></a></span>
-<span id="cb75-135"><a href="wrapper-functions.html#cb75-135" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
-<span id="cb75-136"><a href="wrapper-functions.html#cb75-136" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb75-137"><a href="wrapper-functions.html#cb75-137" tabindex="-1"></a>    }</span>
-<span id="cb75-138"><a href="wrapper-functions.html#cb75-138" tabindex="-1"></a></span>
-<span id="cb75-139"><a href="wrapper-functions.html#cb75-139" tabindex="-1"></a>    <span class="co"># Get selected features</span></span>
-<span id="cb75-140"><a href="wrapper-functions.html#cb75-140" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(css_results, <span class="at">weighting=</span><span class="st">"sparse"</span>, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb75-141"><a href="wrapper-functions.html#cb75-141" tabindex="-1"></a>        <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb75-142"><a href="wrapper-functions.html#cb75-142" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb79-1"><a href="wrapper-functions.html#cb79-1" tabindex="-1"></a><span class="co">#' Obtain a selected set of clusters and features using cluster stability</span></span>
+<span id="cb79-2"><a href="wrapper-functions.html#cb79-2" tabindex="-1"></a><span class="co">#' selection</span></span>
+<span id="cb79-3"><a href="wrapper-functions.html#cb79-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb79-4"><a href="wrapper-functions.html#cb79-4" tabindex="-1"></a><span class="co">#' Takes in data X and y and returns a set of clusters (and a set of features)</span></span>
+<span id="cb79-5"><a href="wrapper-functions.html#cb79-5" tabindex="-1"></a><span class="co">#' that are useful for predicting y from the data in X. This is a wrapper</span></span>
+<span id="cb79-6"><a href="wrapper-functions.html#cb79-6" tabindex="-1"></a><span class="co">#' function for css and getCssSelections. Using cssSelect is simpler, but it</span></span>
+<span id="cb79-7"><a href="wrapper-functions.html#cb79-7" tabindex="-1"></a><span class="co">#' has fewer options, and it executes the full (computationally expensive)</span></span>
+<span id="cb79-8"><a href="wrapper-functions.html#cb79-8" tabindex="-1"></a><span class="co">#' subsampling procedured every time it is called. In contrast, css can be</span></span>
+<span id="cb79-9"><a href="wrapper-functions.html#cb79-9" tabindex="-1"></a><span class="co">#' called just once, and then getCssSelections can quickly return results using</span></span>
+<span id="cb79-10"><a href="wrapper-functions.html#cb79-10" tabindex="-1"></a><span class="co">#' different values of cutoff, max_num_clusts, etc. from the calculations done</span></span>
+<span id="cb79-11"><a href="wrapper-functions.html#cb79-11" tabindex="-1"></a><span class="co">#' in one call to css.</span></span>
+<span id="cb79-12"><a href="wrapper-functions.html#cb79-12" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb79-13"><a href="wrapper-functions.html#cb79-13" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb79-14"><a href="wrapper-functions.html#cb79-14" tabindex="-1"></a><span class="co">#' the p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
+<span id="cb79-15"><a href="wrapper-functions.html#cb79-15" tabindex="-1"></a><span class="co">#' @param y A length-n numeric vector containing the responses; `y[i]` is the</span></span>
+<span id="cb79-16"><a href="wrapper-functions.html#cb79-16" tabindex="-1"></a><span class="co">#' response corresponding to observation `X[i, ]`. (Note that for the css</span></span>
+<span id="cb79-17"><a href="wrapper-functions.html#cb79-17" tabindex="-1"></a><span class="co">#' function, y does not have to be a numeric response, but for this function,</span></span>
+<span id="cb79-18"><a href="wrapper-functions.html#cb79-18" tabindex="-1"></a><span class="co">#' the underlying selection procedure is the lasso, so y must be a real-valued</span></span>
+<span id="cb79-19"><a href="wrapper-functions.html#cb79-19" tabindex="-1"></a><span class="co">#' response.)</span></span>
+<span id="cb79-20"><a href="wrapper-functions.html#cb79-20" tabindex="-1"></a><span class="co">#' @param clusters Optional; either an integer vector of a list of integer</span></span>
+<span id="cb79-21"><a href="wrapper-functions.html#cb79-21" tabindex="-1"></a><span class="co">#' vectors; each vector should contain the indices of a cluster of features (a</span></span>
+<span id="cb79-22"><a href="wrapper-functions.html#cb79-22" tabindex="-1"></a><span class="co">#' subset of 1:p). (If there is only one cluster, clusters can either be a list</span></span>
+<span id="cb79-23"><a href="wrapper-functions.html#cb79-23" tabindex="-1"></a><span class="co">#' of length 1 or an integer vector.) All of the provided clusters must be</span></span>
+<span id="cb79-24"><a href="wrapper-functions.html#cb79-24" tabindex="-1"></a><span class="co">#' non-overlapping. Every feature not appearing in any cluster will be assumed</span></span>
+<span id="cb79-25"><a href="wrapper-functions.html#cb79-25" tabindex="-1"></a><span class="co">#' to be unclustered (that is, they  will be treated as if they are in a</span></span>
+<span id="cb79-26"><a href="wrapper-functions.html#cb79-26" tabindex="-1"></a><span class="co">#' "cluster" containing only themselves). If clusters is a list of length 0 (or</span></span>
+<span id="cb79-27"><a href="wrapper-functions.html#cb79-27" tabindex="-1"></a><span class="co">#' a list only containing clusters of length 1), then <a href="css.html#css">css</a>() returns the same</span></span>
+<span id="cb79-28"><a href="wrapper-functions.html#cb79-28" tabindex="-1"></a><span class="co">#' results as stability selection (so feat_sel_mat will be identical to</span></span>
+<span id="cb79-29"><a href="wrapper-functions.html#cb79-29" tabindex="-1"></a><span class="co">#' clus_sel_mat). Names for the clusters will be needed later; any clusters that</span></span>
+<span id="cb79-30"><a href="wrapper-functions.html#cb79-30" tabindex="-1"></a><span class="co">#' are not given names in the list clusters will be given names automatically by</span></span>
+<span id="cb79-31"><a href="wrapper-functions.html#cb79-31" tabindex="-1"></a><span class="co">#' css. </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
+<span id="cb79-32"><a href="wrapper-functions.html#cb79-32" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
+<span id="cb79-33"><a href="wrapper-functions.html#cb79-33" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
+<span id="cb79-34"><a href="wrapper-functions.html#cb79-34" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
+<span id="cb79-35"><a href="wrapper-functions.html#cb79-35" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package). To</span></span>
+<span id="cb79-36"><a href="wrapper-functions.html#cb79-36" tabindex="-1"></a><span class="co">#' get correct results in this case, please use model.matrix to convert the</span></span>
+<span id="cb79-37"><a href="wrapper-functions.html#cb79-37" tabindex="-1"></a><span class="co">#' data.frame to a numeric matrix on your own, then provide this matrix and</span></span>
+<span id="cb79-38"><a href="wrapper-functions.html#cb79-38" tabindex="-1"></a><span class="co">#' cluster assignments with respect to this matrix. Default is list() (so no</span></span>
+<span id="cb79-39"><a href="wrapper-functions.html#cb79-39" tabindex="-1"></a><span class="co">#' clusters are specified, and every feature is assumed to be in a "cluster"</span></span>
+<span id="cb79-40"><a href="wrapper-functions.html#cb79-40" tabindex="-1"></a><span class="co">#' containing only itself).</span></span>
+<span id="cb79-41"><a href="wrapper-functions.html#cb79-41" tabindex="-1"></a><span class="co">#' @param lambda Optional; the tuning parameter to be used by the lasso for</span></span>
+<span id="cb79-42"><a href="wrapper-functions.html#cb79-42" tabindex="-1"></a><span class="co">#' feature selection in each subsample. If lambda is not provided, cssSelect</span></span>
+<span id="cb79-43"><a href="wrapper-functions.html#cb79-43" tabindex="-1"></a><span class="co">#' will choose one automatically by cross-validation. Default is NA.</span></span>
+<span id="cb79-44"><a href="wrapper-functions.html#cb79-44" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; cssSelect will only select those clusters with</span></span>
+<span id="cb79-45"><a href="wrapper-functions.html#cb79-45" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
+<span id="cb79-46"><a href="wrapper-functions.html#cb79-46" tabindex="-1"></a><span class="co">#' Default is NA (in which case max_num_clusts are used).</span></span>
+<span id="cb79-47"><a href="wrapper-functions.html#cb79-47" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb79-48"><a href="wrapper-functions.html#cb79-48" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
+<span id="cb79-49"><a href="wrapper-functions.html#cb79-49" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
+<span id="cb79-50"><a href="wrapper-functions.html#cb79-50" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb79-51"><a href="wrapper-functions.html#cb79-51" tabindex="-1"></a><span class="co">#' either cutoff is used to choose the number of clusters, or if cutoff was also</span></span>
+<span id="cb79-52"><a href="wrapper-functions.html#cb79-52" tabindex="-1"></a><span class="co">#' unspecified, cssSelect chooses max_num_clusts by cross-validation).</span></span>
+<span id="cb79-53"><a href="wrapper-functions.html#cb79-53" tabindex="-1"></a><span class="co">#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be</span></span>
+<span id="cb79-54"><a href="wrapper-functions.html#cb79-54" tabindex="-1"></a><span class="co">#' automatically estimated using the lasso with cross-validation. Default is</span></span>
+<span id="cb79-55"><a href="wrapper-functions.html#cb79-55" tabindex="-1"></a><span class="co">#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is</span></span>
+<span id="cb79-56"><a href="wrapper-functions.html#cb79-56" tabindex="-1"></a><span class="co">#' provided. (If desired output is to return all clusters, you should set</span></span>
+<span id="cb79-57"><a href="wrapper-functions.html#cb79-57" tabindex="-1"></a><span class="co">#' auto_select_size to FALSE and do not provide cutoff or max_num_clusts.)</span></span>
+<span id="cb79-58"><a href="wrapper-functions.html#cb79-58" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.</span></span>
+<span id="cb79-59"><a href="wrapper-functions.html#cb79-59" tabindex="-1"></a><span class="co">#' Drives both the choice of lambda (when lambda is not provided) and the</span></span>
+<span id="cb79-60"><a href="wrapper-functions.html#cb79-60" tabindex="-1"></a><span class="co">#' elastic net fit used for feature selection in each subsample. Default is 1</span></span>
+<span id="cb79-61"><a href="wrapper-functions.html#cb79-61" tabindex="-1"></a><span class="co">#' (in which case the penalty is the lasso).</span></span>
+<span id="cb79-62"><a href="wrapper-functions.html#cb79-62" tabindex="-1"></a><span class="co">#' @return A named list with three items. \item{selected_clusts}{A named list of</span></span>
+<span id="cb79-63"><a href="wrapper-functions.html#cb79-63" tabindex="-1"></a><span class="co">#' integer vectors; each vector contains the indices of the features in one of</span></span>
+<span id="cb79-64"><a href="wrapper-functions.html#cb79-64" tabindex="-1"></a><span class="co">#' the selected clusters.} \item{selected_feats}{A named integer vector; the</span></span>
+<span id="cb79-65"><a href="wrapper-functions.html#cb79-65" tabindex="-1"></a><span class="co">#' indices of the features with nonzero weights from all of the selected</span></span>
+<span id="cb79-66"><a href="wrapper-functions.html#cb79-66" tabindex="-1"></a><span class="co">#' clusters.} \item{weights}{A named list of the same length as selected_clusts.</span></span>
+<span id="cb79-67"><a href="wrapper-functions.html#cb79-67" tabindex="-1"></a><span class="co">#' Each list element `weights[[j]]` is a numeric vector of the weights to use for</span></span>
+<span id="cb79-68"><a href="wrapper-functions.html#cb79-68" tabindex="-1"></a><span class="co">#' the jth selected cluster, and it has the same name as the cluster it</span></span>
+<span id="cb79-69"><a href="wrapper-functions.html#cb79-69" tabindex="-1"></a><span class="co">#' corresponds to.}</span></span>
+<span id="cb79-70"><a href="wrapper-functions.html#cb79-70" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb79-71"><a href="wrapper-functions.html#cb79-71" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb79-72"><a href="wrapper-functions.html#cb79-72" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb79-73"><a href="wrapper-functions.html#cb79-73" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 80, p = 11, k_unclustered = 2,</span></span>
+<span id="cb79-74"><a href="wrapper-functions.html#cb79-74" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb79-75"><a href="wrapper-functions.html#cb79-75" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb79-76"><a href="wrapper-functions.html#cb79-76" tabindex="-1"></a><span class="co">#' res &lt;- <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
+<span id="cb79-77"><a href="wrapper-functions.html#cb79-77" tabindex="-1"></a><span class="co">#' res$selected_feats</span></span>
+<span id="cb79-78"><a href="wrapper-functions.html#cb79-78" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb79-79"><a href="wrapper-functions.html#cb79-79" tabindex="-1"></a><span id="cssSelect">cssSelect</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters =</span> <span class="fu">list</span>(), <span class="at">lambda=</span><span class="cn">NA</span>, <span class="at">cutoff=</span><span class="cn">NA</span>,</span>
+<span id="cb79-80"><a href="wrapper-functions.html#cb79-80" tabindex="-1"></a>    <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">auto_select_size=</span><span class="cn">TRUE</span>, <span class="at">alpha=</span><span class="dv">1</span>){</span>
+<span id="cb79-81"><a href="wrapper-functions.html#cb79-81" tabindex="-1"></a></span>
+<span id="cb79-82"><a href="wrapper-functions.html#cb79-82" tabindex="-1"></a>    <span class="co"># Check inputs (most inputs will be checked by called functions)</span></span>
+<span id="cb79-83"><a href="wrapper-functions.html#cb79-83" tabindex="-1"></a></span>
+<span id="cb79-84"><a href="wrapper-functions.html#cb79-84" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(auto_select_size))</span>
+<span id="cb79-85"><a href="wrapper-functions.html#cb79-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(auto_select_size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb79-86"><a href="wrapper-functions.html#cb79-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(auto_select_size))</span>
+<span id="cb79-87"><a href="wrapper-functions.html#cb79-87" tabindex="-1"></a></span>
+<span id="cb79-88"><a href="wrapper-functions.html#cb79-88" tabindex="-1"></a>    <span class="co"># Validate alpha up front. This must happen before the NA-lambda branch</span></span>
+<span id="cb79-89"><a href="wrapper-functions.html#cb79-89" tabindex="-1"></a>    <span class="co"># below (a user-supplied non-NA lambda skips getLassoLambda and therefore</span></span>
+<span id="cb79-90"><a href="wrapper-functions.html#cb79-90" tabindex="-1"></a>    <span class="co"># its own alpha check) and before the bundling step, so that an invalid or</span></span>
+<span id="cb79-91"><a href="wrapper-functions.html#cb79-91" tabindex="-1"></a>    <span class="co"># NA alpha is caught here with a clear message rather than deep inside the</span></span>
+<span id="cb79-92"><a href="wrapper-functions.html#cb79-92" tabindex="-1"></a>    <span class="co"># subsampling loop.</span></span>
+<span id="cb79-93"><a href="wrapper-functions.html#cb79-93" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
+<span id="cb79-94"><a href="wrapper-functions.html#cb79-94" tabindex="-1"></a></span>
+<span id="cb79-95"><a href="wrapper-functions.html#cb79-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
+<span id="cb79-96"><a href="wrapper-functions.html#cb79-96" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
+<span id="cb79-97"><a href="wrapper-functions.html#cb79-97" tabindex="-1"></a></span>
+<span id="cb79-98"><a href="wrapper-functions.html#cb79-98" tabindex="-1"></a></span>
+<span id="cb79-99"><a href="wrapper-functions.html#cb79-99" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
+<span id="cb79-100"><a href="wrapper-functions.html#cb79-100" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters, <span class="at">convert_phrase =</span> <span class="st">"the data.frame X"</span>)</span>
+<span id="cb79-101"><a href="wrapper-functions.html#cb79-101" tabindex="-1"></a></span>
+<span id="cb79-102"><a href="wrapper-functions.html#cb79-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb79-103"><a href="wrapper-functions.html#cb79-103" tabindex="-1"></a></span>
+<span id="cb79-104"><a href="wrapper-functions.html#cb79-104" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
+<span id="cb79-105"><a href="wrapper-functions.html#cb79-105" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)"</span>)</span>
+<span id="cb79-106"><a href="wrapper-functions.html#cb79-106" tabindex="-1"></a>    }</span>
+<span id="cb79-107"><a href="wrapper-functions.html#cb79-107" tabindex="-1"></a>    <span class="co"># Reject a non-finite y here (after the domain message above, so that</span></span>
+<span id="cb79-108"><a href="wrapper-functions.html#cb79-108" tabindex="-1"></a>    <span class="co"># message is preserved) so the default lambda=NA -&gt; getLassoLambda path</span></span>
+<span id="cb79-109"><a href="wrapper-functions.html#cb79-109" tabindex="-1"></a>    <span class="co"># fails fast rather than per-subsample later.</span></span>
+<span id="cb79-110"><a href="wrapper-functions.html#cb79-110" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y, <span class="st">"y"</span>)</span>
+<span id="cb79-111"><a href="wrapper-functions.html#cb79-111" tabindex="-1"></a></span>
+<span id="cb79-112"><a href="wrapper-functions.html#cb79-112" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb79-113"><a href="wrapper-functions.html#cb79-113" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(lambda)){</span>
+<span id="cb79-114"><a href="wrapper-functions.html#cb79-114" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, <span class="at">alpha=</span>alpha)</span>
+<span id="cb79-115"><a href="wrapper-functions.html#cb79-115" tabindex="-1"></a>    }</span>
+<span id="cb79-116"><a href="wrapper-functions.html#cb79-116" tabindex="-1"></a></span>
+<span id="cb79-117"><a href="wrapper-functions.html#cb79-117" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
+<span id="cb79-118"><a href="wrapper-functions.html#cb79-118" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
+<span id="cb79-119"><a href="wrapper-functions.html#cb79-119" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
+<span id="cb79-120"><a href="wrapper-functions.html#cb79-120" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
+<span id="cb79-121"><a href="wrapper-functions.html#cb79-121" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
+<span id="cb79-122"><a href="wrapper-functions.html#cb79-122" tabindex="-1"></a>    }</span>
+<span id="cb79-123"><a href="wrapper-functions.html#cb79-123" tabindex="-1"></a></span>
+<span id="cb79-124"><a href="wrapper-functions.html#cb79-124" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(X, y, lambda, clusters)</span>
+<span id="cb79-125"><a href="wrapper-functions.html#cb79-125" tabindex="-1"></a></span>
+<span id="cb79-126"><a href="wrapper-functions.html#cb79-126" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
+<span id="cb79-127"><a href="wrapper-functions.html#cb79-127" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
+<span id="cb79-128"><a href="wrapper-functions.html#cb79-128" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
+<span id="cb79-129"><a href="wrapper-functions.html#cb79-129" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
+<span id="cb79-130"><a href="wrapper-functions.html#cb79-130" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results<span class="sc">$</span>clusters,</span>
+<span id="cb79-131"><a href="wrapper-functions.html#cb79-131" tabindex="-1"></a>                <span class="at">alpha=</span>alpha)</span>
+<span id="cb79-132"><a href="wrapper-functions.html#cb79-132" tabindex="-1"></a>        }</span>
+<span id="cb79-133"><a href="wrapper-functions.html#cb79-133" tabindex="-1"></a>    }</span>
+<span id="cb79-134"><a href="wrapper-functions.html#cb79-134" tabindex="-1"></a></span>
+<span id="cb79-135"><a href="wrapper-functions.html#cb79-135" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
+<span id="cb79-136"><a href="wrapper-functions.html#cb79-136" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb79-137"><a href="wrapper-functions.html#cb79-137" tabindex="-1"></a>    }</span>
+<span id="cb79-138"><a href="wrapper-functions.html#cb79-138" tabindex="-1"></a></span>
+<span id="cb79-139"><a href="wrapper-functions.html#cb79-139" tabindex="-1"></a>    <span class="co"># Get selected features</span></span>
+<span id="cb79-140"><a href="wrapper-functions.html#cb79-140" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(css_results, <span class="at">weighting=</span><span class="st">"sparse"</span>, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb79-141"><a href="wrapper-functions.html#cb79-141" tabindex="-1"></a>        <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb79-142"><a href="wrapper-functions.html#cb79-142" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="wrapper-functions.html#cssPredict">cssPredict</a>()</code>:</p>
-<div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb76-1"><a href="wrapper-functions.html#cb76-1" tabindex="-1"></a><span class="co">#' Wrapper function to generate predictions from cluster stability selected</span></span>
-<span id="cb76-2"><a href="wrapper-functions.html#cb76-2" tabindex="-1"></a><span class="co">#' model in one step</span></span>
-<span id="cb76-3"><a href="wrapper-functions.html#cb76-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb76-4"><a href="wrapper-functions.html#cb76-4" tabindex="-1"></a><span class="co">#' Select clusters using cluster stability selection, form cluster</span></span>
-<span id="cb76-5"><a href="wrapper-functions.html#cb76-5" tabindex="-1"></a><span class="co">#' representatives, fit a linear model, and generate predictions from a matrix</span></span>
-<span id="cb76-6"><a href="wrapper-functions.html#cb76-6" tabindex="-1"></a><span class="co">#' of unlabeled data. This is a wrapper function for css and getCssPreds. Using</span></span>
-<span id="cb76-7"><a href="wrapper-functions.html#cb76-7" tabindex="-1"></a><span class="co">#' cssPredict is simpler, but it has fewer options, and it executes the full</span></span>
-<span id="cb76-8"><a href="wrapper-functions.html#cb76-8" tabindex="-1"></a><span class="co">#' (computationally expensive) subsampling procedured every time it is called.</span></span>
-<span id="cb76-9"><a href="wrapper-functions.html#cb76-9" tabindex="-1"></a><span class="co">#' In contrast, css can be called just once, and then cssPredict can quickly</span></span>
-<span id="cb76-10"><a href="wrapper-functions.html#cb76-10" tabindex="-1"></a><span class="co">#' return results for different matrices of new data or using different values</span></span>
-<span id="cb76-11"><a href="wrapper-functions.html#cb76-11" tabindex="-1"></a><span class="co">#' of cutoff, max_num_clusts, etc. by using the calculations done in one call to</span></span>
-<span id="cb76-12"><a href="wrapper-functions.html#cb76-12" tabindex="-1"></a><span class="co">#' css.</span></span>
-<span id="cb76-13"><a href="wrapper-functions.html#cb76-13" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb76-14"><a href="wrapper-functions.html#cb76-14" tabindex="-1"></a><span class="co">#' @param X_train_selec An n x p numeric matrix (preferably) or a data.frame</span></span>
-<span id="cb76-15"><a href="wrapper-functions.html#cb76-15" tabindex="-1"></a><span class="co">#' (which will be coerced internally to a matrix by the function model.matrix)</span></span>
-<span id="cb76-16"><a href="wrapper-functions.html#cb76-16" tabindex="-1"></a><span class="co">#' containing the p &gt;= 2 features/predictors. The data from X_train_selec and</span></span>
-<span id="cb76-17"><a href="wrapper-functions.html#cb76-17" tabindex="-1"></a><span class="co">#' y_train_selec will be split into two parts; half of the data will be used for</span></span>
-<span id="cb76-18"><a href="wrapper-functions.html#cb76-18" tabindex="-1"></a><span class="co">#' feature selection by cluster stability selection, and half will be used for</span></span>
-<span id="cb76-19"><a href="wrapper-functions.html#cb76-19" tabindex="-1"></a><span class="co">#' estimating a linear model on the selected cluster representatives. Must not</span></span>
-<span id="cb76-20"><a href="wrapper-functions.html#cb76-20" tabindex="-1"></a><span class="co">#' contain missing (`NA`) values.</span></span>
-<span id="cb76-21"><a href="wrapper-functions.html#cb76-21" tabindex="-1"></a><span class="co">#' @param y_train_selec A length-n numeric vector containing the responses;</span></span>
-<span id="cb76-22"><a href="wrapper-functions.html#cb76-22" tabindex="-1"></a><span class="co">#' `y[i]` is the response corresponding to observation `X[i, ]`. Unlke the more</span></span>
-<span id="cb76-23"><a href="wrapper-functions.html#cb76-23" tabindex="-1"></a><span class="co">#' general setup of css, y_train_selec must be real-valued because predictions</span></span>
-<span id="cb76-24"><a href="wrapper-functions.html#cb76-24" tabindex="-1"></a><span class="co">#' will be generated by ordinary least squares.</span></span>
-<span id="cb76-25"><a href="wrapper-functions.html#cb76-25" tabindex="-1"></a><span class="co">#' @param X_test A numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb76-26"><a href="wrapper-functions.html#cb76-26" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb76-27"><a href="wrapper-functions.html#cb76-27" tabindex="-1"></a><span class="co">#' the data that will be used to generate predictions. Must contain the same</span></span>
-<span id="cb76-28"><a href="wrapper-functions.html#cb76-28" tabindex="-1"></a><span class="co">#' features (in the same number of columns) as X_train_selec, and if the columns</span></span>
-<span id="cb76-29"><a href="wrapper-functions.html#cb76-29" tabindex="-1"></a><span class="co">#' of X_test are named, they must match the names of X_train_selec.</span></span>
-<span id="cb76-30"><a href="wrapper-functions.html#cb76-30" tabindex="-1"></a><span class="co">#' @param clusters Optional; either an integer vector of a list of integer</span></span>
-<span id="cb76-31"><a href="wrapper-functions.html#cb76-31" tabindex="-1"></a><span class="co">#' vectors; each vector should contain the indices of a cluster of features (a</span></span>
-<span id="cb76-32"><a href="wrapper-functions.html#cb76-32" tabindex="-1"></a><span class="co">#' subset of 1:p). (If there is only one cluster, clusters can either be a list</span></span>
-<span id="cb76-33"><a href="wrapper-functions.html#cb76-33" tabindex="-1"></a><span class="co">#' of length 1 or an integer vector.) All of the provided clusters must be</span></span>
-<span id="cb76-34"><a href="wrapper-functions.html#cb76-34" tabindex="-1"></a><span class="co">#' non-overlapping. Every feature not appearing in any cluster will be assumed</span></span>
-<span id="cb76-35"><a href="wrapper-functions.html#cb76-35" tabindex="-1"></a><span class="co">#' to be unclustered (that is, they  will be treated as if they are in a</span></span>
-<span id="cb76-36"><a href="wrapper-functions.html#cb76-36" tabindex="-1"></a><span class="co">#' "cluster" containing only themselves). If clusters is a list of length 0 (or</span></span>
-<span id="cb76-37"><a href="wrapper-functions.html#cb76-37" tabindex="-1"></a><span class="co">#' a list only containing clusters of length 1), then <a href="css.html#css">css</a>() returns the same</span></span>
-<span id="cb76-38"><a href="wrapper-functions.html#cb76-38" tabindex="-1"></a><span class="co">#' results as stability selection (so feat_sel_mat will be identical to</span></span>
-<span id="cb76-39"><a href="wrapper-functions.html#cb76-39" tabindex="-1"></a><span class="co">#' clus_sel_mat). Names for the clusters will be needed later; any clusters that</span></span>
-<span id="cb76-40"><a href="wrapper-functions.html#cb76-40" tabindex="-1"></a><span class="co">#' are not given names in the list clusters will be given names automatically by</span></span>
-<span id="cb76-41"><a href="wrapper-functions.html#cb76-41" tabindex="-1"></a><span class="co">#' css. </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
-<span id="cb76-42"><a href="wrapper-functions.html#cb76-42" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
-<span id="cb76-43"><a href="wrapper-functions.html#cb76-43" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
-<span id="cb76-44"><a href="wrapper-functions.html#cb76-44" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
-<span id="cb76-45"><a href="wrapper-functions.html#cb76-45" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package). To</span></span>
-<span id="cb76-46"><a href="wrapper-functions.html#cb76-46" tabindex="-1"></a><span class="co">#' get correct results in this case, please use model.matrix to convert the</span></span>
-<span id="cb76-47"><a href="wrapper-functions.html#cb76-47" tabindex="-1"></a><span class="co">#' data.frame to a numeric matrix on your own, then provide this matrix and</span></span>
-<span id="cb76-48"><a href="wrapper-functions.html#cb76-48" tabindex="-1"></a><span class="co">#' cluster assignments with respect to this matrix.Default is list() (so no</span></span>
-<span id="cb76-49"><a href="wrapper-functions.html#cb76-49" tabindex="-1"></a><span class="co">#' clusters are specified, and every feature is assumed to be in a "cluster"</span></span>
-<span id="cb76-50"><a href="wrapper-functions.html#cb76-50" tabindex="-1"></a><span class="co">#' containing only itself).</span></span>
-<span id="cb76-51"><a href="wrapper-functions.html#cb76-51" tabindex="-1"></a><span class="co">#' @param lambda Optional; the tuning parameter to be used by the lasso for</span></span>
-<span id="cb76-52"><a href="wrapper-functions.html#cb76-52" tabindex="-1"></a><span class="co">#' feature selection in each subsample. If lambda is not provided, cssPredict</span></span>
-<span id="cb76-53"><a href="wrapper-functions.html#cb76-53" tabindex="-1"></a><span class="co">#' will choose one automatically by cross-validation. Default is NA.</span></span>
-<span id="cb76-54"><a href="wrapper-functions.html#cb76-54" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssPreds will make use only of those clusters with</span></span>
-<span id="cb76-55"><a href="wrapper-functions.html#cb76-55" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
-<span id="cb76-56"><a href="wrapper-functions.html#cb76-56" tabindex="-1"></a><span class="co">#' Default is 0 (in which case either all clusters are used, or max_num_clusts</span></span>
-<span id="cb76-57"><a href="wrapper-functions.html#cb76-57" tabindex="-1"></a><span class="co">#' are used, if max_num_clusts is specified).</span></span>
-<span id="cb76-58"><a href="wrapper-functions.html#cb76-58" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb76-59"><a href="wrapper-functions.html#cb76-59" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
-<span id="cb76-60"><a href="wrapper-functions.html#cb76-60" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
-<span id="cb76-61"><a href="wrapper-functions.html#cb76-61" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb76-62"><a href="wrapper-functions.html#cb76-62" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb76-63"><a href="wrapper-functions.html#cb76-63" tabindex="-1"></a><span class="co">#' @param train_inds Optional; an integer or numeric vector containing the</span></span>
-<span id="cb76-64"><a href="wrapper-functions.html#cb76-64" tabindex="-1"></a><span class="co">#' indices of observations in X and y to set aside for model training after</span></span>
-<span id="cb76-65"><a href="wrapper-functions.html#cb76-65" tabindex="-1"></a><span class="co">#' feature selection. If train_inds is not provided, half of the data will be</span></span>
-<span id="cb76-66"><a href="wrapper-functions.html#cb76-66" tabindex="-1"></a><span class="co">#' used for feature selection and half for model estimation (chosen at random).</span></span>
-<span id="cb76-67"><a href="wrapper-functions.html#cb76-67" tabindex="-1"></a><span class="co">#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be</span></span>
-<span id="cb76-68"><a href="wrapper-functions.html#cb76-68" tabindex="-1"></a><span class="co">#' automatically estimated using the lasso with cross-validation. Default is</span></span>
-<span id="cb76-69"><a href="wrapper-functions.html#cb76-69" tabindex="-1"></a><span class="co">#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is</span></span>
-<span id="cb76-70"><a href="wrapper-functions.html#cb76-70" tabindex="-1"></a><span class="co">#' provided. (If desired output is to generate predictions using all clusters,</span></span>
-<span id="cb76-71"><a href="wrapper-functions.html#cb76-71" tabindex="-1"></a><span class="co">#' you should set auto_select_size to FALSE and do not provide cutoff or</span></span>
-<span id="cb76-72"><a href="wrapper-functions.html#cb76-72" tabindex="-1"></a><span class="co">#' max_num_clusts.)</span></span>
-<span id="cb76-73"><a href="wrapper-functions.html#cb76-73" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.</span></span>
-<span id="cb76-74"><a href="wrapper-functions.html#cb76-74" tabindex="-1"></a><span class="co">#' Drives both the choice of lambda (when lambda is not provided) and the</span></span>
-<span id="cb76-75"><a href="wrapper-functions.html#cb76-75" tabindex="-1"></a><span class="co">#' elastic net fit used for feature selection in each subsample. Default is 1</span></span>
-<span id="cb76-76"><a href="wrapper-functions.html#cb76-76" tabindex="-1"></a><span class="co">#' (in which case the penalty is the lasso).</span></span>
-<span id="cb76-77"><a href="wrapper-functions.html#cb76-77" tabindex="-1"></a><span class="co">#' @return A numeric vector of length nrow(X_test) of predictions</span></span>
-<span id="cb76-78"><a href="wrapper-functions.html#cb76-78" tabindex="-1"></a><span class="co">#' corresponding to the observations from X_test.</span></span>
-<span id="cb76-79"><a href="wrapper-functions.html#cb76-79" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb76-80"><a href="wrapper-functions.html#cb76-80" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb76-81"><a href="wrapper-functions.html#cb76-81" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb76-82"><a href="wrapper-functions.html#cb76-82" tabindex="-1"></a><span class="co">#' train &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 80, p = 11, k_unclustered = 2,</span></span>
-<span id="cb76-83"><a href="wrapper-functions.html#cb76-83" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb76-84"><a href="wrapper-functions.html#cb76-84" tabindex="-1"></a><span class="co">#' test &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 10, p = 11, k_unclustered = 2,</span></span>
-<span id="cb76-85"><a href="wrapper-functions.html#cb76-85" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb76-86"><a href="wrapper-functions.html#cb76-86" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb76-87"><a href="wrapper-functions.html#cb76-87" tabindex="-1"></a><span class="co">#' preds &lt;- <a href="wrapper-functions.html#cssPredict">cssPredict</a>(X_train_selec = train$X, y_train_selec = train$y,</span></span>
-<span id="cb76-88"><a href="wrapper-functions.html#cb76-88" tabindex="-1"></a><span class="co">#'   X_test = test$X, clusters = clusters)</span></span>
-<span id="cb76-89"><a href="wrapper-functions.html#cb76-89" tabindex="-1"></a><span class="co">#' preds</span></span>
-<span id="cb76-90"><a href="wrapper-functions.html#cb76-90" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb76-91"><a href="wrapper-functions.html#cb76-91" tabindex="-1"></a><span id="cssPredict">cssPredict</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X_train_selec, y_train_selec, X_test, <span class="at">clusters=</span><span class="fu">list</span>(),</span>
-<span id="cb76-92"><a href="wrapper-functions.html#cb76-92" tabindex="-1"></a>    <span class="at">lambda=</span><span class="cn">NA</span>, <span class="at">cutoff=</span><span class="cn">NA</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">train_inds=</span><span class="cn">NA</span>,</span>
-<span id="cb76-93"><a href="wrapper-functions.html#cb76-93" tabindex="-1"></a>    <span class="at">auto_select_size=</span><span class="cn">TRUE</span>, <span class="at">alpha=</span><span class="dv">1</span>){</span>
-<span id="cb76-94"><a href="wrapper-functions.html#cb76-94" tabindex="-1"></a></span>
-<span id="cb76-95"><a href="wrapper-functions.html#cb76-95" tabindex="-1"></a>    <span class="co"># Check inputs (most inputs will be checked by called functions)</span></span>
-<span id="cb76-96"><a href="wrapper-functions.html#cb76-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y_train_selec) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y_train_selec)){</span>
-<span id="cb76-97"><a href="wrapper-functions.html#cb76-97" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided y_train_selec must be real-valued, because predictions will be generated by ordinary least squares regression."</span>)</span>
-<span id="cb76-98"><a href="wrapper-functions.html#cb76-98" tabindex="-1"></a>    }</span>
-<span id="cb76-99"><a href="wrapper-functions.html#cb76-99" tabindex="-1"></a></span>
-<span id="cb76-100"><a href="wrapper-functions.html#cb76-100" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(auto_select_size))</span>
-<span id="cb76-101"><a href="wrapper-functions.html#cb76-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(auto_select_size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb76-102"><a href="wrapper-functions.html#cb76-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(auto_select_size))</span>
-<span id="cb76-103"><a href="wrapper-functions.html#cb76-103" tabindex="-1"></a></span>
-<span id="cb76-104"><a href="wrapper-functions.html#cb76-104" tabindex="-1"></a>    <span class="co"># Validate alpha up front (before the NA-lambda branch and bundling below);</span></span>
-<span id="cb76-105"><a href="wrapper-functions.html#cb76-105" tabindex="-1"></a>    <span class="co"># see cssSelect for the ordering rationale.</span></span>
-<span id="cb76-106"><a href="wrapper-functions.html#cb76-106" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
-<span id="cb76-107"><a href="wrapper-functions.html#cb76-107" tabindex="-1"></a></span>
-<span id="cb76-108"><a href="wrapper-functions.html#cb76-108" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_train_selec) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X_train_selec))</span>
-<span id="cb76-109"><a href="wrapper-functions.html#cb76-109" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X_train_selec, <span class="st">"X_train_selec"</span>)</span>
-<span id="cb76-110"><a href="wrapper-functions.html#cb76-110" tabindex="-1"></a>    <span class="co"># Reject a non-finite y on the default path (lands after the numeric check</span></span>
-<span id="cb76-111"><a href="wrapper-functions.html#cb76-111" tabindex="-1"></a>    <span class="co"># at the top of the function, so the factor-y message there is preserved).</span></span>
-<span id="cb76-112"><a href="wrapper-functions.html#cb76-112" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y_train_selec, <span class="st">"y_train_selec"</span>)</span>
-<span id="cb76-113"><a href="wrapper-functions.html#cb76-113" tabindex="-1"></a></span>
-<span id="cb76-114"><a href="wrapper-functions.html#cb76-114" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
-<span id="cb76-115"><a href="wrapper-functions.html#cb76-115" tabindex="-1"></a>    X_train_selec <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X_train_selec, clusters,</span>
-<span id="cb76-116"><a href="wrapper-functions.html#cb76-116" tabindex="-1"></a>        <span class="at">arg_name =</span> <span class="st">"X_train_selec"</span>)</span>
-<span id="cb76-117"><a href="wrapper-functions.html#cb76-117" tabindex="-1"></a></span>
-<span id="cb76-118"><a href="wrapper-functions.html#cb76-118" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_train_selec))</span>
-<span id="cb76-119"><a href="wrapper-functions.html#cb76-119" tabindex="-1"></a></span>
-<span id="cb76-120"><a href="wrapper-functions.html#cb76-120" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X_train_selec)</span>
-<span id="cb76-121"><a href="wrapper-functions.html#cb76-121" tabindex="-1"></a></span>
-<span id="cb76-122"><a href="wrapper-functions.html#cb76-122" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(train_inds))){</span>
-<span id="cb76-123"><a href="wrapper-functions.html#cb76-123" tabindex="-1"></a>        train_inds <span class="ot">&lt;-</span> <span class="fu">sample</span>(n, <span class="at">size=</span><span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span>))</span>
-<span id="cb76-124"><a href="wrapper-functions.html#cb76-124" tabindex="-1"></a>    }</span>
-<span id="cb76-125"><a href="wrapper-functions.html#cb76-125" tabindex="-1"></a></span>
-<span id="cb76-126"><a href="wrapper-functions.html#cb76-126" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb76-127"><a href="wrapper-functions.html#cb76-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(lambda)){</span>
-<span id="cb76-128"><a href="wrapper-functions.html#cb76-128" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds), ],</span>
-<span id="cb76-129"><a href="wrapper-functions.html#cb76-129" tabindex="-1"></a>            y_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)], <span class="at">alpha=</span>alpha)</span>
-<span id="cb76-130"><a href="wrapper-functions.html#cb76-130" tabindex="-1"></a>    }</span>
-<span id="cb76-131"><a href="wrapper-functions.html#cb76-131" tabindex="-1"></a></span>
-<span id="cb76-132"><a href="wrapper-functions.html#cb76-132" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
-<span id="cb76-133"><a href="wrapper-functions.html#cb76-133" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
-<span id="cb76-134"><a href="wrapper-functions.html#cb76-134" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
-<span id="cb76-135"><a href="wrapper-functions.html#cb76-135" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
-<span id="cb76-136"><a href="wrapper-functions.html#cb76-136" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
-<span id="cb76-137"><a href="wrapper-functions.html#cb76-137" tabindex="-1"></a>    }</span>
-<span id="cb76-138"><a href="wrapper-functions.html#cb76-138" tabindex="-1"></a></span>
-<span id="cb76-139"><a href="wrapper-functions.html#cb76-139" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_train_selec, <span class="at">y=</span>y_train_selec, <span class="at">lambda=</span>lambda,</span>
-<span id="cb76-140"><a href="wrapper-functions.html#cb76-140" tabindex="-1"></a>        <span class="at">clusters=</span>clusters, <span class="at">train_inds=</span>train_inds)</span>
-<span id="cb76-141"><a href="wrapper-functions.html#cb76-141" tabindex="-1"></a></span>
-<span id="cb76-142"><a href="wrapper-functions.html#cb76-142" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
-<span id="cb76-143"><a href="wrapper-functions.html#cb76-143" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
-<span id="cb76-144"><a href="wrapper-functions.html#cb76-144" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
-<span id="cb76-145"><a href="wrapper-functions.html#cb76-145" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
-<span id="cb76-146"><a href="wrapper-functions.html#cb76-146" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X_train_selec[train_inds, ],</span>
-<span id="cb76-147"><a href="wrapper-functions.html#cb76-147" tabindex="-1"></a>                y_train_selec[train_inds], css_results<span class="sc">$</span>clusters, <span class="at">alpha=</span>alpha)</span>
-<span id="cb76-148"><a href="wrapper-functions.html#cb76-148" tabindex="-1"></a>        }</span>
-<span id="cb76-149"><a href="wrapper-functions.html#cb76-149" tabindex="-1"></a>    }</span>
-<span id="cb76-150"><a href="wrapper-functions.html#cb76-150" tabindex="-1"></a></span>
-<span id="cb76-151"><a href="wrapper-functions.html#cb76-151" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
-<span id="cb76-152"><a href="wrapper-functions.html#cb76-152" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb76-153"><a href="wrapper-functions.html#cb76-153" tabindex="-1"></a>    }</span>
-<span id="cb76-154"><a href="wrapper-functions.html#cb76-154" tabindex="-1"></a></span>
-<span id="cb76-155"><a href="wrapper-functions.html#cb76-155" tabindex="-1"></a>    <span class="co"># Get predictions</span></span>
-<span id="cb76-156"><a href="wrapper-functions.html#cb76-156" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_results, <span class="at">testX=</span>X_test, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
-<span id="cb76-157"><a href="wrapper-functions.html#cb76-157" tabindex="-1"></a>        <span class="at">cutoff=</span>cutoff, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb76-158"><a href="wrapper-functions.html#cb76-158" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="wrapper-functions.html#cb80-1" tabindex="-1"></a><span class="co">#' Wrapper function to generate predictions from cluster stability selected</span></span>
+<span id="cb80-2"><a href="wrapper-functions.html#cb80-2" tabindex="-1"></a><span class="co">#' model in one step</span></span>
+<span id="cb80-3"><a href="wrapper-functions.html#cb80-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-4"><a href="wrapper-functions.html#cb80-4" tabindex="-1"></a><span class="co">#' Select clusters using cluster stability selection, form cluster</span></span>
+<span id="cb80-5"><a href="wrapper-functions.html#cb80-5" tabindex="-1"></a><span class="co">#' representatives, fit a linear model, and generate predictions from a matrix</span></span>
+<span id="cb80-6"><a href="wrapper-functions.html#cb80-6" tabindex="-1"></a><span class="co">#' of unlabeled data. This is a wrapper function for css and getCssPreds. Using</span></span>
+<span id="cb80-7"><a href="wrapper-functions.html#cb80-7" tabindex="-1"></a><span class="co">#' cssPredict is simpler, but it has fewer options, and it executes the full</span></span>
+<span id="cb80-8"><a href="wrapper-functions.html#cb80-8" tabindex="-1"></a><span class="co">#' (computationally expensive) subsampling procedured every time it is called.</span></span>
+<span id="cb80-9"><a href="wrapper-functions.html#cb80-9" tabindex="-1"></a><span class="co">#' In contrast, css can be called just once, and then cssPredict can quickly</span></span>
+<span id="cb80-10"><a href="wrapper-functions.html#cb80-10" tabindex="-1"></a><span class="co">#' return results for different matrices of new data or using different values</span></span>
+<span id="cb80-11"><a href="wrapper-functions.html#cb80-11" tabindex="-1"></a><span class="co">#' of cutoff, max_num_clusts, etc. by using the calculations done in one call to</span></span>
+<span id="cb80-12"><a href="wrapper-functions.html#cb80-12" tabindex="-1"></a><span class="co">#' css.</span></span>
+<span id="cb80-13"><a href="wrapper-functions.html#cb80-13" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-14"><a href="wrapper-functions.html#cb80-14" tabindex="-1"></a><span class="co">#' @param X_train_selec An n x p numeric matrix (preferably) or a data.frame</span></span>
+<span id="cb80-15"><a href="wrapper-functions.html#cb80-15" tabindex="-1"></a><span class="co">#' (which will be coerced internally to a matrix by the function model.matrix)</span></span>
+<span id="cb80-16"><a href="wrapper-functions.html#cb80-16" tabindex="-1"></a><span class="co">#' containing the p &gt;= 2 features/predictors. The data from X_train_selec and</span></span>
+<span id="cb80-17"><a href="wrapper-functions.html#cb80-17" tabindex="-1"></a><span class="co">#' y_train_selec will be split into two parts; half of the data will be used for</span></span>
+<span id="cb80-18"><a href="wrapper-functions.html#cb80-18" tabindex="-1"></a><span class="co">#' feature selection by cluster stability selection, and half will be used for</span></span>
+<span id="cb80-19"><a href="wrapper-functions.html#cb80-19" tabindex="-1"></a><span class="co">#' estimating a linear model on the selected cluster representatives. Must not</span></span>
+<span id="cb80-20"><a href="wrapper-functions.html#cb80-20" tabindex="-1"></a><span class="co">#' contain missing (`NA`) values.</span></span>
+<span id="cb80-21"><a href="wrapper-functions.html#cb80-21" tabindex="-1"></a><span class="co">#' @param y_train_selec A length-n numeric vector containing the responses;</span></span>
+<span id="cb80-22"><a href="wrapper-functions.html#cb80-22" tabindex="-1"></a><span class="co">#' `y[i]` is the response corresponding to observation `X[i, ]`. Unlke the more</span></span>
+<span id="cb80-23"><a href="wrapper-functions.html#cb80-23" tabindex="-1"></a><span class="co">#' general setup of css, y_train_selec must be real-valued because predictions</span></span>
+<span id="cb80-24"><a href="wrapper-functions.html#cb80-24" tabindex="-1"></a><span class="co">#' will be generated by ordinary least squares.</span></span>
+<span id="cb80-25"><a href="wrapper-functions.html#cb80-25" tabindex="-1"></a><span class="co">#' @param X_test A numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb80-26"><a href="wrapper-functions.html#cb80-26" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb80-27"><a href="wrapper-functions.html#cb80-27" tabindex="-1"></a><span class="co">#' the data that will be used to generate predictions. Must contain the same</span></span>
+<span id="cb80-28"><a href="wrapper-functions.html#cb80-28" tabindex="-1"></a><span class="co">#' features (in the same number of columns) as X_train_selec, and if the columns</span></span>
+<span id="cb80-29"><a href="wrapper-functions.html#cb80-29" tabindex="-1"></a><span class="co">#' of X_test are named, they must match the names of X_train_selec.</span></span>
+<span id="cb80-30"><a href="wrapper-functions.html#cb80-30" tabindex="-1"></a><span class="co">#' @param clusters Optional; either an integer vector of a list of integer</span></span>
+<span id="cb80-31"><a href="wrapper-functions.html#cb80-31" tabindex="-1"></a><span class="co">#' vectors; each vector should contain the indices of a cluster of features (a</span></span>
+<span id="cb80-32"><a href="wrapper-functions.html#cb80-32" tabindex="-1"></a><span class="co">#' subset of 1:p). (If there is only one cluster, clusters can either be a list</span></span>
+<span id="cb80-33"><a href="wrapper-functions.html#cb80-33" tabindex="-1"></a><span class="co">#' of length 1 or an integer vector.) All of the provided clusters must be</span></span>
+<span id="cb80-34"><a href="wrapper-functions.html#cb80-34" tabindex="-1"></a><span class="co">#' non-overlapping. Every feature not appearing in any cluster will be assumed</span></span>
+<span id="cb80-35"><a href="wrapper-functions.html#cb80-35" tabindex="-1"></a><span class="co">#' to be unclustered (that is, they  will be treated as if they are in a</span></span>
+<span id="cb80-36"><a href="wrapper-functions.html#cb80-36" tabindex="-1"></a><span class="co">#' "cluster" containing only themselves). If clusters is a list of length 0 (or</span></span>
+<span id="cb80-37"><a href="wrapper-functions.html#cb80-37" tabindex="-1"></a><span class="co">#' a list only containing clusters of length 1), then <a href="css.html#css">css</a>() returns the same</span></span>
+<span id="cb80-38"><a href="wrapper-functions.html#cb80-38" tabindex="-1"></a><span class="co">#' results as stability selection (so feat_sel_mat will be identical to</span></span>
+<span id="cb80-39"><a href="wrapper-functions.html#cb80-39" tabindex="-1"></a><span class="co">#' clus_sel_mat). Names for the clusters will be needed later; any clusters that</span></span>
+<span id="cb80-40"><a href="wrapper-functions.html#cb80-40" tabindex="-1"></a><span class="co">#' are not given names in the list clusters will be given names automatically by</span></span>
+<span id="cb80-41"><a href="wrapper-functions.html#cb80-41" tabindex="-1"></a><span class="co">#' css. </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
+<span id="cb80-42"><a href="wrapper-functions.html#cb80-42" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
+<span id="cb80-43"><a href="wrapper-functions.html#cb80-43" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
+<span id="cb80-44"><a href="wrapper-functions.html#cb80-44" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
+<span id="cb80-45"><a href="wrapper-functions.html#cb80-45" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package). To</span></span>
+<span id="cb80-46"><a href="wrapper-functions.html#cb80-46" tabindex="-1"></a><span class="co">#' get correct results in this case, please use model.matrix to convert the</span></span>
+<span id="cb80-47"><a href="wrapper-functions.html#cb80-47" tabindex="-1"></a><span class="co">#' data.frame to a numeric matrix on your own, then provide this matrix and</span></span>
+<span id="cb80-48"><a href="wrapper-functions.html#cb80-48" tabindex="-1"></a><span class="co">#' cluster assignments with respect to this matrix.Default is list() (so no</span></span>
+<span id="cb80-49"><a href="wrapper-functions.html#cb80-49" tabindex="-1"></a><span class="co">#' clusters are specified, and every feature is assumed to be in a "cluster"</span></span>
+<span id="cb80-50"><a href="wrapper-functions.html#cb80-50" tabindex="-1"></a><span class="co">#' containing only itself).</span></span>
+<span id="cb80-51"><a href="wrapper-functions.html#cb80-51" tabindex="-1"></a><span class="co">#' @param lambda Optional; the tuning parameter to be used by the lasso for</span></span>
+<span id="cb80-52"><a href="wrapper-functions.html#cb80-52" tabindex="-1"></a><span class="co">#' feature selection in each subsample. If lambda is not provided, cssPredict</span></span>
+<span id="cb80-53"><a href="wrapper-functions.html#cb80-53" tabindex="-1"></a><span class="co">#' will choose one automatically by cross-validation. Default is NA.</span></span>
+<span id="cb80-54"><a href="wrapper-functions.html#cb80-54" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssPreds will make use only of those clusters with</span></span>
+<span id="cb80-55"><a href="wrapper-functions.html#cb80-55" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
+<span id="cb80-56"><a href="wrapper-functions.html#cb80-56" tabindex="-1"></a><span class="co">#' Default is 0 (in which case either all clusters are used, or max_num_clusts</span></span>
+<span id="cb80-57"><a href="wrapper-functions.html#cb80-57" tabindex="-1"></a><span class="co">#' are used, if max_num_clusts is specified).</span></span>
+<span id="cb80-58"><a href="wrapper-functions.html#cb80-58" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb80-59"><a href="wrapper-functions.html#cb80-59" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
+<span id="cb80-60"><a href="wrapper-functions.html#cb80-60" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
+<span id="cb80-61"><a href="wrapper-functions.html#cb80-61" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb80-62"><a href="wrapper-functions.html#cb80-62" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
+<span id="cb80-63"><a href="wrapper-functions.html#cb80-63" tabindex="-1"></a><span class="co">#' @param train_inds Optional; an integer or numeric vector containing the</span></span>
+<span id="cb80-64"><a href="wrapper-functions.html#cb80-64" tabindex="-1"></a><span class="co">#' indices of observations in X and y to set aside for model training after</span></span>
+<span id="cb80-65"><a href="wrapper-functions.html#cb80-65" tabindex="-1"></a><span class="co">#' feature selection. If train_inds is not provided, half of the data will be</span></span>
+<span id="cb80-66"><a href="wrapper-functions.html#cb80-66" tabindex="-1"></a><span class="co">#' used for feature selection and half for model estimation (chosen at random).</span></span>
+<span id="cb80-67"><a href="wrapper-functions.html#cb80-67" tabindex="-1"></a><span class="co">#' @param auto_select_size Logical; if TRUE, then max_num_clusts will be</span></span>
+<span id="cb80-68"><a href="wrapper-functions.html#cb80-68" tabindex="-1"></a><span class="co">#' automatically estimated using the lasso with cross-validation. Default is</span></span>
+<span id="cb80-69"><a href="wrapper-functions.html#cb80-69" tabindex="-1"></a><span class="co">#' TRUE, though this argument is ignored if either cutoff or max_num_clusts is</span></span>
+<span id="cb80-70"><a href="wrapper-functions.html#cb80-70" tabindex="-1"></a><span class="co">#' provided. (If desired output is to generate predictions using all clusters,</span></span>
+<span id="cb80-71"><a href="wrapper-functions.html#cb80-71" tabindex="-1"></a><span class="co">#' you should set auto_select_size to FALSE and do not provide cutoff or</span></span>
+<span id="cb80-72"><a href="wrapper-functions.html#cb80-72" tabindex="-1"></a><span class="co">#' max_num_clusts.)</span></span>
+<span id="cb80-73"><a href="wrapper-functions.html#cb80-73" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.</span></span>
+<span id="cb80-74"><a href="wrapper-functions.html#cb80-74" tabindex="-1"></a><span class="co">#' Drives both the choice of lambda (when lambda is not provided) and the</span></span>
+<span id="cb80-75"><a href="wrapper-functions.html#cb80-75" tabindex="-1"></a><span class="co">#' elastic net fit used for feature selection in each subsample. Default is 1</span></span>
+<span id="cb80-76"><a href="wrapper-functions.html#cb80-76" tabindex="-1"></a><span class="co">#' (in which case the penalty is the lasso).</span></span>
+<span id="cb80-77"><a href="wrapper-functions.html#cb80-77" tabindex="-1"></a><span class="co">#' @return A numeric vector of length nrow(X_test) of predictions</span></span>
+<span id="cb80-78"><a href="wrapper-functions.html#cb80-78" tabindex="-1"></a><span class="co">#' corresponding to the observations from X_test.</span></span>
+<span id="cb80-79"><a href="wrapper-functions.html#cb80-79" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb80-80"><a href="wrapper-functions.html#cb80-80" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb80-81"><a href="wrapper-functions.html#cb80-81" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb80-82"><a href="wrapper-functions.html#cb80-82" tabindex="-1"></a><span class="co">#' train &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 80, p = 11, k_unclustered = 2,</span></span>
+<span id="cb80-83"><a href="wrapper-functions.html#cb80-83" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb80-84"><a href="wrapper-functions.html#cb80-84" tabindex="-1"></a><span class="co">#' test &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 10, p = 11, k_unclustered = 2,</span></span>
+<span id="cb80-85"><a href="wrapper-functions.html#cb80-85" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb80-86"><a href="wrapper-functions.html#cb80-86" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb80-87"><a href="wrapper-functions.html#cb80-87" tabindex="-1"></a><span class="co">#' preds &lt;- <a href="wrapper-functions.html#cssPredict">cssPredict</a>(X_train_selec = train$X, y_train_selec = train$y,</span></span>
+<span id="cb80-88"><a href="wrapper-functions.html#cb80-88" tabindex="-1"></a><span class="co">#'   X_test = test$X, clusters = clusters)</span></span>
+<span id="cb80-89"><a href="wrapper-functions.html#cb80-89" tabindex="-1"></a><span class="co">#' preds</span></span>
+<span id="cb80-90"><a href="wrapper-functions.html#cb80-90" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb80-91"><a href="wrapper-functions.html#cb80-91" tabindex="-1"></a><span id="cssPredict">cssPredict</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X_train_selec, y_train_selec, X_test, <span class="at">clusters=</span><span class="fu">list</span>(),</span>
+<span id="cb80-92"><a href="wrapper-functions.html#cb80-92" tabindex="-1"></a>    <span class="at">lambda=</span><span class="cn">NA</span>, <span class="at">cutoff=</span><span class="cn">NA</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">train_inds=</span><span class="cn">NA</span>,</span>
+<span id="cb80-93"><a href="wrapper-functions.html#cb80-93" tabindex="-1"></a>    <span class="at">auto_select_size=</span><span class="cn">TRUE</span>, <span class="at">alpha=</span><span class="dv">1</span>){</span>
+<span id="cb80-94"><a href="wrapper-functions.html#cb80-94" tabindex="-1"></a></span>
+<span id="cb80-95"><a href="wrapper-functions.html#cb80-95" tabindex="-1"></a>    <span class="co"># Check inputs (most inputs will be checked by called functions)</span></span>
+<span id="cb80-96"><a href="wrapper-functions.html#cb80-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y_train_selec) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y_train_selec)){</span>
+<span id="cb80-97"><a href="wrapper-functions.html#cb80-97" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided y_train_selec must be real-valued, because predictions will be generated by ordinary least squares regression."</span>)</span>
+<span id="cb80-98"><a href="wrapper-functions.html#cb80-98" tabindex="-1"></a>    }</span>
+<span id="cb80-99"><a href="wrapper-functions.html#cb80-99" tabindex="-1"></a></span>
+<span id="cb80-100"><a href="wrapper-functions.html#cb80-100" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(auto_select_size))</span>
+<span id="cb80-101"><a href="wrapper-functions.html#cb80-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(auto_select_size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb80-102"><a href="wrapper-functions.html#cb80-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.logical</span>(auto_select_size))</span>
+<span id="cb80-103"><a href="wrapper-functions.html#cb80-103" tabindex="-1"></a></span>
+<span id="cb80-104"><a href="wrapper-functions.html#cb80-104" tabindex="-1"></a>    <span class="co"># Validate alpha up front (before the NA-lambda branch and bundling below);</span></span>
+<span id="cb80-105"><a href="wrapper-functions.html#cb80-105" tabindex="-1"></a>    <span class="co"># see cssSelect for the ordering rationale.</span></span>
+<span id="cb80-106"><a href="wrapper-functions.html#cb80-106" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
+<span id="cb80-107"><a href="wrapper-functions.html#cb80-107" tabindex="-1"></a></span>
+<span id="cb80-108"><a href="wrapper-functions.html#cb80-108" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_train_selec) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X_train_selec))</span>
+<span id="cb80-109"><a href="wrapper-functions.html#cb80-109" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X_train_selec, <span class="st">"X_train_selec"</span>)</span>
+<span id="cb80-110"><a href="wrapper-functions.html#cb80-110" tabindex="-1"></a>    <span class="co"># Reject a non-finite y on the default path (lands after the numeric check</span></span>
+<span id="cb80-111"><a href="wrapper-functions.html#cb80-111" tabindex="-1"></a>    <span class="co"># at the top of the function, so the factor-y message there is preserved).</span></span>
+<span id="cb80-112"><a href="wrapper-functions.html#cb80-112" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y_train_selec, <span class="st">"y_train_selec"</span>)</span>
+<span id="cb80-113"><a href="wrapper-functions.html#cb80-113" tabindex="-1"></a></span>
+<span id="cb80-114"><a href="wrapper-functions.html#cb80-114" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
+<span id="cb80-115"><a href="wrapper-functions.html#cb80-115" tabindex="-1"></a>    X_train_selec <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X_train_selec, clusters,</span>
+<span id="cb80-116"><a href="wrapper-functions.html#cb80-116" tabindex="-1"></a>        <span class="at">arg_name =</span> <span class="st">"X_train_selec"</span>)</span>
+<span id="cb80-117"><a href="wrapper-functions.html#cb80-117" tabindex="-1"></a></span>
+<span id="cb80-118"><a href="wrapper-functions.html#cb80-118" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_train_selec))</span>
+<span id="cb80-119"><a href="wrapper-functions.html#cb80-119" tabindex="-1"></a></span>
+<span id="cb80-120"><a href="wrapper-functions.html#cb80-120" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X_train_selec)</span>
+<span id="cb80-121"><a href="wrapper-functions.html#cb80-121" tabindex="-1"></a></span>
+<span id="cb80-122"><a href="wrapper-functions.html#cb80-122" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(train_inds))){</span>
+<span id="cb80-123"><a href="wrapper-functions.html#cb80-123" tabindex="-1"></a>        train_inds <span class="ot">&lt;-</span> <span class="fu">sample</span>(n, <span class="at">size=</span><span class="fu">round</span>(n<span class="sc">/</span><span class="dv">2</span>))</span>
+<span id="cb80-124"><a href="wrapper-functions.html#cb80-124" tabindex="-1"></a>    }</span>
+<span id="cb80-125"><a href="wrapper-functions.html#cb80-125" tabindex="-1"></a></span>
+<span id="cb80-126"><a href="wrapper-functions.html#cb80-126" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb80-127"><a href="wrapper-functions.html#cb80-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(lambda)){</span>
+<span id="cb80-128"><a href="wrapper-functions.html#cb80-128" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds), ],</span>
+<span id="cb80-129"><a href="wrapper-functions.html#cb80-129" tabindex="-1"></a>            y_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)], <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-130"><a href="wrapper-functions.html#cb80-130" tabindex="-1"></a>    }</span>
+<span id="cb80-131"><a href="wrapper-functions.html#cb80-131" tabindex="-1"></a></span>
+<span id="cb80-132"><a href="wrapper-functions.html#cb80-132" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
+<span id="cb80-133"><a href="wrapper-functions.html#cb80-133" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
+<span id="cb80-134"><a href="wrapper-functions.html#cb80-134" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
+<span id="cb80-135"><a href="wrapper-functions.html#cb80-135" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
+<span id="cb80-136"><a href="wrapper-functions.html#cb80-136" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-137"><a href="wrapper-functions.html#cb80-137" tabindex="-1"></a>    }</span>
+<span id="cb80-138"><a href="wrapper-functions.html#cb80-138" tabindex="-1"></a></span>
+<span id="cb80-139"><a href="wrapper-functions.html#cb80-139" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_train_selec, <span class="at">y=</span>y_train_selec, <span class="at">lambda=</span>lambda,</span>
+<span id="cb80-140"><a href="wrapper-functions.html#cb80-140" tabindex="-1"></a>        <span class="at">clusters=</span>clusters, <span class="at">train_inds=</span>train_inds)</span>
+<span id="cb80-141"><a href="wrapper-functions.html#cb80-141" tabindex="-1"></a></span>
+<span id="cb80-142"><a href="wrapper-functions.html#cb80-142" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
+<span id="cb80-143"><a href="wrapper-functions.html#cb80-143" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
+<span id="cb80-144"><a href="wrapper-functions.html#cb80-144" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
+<span id="cb80-145"><a href="wrapper-functions.html#cb80-145" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
+<span id="cb80-146"><a href="wrapper-functions.html#cb80-146" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X_train_selec[train_inds, ],</span>
+<span id="cb80-147"><a href="wrapper-functions.html#cb80-147" tabindex="-1"></a>                y_train_selec[train_inds], css_results<span class="sc">$</span>clusters, <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-148"><a href="wrapper-functions.html#cb80-148" tabindex="-1"></a>        }</span>
+<span id="cb80-149"><a href="wrapper-functions.html#cb80-149" tabindex="-1"></a>    }</span>
+<span id="cb80-150"><a href="wrapper-functions.html#cb80-150" tabindex="-1"></a></span>
+<span id="cb80-151"><a href="wrapper-functions.html#cb80-151" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
+<span id="cb80-152"><a href="wrapper-functions.html#cb80-152" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb80-153"><a href="wrapper-functions.html#cb80-153" tabindex="-1"></a>    }</span>
+<span id="cb80-154"><a href="wrapper-functions.html#cb80-154" tabindex="-1"></a></span>
+<span id="cb80-155"><a href="wrapper-functions.html#cb80-155" tabindex="-1"></a>    <span class="co"># Get predictions</span></span>
+<span id="cb80-156"><a href="wrapper-functions.html#cb80-156" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_results, <span class="at">testX=</span>X_test, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
+<span id="cb80-157"><a href="wrapper-functions.html#cb80-157" tabindex="-1"></a>        <span class="at">cutoff=</span>cutoff, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb80-158"><a href="wrapper-functions.html#cb80-158" tabindex="-1"></a>}</span></code></pre></div>
 </div>
             </section>
 </div>
