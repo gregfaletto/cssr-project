@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="4 Selection and prediction functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-01">
+<meta name="date" content="2026-07-02">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1393,160 +1393,194 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb57-143"><a href="sel-and-pred.html#cb57-143" tabindex="-1"></a>    <span class="fu">colnames</span>(df)[<span class="dv">2</span><span class="sc">:</span><span class="fu">ncol</span>(df)] <span class="ot">&lt;-</span> clust_X_names</span>
 <span id="cb57-144"><a href="sel-and-pred.html#cb57-144" tabindex="-1"></a>    model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(y <span class="sc">~</span>., <span class="at">data=</span>df)</span>
 <span id="cb57-145"><a href="sel-and-pred.html#cb57-145" tabindex="-1"></a></span>
-<span id="cb57-146"><a href="sel-and-pred.html#cb57-146" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX</span></span>
-<span id="cb57-147"><a href="sel-and-pred.html#cb57-147" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
-<span id="cb57-148"><a href="sel-and-pred.html#cb57-148" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
-<span id="cb57-149"><a href="sel-and-pred.html#cb57-149" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">predict.lm</span>(model, <span class="at">newdata=</span>df_test)</span>
-<span id="cb57-150"><a href="sel-and-pred.html#cb57-150" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb57-151"><a href="sel-and-pred.html#cb57-151" tabindex="-1"></a></span>
-<span id="cb57-152"><a href="sel-and-pred.html#cb57-152" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb57-153"><a href="sel-and-pred.html#cb57-153" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
-<span id="cb57-154"><a href="sel-and-pred.html#cb57-154" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
-<span id="cb57-155"><a href="sel-and-pred.html#cb57-155" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
-<span id="cb57-156"><a href="sel-and-pred.html#cb57-156" tabindex="-1"></a></span>
-<span id="cb57-157"><a href="sel-and-pred.html#cb57-157" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
-<span id="cb57-158"><a href="sel-and-pred.html#cb57-158" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb57-146"><a href="sel-and-pred.html#cb57-146" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX. Route through</span></span>
+<span id="cb57-147"><a href="sel-and-pred.html#cb57-147" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>() so a rank-deficient OLS fit predicts from its</span></span>
+<span id="cb57-148"><a href="sel-and-pred.html#cb57-148" tabindex="-1"></a>    <span class="co"># estimable coefficients instead of crashing under R &gt;= 4.4's predict.lm</span></span>
+<span id="cb57-149"><a href="sel-and-pred.html#cb57-149" tabindex="-1"></a>    <span class="co"># default (see the helper's note and issue #117).</span></span>
+<span id="cb57-150"><a href="sel-and-pred.html#cb57-150" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
+<span id="cb57-151"><a href="sel-and-pred.html#cb57-151" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
+<span id="cb57-152"><a href="sel-and-pred.html#cb57-152" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>(model, df_test)</span>
+<span id="cb57-153"><a href="sel-and-pred.html#cb57-153" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb57-154"><a href="sel-and-pred.html#cb57-154" tabindex="-1"></a></span>
+<span id="cb57-155"><a href="sel-and-pred.html#cb57-155" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb57-156"><a href="sel-and-pred.html#cb57-156" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
+<span id="cb57-157"><a href="sel-and-pred.html#cb57-157" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
+<span id="cb57-158"><a href="sel-and-pred.html#cb57-158" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
+<span id="cb57-159"><a href="sel-and-pred.html#cb57-159" tabindex="-1"></a></span>
+<span id="cb57-160"><a href="sel-and-pred.html#cb57-160" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
+<span id="cb57-161"><a href="sel-and-pred.html#cb57-161" tabindex="-1"></a>}</span></code></pre></div>
+<p>Internal OLS-prediction helper used by <code><a href="sel-and-pred.html#getCssPreds">getCssPreds</a>()</code> (issue #117):</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="sel-and-pred.html#cb58-1" tabindex="-1"></a><span class="co">#' Predict from a possibly rank-deficient OLS fit without crashing on R &gt;= 4.4</span></span>
+<span id="cb58-2"><a href="sel-and-pred.html#cb58-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb58-3"><a href="sel-and-pred.html#cb58-3" tabindex="-1"></a><span class="co">#' On R &gt;= 4.4 `stats::predict.lm()`'s default `rankdeficient = "warnif"` runs</span></span>
+<span id="cb58-4"><a href="sel-and-pred.html#cb58-4" tabindex="-1"></a><span class="co">#' `qr.Q(qr.default(t(qr.R(model$qr))))`, which aborts with "NA/NaN/Inf in</span></span>
+<span id="cb58-5"><a href="sel-and-pred.html#cb58-5" tabindex="-1"></a><span class="co">#' foreign function call" when `qr.R(model$qr)` contains NaN/Inf (a rank-deficient</span></span>
+<span id="cb58-6"><a href="sel-and-pred.html#cb58-6" tabindex="-1"></a><span class="co">#' fit plus a LINPACK numerical pathology seen on real high-dimensional data).</span></span>
+<span id="cb58-7"><a href="sel-and-pred.html#cb58-7" tabindex="-1"></a><span class="co">#' `rankdeficient = "simple"` restores the pre-4.4 behavior: predict from the</span></span>
+<span id="cb58-8"><a href="sel-and-pred.html#cb58-8" tabindex="-1"></a><span class="co">#' estimable coefficients, yielding finite predictions. That argument only exists</span></span>
+<span id="cb58-9"><a href="sel-and-pred.html#cb58-9" tabindex="-1"></a><span class="co">#' on R &gt;= 4.4, so it is added conditionally (a plain retry with the argument</span></span>
+<span id="cb58-10"><a href="sel-and-pred.html#cb58-10" tabindex="-1"></a><span class="co">#' would itself error on older R with "unused argument"). The `"simple"` path</span></span>
+<span id="cb58-11"><a href="sel-and-pred.html#cb58-11" tabindex="-1"></a><span class="co">#' emits the stock "rank-deficient fit" warning; muffle only that specific</span></span>
+<span id="cb58-12"><a href="sel-and-pred.html#cb58-12" tabindex="-1"></a><span class="co">#' warning (its advice to use `rankdeficient = "NA"` would NA-fill non-estimable</span></span>
+<span id="cb58-13"><a href="sel-and-pred.html#cb58-13" tabindex="-1"></a><span class="co">#' cases and break the finiteness contract in `<a href="sel-and-pred.html#getCssPreds">getCssPreds</a>()`) so unrelated</span></span>
+<span id="cb58-14"><a href="sel-and-pred.html#cb58-14" tabindex="-1"></a><span class="co">#' warnings still surface. On full-rank fits this is bit-identical to the old</span></span>
+<span id="cb58-15"><a href="sel-and-pred.html#cb58-15" tabindex="-1"></a><span class="co">#' default.</span></span>
+<span id="cb58-16"><a href="sel-and-pred.html#cb58-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb58-17"><a href="sel-and-pred.html#cb58-17" tabindex="-1"></a><span id="olsPredictRankSafe">olsPredictRankSafe</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(model, newdata) {</span>
+<span id="cb58-18"><a href="sel-and-pred.html#cb58-18" tabindex="-1"></a>    pred_args <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">object =</span> model, <span class="at">newdata =</span> newdata)</span>
+<span id="cb58-19"><a href="sel-and-pred.html#cb58-19" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">getRversion</span>() <span class="sc">&gt;=</span> <span class="st">"4.4.0"</span>) {</span>
+<span id="cb58-20"><a href="sel-and-pred.html#cb58-20" tabindex="-1"></a>        pred_args<span class="sc">$</span>rankdeficient <span class="ot">&lt;-</span> <span class="st">"simple"</span></span>
+<span id="cb58-21"><a href="sel-and-pred.html#cb58-21" tabindex="-1"></a>    }</span>
+<span id="cb58-22"><a href="sel-and-pred.html#cb58-22" tabindex="-1"></a>    <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb58-23"><a href="sel-and-pred.html#cb58-23" tabindex="-1"></a>        <span class="fu">do.call</span>(stats<span class="sc">::</span>predict.lm, pred_args),</span>
+<span id="cb58-24"><a href="sel-and-pred.html#cb58-24" tabindex="-1"></a>        <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb58-25"><a href="sel-and-pred.html#cb58-25" tabindex="-1"></a>            <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"rank-deficient fit"</span>, <span class="fu">conditionMessage</span>(w), <span class="at">fixed =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb58-26"><a href="sel-and-pred.html#cb58-26" tabindex="-1"></a>                <span class="fu">invokeRestart</span>(<span class="st">"muffleWarning"</span>)</span>
+<span id="cb58-27"><a href="sel-and-pred.html#cb58-27" tabindex="-1"></a>            }</span>
+<span id="cb58-28"><a href="sel-and-pred.html#cb58-28" tabindex="-1"></a>        }</span>
+<span id="cb58-29"><a href="sel-and-pred.html#cb58-29" tabindex="-1"></a>    )</span>
+<span id="cb58-30"><a href="sel-and-pred.html#cb58-30" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkGetCssPredsInputs">checkGetCssPredsInputs</a>()</code>:</p>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="sel-and-pred.html#cb58-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that inputs to the function getCssPreds are as</span></span>
-<span id="cb58-2"><a href="sel-and-pred.html#cb58-2" tabindex="-1"></a><span class="co">#' expected, and modify inputs if needed.</span></span>
-<span id="cb58-3"><a href="sel-and-pred.html#cb58-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb58-4"><a href="sel-and-pred.html#cb58-4" tabindex="-1"></a><span class="co">#' @param css_results An object of class "cssr" (the output of the function</span></span>
-<span id="cb58-5"><a href="sel-and-pred.html#cb58-5" tabindex="-1"></a><span class="co">#' css).</span></span>
-<span id="cb58-6"><a href="sel-and-pred.html#cb58-6" tabindex="-1"></a><span class="co">#' @param testX A numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb58-7"><a href="sel-and-pred.html#cb58-7" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb58-8"><a href="sel-and-pred.html#cb58-8" tabindex="-1"></a><span class="co">#' the data that will be used to generate predictions. Must contain the same</span></span>
-<span id="cb58-9"><a href="sel-and-pred.html#cb58-9" tabindex="-1"></a><span class="co">#' features (in the same number of columns) as the matrix provided to css.</span></span>
-<span id="cb58-10"><a href="sel-and-pred.html#cb58-10" tabindex="-1"></a><span class="co">#' @param weighting Character; determines how to calculate the weights to</span></span>
-<span id="cb58-11"><a href="sel-and-pred.html#cb58-11" tabindex="-1"></a><span class="co">#' combine features from the selected clusters into weighted averages, called</span></span>
-<span id="cb58-12"><a href="sel-and-pred.html#cb58-12" tabindex="-1"></a><span class="co">#' cluster representatives. Must be one of "sparse", "weighted_avg", or</span></span>
-<span id="cb58-13"><a href="sel-and-pred.html#cb58-13" tabindex="-1"></a><span class="co">#' "simple_avg". For "sparse", all the weight is put on the most frequently</span></span>
-<span id="cb58-14"><a href="sel-and-pred.html#cb58-14" tabindex="-1"></a><span class="co">#' selected individual cluster member (or divided equally among all the clusters</span></span>
-<span id="cb58-15"><a href="sel-and-pred.html#cb58-15" tabindex="-1"></a><span class="co">#' that are tied for the top selection proportion if there is a tie). For</span></span>
-<span id="cb58-16"><a href="sel-and-pred.html#cb58-16" tabindex="-1"></a><span class="co">#' "weighted_avg", the weight used for each cluster member is calculated in</span></span>
-<span id="cb58-17"><a href="sel-and-pred.html#cb58-17" tabindex="-1"></a><span class="co">#' proportion to the individual selection proportions of each feature. For</span></span>
-<span id="cb58-18"><a href="sel-and-pred.html#cb58-18" tabindex="-1"></a><span class="co">#' "simple_avg", each cluster member gets equal weight regardless of the</span></span>
-<span id="cb58-19"><a href="sel-and-pred.html#cb58-19" tabindex="-1"></a><span class="co">#' individual feature selection proportions (that is, the cluster representative</span></span>
-<span id="cb58-20"><a href="sel-and-pred.html#cb58-20" tabindex="-1"></a><span class="co">#' is just a simple average of all the cluster members). See Faletto and Bien</span></span>
-<span id="cb58-21"><a href="sel-and-pred.html#cb58-21" tabindex="-1"></a><span class="co">#' (2022) for details. Default is "weighted_avg".</span></span>
-<span id="cb58-22"><a href="sel-and-pred.html#cb58-22" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssPreds will make use only of those clusters with</span></span>
-<span id="cb58-23"><a href="sel-and-pred.html#cb58-23" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
-<span id="cb58-24"><a href="sel-and-pred.html#cb58-24" tabindex="-1"></a><span class="co">#' Default is 0 (in which case either all clusters are used, or max_num_clusts</span></span>
-<span id="cb58-25"><a href="sel-and-pred.html#cb58-25" tabindex="-1"></a><span class="co">#' are used, if max_num_clusts is specified).</span></span>
-<span id="cb58-26"><a href="sel-and-pred.html#cb58-26" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
-<span id="cb58-27"><a href="sel-and-pred.html#cb58-27" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
-<span id="cb58-28"><a href="sel-and-pred.html#cb58-28" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be increased until at least</span></span>
-<span id="cb58-29"><a href="sel-and-pred.html#cb58-29" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1.</span></span>
-<span id="cb58-30"><a href="sel-and-pred.html#cb58-30" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb58-31"><a href="sel-and-pred.html#cb58-31" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
-<span id="cb58-32"><a href="sel-and-pred.html#cb58-32" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
-<span id="cb58-33"><a href="sel-and-pred.html#cb58-33" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb58-34"><a href="sel-and-pred.html#cb58-34" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb58-35"><a href="sel-and-pred.html#cb58-35" tabindex="-1"></a><span class="co">#' @param trainX A numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb58-36"><a href="sel-and-pred.html#cb58-36" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb58-37"><a href="sel-and-pred.html#cb58-37" tabindex="-1"></a><span class="co">#' the data that will be used to estimate the linear model from the selected</span></span>
-<span id="cb58-38"><a href="sel-and-pred.html#cb58-38" tabindex="-1"></a><span class="co">#' clusters. trainX is only necessary to provide if no train_inds were</span></span>
-<span id="cb58-39"><a href="sel-and-pred.html#cb58-39" tabindex="-1"></a><span class="co">#' designated in the css function call to set aside observations for model</span></span>
-<span id="cb58-40"><a href="sel-and-pred.html#cb58-40" tabindex="-1"></a><span class="co">#' estimation (though even if train_inds was provided, trainX and trainY will be</span></span>
-<span id="cb58-41"><a href="sel-and-pred.html#cb58-41" tabindex="-1"></a><span class="co">#' used for model estimation if they are both provided to getCssPreds). Must </span></span>
-<span id="cb58-42"><a href="sel-and-pred.html#cb58-42" tabindex="-1"></a><span class="co">#' contain the same features (in the same number of columns) as the matrix </span></span>
-<span id="cb58-43"><a href="sel-and-pred.html#cb58-43" tabindex="-1"></a><span class="co">#' provided to css, and if the columns of trainX are labeled, the names must</span></span>
-<span id="cb58-44"><a href="sel-and-pred.html#cb58-44" tabindex="-1"></a><span class="co">#' match the variable names provided to css. Must not contain missing (`NA`)</span></span>
-<span id="cb58-45"><a href="sel-and-pred.html#cb58-45" tabindex="-1"></a><span class="co">#' values. Default is NA (in which case getCssPreds uses the observations from</span></span>
-<span id="cb58-46"><a href="sel-and-pred.html#cb58-46" tabindex="-1"></a><span class="co">#' the train_inds that were provided to css to estimate a linear model).</span></span>
-<span id="cb58-47"><a href="sel-and-pred.html#cb58-47" tabindex="-1"></a><span class="co">#' @param trainY The response corresponding to trainX. Must be a real-valued</span></span>
-<span id="cb58-48"><a href="sel-and-pred.html#cb58-48" tabindex="-1"></a><span class="co">#' response (unlike in the general css setup) because predictions will be</span></span>
-<span id="cb58-49"><a href="sel-and-pred.html#cb58-49" tabindex="-1"></a><span class="co">#' generated by an ordinary least squares model. Must have the same length as</span></span>
-<span id="cb58-50"><a href="sel-and-pred.html#cb58-50" tabindex="-1"></a><span class="co">#' the number of rows of trainX. Like trainX, only needs to be provided if no</span></span>
-<span id="cb58-51"><a href="sel-and-pred.html#cb58-51" tabindex="-1"></a><span class="co">#' observations were set aside for model estimation by the parameter train_inds</span></span>
-<span id="cb58-52"><a href="sel-and-pred.html#cb58-52" tabindex="-1"></a><span class="co">#' in the css function call. Default is NA (in which case getCssPreds uses the</span></span>
-<span id="cb58-53"><a href="sel-and-pred.html#cb58-53" tabindex="-1"></a><span class="co">#' observations from the train_inds that were provided to css).</span></span>
-<span id="cb58-54"><a href="sel-and-pred.html#cb58-54" tabindex="-1"></a><span class="co">#' @return A named list with the following elements: \item{trainXProvided}{</span></span>
-<span id="cb58-55"><a href="sel-and-pred.html#cb58-55" tabindex="-1"></a><span class="co">#' Logical; indicates whether a valid trainX input was provided.} \item{trainX}{</span></span>
-<span id="cb58-56"><a href="sel-and-pred.html#cb58-56" tabindex="-1"></a><span class="co">#' The provided trainX matrix, coerced from a data.frame to a matrix if the</span></span>
-<span id="cb58-57"><a href="sel-and-pred.html#cb58-57" tabindex="-1"></a><span class="co">#' provided trainX was a data.frame. (If a valid trainX was not provided, this</span></span>
-<span id="cb58-58"><a href="sel-and-pred.html#cb58-58" tabindex="-1"></a><span class="co">#' output simply passes whatever was provided as trainX.)} \item{testX}{The</span></span>
-<span id="cb58-59"><a href="sel-and-pred.html#cb58-59" tabindex="-1"></a><span class="co">#' provided testX matrix, coerced from a data.frame to a matrix if the provided</span></span>
-<span id="cb58-60"><a href="sel-and-pred.html#cb58-60" tabindex="-1"></a><span class="co">#' testX was a data.frame.} \item{feat_names}{A character vector containing the</span></span>
-<span id="cb58-61"><a href="sel-and-pred.html#cb58-61" tabindex="-1"></a><span class="co">#' column names of testX (if the provided testX had column names). If the</span></span>
-<span id="cb58-62"><a href="sel-and-pred.html#cb58-62" tabindex="-1"></a><span class="co">#' provided testX did not have column names, feat_names will be NA.}</span></span>
-<span id="cb58-63"><a href="sel-and-pred.html#cb58-63" tabindex="-1"></a><span class="co">#' \item{max_num_clusts}{The provided max_num_clusts, coerced to an integer if</span></span>
-<span id="cb58-64"><a href="sel-and-pred.html#cb58-64" tabindex="-1"></a><span class="co">#' needed, and coerced to be less than or equal to the total number of clusters</span></span>
-<span id="cb58-65"><a href="sel-and-pred.html#cb58-65" tabindex="-1"></a><span class="co">#' from the output of css_results.}</span></span>
-<span id="cb58-66"><a href="sel-and-pred.html#cb58-66" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb58-67"><a href="sel-and-pred.html#cb58-67" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb58-68"><a href="sel-and-pred.html#cb58-68" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb58-69"><a href="sel-and-pred.html#cb58-69" tabindex="-1"></a><span id="checkGetCssPredsInputs">checkGetCssPredsInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, testX, weighting, cutoff,</span>
-<span id="cb58-70"><a href="sel-and-pred.html#cb58-70" tabindex="-1"></a>    min_num_clusts, max_num_clusts, trainX, trainY){</span>
-<span id="cb58-71"><a href="sel-and-pred.html#cb58-71" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb58-72"><a href="sel-and-pred.html#cb58-72" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
-<span id="cb58-73"><a href="sel-and-pred.html#cb58-73" tabindex="-1"></a></span>
-<span id="cb58-74"><a href="sel-and-pred.html#cb58-74" tabindex="-1"></a>    check_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(trainX, css_results)</span>
-<span id="cb58-75"><a href="sel-and-pred.html#cb58-75" tabindex="-1"></a></span>
-<span id="cb58-76"><a href="sel-and-pred.html#cb58-76" tabindex="-1"></a>    trainX <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newX</span>
-<span id="cb58-77"><a href="sel-and-pred.html#cb58-77" tabindex="-1"></a>    trainXProvided <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newXProvided</span>
-<span id="cb58-78"><a href="sel-and-pred.html#cb58-78" tabindex="-1"></a></span>
-<span id="cb58-79"><a href="sel-and-pred.html#cb58-79" tabindex="-1"></a>    <span class="fu">rm</span>(check_results)</span>
-<span id="cb58-80"><a href="sel-and-pred.html#cb58-80" tabindex="-1"></a></span>
-<span id="cb58-81"><a href="sel-and-pred.html#cb58-81" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
-<span id="cb58-82"><a href="sel-and-pred.html#cb58-82" tabindex="-1"></a></span>
-<span id="cb58-83"><a href="sel-and-pred.html#cb58-83" tabindex="-1"></a>    <span class="cf">if</span>(trainXProvided){</span>
-<span id="cb58-84"><a href="sel-and-pred.html#cb58-84" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainY)) <span class="sc">&amp;</span> <span class="fu">length</span>(trainY) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb58-85"><a href="sel-and-pred.html#cb58-85" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(trainY))</span>
-<span id="cb58-86"><a href="sel-and-pred.html#cb58-86" tabindex="-1"></a>            <span class="fu">stopifnot</span>(n_train <span class="sc">==</span> <span class="fu">length</span>(trainY))</span>
-<span id="cb58-87"><a href="sel-and-pred.html#cb58-87" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb58-88"><a href="sel-and-pred.html#cb58-88" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb58-89"><a href="sel-and-pred.html#cb58-89" tabindex="-1"></a>                <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions"</span>)</span>
-<span id="cb58-90"><a href="sel-and-pred.html#cb58-90" tabindex="-1"></a>            }</span>
-<span id="cb58-91"><a href="sel-and-pred.html#cb58-91" tabindex="-1"></a>            trainXProvided <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
-<span id="cb58-92"><a href="sel-and-pred.html#cb58-92" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="st">"trainX provided but no trainY provided; instead, training model using the train_inds observations provided to css to set aside for model training."</span>)</span>
-<span id="cb58-93"><a href="sel-and-pred.html#cb58-93" tabindex="-1"></a>        }</span>
-<span id="cb58-94"><a href="sel-and-pred.html#cb58-94" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb58-95"><a href="sel-and-pred.html#cb58-95" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb58-96"><a href="sel-and-pred.html#cb58-96" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions"</span>)</span>
-<span id="cb58-97"><a href="sel-and-pred.html#cb58-97" tabindex="-1"></a>        }</span>
-<span id="cb58-98"><a href="sel-and-pred.html#cb58-98" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainY)) <span class="sc">&amp;</span> <span class="fu">length</span>(trainY) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb58-99"><a href="sel-and-pred.html#cb58-99" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="st">"trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training."</span>)</span>
-<span id="cb58-100"><a href="sel-and-pred.html#cb58-100" tabindex="-1"></a>        }</span>
-<span id="cb58-101"><a href="sel-and-pred.html#cb58-101" tabindex="-1"></a>    }</span>
-<span id="cb58-102"><a href="sel-and-pred.html#cb58-102" tabindex="-1"></a></span>
-<span id="cb58-103"><a href="sel-and-pred.html#cb58-103" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(testX, css_results<span class="sc">$</span>X)</span>
-<span id="cb58-104"><a href="sel-and-pred.html#cb58-104" tabindex="-1"></a></span>
-<span id="cb58-105"><a href="sel-and-pred.html#cb58-105" tabindex="-1"></a>    testX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
-<span id="cb58-106"><a href="sel-and-pred.html#cb58-106" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
-<span id="cb58-107"><a href="sel-and-pred.html#cb58-107" tabindex="-1"></a></span>
-<span id="cb58-108"><a href="sel-and-pred.html#cb58-108" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb58-109"><a href="sel-and-pred.html#cb58-109" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(feat_names) <span class="sc">==</span> <span class="fu">ncol</span>(testX))</span>
-<span id="cb58-110"><a href="sel-and-pred.html#cb58-110" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"(Intercept)"</span> <span class="sc">%in%</span> feat_names))</span>
-<span id="cb58-111"><a href="sel-and-pred.html#cb58-111" tabindex="-1"></a>        <span class="fu">colnames</span>(testX) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb58-112"><a href="sel-and-pred.html#cb58-112" tabindex="-1"></a>    }</span>
-<span id="cb58-113"><a href="sel-and-pred.html#cb58-113" tabindex="-1"></a></span>
-<span id="cb58-114"><a href="sel-and-pred.html#cb58-114" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
-<span id="cb58-115"><a href="sel-and-pred.html#cb58-115" tabindex="-1"></a></span>
-<span id="cb58-116"><a href="sel-and-pred.html#cb58-116" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(testX)</span>
-<span id="cb58-117"><a href="sel-and-pred.html#cb58-117" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(testX)</span>
-<span id="cb58-118"><a href="sel-and-pred.html#cb58-118" tabindex="-1"></a></span>
-<span id="cb58-119"><a href="sel-and-pred.html#cb58-119" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb58-120"><a href="sel-and-pred.html#cb58-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">==</span> <span class="fu">ncol</span>(trainX))</span>
-<span id="cb58-121"><a href="sel-and-pred.html#cb58-121" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb58-122"><a href="sel-and-pred.html#cb58-122" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)"</span>)</span>
-<span id="cb58-123"><a href="sel-and-pred.html#cb58-123" tabindex="-1"></a>    }</span>
-<span id="cb58-124"><a href="sel-and-pred.html#cb58-124" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb58-125"><a href="sel-and-pred.html#cb58-125" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)"</span>)</span>
-<span id="cb58-126"><a href="sel-and-pred.html#cb58-126" tabindex="-1"></a>    }</span>
-<span id="cb58-127"><a href="sel-and-pred.html#cb58-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb58-128"><a href="sel-and-pred.html#cb58-128" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(trainX) <span class="sc">==</span> <span class="fu">colnames</span>(testX)))</span>
-<span id="cb58-129"><a href="sel-and-pred.html#cb58-129" tabindex="-1"></a>    }</span>
-<span id="cb58-130"><a href="sel-and-pred.html#cb58-130" tabindex="-1"></a></span>
-<span id="cb58-131"><a href="sel-and-pred.html#cb58-131" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb58-132"><a href="sel-and-pred.html#cb58-132" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
-<span id="cb58-133"><a href="sel-and-pred.html#cb58-133" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb58-134"><a href="sel-and-pred.html#cb58-134" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb58-135"><a href="sel-and-pred.html#cb58-135" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb58-136"><a href="sel-and-pred.html#cb58-136" tabindex="-1"></a></span>
-<span id="cb58-137"><a href="sel-and-pred.html#cb58-137" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">trainXProvided=</span>trainXProvided, <span class="at">trainX=</span>trainX, <span class="at">testX=</span>testX,</span>
-<span id="cb58-138"><a href="sel-and-pred.html#cb58-138" tabindex="-1"></a>        <span class="at">feat_names=</span>feat_names, <span class="at">max_num_clusts=</span>max_num_clusts))</span>
-<span id="cb58-139"><a href="sel-and-pred.html#cb58-139" tabindex="-1"></a></span>
-<span id="cb58-140"><a href="sel-and-pred.html#cb58-140" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="sel-and-pred.html#cb59-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that inputs to the function getCssPreds are as</span></span>
+<span id="cb59-2"><a href="sel-and-pred.html#cb59-2" tabindex="-1"></a><span class="co">#' expected, and modify inputs if needed.</span></span>
+<span id="cb59-3"><a href="sel-and-pred.html#cb59-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb59-4"><a href="sel-and-pred.html#cb59-4" tabindex="-1"></a><span class="co">#' @param css_results An object of class "cssr" (the output of the function</span></span>
+<span id="cb59-5"><a href="sel-and-pred.html#cb59-5" tabindex="-1"></a><span class="co">#' css).</span></span>
+<span id="cb59-6"><a href="sel-and-pred.html#cb59-6" tabindex="-1"></a><span class="co">#' @param testX A numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb59-7"><a href="sel-and-pred.html#cb59-7" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb59-8"><a href="sel-and-pred.html#cb59-8" tabindex="-1"></a><span class="co">#' the data that will be used to generate predictions. Must contain the same</span></span>
+<span id="cb59-9"><a href="sel-and-pred.html#cb59-9" tabindex="-1"></a><span class="co">#' features (in the same number of columns) as the matrix provided to css.</span></span>
+<span id="cb59-10"><a href="sel-and-pred.html#cb59-10" tabindex="-1"></a><span class="co">#' @param weighting Character; determines how to calculate the weights to</span></span>
+<span id="cb59-11"><a href="sel-and-pred.html#cb59-11" tabindex="-1"></a><span class="co">#' combine features from the selected clusters into weighted averages, called</span></span>
+<span id="cb59-12"><a href="sel-and-pred.html#cb59-12" tabindex="-1"></a><span class="co">#' cluster representatives. Must be one of "sparse", "weighted_avg", or</span></span>
+<span id="cb59-13"><a href="sel-and-pred.html#cb59-13" tabindex="-1"></a><span class="co">#' "simple_avg". For "sparse", all the weight is put on the most frequently</span></span>
+<span id="cb59-14"><a href="sel-and-pred.html#cb59-14" tabindex="-1"></a><span class="co">#' selected individual cluster member (or divided equally among all the clusters</span></span>
+<span id="cb59-15"><a href="sel-and-pred.html#cb59-15" tabindex="-1"></a><span class="co">#' that are tied for the top selection proportion if there is a tie). For</span></span>
+<span id="cb59-16"><a href="sel-and-pred.html#cb59-16" tabindex="-1"></a><span class="co">#' "weighted_avg", the weight used for each cluster member is calculated in</span></span>
+<span id="cb59-17"><a href="sel-and-pred.html#cb59-17" tabindex="-1"></a><span class="co">#' proportion to the individual selection proportions of each feature. For</span></span>
+<span id="cb59-18"><a href="sel-and-pred.html#cb59-18" tabindex="-1"></a><span class="co">#' "simple_avg", each cluster member gets equal weight regardless of the</span></span>
+<span id="cb59-19"><a href="sel-and-pred.html#cb59-19" tabindex="-1"></a><span class="co">#' individual feature selection proportions (that is, the cluster representative</span></span>
+<span id="cb59-20"><a href="sel-and-pred.html#cb59-20" tabindex="-1"></a><span class="co">#' is just a simple average of all the cluster members). See Faletto and Bien</span></span>
+<span id="cb59-21"><a href="sel-and-pred.html#cb59-21" tabindex="-1"></a><span class="co">#' (2022) for details. Default is "weighted_avg".</span></span>
+<span id="cb59-22"><a href="sel-and-pred.html#cb59-22" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssPreds will make use only of those clusters with</span></span>
+<span id="cb59-23"><a href="sel-and-pred.html#cb59-23" tabindex="-1"></a><span class="co">#' selection proportions equal to at least cutoff. Must be between 0 and 1.</span></span>
+<span id="cb59-24"><a href="sel-and-pred.html#cb59-24" tabindex="-1"></a><span class="co">#' Default is 0 (in which case either all clusters are used, or max_num_clusts</span></span>
+<span id="cb59-25"><a href="sel-and-pred.html#cb59-25" tabindex="-1"></a><span class="co">#' are used, if max_num_clusts is specified).</span></span>
+<span id="cb59-26"><a href="sel-and-pred.html#cb59-26" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb59-27"><a href="sel-and-pred.html#cb59-27" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
+<span id="cb59-28"><a href="sel-and-pred.html#cb59-28" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be increased until at least</span></span>
+<span id="cb59-29"><a href="sel-and-pred.html#cb59-29" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1.</span></span>
+<span id="cb59-30"><a href="sel-and-pred.html#cb59-30" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb59-31"><a href="sel-and-pred.html#cb59-31" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
+<span id="cb59-32"><a href="sel-and-pred.html#cb59-32" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be decreased until at most</span></span>
+<span id="cb59-33"><a href="sel-and-pred.html#cb59-33" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb59-34"><a href="sel-and-pred.html#cb59-34" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
+<span id="cb59-35"><a href="sel-and-pred.html#cb59-35" tabindex="-1"></a><span class="co">#' @param trainX A numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb59-36"><a href="sel-and-pred.html#cb59-36" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb59-37"><a href="sel-and-pred.html#cb59-37" tabindex="-1"></a><span class="co">#' the data that will be used to estimate the linear model from the selected</span></span>
+<span id="cb59-38"><a href="sel-and-pred.html#cb59-38" tabindex="-1"></a><span class="co">#' clusters. trainX is only necessary to provide if no train_inds were</span></span>
+<span id="cb59-39"><a href="sel-and-pred.html#cb59-39" tabindex="-1"></a><span class="co">#' designated in the css function call to set aside observations for model</span></span>
+<span id="cb59-40"><a href="sel-and-pred.html#cb59-40" tabindex="-1"></a><span class="co">#' estimation (though even if train_inds was provided, trainX and trainY will be</span></span>
+<span id="cb59-41"><a href="sel-and-pred.html#cb59-41" tabindex="-1"></a><span class="co">#' used for model estimation if they are both provided to getCssPreds). Must </span></span>
+<span id="cb59-42"><a href="sel-and-pred.html#cb59-42" tabindex="-1"></a><span class="co">#' contain the same features (in the same number of columns) as the matrix </span></span>
+<span id="cb59-43"><a href="sel-and-pred.html#cb59-43" tabindex="-1"></a><span class="co">#' provided to css, and if the columns of trainX are labeled, the names must</span></span>
+<span id="cb59-44"><a href="sel-and-pred.html#cb59-44" tabindex="-1"></a><span class="co">#' match the variable names provided to css. Must not contain missing (`NA`)</span></span>
+<span id="cb59-45"><a href="sel-and-pred.html#cb59-45" tabindex="-1"></a><span class="co">#' values. Default is NA (in which case getCssPreds uses the observations from</span></span>
+<span id="cb59-46"><a href="sel-and-pred.html#cb59-46" tabindex="-1"></a><span class="co">#' the train_inds that were provided to css to estimate a linear model).</span></span>
+<span id="cb59-47"><a href="sel-and-pred.html#cb59-47" tabindex="-1"></a><span class="co">#' @param trainY The response corresponding to trainX. Must be a real-valued</span></span>
+<span id="cb59-48"><a href="sel-and-pred.html#cb59-48" tabindex="-1"></a><span class="co">#' response (unlike in the general css setup) because predictions will be</span></span>
+<span id="cb59-49"><a href="sel-and-pred.html#cb59-49" tabindex="-1"></a><span class="co">#' generated by an ordinary least squares model. Must have the same length as</span></span>
+<span id="cb59-50"><a href="sel-and-pred.html#cb59-50" tabindex="-1"></a><span class="co">#' the number of rows of trainX. Like trainX, only needs to be provided if no</span></span>
+<span id="cb59-51"><a href="sel-and-pred.html#cb59-51" tabindex="-1"></a><span class="co">#' observations were set aside for model estimation by the parameter train_inds</span></span>
+<span id="cb59-52"><a href="sel-and-pred.html#cb59-52" tabindex="-1"></a><span class="co">#' in the css function call. Default is NA (in which case getCssPreds uses the</span></span>
+<span id="cb59-53"><a href="sel-and-pred.html#cb59-53" tabindex="-1"></a><span class="co">#' observations from the train_inds that were provided to css).</span></span>
+<span id="cb59-54"><a href="sel-and-pred.html#cb59-54" tabindex="-1"></a><span class="co">#' @return A named list with the following elements: \item{trainXProvided}{</span></span>
+<span id="cb59-55"><a href="sel-and-pred.html#cb59-55" tabindex="-1"></a><span class="co">#' Logical; indicates whether a valid trainX input was provided.} \item{trainX}{</span></span>
+<span id="cb59-56"><a href="sel-and-pred.html#cb59-56" tabindex="-1"></a><span class="co">#' The provided trainX matrix, coerced from a data.frame to a matrix if the</span></span>
+<span id="cb59-57"><a href="sel-and-pred.html#cb59-57" tabindex="-1"></a><span class="co">#' provided trainX was a data.frame. (If a valid trainX was not provided, this</span></span>
+<span id="cb59-58"><a href="sel-and-pred.html#cb59-58" tabindex="-1"></a><span class="co">#' output simply passes whatever was provided as trainX.)} \item{testX}{The</span></span>
+<span id="cb59-59"><a href="sel-and-pred.html#cb59-59" tabindex="-1"></a><span class="co">#' provided testX matrix, coerced from a data.frame to a matrix if the provided</span></span>
+<span id="cb59-60"><a href="sel-and-pred.html#cb59-60" tabindex="-1"></a><span class="co">#' testX was a data.frame.} \item{feat_names}{A character vector containing the</span></span>
+<span id="cb59-61"><a href="sel-and-pred.html#cb59-61" tabindex="-1"></a><span class="co">#' column names of testX (if the provided testX had column names). If the</span></span>
+<span id="cb59-62"><a href="sel-and-pred.html#cb59-62" tabindex="-1"></a><span class="co">#' provided testX did not have column names, feat_names will be NA.}</span></span>
+<span id="cb59-63"><a href="sel-and-pred.html#cb59-63" tabindex="-1"></a><span class="co">#' \item{max_num_clusts}{The provided max_num_clusts, coerced to an integer if</span></span>
+<span id="cb59-64"><a href="sel-and-pred.html#cb59-64" tabindex="-1"></a><span class="co">#' needed, and coerced to be less than or equal to the total number of clusters</span></span>
+<span id="cb59-65"><a href="sel-and-pred.html#cb59-65" tabindex="-1"></a><span class="co">#' from the output of css_results.}</span></span>
+<span id="cb59-66"><a href="sel-and-pred.html#cb59-66" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb59-67"><a href="sel-and-pred.html#cb59-67" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb59-68"><a href="sel-and-pred.html#cb59-68" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb59-69"><a href="sel-and-pred.html#cb59-69" tabindex="-1"></a><span id="checkGetCssPredsInputs">checkGetCssPredsInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, testX, weighting, cutoff,</span>
+<span id="cb59-70"><a href="sel-and-pred.html#cb59-70" tabindex="-1"></a>    min_num_clusts, max_num_clusts, trainX, trainY){</span>
+<span id="cb59-71"><a href="sel-and-pred.html#cb59-71" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb59-72"><a href="sel-and-pred.html#cb59-72" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
+<span id="cb59-73"><a href="sel-and-pred.html#cb59-73" tabindex="-1"></a></span>
+<span id="cb59-74"><a href="sel-and-pred.html#cb59-74" tabindex="-1"></a>    check_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(trainX, css_results)</span>
+<span id="cb59-75"><a href="sel-and-pred.html#cb59-75" tabindex="-1"></a></span>
+<span id="cb59-76"><a href="sel-and-pred.html#cb59-76" tabindex="-1"></a>    trainX <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newX</span>
+<span id="cb59-77"><a href="sel-and-pred.html#cb59-77" tabindex="-1"></a>    trainXProvided <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newXProvided</span>
+<span id="cb59-78"><a href="sel-and-pred.html#cb59-78" tabindex="-1"></a></span>
+<span id="cb59-79"><a href="sel-and-pred.html#cb59-79" tabindex="-1"></a>    <span class="fu">rm</span>(check_results)</span>
+<span id="cb59-80"><a href="sel-and-pred.html#cb59-80" tabindex="-1"></a></span>
+<span id="cb59-81"><a href="sel-and-pred.html#cb59-81" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
+<span id="cb59-82"><a href="sel-and-pred.html#cb59-82" tabindex="-1"></a></span>
+<span id="cb59-83"><a href="sel-and-pred.html#cb59-83" tabindex="-1"></a>    <span class="cf">if</span>(trainXProvided){</span>
+<span id="cb59-84"><a href="sel-and-pred.html#cb59-84" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainY)) <span class="sc">&amp;</span> <span class="fu">length</span>(trainY) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb59-85"><a href="sel-and-pred.html#cb59-85" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(trainY))</span>
+<span id="cb59-86"><a href="sel-and-pred.html#cb59-86" tabindex="-1"></a>            <span class="fu">stopifnot</span>(n_train <span class="sc">==</span> <span class="fu">length</span>(trainY))</span>
+<span id="cb59-87"><a href="sel-and-pred.html#cb59-87" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb59-88"><a href="sel-and-pred.html#cb59-88" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb59-89"><a href="sel-and-pred.html#cb59-89" tabindex="-1"></a>                <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions"</span>)</span>
+<span id="cb59-90"><a href="sel-and-pred.html#cb59-90" tabindex="-1"></a>            }</span>
+<span id="cb59-91"><a href="sel-and-pred.html#cb59-91" tabindex="-1"></a>            trainXProvided <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb59-92"><a href="sel-and-pred.html#cb59-92" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="st">"trainX provided but no trainY provided; instead, training model using the train_inds observations provided to css to set aside for model training."</span>)</span>
+<span id="cb59-93"><a href="sel-and-pred.html#cb59-93" tabindex="-1"></a>        }</span>
+<span id="cb59-94"><a href="sel-and-pred.html#cb59-94" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb59-95"><a href="sel-and-pred.html#cb59-95" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(css_results<span class="sc">$</span>train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb59-96"><a href="sel-and-pred.html#cb59-96" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions"</span>)</span>
+<span id="cb59-97"><a href="sel-and-pred.html#cb59-97" tabindex="-1"></a>        }</span>
+<span id="cb59-98"><a href="sel-and-pred.html#cb59-98" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(trainY)) <span class="sc">&amp;</span> <span class="fu">length</span>(trainY) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb59-99"><a href="sel-and-pred.html#cb59-99" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="st">"trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training."</span>)</span>
+<span id="cb59-100"><a href="sel-and-pred.html#cb59-100" tabindex="-1"></a>        }</span>
+<span id="cb59-101"><a href="sel-and-pred.html#cb59-101" tabindex="-1"></a>    }</span>
+<span id="cb59-102"><a href="sel-and-pred.html#cb59-102" tabindex="-1"></a></span>
+<span id="cb59-103"><a href="sel-and-pred.html#cb59-103" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(testX, css_results<span class="sc">$</span>X)</span>
+<span id="cb59-104"><a href="sel-and-pred.html#cb59-104" tabindex="-1"></a></span>
+<span id="cb59-105"><a href="sel-and-pred.html#cb59-105" tabindex="-1"></a>    testX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
+<span id="cb59-106"><a href="sel-and-pred.html#cb59-106" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
+<span id="cb59-107"><a href="sel-and-pred.html#cb59-107" tabindex="-1"></a></span>
+<span id="cb59-108"><a href="sel-and-pred.html#cb59-108" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb59-109"><a href="sel-and-pred.html#cb59-109" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(feat_names) <span class="sc">==</span> <span class="fu">ncol</span>(testX))</span>
+<span id="cb59-110"><a href="sel-and-pred.html#cb59-110" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"(Intercept)"</span> <span class="sc">%in%</span> feat_names))</span>
+<span id="cb59-111"><a href="sel-and-pred.html#cb59-111" tabindex="-1"></a>        <span class="fu">colnames</span>(testX) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb59-112"><a href="sel-and-pred.html#cb59-112" tabindex="-1"></a>    }</span>
+<span id="cb59-113"><a href="sel-and-pred.html#cb59-113" tabindex="-1"></a></span>
+<span id="cb59-114"><a href="sel-and-pred.html#cb59-114" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
+<span id="cb59-115"><a href="sel-and-pred.html#cb59-115" tabindex="-1"></a></span>
+<span id="cb59-116"><a href="sel-and-pred.html#cb59-116" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(testX)</span>
+<span id="cb59-117"><a href="sel-and-pred.html#cb59-117" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(testX)</span>
+<span id="cb59-118"><a href="sel-and-pred.html#cb59-118" tabindex="-1"></a></span>
+<span id="cb59-119"><a href="sel-and-pred.html#cb59-119" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb59-120"><a href="sel-and-pred.html#cb59-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">==</span> <span class="fu">ncol</span>(trainX))</span>
+<span id="cb59-121"><a href="sel-and-pred.html#cb59-121" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb59-122"><a href="sel-and-pred.html#cb59-122" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)"</span>)</span>
+<span id="cb59-123"><a href="sel-and-pred.html#cb59-123" tabindex="-1"></a>    }</span>
+<span id="cb59-124"><a href="sel-and-pred.html#cb59-124" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb59-125"><a href="sel-and-pred.html#cb59-125" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)"</span>)</span>
+<span id="cb59-126"><a href="sel-and-pred.html#cb59-126" tabindex="-1"></a>    }</span>
+<span id="cb59-127"><a href="sel-and-pred.html#cb59-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb59-128"><a href="sel-and-pred.html#cb59-128" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(trainX) <span class="sc">==</span> <span class="fu">colnames</span>(testX)))</span>
+<span id="cb59-129"><a href="sel-and-pred.html#cb59-129" tabindex="-1"></a>    }</span>
+<span id="cb59-130"><a href="sel-and-pred.html#cb59-130" tabindex="-1"></a></span>
+<span id="cb59-131"><a href="sel-and-pred.html#cb59-131" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb59-132"><a href="sel-and-pred.html#cb59-132" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
+<span id="cb59-133"><a href="sel-and-pred.html#cb59-133" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb59-134"><a href="sel-and-pred.html#cb59-134" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb59-135"><a href="sel-and-pred.html#cb59-135" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb59-136"><a href="sel-and-pred.html#cb59-136" tabindex="-1"></a></span>
+<span id="cb59-137"><a href="sel-and-pred.html#cb59-137" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">trainXProvided=</span>trainXProvided, <span class="at">trainX=</span>trainX, <span class="at">testX=</span>testX,</span>
+<span id="cb59-138"><a href="sel-and-pred.html#cb59-138" tabindex="-1"></a>        <span class="at">feat_names=</span>feat_names, <span class="at">max_num_clusts=</span>max_num_clusts))</span>
+<span id="cb59-139"><a href="sel-and-pred.html#cb59-139" tabindex="-1"></a></span>
+<span id="cb59-140"><a href="sel-and-pred.html#cb59-140" tabindex="-1"></a>}</span></code></pre></div>
 </div>
             </section>
 </div>
