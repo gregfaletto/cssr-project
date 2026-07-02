@@ -4047,6 +4047,61 @@ testthat::test_that("getCssPreds works", {
 
 })
 
+testthat::test_that("olsPredictRankSafe predicts from rank-deficient OLS without crashing (#117)", {
+  # (a) Crash/finiteness guard. On R >= 4.4 predict.lm()'s default
+  # rankdeficient="warnif" aborts ("NA/NaN/Inf in foreign function call") when
+  # qr.R(model$qr) holds NaN/Inf -- a rank-deficient fit plus a LINPACK numerical
+  # pathology seen on real high-dimensional data. Reproduce that precondition by
+  # fitting a rank-deficient lm (a duplicated column) and injecting NaN into an
+  # OFF-DIAGONAL upper-triangular entry of the aliased column. (The aliased
+  # diagonal entry alone does not reproduce it: predict.lm overwrites diagonal
+  # entries in rows beyond the rank with 1.)
+  set.seed(11711)
+  n_a <- 20
+  df_a <- data.frame(y=stats::rnorm(n_a), a=stats::rnorm(n_a),
+                     b=stats::rnorm(n_a), c=stats::rnorm(n_a))
+  df_a$d <- df_a$b                          # duplicate column -> rank-deficient
+  model_a <- stats::lm(y ~ ., data=df_a)
+  R_a <- qr.R(model_a$qr)
+  aliased_col <- which.min(abs(diag(R_a)))  # pivoted-last near-zero diagonal
+  testthat::expect_true(aliased_col > 1L)
+  model_a$qr$qr[1L, aliased_col] <- NaN     # off-diagonal aliased entry
+  # Precondition (version-independent): qr.R now holds a non-finite value.
+  testthat::expect_true(any(!is.finite(qr.R(model_a$qr))))
+
+  newdata_a <- data.frame(a=stats::rnorm(5), b=stats::rnorm(5),
+                          c=stats::rnorm(5), d=stats::rnorm(5))
+
+  testthat::skip_if(getRversion() < "4.4.0")
+  # Pre-fix path (default predict.lm) genuinely crashes on this model.
+  testthat::expect_error(stats::predict.lm(model_a, newdata=newdata_a))
+  # The helper returns a finite numeric vector of the right length...
+  preds_a <- olsPredictRankSafe(model_a, newdata_a)
+  testthat::expect_true(all(is.finite(preds_a)))
+  testthat::expect_equal(length(preds_a), nrow(newdata_a))
+  # ...and does so without surfacing the stock rank-deficient warning.
+  testthat::expect_no_warning(olsPredictRankSafe(model_a, newdata_a))
+
+  # (b) Warning muffle on a normal-scale rank-deficient design (duplicated
+  # column): predict.lm warns but does NOT crash. The helper must emit no
+  # "rank-deficient fit" warning and still return finite predictions.
+  set.seed(51422)
+  n_b <- 30
+  df_b <- data.frame(y=stats::rnorm(n_b), a=stats::rnorm(n_b),
+                     b=stats::rnorm(n_b), c=stats::rnorm(n_b))
+  df_b$d <- df_b$b
+  model_b <- stats::lm(y ~ ., data=df_b)
+  newdata_b <- data.frame(a=stats::rnorm(6), b=stats::rnorm(6),
+                          c=stats::rnorm(6), d=stats::rnorm(6))
+  # Sanity: the stock default warns on this design (confirms the muffle is real).
+  testthat::expect_warning(stats::predict.lm(model_b, newdata=newdata_b),
+                           "rank-deficient fit")
+  testthat::expect_no_warning(preds_b <- olsPredictRankSafe(model_b,
+                                                                    newdata_b))
+  testthat::expect_true(all(is.finite(preds_b)))
+  testthat::expect_equal(length(preds_b), nrow(newdata_b))
+})
+
 testthat::test_that("css and getCssPreds reject non-finite (Inf) inputs (#99)", {
   set.seed(99001)
 

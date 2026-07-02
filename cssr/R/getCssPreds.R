@@ -147,10 +147,13 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     colnames(df)[2:ncol(df)] <- clust_X_names
     model <- stats::lm(y ~., data=df)
 
-    # Use fitted model to generate predictions on testX
+    # Use fitted model to generate predictions on testX. Route through
+    # olsPredictRankSafe() so a rank-deficient OLS fit predicts from its
+    # estimable coefficients instead of crashing under R >= 4.4's predict.lm
+    # default (see the helper's note and issue #117).
     df_test <- data.frame(testX_clusters)
     colnames(df_test) <- clust_X_names
-    predictions <- stats::predict.lm(model, newdata=df_test)
+    predictions <- olsPredictRankSafe(model, df_test)
     names(predictions) <- NULL
 
     # Check output
