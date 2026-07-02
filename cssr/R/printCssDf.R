@@ -56,8 +56,21 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
         min_num_clusts=min_num_clusts,
         max_num_clusts=max_num_clusts)$selected_clusts
 
-    # sel_clusts is guaranteed to have length at least 1 by
-    # getCssSelections 
+    # An empty selection is valid post-#107 (e.g. cutoff = 1 with
+    # min_num_clusts = 0 when no cluster clears the cutoff). Return a well-formed
+    # zero-row data.frame whose columns mirror the populated branch below for the
+    # same object: 5 columns (with ClustProtoName) when X has column names, 4
+    # otherwise -- names(prototypes) is non-NULL iff colnames(css_results$X) is,
+    # since prototype names come from colnames(X). (#120)
+    if(length(sel_clusts) == 0){
+        if(!is.null(colnames(css_results$X))){
+            return(data.frame(ClustName=character(0),
+                ClustProtoName=character(0), ClustProtoNum=integer(0),
+                ClustSelProp=numeric(0), ClustSize=integer(0)))
+        }
+        return(data.frame(ClustName=character(0), ClustProtoNum=integer(0),
+            ClustSelProp=numeric(0), ClustSize=integer(0)))
+    }
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with
