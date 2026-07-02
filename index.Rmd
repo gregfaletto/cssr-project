@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.3.0",
+    Version = "0.3.1",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -4751,8 +4751,21 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
         min_num_clusts=min_num_clusts,
         max_num_clusts=max_num_clusts)$selected_clusts
 
-    # sel_clusts is guaranteed to have length at least 1 by
-    # getCssSelections 
+    # An empty selection is valid post-#107 (e.g. cutoff = 1 with
+    # min_num_clusts = 0 when no cluster clears the cutoff). Return a well-formed
+    # zero-row data.frame whose columns mirror the populated branch below for the
+    # same object: 5 columns (with ClustProtoName) when X has column names, 4
+    # otherwise -- names(prototypes) is non-NULL iff colnames(css_results$X) is,
+    # since prototype names come from colnames(X). (#120)
+    if(length(sel_clusts) == 0){
+        if(!is.null(colnames(css_results$X))){
+            return(data.frame(ClustName=character(0),
+                ClustProtoName=character(0), ClustProtoNum=integer(0),
+                ClustSelProp=numeric(0), ClustSize=integer(0)))
+        }
+        return(data.frame(ClustName=character(0), ClustProtoNum=integer(0),
+            ClustSelProp=numeric(0), ClustSize=integer(0)))
+    }
 
     # Get prototypes (feature from each cluster with highest selection
     # proportion, breaking ties by using marginal correlations of features with
@@ -4819,6 +4832,15 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 
     stopifnot(is.list(selected_clusts))
     n_selected_clusts <- length(selected_clusts)
+
+    # An empty selection is valid post-#107: getCssSelections() can return zero
+    # selected clusters (e.g. cutoff = 1 with min_num_clusts = 0 when no cluster
+    # clears the cutoff). Return an empty integer vector before the non-empty
+    # guards below; this also avoids the 1:0 foot-gun in the for loop. (#120)
+    if(n_selected_clusts == 0){
+        return(integer(0))
+    }
+
     stopifnot(n_selected_clusts >= 1)
     stopifnot(all(lengths(selected_clusts) >= 1))
 
@@ -4898,7 +4920,12 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     df <- printCssDf(css_results=x, cutoff=cutoff,
         min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
-    print.data.frame(df, ...)
+    if(nrow(df) == 0){
+        # Empty selection (#120): no table to print.
+        cat(sprintf("(no clusters selected at cutoff %s)\n", format(cutoff)))
+    } else{
+        print.data.frame(df, ...)
+    }
     invisible(x)
 }
 ```
@@ -11741,8 +11768,10 @@ testthat::test_that("getSelectionPrototypes works", {
   testthat::expect_error(getSelectionPrototypes(css_results, 1L:3L),
                          "is.list(selected_clusts) is not TRUE", fixed=TRUE)
 
-  testthat::expect_error(getSelectionPrototypes(css_results, list()),
-                         "n_selected_clusts >= 1 is not TRUE", fixed=TRUE)
+  # An empty selection (empty list of selected clusters) is valid post-#107:
+  # getSelectionPrototypes() returns an empty integer vector, no error (#120).
+  testthat::expect_identical(getSelectionPrototypes(css_results, list()),
+                             integer(0))
 
   testthat::expect_error(getSelectionPrototypes(css_results,
                                                 list(red_cluster=1L:3L,
@@ -12214,10 +12243,13 @@ testthat::test_that("summary.cssr summarizes clusters, sizes, and header counts"
 })
 ```
 
-Test for the empty-selection path of `selected()` and `summary.cssr()` (issue
-#107): an empty selection must return clean empty output / a zero-row summary,
-NOT trip the `nrow >= 1` / `n_selected_clusts >= 1` assertions inside
-`printCssDf()` / `getSelectionPrototypes()`.
+Test for the empty-selection path of the print layer (issues #107 and #120).
+Post-#107 an empty selection is valid; #120 makes `printCssDf()`,
+`print.cssr()`, and `getSelectionPrototypes()` return clean empty output -- a
+zero-row `data.frame`, a "(no clusters selected ...)" message, and an empty
+integer vector, respectively -- via an early return *before* the `nrow >= 1` /
+`n_selected_clusts >= 1` guards, rather than tripping those assertions. The
+block also covers the higher-level `selected()` and a zero-row `summary.cssr()`.
 
 ```{r}
 testthat::test_that("selected() and summary() handle an empty selection", {
@@ -12250,6 +12282,52 @@ testthat::test_that("selected() and summary() handle an empty selection", {
   # print still works and reports 0 clusters / 0 features.
   testthat::expect_invisible(print(smry))
   testthat::expect_output(print(smry), "0 clusters / 0 features")
+
+  # printCssDf() (#120): an empty selection returns a well-formed zero-row
+  # data.frame with the SAME columns as a non-empty printCssDf() on the same
+  # object, rather than tripping stopifnot(nrow >= 1). Unnamed X (this fixture)
+  # -> 4 columns, no ClustProtoName.
+  empty_df <- printCssDf(css_res, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.data.frame(empty_df))
+  testthat::expect_equal(nrow(empty_df), 0)
+  testthat::expect_equal(ncol(empty_df), 4)
+  nonempty_df <- printCssDf(css_res, cutoff=0)
+  testthat::expect_true(nrow(nonempty_df) >= 1)
+  # The invariant that matters: empty and non-empty share the same column set.
+  testthat::expect_identical(colnames(empty_df), colnames(nonempty_df))
+  testthat::expect_identical(
+    colnames(empty_df),
+    c("ClustName", "ClustProtoNum", "ClustSelProp", "ClustSize"))
+  # Correct 0-length column types.
+  testthat::expect_true(is.character(empty_df$ClustName))
+  testthat::expect_true(is.integer(empty_df$ClustProtoNum))
+  testthat::expect_true(is.numeric(empty_df$ClustSelProp))
+  testthat::expect_true(is.integer(empty_df$ClustSize))
+
+  # Named X -> the 5-column path (adds ClustProtoName). Same data + column names,
+  # so the selection is still empty at cutoff = 1 with min_num_clusts = 0.
+  x_named <- x
+  colnames(x_named) <- paste0("V", seq_len(ncol(x_named)))
+  css_named <- css(X=x_named, y=y, lambda=0.5, clusters=list(), B=B)
+  empty_named_df <- printCssDf(css_named, cutoff=1, min_num_clusts=0)
+  testthat::expect_true(is.data.frame(empty_named_df))
+  testthat::expect_equal(nrow(empty_named_df), 0)
+  testthat::expect_equal(ncol(empty_named_df), 5)
+  testthat::expect_true("ClustProtoName" %in% colnames(empty_named_df))
+  testthat::expect_identical(colnames(empty_named_df),
+                             colnames(printCssDf(css_named, cutoff=0)))
+
+  # getSelectionPrototypes() on an empty list of clusters -> integer(0) (#120).
+  testthat::expect_identical(getSelectionPrototypes(css_res, list()),
+                             integer(0))
+
+  # print.cssr() (#120): prints a "(no clusters selected ...)" message instead
+  # of a table, does not error, and returns the cssr object invisibly unchanged.
+  testthat::expect_output(
+    ret <- print(css_res, cutoff=1, min_num_clusts=0),
+    "no clusters selected")
+  testthat::expect_identical(ret, css_res)
+  testthat::expect_invisible(print(css_res, cutoff=1, min_num_clusts=0))
 })
 ```
 

@@ -24,6 +24,15 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 
     stopifnot(is.list(selected_clusts))
     n_selected_clusts <- length(selected_clusts)
+
+    # An empty selection is valid post-#107: getCssSelections() can return zero
+    # selected clusters (e.g. cutoff = 1 with min_num_clusts = 0 when no cluster
+    # clears the cutoff). Return an empty integer vector before the non-empty
+    # guards below; this also avoids the 1:0 foot-gun in the for loop. (#120)
+    if(n_selected_clusts == 0){
+        return(integer(0))
+    }
+
     stopifnot(n_selected_clusts >= 1)
     stopifnot(all(lengths(selected_clusts) >= 1))
 

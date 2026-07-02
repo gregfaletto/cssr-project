@@ -37,6 +37,11 @@
 print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
     df <- printCssDf(css_results=x, cutoff=cutoff,
         min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
-    print.data.frame(df, ...)
+    if(nrow(df) == 0){
+        # Empty selection (#120): no table to print.
+        cat(sprintf("(no clusters selected at cutoff %s)\n", format(cutoff)))
+    } else{
+        print.data.frame(df, ...)
+    }
     invisible(x)
 }
