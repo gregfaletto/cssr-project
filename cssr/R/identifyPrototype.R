@@ -57,8 +57,10 @@ identifyPrototype <- function(cluster_members_i, x, y){
     stopifnot(is.integer(ret))
     stopifnot(length(ret) == 1)
     stopifnot(ret %in% cluster_members_i)
-    stopifnot(identical(x[, cluster_members_i][, max_index_i],
-        x[, ret]))
+    # (#129) Dropped a tautological assert here: ret == cluster_members_i[
+    # max_index_i], so x[, cluster_members_i][, max_index_i] is by construction
+    # x[, ret]. The check could never fire, but it materialized a fresh
+    # n x |cluster| submatrix copy of x on every prototype identification.
 
     return(ret)
 }

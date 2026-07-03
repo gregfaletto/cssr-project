@@ -179,7 +179,15 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
 
     stopifnot(!is.matrix(y))
 
-    feat_sel_mat <- getSelMatrix(X[sel_inds, ], y[sel_inds], lambda, B,
+    # When train_inds is empty (the default), sel_inds is 1:n, so X[sel_inds, ]
+    # / y[sel_inds] would just materialize a full-size copy of X / y for nothing
+    # (getSelMatrix re-indexes rows per subsample anyway). Pass X / y directly in
+    # that case; the result is byte-identical, since X[1:n, ] equals X (same
+    # values and dimnames) and y[1:n] equals y. (#129)
+    sel_X <- if(length(train_inds) == 0) X else X[sel_inds, ]
+    sel_y <- if(length(train_inds) == 0) y else y[sel_inds]
+
+    feat_sel_mat <- getSelMatrix(sel_X, sel_y, lambda, B,
         sampling_type, subsamps_object, num_cores, fitfun)
 
     if(any(!is.na(feat_names))){

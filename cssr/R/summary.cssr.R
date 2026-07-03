@@ -80,8 +80,12 @@ summary.cssr <- function(object, cutoff=0, min_num_clusts=1, max_num_clusts=NA,
     # getSelectionPrototypes: n_selected_clusts >= 1) and so would die opaquely
     # on an empty selection (#107). Return a well-formed zero-row summary.
     if(n_selected_clusts >= 1){
-        clust_table <- printCssDf(object, cutoff=cutoff,
-            min_num_clusts=min_num_clusts, max_num_clusts=max_num_clusts)
+        # Reuse the sel$selected_clusts already computed above instead of a
+        # second identical getCssSelections() inside printCssDf(). Cluster
+        # selection is weighting-invariant, so sel$selected_clusts (for this
+        # weighting) matches the "sparse"-default selection printCssDf() would
+        # recompute -- the resulting table is byte-identical. (#129)
+        clust_table <- buildCssDf(object, sel$selected_clusts)
     } else{
         clust_table <- NULL
     }
