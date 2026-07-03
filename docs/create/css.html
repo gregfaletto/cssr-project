@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-02">
+<meta name="date" content="2026-07-03">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -380,34 +380,42 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb10-133"><a href="css.html#cb10-133" tabindex="-1"></a></span>
 <span id="cb10-134"><a href="css.html#cb10-134" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.matrix</span>(y))</span>
 <span id="cb10-135"><a href="css.html#cb10-135" tabindex="-1"></a></span>
-<span id="cb10-136"><a href="css.html#cb10-136" tabindex="-1"></a>    feat_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getSelMatrix">getSelMatrix</a>(X[sel_inds, ], y[sel_inds], lambda, B,</span>
-<span id="cb10-137"><a href="css.html#cb10-137" tabindex="-1"></a>        sampling_type, subsamps_object, num_cores, fitfun)</span>
-<span id="cb10-138"><a href="css.html#cb10-138" tabindex="-1"></a></span>
-<span id="cb10-139"><a href="css.html#cb10-139" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb10-140"><a href="css.html#cb10-140" tabindex="-1"></a>        <span class="fu">colnames</span>(feat_sel_mat) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb10-141"><a href="css.html#cb10-141" tabindex="-1"></a>        <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb10-142"><a href="css.html#cb10-142" tabindex="-1"></a>    }</span>
+<span id="cb10-136"><a href="css.html#cb10-136" tabindex="-1"></a>    <span class="co"># When train_inds is empty (the default), sel_inds is 1:n, so X[sel_inds, ]</span></span>
+<span id="cb10-137"><a href="css.html#cb10-137" tabindex="-1"></a>    <span class="co"># / y[sel_inds] would just materialize a full-size copy of X / y for nothing</span></span>
+<span id="cb10-138"><a href="css.html#cb10-138" tabindex="-1"></a>    <span class="co"># (getSelMatrix re-indexes rows per subsample anyway). Pass X / y directly in</span></span>
+<span id="cb10-139"><a href="css.html#cb10-139" tabindex="-1"></a>    <span class="co"># that case; the result is byte-identical, since X[1:n, ] equals X (same</span></span>
+<span id="cb10-140"><a href="css.html#cb10-140" tabindex="-1"></a>    <span class="co"># values and dimnames) and y[1:n] equals y. (#129)</span></span>
+<span id="cb10-141"><a href="css.html#cb10-141" tabindex="-1"></a>    sel_X <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) X <span class="cf">else</span> X[sel_inds, ]</span>
+<span id="cb10-142"><a href="css.html#cb10-142" tabindex="-1"></a>    sel_y <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) y <span class="cf">else</span> y[sel_inds]</span>
 <span id="cb10-143"><a href="css.html#cb10-143" tabindex="-1"></a></span>
-<span id="cb10-144"><a href="css.html#cb10-144" tabindex="-1"></a>    <span class="do">### Get selection proportions for clusters corresponding to each feature</span></span>
-<span id="cb10-145"><a href="css.html#cb10-145" tabindex="-1"></a></span>
-<span id="cb10-146"><a href="css.html#cb10-146" tabindex="-1"></a>    clus_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>(clusters, feat_sel_mat)</span>
-<span id="cb10-147"><a href="css.html#cb10-147" tabindex="-1"></a></span>
-<span id="cb10-148"><a href="css.html#cb10-148" tabindex="-1"></a>    <span class="co"># Check outputs</span></span>
-<span id="cb10-149"><a href="css.html#cb10-149" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(clus_sel_mat)))</span>
-<span id="cb10-150"><a href="css.html#cb10-150" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(clus_sel_mat) <span class="sc">==</span> <span class="fu">names</span>(clusters)))</span>
+<span id="cb10-144"><a href="css.html#cb10-144" tabindex="-1"></a>    feat_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getSelMatrix">getSelMatrix</a>(sel_X, sel_y, lambda, B,</span>
+<span id="cb10-145"><a href="css.html#cb10-145" tabindex="-1"></a>        sampling_type, subsamps_object, num_cores, fitfun)</span>
+<span id="cb10-146"><a href="css.html#cb10-146" tabindex="-1"></a></span>
+<span id="cb10-147"><a href="css.html#cb10-147" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb10-148"><a href="css.html#cb10-148" tabindex="-1"></a>        <span class="fu">colnames</span>(feat_sel_mat) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb10-149"><a href="css.html#cb10-149" tabindex="-1"></a>        <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb10-150"><a href="css.html#cb10-150" tabindex="-1"></a>    }</span>
 <span id="cb10-151"><a href="css.html#cb10-151" tabindex="-1"></a></span>
-<span id="cb10-152"><a href="css.html#cb10-152" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">feat_sel_mat =</span> feat_sel_mat,</span>
-<span id="cb10-153"><a href="css.html#cb10-153" tabindex="-1"></a>        <span class="at">clus_sel_mat =</span> clus_sel_mat,</span>
-<span id="cb10-154"><a href="css.html#cb10-154" tabindex="-1"></a>        <span class="at">X =</span> X,</span>
-<span id="cb10-155"><a href="css.html#cb10-155" tabindex="-1"></a>        <span class="at">y =</span> y,</span>
-<span id="cb10-156"><a href="css.html#cb10-156" tabindex="-1"></a>        <span class="at">clusters =</span> clusters,</span>
-<span id="cb10-157"><a href="css.html#cb10-157" tabindex="-1"></a>        <span class="at">train_inds =</span> train_inds</span>
-<span id="cb10-158"><a href="css.html#cb10-158" tabindex="-1"></a>        )</span>
+<span id="cb10-152"><a href="css.html#cb10-152" tabindex="-1"></a>    <span class="do">### Get selection proportions for clusters corresponding to each feature</span></span>
+<span id="cb10-153"><a href="css.html#cb10-153" tabindex="-1"></a></span>
+<span id="cb10-154"><a href="css.html#cb10-154" tabindex="-1"></a>    clus_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>(clusters, feat_sel_mat)</span>
+<span id="cb10-155"><a href="css.html#cb10-155" tabindex="-1"></a></span>
+<span id="cb10-156"><a href="css.html#cb10-156" tabindex="-1"></a>    <span class="co"># Check outputs</span></span>
+<span id="cb10-157"><a href="css.html#cb10-157" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(clus_sel_mat)))</span>
+<span id="cb10-158"><a href="css.html#cb10-158" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(clus_sel_mat) <span class="sc">==</span> <span class="fu">names</span>(clusters)))</span>
 <span id="cb10-159"><a href="css.html#cb10-159" tabindex="-1"></a></span>
-<span id="cb10-160"><a href="css.html#cb10-160" tabindex="-1"></a>    <span class="fu">class</span>(ret) <span class="ot">&lt;-</span> <span class="st">"cssr"</span></span>
-<span id="cb10-161"><a href="css.html#cb10-161" tabindex="-1"></a></span>
-<span id="cb10-162"><a href="css.html#cb10-162" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
-<span id="cb10-163"><a href="css.html#cb10-163" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb10-160"><a href="css.html#cb10-160" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">feat_sel_mat =</span> feat_sel_mat,</span>
+<span id="cb10-161"><a href="css.html#cb10-161" tabindex="-1"></a>        <span class="at">clus_sel_mat =</span> clus_sel_mat,</span>
+<span id="cb10-162"><a href="css.html#cb10-162" tabindex="-1"></a>        <span class="at">X =</span> X,</span>
+<span id="cb10-163"><a href="css.html#cb10-163" tabindex="-1"></a>        <span class="at">y =</span> y,</span>
+<span id="cb10-164"><a href="css.html#cb10-164" tabindex="-1"></a>        <span class="at">clusters =</span> clusters,</span>
+<span id="cb10-165"><a href="css.html#cb10-165" tabindex="-1"></a>        <span class="at">train_inds =</span> train_inds</span>
+<span id="cb10-166"><a href="css.html#cb10-166" tabindex="-1"></a>        )</span>
+<span id="cb10-167"><a href="css.html#cb10-167" tabindex="-1"></a></span>
+<span id="cb10-168"><a href="css.html#cb10-168" tabindex="-1"></a>    <span class="fu">class</span>(ret) <span class="ot">&lt;-</span> <span class="st">"cssr"</span></span>
+<span id="cb10-169"><a href="css.html#cb10-169" tabindex="-1"></a></span>
+<span id="cb10-170"><a href="css.html#cb10-170" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
+<span id="cb10-171"><a href="css.html#cb10-171" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="css.html#css">css</a>()</code> and the other functions in this section are collected in the Tests chapters at the end of this document (the <strong>Tests</strong> part). Next, we’ll build the individual functions one at a time. (The one function above that I didn’t mention at all is <code><a href="css.html#checkCssInputs">checkCssInputs</a>()</code>, which confirms that the inputs to <code><a href="css.html#css">css</a>()</code> are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.)</p>
 <div id="main-components-of-css" class="section level2 hasAnchor" number="3.1">
 <h2>
@@ -1692,11 +1700,13 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb32-55"><a href="css.html#cb32-55" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(ret))</span>
 <span id="cb32-56"><a href="css.html#cb32-56" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb32-57"><a href="css.html#cb32-57" tabindex="-1"></a>    <span class="fu">stopifnot</span>(ret <span class="sc">%in%</span> cluster_members_i)</span>
-<span id="cb32-58"><a href="css.html#cb32-58" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">identical</span>(x[, cluster_members_i][, max_index_i],</span>
-<span id="cb32-59"><a href="css.html#cb32-59" tabindex="-1"></a>        x[, ret]))</span>
-<span id="cb32-60"><a href="css.html#cb32-60" tabindex="-1"></a></span>
-<span id="cb32-61"><a href="css.html#cb32-61" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
-<span id="cb32-62"><a href="css.html#cb32-62" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb32-58"><a href="css.html#cb32-58" tabindex="-1"></a>    <span class="co"># (#129) Dropped a tautological assert here: ret == cluster_members_i[</span></span>
+<span id="cb32-59"><a href="css.html#cb32-59" tabindex="-1"></a>    <span class="co"># max_index_i], so x[, cluster_members_i][, max_index_i] is by construction</span></span>
+<span id="cb32-60"><a href="css.html#cb32-60" tabindex="-1"></a>    <span class="co"># x[, ret]. The check could never fire, but it materialized a fresh</span></span>
+<span id="cb32-61"><a href="css.html#cb32-61" tabindex="-1"></a>    <span class="co"># n x |cluster| submatrix copy of x on every prototype identification.</span></span>
+<span id="cb32-62"><a href="css.html#cb32-62" tabindex="-1"></a></span>
+<span id="cb32-63"><a href="css.html#cb32-63" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
+<span id="cb32-64"><a href="css.html#cb32-64" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkSamplingType">checkSamplingType</a>()</code>:</p>
 <div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="css.html#cb33-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the argument sampling_type to several </span></span>
 <span id="cb33-2"><a href="css.html#cb33-2" tabindex="-1"></a><span class="co">#' functions is as expected</span></span>

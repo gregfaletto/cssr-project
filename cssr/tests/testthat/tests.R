@@ -6179,6 +6179,72 @@ testthat::test_that("selected() and summary() handle an empty selection", {
   testthat::expect_invisible(print(css_res, cutoff=1, min_num_clusts=0))
 })
 
+testthat::test_that("Opt 2 (#129): formCssDesign weights= equals internal recompute; getCssPreds finite", {
+  set.seed(721)
+  dat <- genClusteredData(n = 60, p = 11, k_unclustered = 2, cluster_size = 4,
+      n_clusters = 1, snr = 3)
+  clusters <- list(cluster1 = 1:4)
+  res <- suppressWarnings(css(X = dat$X, y = dat$y, lambda = 0.01,
+      clusters = clusters, B = 15))
+
+  # The hoist: passing weights= (as getCssPreds now does) must build a design
+  # matrix byte-identical to letting formCssDesign() recompute the weights via
+  # getSelectedClusters(), across every weighting rule.
+  for(w in c("sparse", "weighted_avg", "simple_avg")){
+    wts <- getSelectedClusters(res, w, 0, 1, NA)$weights
+    d_recompute <- suppressWarnings(formCssDesign(res, weighting = w,
+        newx = dat$X))
+    d_passed <- suppressWarnings(formCssDesign(res, weighting = w,
+        newx = dat$X, weights = wts))
+    testthat::expect_identical(d_passed, d_recompute)
+  }
+
+  # End-to-end getCssPreds still returns finite predictions of the right length
+  # for both the provided-trainX path and the train_inds path, across weightings.
+  res_ti <- suppressWarnings(css(X = dat$X, y = dat$y, lambda = 0.01,
+      clusters = clusters, B = 15, train_inds = 41:60))
+  for(w in c("sparse", "weighted_avg", "simple_avg")){
+    p_prov <- suppressWarnings(getCssPreds(res, testX = dat$X[1:10, ],
+        trainX = dat$X[11:40, ], trainY = dat$y[11:40], weighting = w))
+    testthat::expect_length(p_prov, 10)
+    testthat::expect_true(all(is.finite(p_prov)))
+    p_ti <- suppressWarnings(getCssPreds(res_ti, testX = dat$X[1:10, ],
+        weighting = w))
+    testthat::expect_length(p_ti, 10)
+    testthat::expect_true(all(is.finite(p_ti)))
+  }
+})
+
+testthat::test_that("Opt 3 (#129): buildCssDf equals printCssDf; summary$table reuses it", {
+  set.seed(824)
+  dat <- genClusteredData(n = 55, p = 11, k_unclustered = 2, cluster_size = 4,
+      n_clusters = 1, snr = 3)
+  clusters <- list(cluster1 = 1:4)
+  res <- suppressWarnings(css(X = dat$X, y = dat$y, lambda = 0.01,
+      clusters = clusters, B = 12))
+
+  # buildCssDf(obj, getCssSelections(obj, ...)$selected_clusts) reproduces
+  # printCssDf(obj, ...) exactly, across cutoffs (including the empty selection
+  # at cutoff = 1 with min_num_clusts = 0).
+  for(cut in c(0, 0.2, 0.5, 1)){
+    sc <- suppressWarnings(getCssSelections(res, cutoff = cut,
+        min_num_clusts = 0))$selected_clusts
+    testthat::expect_identical(
+        suppressWarnings(buildCssDf(res, sc)),
+        suppressWarnings(printCssDf(res, cutoff = cut, min_num_clusts = 0)))
+  }
+
+  # summary.cssr()$table (now built via buildCssDf() on summary's own
+  # sel$selected_clusts) equals printCssDf() on the same object across
+  # weightings -- cluster selection is weighting-invariant, so reusing summary's
+  # sel$selected_clusts is byte-identical to printCssDf's internal recompute.
+  ref <- suppressWarnings(printCssDf(res))
+  for(w in c("sparse", "weighted_avg", "simple_avg")){
+    s <- suppressWarnings(summary(res, weighting = w))
+    testthat::expect_identical(s$table, ref)
+  }
+})
+
 testthat::test_that("cssSelect works", {
   set.seed(73212)
   

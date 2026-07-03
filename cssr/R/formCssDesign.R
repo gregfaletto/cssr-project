@@ -53,7 +53,7 @@
 #' @keywords internal
 #' @noRd
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
-    min_num_clusts=1, max_num_clusts=NA, newx=NA){
+    min_num_clusts=1, max_num_clusts=NA, newx=NA, weights=NULL){
 
     # Check inputs
     ret <- checkFormCssDesignInputs(css_results, weighting, cutoff,
@@ -68,9 +68,19 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
     p <- ncol(newx)
 
     # Get the names of the selected clusters and the weights for the features
-    # within each cluster, according to the provided weighting rule
-    weights <- getSelectedClusters(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts)$weights
+    # within each cluster, according to the provided weighting rule. These depend
+    # only on css_results and the (weighting, cutoff, min/max_num_clusts) args,
+    # NOT on newx, so a caller that forms several designs from one css_results
+    # (e.g. getCssPreds, which builds a train design and a test design) can
+    # compute them once and pass them in via `weights` to skip the repeated
+    # getSelectedClusters() work. Byte-identical: a passed-in `weights` equals
+    # what this call would otherwise recompute (checkMaxNumClusts is idempotent,
+    # so the max_num_clusts re-derived by checkFormCssDesignInputs above matches
+    # the caller's already-adjusted value). (#129)
+    if(is.null(weights)){
+        weights <- getSelectedClusters(css_results, weighting, cutoff,
+            min_num_clusts, max_num_clusts)$weights
+    }
 
     n_sel_clusts <- length(weights)
 

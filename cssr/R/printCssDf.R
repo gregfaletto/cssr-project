@@ -56,55 +56,11 @@ printCssDf <- function(css_results, cutoff=0, min_num_clusts=1,
         min_num_clusts=min_num_clusts,
         max_num_clusts=max_num_clusts)$selected_clusts
 
-    # An empty selection is valid post-#107 (e.g. cutoff = 1 with
-    # min_num_clusts = 0 when no cluster clears the cutoff). Return a well-formed
-    # zero-row data.frame whose columns mirror the populated branch below for the
-    # same object: 5 columns (with ClustProtoName) when X has column names, 4
-    # otherwise -- names(prototypes) is non-NULL iff colnames(css_results$X) is,
-    # since prototype names come from colnames(X). (#120)
-    if(length(sel_clusts) == 0){
-        if(!is.null(colnames(css_results$X))){
-            return(data.frame(ClustName=character(0),
-                ClustProtoName=character(0), ClustProtoNum=integer(0),
-                ClustSelProp=numeric(0), ClustSize=integer(0)))
-        }
-        return(data.frame(ClustName=character(0), ClustProtoNum=integer(0),
-            ClustSelProp=numeric(0), ClustSize=integer(0)))
-    }
-
-    # Get prototypes (feature from each cluster with highest selection
-    # proportion, breaking ties by using marginal correlations of features with
-    # y from data provided to css if y is real-valued)
-    prototypes <- getSelectionPrototypes(css_results, sel_clusts)
-    
-    # Cluster selection proportions
-    if(length(sel_clusts) > 1){
-        sel_clust_sel_props <- colMeans(css_results$clus_sel_mat[,
-            names(sel_clusts)])
-    } else{
-        sel_clust_sel_props <- mean(css_results$clus_sel_mat[,
-            names(sel_clusts)])
-    }
-
-    # Data.frame: name of cluster, cluster prototype, selection proportion,
-    # cluster size
-
-    if(!is.null(names(prototypes))){
-        print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoName=names(prototypes), ClustProtoNum=unname(prototypes),
-            ClustSelProp=sel_clust_sel_props, ClustSize=lengths(sel_clusts))
-    } else{
-        print_df <- data.frame(ClustName=names(sel_clusts),
-            ClustProtoNum=unname(prototypes), ClustSelProp=sel_clust_sel_props,
-            ClustSize=lengths(sel_clusts))
-    }
-
-    print_df <- print_df[order(print_df$ClustSelProp, decreasing=TRUE), ]
-
-    rownames(print_df) <- NULL
-    
-    stopifnot(is.data.frame(print_df))
-    stopifnot(nrow(print_df) >= 1)
-
-    return(print_df)
+    # printCssDf keeps its exact exported signature; the table-building work
+    # (empty-selection handling, prototypes, selection proportions, ordering)
+    # now lives in the internal buildCssDf() helper so summary.cssr() can reuse
+    # an already-computed sel_clusts instead of making a second identical
+    # getCssSelections() call. Byte-identical: buildCssDf() consumes sel_clusts
+    # exactly as this body did. (#129)
+    return(buildCssDf(css_results, sel_clusts))
 }
