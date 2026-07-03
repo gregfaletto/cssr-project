@@ -7264,6 +7264,26 @@ testthat::test_that("createSubsamples returns properly-named elements with featu
       logical(1))))
 })
 
+testthat::test_that("createSubsamples copies feats_to_keep onto each SS complementary pair (#128)", {
+  set.seed(128)
+  res <- createSubsamples(n = 30, p = 20, B = 5, sampling_type = "SS",
+                          prop_feats_remove = 0.5)
+  # SS with feature removal -> 2B elements.
+  testthat::expect_equal(length(res), 10L)
+  # Each complementary pair (i, B + i) must share the SAME feats_to_keep -- the
+  # Shah-Samworth pairing guarantee (createSubsamples copies subsample i's mask
+  # onto its pair B + i). With p = 20, two independent rbinom draws would match
+  # with probability ~2^-20 (~1e-6), so the identity below genuinely exercises
+  # the copy rather than passing by coincidence. Every subsample must also retain
+  # >= 2 features (the while-loop guarantee).
+  for(i in 1:5){
+    testthat::expect_identical(res[[5L + i]]$feats_to_keep,
+                               res[[i]]$feats_to_keep)
+    testthat::expect_gte(sum(res[[i]]$feats_to_keep), 2)
+    testthat::expect_gte(sum(res[[5L + i]]$feats_to_keep), 2)
+  }
+})
+
 testthat::test_that("createSubsamples works", {
   res <- createSubsamples(n=20L, p=5L, B=11L, sampling_type="SS",
                           prop_feats_remove=0)
@@ -10363,6 +10383,50 @@ testthat::test_that("getCssPreds works", {
 })
 ```
 
+The three partial-training-input branches of `checkGetCssPredsInputs()` -- the
+hard `stop` when `trainX` is supplied without `trainY` and css had no
+`train_inds`, and the two fallback warnings when only one of `trainX`/`trainY`
+is supplied alongside `train_inds` -- are otherwise unexercised (#128).
+
+```{r}
+testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
+  set.seed(128)
+  X <- matrix(stats::rnorm(15 * 6), nrow = 15, ncol = 6)
+  y <- stats::rnorm(15)
+  # 1:3 as one cluster; feats 4, 5, 6 become singletons -> 4 clusters total.
+  clusters <- list(cluster1 = 1:3)
+
+  # No train_inds (train_inds empty).
+  css_no_train <- css(X = X, y = y, lambda = 0.01, clusters = clusters, B = 10)
+  # train_inds length 6 > 4 clusters, so the fallback path clears the downstream
+  # OLS-size guard (needs more training rows than clusters) and can predict
+  # rather than error.
+  css_with_train <- css(X = X, y = y, lambda = 0.01, clusters = clusters,
+                        B = 10, train_inds = 10:15)
+
+  testX <- matrix(stats::rnorm(4 * 6), nrow = 4, ncol = 6)
+  trainX <- matrix(stats::rnorm(8 * 6), nrow = 8, ncol = 6)
+
+  # (A) trainX provided, trainY missing (scalar NA), css had NO train_inds ->
+  # hard stop.
+  testthat::expect_error(
+    getCssPreds(css_no_train, testX = testX, trainX = trainX, trainY = NA),
+    "must provide both trainX and trainY", fixed = TRUE)
+
+  # (B) trainX provided, trainY missing, css HAD train_inds -> warn, fall back to
+  # the train_inds observations, then predict.
+  testthat::expect_warning(
+    getCssPreds(css_with_train, testX = testX, trainX = trainX, trainY = NA),
+    "trainX provided but no trainY", fixed = TRUE)
+
+  # (C) trainY provided but no trainX, css HAD train_inds -> warn, use the
+  # train_inds observations (trainY is ignored on this path), then predict.
+  testthat::expect_warning(
+    getCssPreds(css_with_train, testX = testX, trainY = c(1, 2, 3)),
+    "trainY provided but no trainX", fixed = TRUE)
+})
+```
+
 A focused test for the internal OLS-prediction helper `olsPredictRankSafe()`
 (issue #117), which keeps `getCssPreds()` from crashing on a rank-deficient OLS
 fit under R >= 4.4's `stats::predict.lm()` default.
@@ -11978,6 +12042,29 @@ testthat::test_that("getSelectionPrototypes handles a constant tied column witho
   proto2 <- suppressWarnings(
       getSelectionPrototypes(css2, selected_clusts = list(c(3L, 4L))))
   testthat::expect_identical(unname(proto2), 3L)
+})
+
+testthat::test_that("getSelectionPrototypes skips the correlation tie-break for non-numeric y (#128)", {
+  # css() accepts a non-numeric y (response validation is delegated to fitfun),
+  # so getSelectionPrototypes must NOT call cor() -- which requires a numeric y --
+  # when breaking a selection-proportion tie. Hand-build a cssr object with a
+  # CHARACTER y and a feat_sel_mat in which members 1 and 2 tie (equal column
+  # means) so the tie block IS entered (length(proto_i) > 1). Without the
+  # is.numeric(y) guard, cor(X[, 1:2], <character y>) would error; the guard skips
+  # it and the first tied index is returned deterministically.
+  B <- 10L; p <- 2L; n <- 8L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- letters[1:n]                    # non-numeric (character) response
+  M <- matrix(0L, nrow = B, ncol = p)
+  M[1:5, 1] <- 1L                      # features 1 and 2 tie at proportion 0.5,
+  M[1:5, 2] <- 1L                      # forcing the tie-break path
+  css <- structure(list(X = X, y = y, feat_sel_mat = M), class = "cssr")
+  # suppressWarnings: an unbroken length-2 tie triggers a benign R "number of
+  # items to replace" warning at the names-assignment (it fires for ANY persisted
+  # tie, incl. the numeric #68 case) that would otherwise fail testthat edition 3.
+  res <- suppressWarnings(getSelectionPrototypes(css, list(c(1L, 2L))))
+  testthat::expect_identical(unname(res), 1L)   # first tied index, deterministic
 })
 ```
 
