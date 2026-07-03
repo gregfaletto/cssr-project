@@ -226,18 +226,28 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb81-29"><a href="competitor-methods.html#cb81-29" tabindex="-1"></a>    <span class="co"># (type = "protolasso" or "clusterRepLasso"); see <a href="competitor-methods.html#getXglmnet">getXglmnet</a>().</span></span>
 <span id="cb81-30"><a href="competitor-methods.html#cb81-30" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href="competitor-methods.html#getXglmnet">getXglmnet</a>(x, clusters, <span class="at">type=</span>type, <span class="at">prototypes=</span>prototypes)</span>
 <span id="cb81-31"><a href="competitor-methods.html#cb81-31" tabindex="-1"></a></span>
-<span id="cb81-32"><a href="competitor-methods.html#cb81-32" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster prototypes / representatives</span></span>
-<span id="cb81-33"><a href="competitor-methods.html#cb81-33" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nlambda=</span>nlambda)</span>
-<span id="cb81-34"><a href="competitor-methods.html#cb81-34" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">"nonzero"</span>))</span>
-<span id="cb81-35"><a href="competitor-methods.html#cb81-35" tabindex="-1"></a></span>
-<span id="cb81-36"><a href="competitor-methods.html#cb81-36" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
-<span id="cb81-37"><a href="competitor-methods.html#cb81-37" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
-<span id="cb81-38"><a href="competitor-methods.html#cb81-38" tabindex="-1"></a>        prototypes, feat_names)</span>
-<span id="cb81-39"><a href="competitor-methods.html#cb81-39" tabindex="-1"></a></span>
-<span id="cb81-40"><a href="competitor-methods.html#cb81-40" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
-<span id="cb81-41"><a href="competitor-methods.html#cb81-41" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
-<span id="cb81-42"><a href="competitor-methods.html#cb81-42" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
-<span id="cb81-43"><a href="competitor-methods.html#cb81-43" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb81-32"><a href="competitor-methods.html#cb81-32" tabindex="-1"></a>    <span class="co"># getXglmnet returns one column per cluster, so a single all-encompassing</span></span>
+<span id="cb81-33"><a href="competitor-methods.html#cb81-33" tabindex="-1"></a>    <span class="co"># cluster (or a genuine p &lt; 2 input, which processClusterLassoInputs does not</span></span>
+<span id="cb81-34"><a href="competitor-methods.html#cb81-34" tabindex="-1"></a>    <span class="co"># rule out) yields a 1-column design that glmnet cannot fit ("x should be a</span></span>
+<span id="cb81-35"><a href="competitor-methods.html#cb81-35" tabindex="-1"></a>    <span class="co"># matrix with 2 or more columns"). Fail early with a message naming both</span></span>
+<span id="cb81-36"><a href="competitor-methods.html#cb81-36" tabindex="-1"></a>    <span class="co"># degenerate causes instead of surfacing glmnet's opaque error. This catches</span></span>
+<span id="cb81-37"><a href="competitor-methods.html#cb81-37" tabindex="-1"></a>    <span class="co"># both <a href="competitor-methods.html#protolasso">protolasso</a>() and <a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>(), which route through here.</span></span>
+<span id="cb81-38"><a href="competitor-methods.html#cb81-38" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
+<span id="cb81-39"><a href="competitor-methods.html#cb81-39" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"<a href="competitor-methods.html#protolasso">protolasso</a>()/<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>() need at least 2 cluster representatives to fit the lasso, but the provided data yields only 1 (all features are in a single cluster, or p &lt; 2)."</span>)</span>
+<span id="cb81-40"><a href="competitor-methods.html#cb81-40" tabindex="-1"></a>    }</span>
+<span id="cb81-41"><a href="competitor-methods.html#cb81-41" tabindex="-1"></a></span>
+<span id="cb81-42"><a href="competitor-methods.html#cb81-42" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster prototypes / representatives</span></span>
+<span id="cb81-43"><a href="competitor-methods.html#cb81-43" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nlambda=</span>nlambda)</span>
+<span id="cb81-44"><a href="competitor-methods.html#cb81-44" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">"nonzero"</span>))</span>
+<span id="cb81-45"><a href="competitor-methods.html#cb81-45" tabindex="-1"></a></span>
+<span id="cb81-46"><a href="competitor-methods.html#cb81-46" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
+<span id="cb81-47"><a href="competitor-methods.html#cb81-47" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
+<span id="cb81-48"><a href="competitor-methods.html#cb81-48" tabindex="-1"></a>        prototypes, feat_names)</span>
+<span id="cb81-49"><a href="competitor-methods.html#cb81-49" tabindex="-1"></a></span>
+<span id="cb81-50"><a href="competitor-methods.html#cb81-50" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
+<span id="cb81-51"><a href="competitor-methods.html#cb81-51" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
+<span id="cb81-52"><a href="competitor-methods.html#cb81-52" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
+<span id="cb81-53"><a href="competitor-methods.html#cb81-53" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#protolasso">protolasso</a>()</code>:</p>
 <div class="sourceCode" id="cb82"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb82-1"><a href="competitor-methods.html#cb82-1" tabindex="-1"></a><span class="co">#' Select features via the protolasso (Reid and Tibshirani 2016)</span></span>
 <span id="cb82-2"><a href="competitor-methods.html#cb82-2" tabindex="-1"></a><span class="co">#'</span></span>

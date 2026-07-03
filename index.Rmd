@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.3.2",
+    Version = "0.3.3",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -246,7 +246,12 @@ The function `css()` is specified below. (There are some extra details that I om
 #' @param y The response; can be anything that takes the form of an
 #' n-dimensional vector, with the ith entry corresponding to the ith row of X.
 #' Typically (and for default `fitfun = cssLasso`), `y` should be an n-dimensional
-#' numeric vector.
+#' numeric vector. Note that for the default `fitfun = cssLasso`, `y` must not be
+#' too discrete: every random subsample of `y` (of size `floor(n/2)`) must contain
+#' more than one unique value, or css aborts. Because the subsamples are random,
+#' such an abort is seed-dependent and becomes more likely as `B` grows; if it
+#' occurs, supply a less discrete (more continuous) response or a custom `fitfun`
+#' that tolerates a constant-`y` subsample.
 <<param-lambda>>
 <<param-clusters>>
 <<param-fitfun>>
@@ -2030,7 +2035,7 @@ checkCssLassoInputs <- function(X, y, lambda){
         stop("For method cssLasso, y must be a vector of length equal to nrow(X).")
     }
     if(length(unique(y)) <= 1){
-        stop("Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.")
+        stop("Subsample with only one unique value of y detected: for the default cssLasso, every subsample of y (of size floor(n/2)) must have more than one unique value. css draws random subsamples, so this abort is seed-dependent and becomes more likely as B grows. It indicates that y is too discrete for the default cssLasso--supply a less discrete (more continuous) response, or pass a custom fitfun that tolerates a constant-y subsample.")
     }
     if(!is.numeric(lambda) & !is.integer(lambda)){
         stop("For method cssLasso, lambda must be a numeric.")
@@ -2910,7 +2915,7 @@ checkNewXProvided <- function(trainX, css_results){
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
         }
-        trainX <- css_results$X[css_results$train_inds, ]
+        trainX <- css_results$X[css_results$train_inds, , drop = FALSE]
     } 
     stopifnot(is.matrix(trainX))
     stopifnot(is.numeric(trainX) | is.integer(trainX))
@@ -3164,7 +3169,7 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
             if(length(css_results$train_inds) == 0){
                 stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
             }
-            newx <- css_results$X[css_results$train_inds, ]
+            newx <- css_results$X[css_results$train_inds, , drop = FALSE]
             # feat_names <- colnames(newx)
         } else{
             results <- checkXInputResults(newx, css_results$X)
@@ -4516,6 +4521,12 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     X <- coerceDataFrameToMatrix(X, clusters = list())
     stopifnot(is.matrix(X))
     stopifnot(is.numeric(X) | is.integer(X))
+    # Require at least two features, mirroring css()'s stopifnot(p >= 2). A 1-col
+    # X (e.g. cssSelect()/cssPredict() called with p = 1) would otherwise reach
+    # cv.glmnet with a single column and fail cryptically; this fires the same
+    # clean "p >= 2 is not TRUE" message as css().
+    p <- ncol(X)
+    stopifnot(p >= 2)
     n <- nrow(X)
 
     stopifnot(is.numeric(nfolds) | is.integer(nfolds))
@@ -5440,7 +5451,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
-        lambda <- getLassoLambda(X_train_selec[setdiff(1:n, train_inds), ],
+        lambda <- getLassoLambda(
+            X_train_selec[setdiff(1:n, train_inds), , drop = FALSE],
             y_train_selec[setdiff(1:n, train_inds)], alpha=alpha)
     }
 
@@ -5518,6 +5530,16 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # Format the design matrix for glmnet according to the chosen procedure
     # (type = "protolasso" or "clusterRepLasso"); see getXglmnet().
     X_glmnet <- getXglmnet(x, clusters, type=type, prototypes=prototypes)
+
+    # getXglmnet returns one column per cluster, so a single all-encompassing
+    # cluster (or a genuine p < 2 input, which processClusterLassoInputs does not
+    # rule out) yields a 1-column design that glmnet cannot fit ("x should be a
+    # matrix with 2 or more columns"). Fail early with a message naming both
+    # degenerate causes instead of surfacing glmnet's opaque error. This catches
+    # both protolasso() and clusterRepLasso(), which route through here.
+    if(ncol(X_glmnet) < 2){
+        stop("protolasso()/clusterRepLasso() need at least 2 cluster representatives to fit the lasso, but the provided data yields only 1 (all features are in a single cluster, or p < 2).")
+    }
 
     # Estimate the lasso on the cluster prototypes / representatives
     fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=nlambda)
@@ -6973,7 +6995,7 @@ testthat::test_that("checkCssLassoInputs works", {
                          fixed=TRUE)
   
   testthat::expect_error(checkCssLassoInputs(X=x, y=rep(1.2, 15), lambda=0.05),
-                         "Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.",
+                         "Subsample with only one unique value of y detected: for the default cssLasso, every subsample of y (of size floor(n/2)) must have more than one unique value. css draws random subsamples, so this abort is seed-dependent and becomes more likely as B grows. It indicates that y is too discrete for the default cssLasso--supply a less discrete (more continuous) response, or pass a custom fitfun that tolerates a constant-y subsample.",
                          fixed=TRUE)
   
   testthat::expect_error(checkCssLassoInputs(X=x, y=y, lambda=TRUE),
@@ -9609,6 +9631,50 @@ testthat::test_that("getCssDesign works", {
 })
 ```
 
+A single held-out training index (length-1 `train_inds`) is enough to build a
+design matrix -- one row of cluster representatives (#127). It used to crash
+because `css_results$X[css_results$train_inds, ]` dropped to a vector in both
+`checkNewXProvided` and `checkFormCssDesignInputs`.
+
+```{r}
+testthat::test_that("getCssDesign/getCssPreds handle length-1 train_inds (#127)", {
+  set.seed(51274)
+
+  x_select <- matrix(stats::rnorm(10*6), nrow=10, ncol=6)
+  y_select <- stats::rnorm(10)
+  x_pred <- matrix(stats::rnorm(4*6), nrow=4, ncol=6)
+
+  # clusters covers features 1:3; features 4, 5, 6 become singleton clusters, so
+  # css_res has 4 clusters. train_inds = 5L sets aside a single observation.
+  css_res <- css(X=x_select, y=y_select, lambda=0.01,
+                 clusters=list(cluster1=1:3), B=10, train_inds=5L)
+
+  # getCssDesign with no newX re-derives the design from the single training row
+  # and must return a 1 x (#clusters) matrix without error.
+  des <- getCssDesign(css_res)
+  testthat::expect_true(is.matrix(des))
+  testthat::expect_true(is.numeric(des))
+  testthat::expect_equal(nrow(des), 1)
+  testthat::expect_equal(ncol(des), length(css_res$clusters))
+
+  # getCssPreds with the same length-1 train_inds cannot fit OLS (1 training row
+  # is not more than the number of clusters + intercept): it must fail with the
+  # clean OLS-size guard message, NOT a subscript/matrix crash. This guard is
+  # deliberate -- 1 training row genuinely cannot fit the prediction model.
+  testthat::expect_error(getCssPreds(css_res, testX=x_pred),
+                         "not provided with enough indices to fit OLS",
+                         fixed=TRUE)
+
+  # A length-2 train_inds still yields a valid 2-row design (no regression).
+  css_res2 <- css(X=x_select, y=y_select, lambda=0.01,
+                  clusters=list(cluster1=1:3), B=10, train_inds=c(5L, 6L))
+  des2 <- getCssDesign(css_res2)
+  testthat::expect_true(is.matrix(des2))
+  testthat::expect_equal(nrow(des2), 2)
+  testthat::expect_equal(ncol(des2), length(css_res2$clusters))
+})
+```
+
 Tests for `checkGetCssPredsInputs()`
 
 
@@ -11599,6 +11665,13 @@ testthat::test_that("getLassoLambda works", {
                    y=stats::rnorm(4)),
     "is too small to choose lambda", fixed=TRUE)
 
+  # (#127) A single-column X now fires the same clean "p >= 2 is not TRUE"
+  # message as css(), rather than crashing later inside cv.glmnet.
+  testthat::expect_error(
+    getLassoLambda(X=matrix(stats::rnorm(40), nrow=40, ncol=1),
+                   y=stats::rnorm(40)),
+    "p >= 2 is not TRUE", fixed=TRUE)
+
 })
 ```
 
@@ -12776,6 +12849,13 @@ testthat::test_that("cssSelect works", {
   x_na <- x; x_na[2, 1] <- NA
   testthat::expect_error(cssSelect(X=x_na, y=y),
                          "must not contain missing", fixed=TRUE)
+
+  # (#127) A single-column X reaches getLassoLambda as a matrix and now errors
+  # with the clean "p >= 2 is not TRUE" message rather than a cryptic downstream
+  # failure ("invalid 'times' argument").
+  testthat::expect_error(
+    cssSelect(matrix(stats::rnorm(40), nrow=40, ncol=1), stats::rnorm(40)),
+    "p >= 2 is not TRUE", fixed=TRUE)
 })
 ```
 
@@ -13020,6 +13100,15 @@ testthat::test_that("cssPredict works", {
   testthat::expect_error(cssPredict(X_train_selec=x, y_train_selec=y,
                                     X_test=test_x, alpha=1.5),
                          "alpha <= 1 is not TRUE", fixed=TRUE)
+
+  # (#127) A single-column training design now reaches getLassoLambda as a matrix
+  # (drop = FALSE on the subsample) and errors with the clean "p >= 2 is not
+  # TRUE" message rather than "is.matrix(X) is not TRUE".
+  testthat::expect_error(
+    cssPredict(X_train_selec=matrix(stats::rnorm(40), nrow=40, ncol=1),
+               y_train_selec=stats::rnorm(40),
+               X_test=matrix(stats::rnorm(10), nrow=10, ncol=1)),
+    "p >= 2 is not TRUE", fixed=TRUE)
 })
 ```
 
@@ -14629,6 +14718,13 @@ testthat::test_that("protolasso works", {
                                     nlambda=10.5),
                          "nlambda == round(nlambda) is not TRUE",
                          fixed=TRUE)
+
+  # (#127) A single all-encompassing cluster (or a genuine p < 2 input) leaves
+  # glmnet with a 1-column design; clusterLassoCore now errors up front with a
+  # cssr message naming both causes, instead of glmnet's "2 or more columns".
+  testthat::expect_error(
+    protolasso(X=x, y=y, clusters=list(all=1:11)),
+    "need at least 2 cluster representatives to fit the lasso", fixed=TRUE)
   
 })
 ```
@@ -15013,6 +15109,13 @@ testthat::test_that("clusterRepLasso works", {
                                     nlambda=10.5),
                          "nlambda == round(nlambda) is not TRUE",
                          fixed=TRUE)
+
+  # (#127) Same degenerate-design guard as protolasso: a single all-encompassing
+  # cluster yields a 1-column design, now rejected with a clear cssr message
+  # rather than glmnet's "2 or more columns".
+  testthat::expect_error(
+    clusterRepLasso(X=x, y=y, clusters=list(all=1:11)),
+    "need at least 2 cluster representatives to fit the lasso", fixed=TRUE)
   
 })
 ```

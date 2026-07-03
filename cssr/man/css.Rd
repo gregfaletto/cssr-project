@@ -25,7 +25,12 @@ p >= 2 features/predictors. Must not contain missing (\code{NA}) values.}
 \item{y}{The response; can be anything that takes the form of an
 n-dimensional vector, with the ith entry corresponding to the ith row of X.
 Typically (and for default \code{fitfun = cssLasso}), \code{y} should be an n-dimensional
-numeric vector.}
+numeric vector. Note that for the default \code{fitfun = cssLasso}, \code{y} must not be
+too discrete: every random subsample of \code{y} (of size \code{floor(n/2)}) must contain
+more than one unique value, or css aborts. Because the subsamples are random,
+such an abort is seed-dependent and becomes more likely as \code{B} grows; if it
+occurs, supply a less discrete (more continuous) response or a custom \code{fitfun}
+that tolerates a constant-\code{y} subsample.}
 
 \item{lambda}{A tuning parameter or set of tuning parameters that may be used
 by the feature selection method \code{fitfun}. In the default case when

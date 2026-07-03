@@ -54,6 +54,12 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     X <- coerceDataFrameToMatrix(X, clusters = list())
     stopifnot(is.matrix(X))
     stopifnot(is.numeric(X) | is.integer(X))
+    # Require at least two features, mirroring css()'s stopifnot(p >= 2). A 1-col
+    # X (e.g. cssSelect()/cssPredict() called with p = 1) would otherwise reach
+    # cv.glmnet with a single column and fail cryptically; this fires the same
+    # clean "p >= 2 is not TRUE" message as css().
+    p <- ncol(X)
+    stopifnot(p >= 2)
     n <- nrow(X)
 
     stopifnot(is.numeric(nfolds) | is.integer(nfolds))

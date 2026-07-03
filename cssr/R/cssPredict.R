@@ -127,7 +127,8 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
 
     stopifnot(length(lambda) == 1)
     if(is.na(lambda)){
-        lambda <- getLassoLambda(X_train_selec[setdiff(1:n, train_inds), ],
+        lambda <- getLassoLambda(
+            X_train_selec[setdiff(1:n, train_inds), , drop = FALSE],
             y_train_selec[setdiff(1:n, train_inds)], alpha=alpha)
     }
 

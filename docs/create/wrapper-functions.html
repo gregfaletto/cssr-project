@@ -444,37 +444,38 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb80-125"><a href="wrapper-functions.html#cb80-125" tabindex="-1"></a></span>
 <span id="cb80-126"><a href="wrapper-functions.html#cb80-126" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
 <span id="cb80-127"><a href="wrapper-functions.html#cb80-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(lambda)){</span>
-<span id="cb80-128"><a href="wrapper-functions.html#cb80-128" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds), ],</span>
-<span id="cb80-129"><a href="wrapper-functions.html#cb80-129" tabindex="-1"></a>            y_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)], <span class="at">alpha=</span>alpha)</span>
-<span id="cb80-130"><a href="wrapper-functions.html#cb80-130" tabindex="-1"></a>    }</span>
-<span id="cb80-131"><a href="wrapper-functions.html#cb80-131" tabindex="-1"></a></span>
-<span id="cb80-132"><a href="wrapper-functions.html#cb80-132" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
-<span id="cb80-133"><a href="wrapper-functions.html#cb80-133" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
-<span id="cb80-134"><a href="wrapper-functions.html#cb80-134" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
-<span id="cb80-135"><a href="wrapper-functions.html#cb80-135" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
-<span id="cb80-136"><a href="wrapper-functions.html#cb80-136" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
-<span id="cb80-137"><a href="wrapper-functions.html#cb80-137" tabindex="-1"></a>    }</span>
-<span id="cb80-138"><a href="wrapper-functions.html#cb80-138" tabindex="-1"></a></span>
-<span id="cb80-139"><a href="wrapper-functions.html#cb80-139" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_train_selec, <span class="at">y=</span>y_train_selec, <span class="at">lambda=</span>lambda,</span>
-<span id="cb80-140"><a href="wrapper-functions.html#cb80-140" tabindex="-1"></a>        <span class="at">clusters=</span>clusters, <span class="at">train_inds=</span>train_inds)</span>
-<span id="cb80-141"><a href="wrapper-functions.html#cb80-141" tabindex="-1"></a></span>
-<span id="cb80-142"><a href="wrapper-functions.html#cb80-142" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
-<span id="cb80-143"><a href="wrapper-functions.html#cb80-143" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
-<span id="cb80-144"><a href="wrapper-functions.html#cb80-144" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
-<span id="cb80-145"><a href="wrapper-functions.html#cb80-145" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
-<span id="cb80-146"><a href="wrapper-functions.html#cb80-146" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X_train_selec[train_inds, ],</span>
-<span id="cb80-147"><a href="wrapper-functions.html#cb80-147" tabindex="-1"></a>                y_train_selec[train_inds], css_results<span class="sc">$</span>clusters, <span class="at">alpha=</span>alpha)</span>
-<span id="cb80-148"><a href="wrapper-functions.html#cb80-148" tabindex="-1"></a>        }</span>
-<span id="cb80-149"><a href="wrapper-functions.html#cb80-149" tabindex="-1"></a>    }</span>
-<span id="cb80-150"><a href="wrapper-functions.html#cb80-150" tabindex="-1"></a></span>
-<span id="cb80-151"><a href="wrapper-functions.html#cb80-151" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
-<span id="cb80-152"><a href="wrapper-functions.html#cb80-152" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb80-153"><a href="wrapper-functions.html#cb80-153" tabindex="-1"></a>    }</span>
-<span id="cb80-154"><a href="wrapper-functions.html#cb80-154" tabindex="-1"></a></span>
-<span id="cb80-155"><a href="wrapper-functions.html#cb80-155" tabindex="-1"></a>    <span class="co"># Get predictions</span></span>
-<span id="cb80-156"><a href="wrapper-functions.html#cb80-156" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_results, <span class="at">testX=</span>X_test, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
-<span id="cb80-157"><a href="wrapper-functions.html#cb80-157" tabindex="-1"></a>        <span class="at">cutoff=</span>cutoff, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb80-158"><a href="wrapper-functions.html#cb80-158" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb80-128"><a href="wrapper-functions.html#cb80-128" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(</span>
+<span id="cb80-129"><a href="wrapper-functions.html#cb80-129" tabindex="-1"></a>            X_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds), , <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb80-130"><a href="wrapper-functions.html#cb80-130" tabindex="-1"></a>            y_train_selec[<span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)], <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-131"><a href="wrapper-functions.html#cb80-131" tabindex="-1"></a>    }</span>
+<span id="cb80-132"><a href="wrapper-functions.html#cb80-132" tabindex="-1"></a></span>
+<span id="cb80-133"><a href="wrapper-functions.html#cb80-133" tabindex="-1"></a>    <span class="co"># Bundle alpha into lambda for the elastic-net fit. When alpha == 1 (the</span></span>
+<span id="cb80-134"><a href="wrapper-functions.html#cb80-134" tabindex="-1"></a>    <span class="co"># default), leave lambda as a scalar so the pure-lasso path is byte-identical</span></span>
+<span id="cb80-135"><a href="wrapper-functions.html#cb80-135" tabindex="-1"></a>    <span class="co"># to the original behavior.</span></span>
+<span id="cb80-136"><a href="wrapper-functions.html#cb80-136" tabindex="-1"></a>    <span class="cf">if</span>(alpha <span class="sc">!=</span> <span class="dv">1</span>){</span>
+<span id="cb80-137"><a href="wrapper-functions.html#cb80-137" tabindex="-1"></a>        lambda <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">lambda=</span>lambda, <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-138"><a href="wrapper-functions.html#cb80-138" tabindex="-1"></a>    }</span>
+<span id="cb80-139"><a href="wrapper-functions.html#cb80-139" tabindex="-1"></a></span>
+<span id="cb80-140"><a href="wrapper-functions.html#cb80-140" tabindex="-1"></a>    css_results <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X=</span>X_train_selec, <span class="at">y=</span>y_train_selec, <span class="at">lambda=</span>lambda,</span>
+<span id="cb80-141"><a href="wrapper-functions.html#cb80-141" tabindex="-1"></a>        <span class="at">clusters=</span>clusters, <span class="at">train_inds=</span>train_inds)</span>
+<span id="cb80-142"><a href="wrapper-functions.html#cb80-142" tabindex="-1"></a></span>
+<span id="cb80-143"><a href="wrapper-functions.html#cb80-143" tabindex="-1"></a>    <span class="co"># If no indication of how to select model size was provided, choose model</span></span>
+<span id="cb80-144"><a href="wrapper-functions.html#cb80-144" tabindex="-1"></a>    <span class="co"># size by cross-validation</span></span>
+<span id="cb80-145"><a href="wrapper-functions.html#cb80-145" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff) <span class="sc">&amp;</span> <span class="fu">is.na</span>(max_num_clusts)){</span>
+<span id="cb80-146"><a href="wrapper-functions.html#cb80-146" tabindex="-1"></a>        <span class="cf">if</span>(auto_select_size){</span>
+<span id="cb80-147"><a href="wrapper-functions.html#cb80-147" tabindex="-1"></a>            max_num_clusts <span class="ot">&lt;-</span> <a href="other-useful.html#getModelSize">getModelSize</a>(X_train_selec[train_inds, ],</span>
+<span id="cb80-148"><a href="wrapper-functions.html#cb80-148" tabindex="-1"></a>                y_train_selec[train_inds], css_results<span class="sc">$</span>clusters, <span class="at">alpha=</span>alpha)</span>
+<span id="cb80-149"><a href="wrapper-functions.html#cb80-149" tabindex="-1"></a>        }</span>
+<span id="cb80-150"><a href="wrapper-functions.html#cb80-150" tabindex="-1"></a>    }</span>
+<span id="cb80-151"><a href="wrapper-functions.html#cb80-151" tabindex="-1"></a></span>
+<span id="cb80-152"><a href="wrapper-functions.html#cb80-152" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.na</span>(cutoff)){</span>
+<span id="cb80-153"><a href="wrapper-functions.html#cb80-153" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb80-154"><a href="wrapper-functions.html#cb80-154" tabindex="-1"></a>    }</span>
+<span id="cb80-155"><a href="wrapper-functions.html#cb80-155" tabindex="-1"></a></span>
+<span id="cb80-156"><a href="wrapper-functions.html#cb80-156" tabindex="-1"></a>    <span class="co"># Get predictions</span></span>
+<span id="cb80-157"><a href="wrapper-functions.html#cb80-157" tabindex="-1"></a>    <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(css_results, <span class="at">testX=</span>X_test, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
+<span id="cb80-158"><a href="wrapper-functions.html#cb80-158" tabindex="-1"></a>        <span class="at">cutoff=</span>cutoff, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb80-159"><a href="wrapper-functions.html#cb80-159" tabindex="-1"></a>}</span></code></pre></div>
 </div>
             </section>
 </div>
