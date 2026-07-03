@@ -12,7 +12,12 @@
 #' @param y The response; can be anything that takes the form of an
 #' n-dimensional vector, with the ith entry corresponding to the ith row of X.
 #' Typically (and for default `fitfun = cssLasso`), `y` should be an n-dimensional
-#' numeric vector.
+#' numeric vector. Note that for the default `fitfun = cssLasso`, `y` must not be
+#' too discrete: every random subsample of `y` (of size `floor(n/2)`) must contain
+#' more than one unique value, or css aborts. Because the subsamples are random,
+#' such an abort is seed-dependent and becomes more likely as `B` grows; if it
+#' occurs, supply a less discrete (more continuous) response or a custom `fitfun`
+#' that tolerates a constant-`y` subsample.
 #' @param lambda A tuning parameter or set of tuning parameters that may be used
 #' by the feature selection method `fitfun`. In the default case when
 #' `fitfun = cssLasso`, lambda is a nonnegative numeric (or a named `c(lambda, alpha)` for an elastic net fit; see `cssLasso`): the penalty to use for each

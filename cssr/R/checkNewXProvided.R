@@ -53,7 +53,7 @@ checkNewXProvided <- function(trainX, css_results){
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide new X in order to generate a design matrix")
         }
-        trainX <- css_results$X[css_results$train_inds, ]
+        trainX <- css_results$X[css_results$train_inds, , drop = FALSE]
     } 
     stopifnot(is.matrix(trainX))
     stopifnot(is.numeric(trainX) | is.integer(trainX))

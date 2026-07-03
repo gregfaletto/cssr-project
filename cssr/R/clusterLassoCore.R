@@ -31,6 +31,16 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # (type = "protolasso" or "clusterRepLasso"); see getXglmnet().
     X_glmnet <- getXglmnet(x, clusters, type=type, prototypes=prototypes)
 
+    # getXglmnet returns one column per cluster, so a single all-encompassing
+    # cluster (or a genuine p < 2 input, which processClusterLassoInputs does not
+    # rule out) yields a 1-column design that glmnet cannot fit ("x should be a
+    # matrix with 2 or more columns"). Fail early with a message naming both
+    # degenerate causes instead of surfacing glmnet's opaque error. This catches
+    # both protolasso() and clusterRepLasso(), which route through here.
+    if(ncol(X_glmnet) < 2){
+        stop("protolasso()/clusterRepLasso() need at least 2 cluster representatives to fit the lasso, but the provided data yields only 1 (all features are in a single cluster, or p < 2).")
+    }
+
     # Estimate the lasso on the cluster prototypes / representatives
     fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=nlambda)
     lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))

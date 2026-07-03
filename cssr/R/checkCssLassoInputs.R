@@ -34,7 +34,7 @@ checkCssLassoInputs <- function(X, y, lambda){
         stop("For method cssLasso, y must be a vector of length equal to nrow(X).")
     }
     if(length(unique(y)) <= 1){
-        stop("Subsample with only one unique value of y detected--for method cssLasso, all subsamples of y of size floor(n/2) must have more than one unique value.")
+        stop("Subsample with only one unique value of y detected: for the default cssLasso, every subsample of y (of size floor(n/2)) must have more than one unique value. css draws random subsamples, so this abort is seed-dependent and becomes more likely as B grows. It indicates that y is too discrete for the default cssLasso--supply a less discrete (more continuous) response, or pass a custom fitfun that tolerates a constant-y subsample.")
     }
     if(!is.numeric(lambda) & !is.integer(lambda)){
         stop("For method cssLasso, lambda must be a numeric.")

@@ -48,7 +48,7 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
             if(length(css_results$train_inds) == 0){
                 stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
             }
-            newx <- css_results$X[css_results$train_inds, ]
+            newx <- css_results$X[css_results$train_inds, , drop = FALSE]
             # feat_names <- colnames(newx)
         } else{
             results <- checkXInputResults(newx, css_results$X)
