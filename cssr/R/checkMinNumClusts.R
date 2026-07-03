@@ -5,7 +5,7 @@
 #'
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param p The number of features; since this is an upper bound on the number
 #' of clusters of features, it is also an upper bound on min_num_clusts.

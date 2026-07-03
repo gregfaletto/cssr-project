@@ -12,11 +12,11 @@
 #' proportions equal to at least cutoff. Must be between 0 and 1.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.)
 #' @param newx A numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing

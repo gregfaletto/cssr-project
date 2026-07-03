@@ -5,12 +5,12 @@
 #'
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Can be NA, in which case
 #' max_num_clusts will be ignored.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) max_num_clusts must be at least as
 #' large as min_num_clusts.
 #' @param p The number of features; since this is an upper bound on the number

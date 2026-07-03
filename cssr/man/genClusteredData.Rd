@@ -47,7 +47,7 @@ them will have coefficient beta_latent). Must be less than or equal to
 n_clusters. Default is 1.}
 
 \item{rho}{Integer or numeric; the correlation of the proxies in each cluster
-with the latent variable. Must be greater than 0. Default is 0.9.}
+with the latent variable. Must be in (0, 1] (greater than 0 and at most 1). Default is 0.9.}
 
 \item{beta_latent}{Integer or numeric; the coefficient used for all
 sig_clusters latent variables that have nonzero coefficients in the true

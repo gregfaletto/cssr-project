@@ -70,16 +70,16 @@ cssPredict(
   will be identical to clus_sel_mat). Names for the clusters will be
   needed later; any clusters that are not given names in the list
   clusters will be given names automatically by css. CAUTION: if the
-  provided X is a data.frame that contains a categorical feature with
-  more than two levels, then the resulting matrix made from model.matrix
-  will have a different number of columns than the provided data.frame,
-  some of the feature numbers will change, and the clusters argument
-  will not work properly (in the current version of the package). To get
-  correct results in this case, please use model.matrix to convert the
-  data.frame to a numeric matrix on your own, then provide this matrix
-  and cluster assignments with respect to this matrix.Default is list()
-  (so no clusters are specified, and every feature is assumed to be in a
-  "cluster" containing only itself).
+  provided X_train_selec (or X_test) is a data.frame that contains a
+  categorical feature with more than two levels, then the resulting
+  matrix made from model.matrix will have a different number of columns
+  than the provided data.frame, some of the feature numbers will change,
+  and the clusters argument will not work properly (in the current
+  version of the package). To get correct results in this case, please
+  use model.matrix to convert the data.frame to a numeric matrix on your
+  own, then provide this matrix and cluster assignments with respect to
+  this matrix.Default is list() (so no clusters are specified, and every
+  feature is assumed to be in a "cluster" containing only itself).
 
 - lambda:
 
@@ -89,26 +89,27 @@ cssPredict(
 
 - cutoff:
 
-  Numeric; getCssPreds will make use only of those clusters with
+  Numeric; cssPredict will make use only of those clusters with
   selection proportions equal to at least cutoff. Must be between 0
-  and 1. Default is 0 (in which case either all clusters are used, or
-  max_num_clusts are used, if max_num_clusts is specified).
+  and 1. Default is NA (in which case, if auto_select_size is TRUE (the
+  default), the number of cluster representatives is chosen
+  automatically by cross-validation; see auto_select_size).
 
 - max_num_clusts:
 
   Integer or numeric; the maximum number of clusters to use regardless
   of cutoff. (That is, if the chosen cutoff returns more than
-  max_num_clusts clusters, the cutoff will be decreased until at most
+  max_num_clusts clusters, the cutoff will be raised until at most
   max_num_clusts clusters are selected.) Default is NA (in which case
   max_num_clusts is ignored).
 
 - train_inds:
 
   Optional; an integer or numeric vector containing the indices of
-  observations in X and y to set aside for model training after feature
-  selection. If train_inds is not provided, half of the data will be
-  used for feature selection and half for model estimation (chosen at
-  random).
+  observations in X_train_selec and y_train_selec to set aside for model
+  training after feature selection. If train_inds is not provided, half
+  of the data will be used for feature selection and half for model
+  estimation (chosen at random).
 
 - auto_select_size:
 

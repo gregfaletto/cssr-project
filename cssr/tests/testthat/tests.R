@@ -5688,6 +5688,30 @@ testthat::test_that("getSelectionPrototypes skips the correlation tie-break for 
   testthat::expect_identical(unname(res), 1L)   # first tied index, deterministic
 })
 
+testthat::test_that("getSelectionPrototypes emits no warning on an unbroken tie (#126)", {
+  # Item-5 regression (#126): the name-assignment now indexes proto_i[1] (a single
+  # element), not the possibly length>1 proto_i. On an UNBROKEN within-cluster tie
+  # -- here a CHARACTER y, so the numeric correlation tie-break is skipped and
+  # proto_i stays length 2 -- the pre-fix code raised R's "number of items to
+  # replace is not a multiple of replacement length" warning at the names<-
+  # assignment (surfacing through print.cssr / summary.cssr / printCssDf). After
+  # the fix NO warning fires, and the returned prototype is still the first tied
+  # index (value unchanged; only the spurious warning is removed).
+  B <- 10L; p <- 2L; n <- 8L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- letters[1:n]                    # non-numeric (character) response
+  M <- matrix(0L, nrow = B, ncol = p)
+  M[1:5, 1] <- 1L                      # features 1 and 2 tie at proportion 0.5,
+  M[1:5, 2] <- 1L                      # forcing the (unbroken) tie-break path
+  css <- structure(list(X = X, y = y, feat_sel_mat = M), class = "cssr")
+  # No suppressWarnings here: the fix must make this call warning-free.
+  testthat::expect_no_warning(
+      res <- getSelectionPrototypes(css, list(c(1L, 2L))))
+  testthat::expect_identical(unname(res), 1L)    # first tied index, deterministic
+  testthat::expect_identical(names(res), "V1")   # name taken from proto_i[1] only
+})
+
 testthat::test_that("printCssDf works", {
   set.seed(67234)
   
