@@ -557,40 +557,41 @@ checks – preserving each validator’s exact original check order.</p>
 <span id="cb63-69"><a href="other-useful.html#cb63-69" tabindex="-1"></a>    <span class="co"># signal features. Any remaining features are noise features.</span></span>
 <span id="cb63-70"><a href="other-useful.html#cb63-70" tabindex="-1"></a>    Z <span class="ot">&lt;-</span> orig_feat_mat[, <span class="dv">1</span><span class="sc">:</span>n_clusters]</span>
 <span id="cb63-71"><a href="other-useful.html#cb63-71" tabindex="-1"></a></span>
-<span id="cb63-72"><a href="other-useful.html#cb63-72" tabindex="-1"></a>    other_X <span class="ot">&lt;-</span> orig_feat_mat[, (n_clusters <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>p_orig_feat_mat]</span>
+<span id="cb63-72"><a href="other-useful.html#cb63-72" tabindex="-1"></a>    other_X <span class="ot">&lt;-</span> orig_feat_mat[, (n_clusters <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>p_orig_feat_mat, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
 <span id="cb63-73"><a href="other-useful.html#cb63-73" tabindex="-1"></a></span>
 <span id="cb63-74"><a href="other-useful.html#cb63-74" tabindex="-1"></a>    <span class="co"># Ready to create mu and y</span></span>
-<span id="cb63-75"><a href="other-useful.html#cb63-75" tabindex="-1"></a>    <span class="cf">if</span>(n_clusters <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb63-76"><a href="other-useful.html#cb63-76" tabindex="-1"></a>        <span class="cf">if</span>(sig_clusters <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb63-77"><a href="other-useful.html#cb63-77" tabindex="-1"></a>            mu <span class="ot">&lt;-</span> Z[, <span class="dv">1</span><span class="sc">:</span>sig_clusters] <span class="sc">%*%</span> <span class="fu">rep</span>(beta_latent, sig_clusters)</span>
-<span id="cb63-78"><a href="other-useful.html#cb63-78" tabindex="-1"></a>            </span>
-<span id="cb63-79"><a href="other-useful.html#cb63-79" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb63-80"><a href="other-useful.html#cb63-80" tabindex="-1"></a>            mu <span class="ot">&lt;-</span> Z[, <span class="dv">1</span><span class="sc">:</span>sig_clusters] <span class="sc">*</span> beta_latent</span>
-<span id="cb63-81"><a href="other-useful.html#cb63-81" tabindex="-1"></a>        }</span>
-<span id="cb63-82"><a href="other-useful.html#cb63-82" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb63-83"><a href="other-useful.html#cb63-83" tabindex="-1"></a>        mu <span class="ot">&lt;-</span> Z<span class="sc">*</span>beta_latent</span>
-<span id="cb63-84"><a href="other-useful.html#cb63-84" tabindex="-1"></a>    }</span>
-<span id="cb63-85"><a href="other-useful.html#cb63-85" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>k_unclustered){</span>
-<span id="cb63-86"><a href="other-useful.html#cb63-86" tabindex="-1"></a>        mu <span class="ot">&lt;-</span> mu <span class="sc">+</span> beta_unclustered<span class="sc">/</span><span class="fu">sqrt</span>(j)<span class="sc">*</span>other_X[, j]</span>
-<span id="cb63-87"><a href="other-useful.html#cb63-87" tabindex="-1"></a>    }</span>
-<span id="cb63-88"><a href="other-useful.html#cb63-88" tabindex="-1"></a>    mu <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mu)</span>
-<span id="cb63-89"><a href="other-useful.html#cb63-89" tabindex="-1"></a></span>
-<span id="cb63-90"><a href="other-useful.html#cb63-90" tabindex="-1"></a>    <span class="co"># If SNR is null, use sigma_eps_sq</span></span>
-<span id="cb63-91"><a href="other-useful.html#cb63-91" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.na</span>(sigma_eps_sq)){</span>
-<span id="cb63-92"><a href="other-useful.html#cb63-92" tabindex="-1"></a>        sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(sigma_eps_sq)</span>
-<span id="cb63-93"><a href="other-useful.html#cb63-93" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
-<span id="cb63-94"><a href="other-useful.html#cb63-94" tabindex="-1"></a>        sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(mu<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (n <span class="sc">*</span> snr)) <span class="co"># taking snr = ||mu||^2 /(n * sigma^2)</span></span>
-<span id="cb63-95"><a href="other-useful.html#cb63-95" tabindex="-1"></a>    }</span>
-<span id="cb63-96"><a href="other-useful.html#cb63-96" tabindex="-1"></a></span>
-<span id="cb63-97"><a href="other-useful.html#cb63-97" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(sd) <span class="sc">|</span> <span class="fu">is.integer</span>(sd))</span>
-<span id="cb63-98"><a href="other-useful.html#cb63-98" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sd) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb63-99"><a href="other-useful.html#cb63-99" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(sd))</span>
-<span id="cb63-100"><a href="other-useful.html#cb63-100" tabindex="-1"></a>    <span class="fu">stopifnot</span>(sd <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb63-101"><a href="other-useful.html#cb63-101" tabindex="-1"></a></span>
-<span id="cb63-102"><a href="other-useful.html#cb63-102" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mu <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">mean=</span><span class="dv">0</span>, <span class="at">sd=</span>sd))</span>
-<span id="cb63-103"><a href="other-useful.html#cb63-103" tabindex="-1"></a></span>
-<span id="cb63-104"><a href="other-useful.html#cb63-104" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">Z=</span>Z, <span class="at">mu=</span>mu, <span class="at">y=</span>y, <span class="at">other_X=</span>other_X))</span>
-<span id="cb63-105"><a href="other-useful.html#cb63-105" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb63-75"><a href="other-useful.html#cb63-75" tabindex="-1"></a>    <span class="cf">if</span>(sig_clusters <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb63-76"><a href="other-useful.html#cb63-76" tabindex="-1"></a>        mu <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, n)                 <span class="co"># null latent model; weak-signal features add below</span></span>
+<span id="cb63-77"><a href="other-useful.html#cb63-77" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(n_clusters <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb63-78"><a href="other-useful.html#cb63-78" tabindex="-1"></a>        <span class="cf">if</span>(sig_clusters <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb63-79"><a href="other-useful.html#cb63-79" tabindex="-1"></a>            mu <span class="ot">&lt;-</span> Z[, <span class="fu">seq_len</span>(sig_clusters)] <span class="sc">%*%</span> <span class="fu">rep</span>(beta_latent, sig_clusters)</span>
+<span id="cb63-80"><a href="other-useful.html#cb63-80" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb63-81"><a href="other-useful.html#cb63-81" tabindex="-1"></a>            mu <span class="ot">&lt;-</span> Z[, <span class="dv">1</span>] <span class="sc">*</span> beta_latent</span>
+<span id="cb63-82"><a href="other-useful.html#cb63-82" tabindex="-1"></a>        }</span>
+<span id="cb63-83"><a href="other-useful.html#cb63-83" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb63-84"><a href="other-useful.html#cb63-84" tabindex="-1"></a>        mu <span class="ot">&lt;-</span> Z <span class="sc">*</span> beta_latent</span>
+<span id="cb63-85"><a href="other-useful.html#cb63-85" tabindex="-1"></a>    }</span>
+<span id="cb63-86"><a href="other-useful.html#cb63-86" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>k_unclustered){</span>
+<span id="cb63-87"><a href="other-useful.html#cb63-87" tabindex="-1"></a>        mu <span class="ot">&lt;-</span> mu <span class="sc">+</span> beta_unclustered<span class="sc">/</span><span class="fu">sqrt</span>(j)<span class="sc">*</span>other_X[, j]</span>
+<span id="cb63-88"><a href="other-useful.html#cb63-88" tabindex="-1"></a>    }</span>
+<span id="cb63-89"><a href="other-useful.html#cb63-89" tabindex="-1"></a>    mu <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mu)</span>
+<span id="cb63-90"><a href="other-useful.html#cb63-90" tabindex="-1"></a></span>
+<span id="cb63-91"><a href="other-useful.html#cb63-91" tabindex="-1"></a>    <span class="co"># If SNR is null, use sigma_eps_sq</span></span>
+<span id="cb63-92"><a href="other-useful.html#cb63-92" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.na</span>(sigma_eps_sq)){</span>
+<span id="cb63-93"><a href="other-useful.html#cb63-93" tabindex="-1"></a>        sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(sigma_eps_sq)</span>
+<span id="cb63-94"><a href="other-useful.html#cb63-94" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb63-95"><a href="other-useful.html#cb63-95" tabindex="-1"></a>        sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(mu<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (n <span class="sc">*</span> snr)) <span class="co"># taking snr = ||mu||^2 /(n * sigma^2)</span></span>
+<span id="cb63-96"><a href="other-useful.html#cb63-96" tabindex="-1"></a>    }</span>
+<span id="cb63-97"><a href="other-useful.html#cb63-97" tabindex="-1"></a></span>
+<span id="cb63-98"><a href="other-useful.html#cb63-98" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(sd) <span class="sc">|</span> <span class="fu">is.integer</span>(sd))</span>
+<span id="cb63-99"><a href="other-useful.html#cb63-99" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sd) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb63-100"><a href="other-useful.html#cb63-100" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(sd))</span>
+<span id="cb63-101"><a href="other-useful.html#cb63-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(sd <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb63-102"><a href="other-useful.html#cb63-102" tabindex="-1"></a></span>
+<span id="cb63-103"><a href="other-useful.html#cb63-103" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(mu <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">mean=</span><span class="dv">0</span>, <span class="at">sd=</span>sd))</span>
+<span id="cb63-104"><a href="other-useful.html#cb63-104" tabindex="-1"></a></span>
+<span id="cb63-105"><a href="other-useful.html#cb63-105" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">Z=</span>Z, <span class="at">mu=</span>mu, <span class="at">y=</span>y, <span class="at">other_X=</span>other_X))</span>
+<span id="cb63-106"><a href="other-useful.html#cb63-106" tabindex="-1"></a>}</span></code></pre></div>
 <p>No tests for <code><a href="other-useful.html#genZmuY">genZmuY</a>()</code>.</p>
 <p><code><a href="other-useful.html#getNoiseVar">getNoiseVar</a>()</code>:</p>
 <div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="other-useful.html#cb64-1" tabindex="-1"></a><span class="co">#' Get variance of noise to add to Z in order to yield proxies X with desired</span></span>

@@ -5094,6 +5094,89 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
   testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
 })
 
+testthat::test_that("genZmuY one-weak-signal config no longer crashes, all 3 generators (#124 bug 1)", {
+  # p == n_clusters*cluster_size + 1 leaves exactly ONE weak-signal/noise
+  # feature, so other_X had a single column; without drop = FALSE it collapsed
+  # to a vector and other_X[, j] errored "incorrect number of dimensions". The
+  # pre-check only requires p_orig_feat_mat >= k_unclustered + n_clusters
+  # (here 2 >= 2), so it passed straight into the crash.
+  ret <- genClusteredData(n = 20, p = 3, k_unclustered = 1, cluster_size = 2,
+                          n_clusters = 1, snr = 2)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_true(is.matrix(ret$X))
+  testthat::expect_equal(ncol(ret$X), 3)
+  testthat::expect_equal(nrow(ret$X), 20)
+
+  # genClusteredDataWeighted: n_strong_cluster_vars is REQUIRED and its checker
+  # enforces >= 1 AND < cluster_size, so with cluster_size = 2 the only valid
+  # value is 1.
+  retW <- genClusteredDataWeighted(n = 20, p = 3, k_unclustered = 1,
+                                   cluster_size = 2, n_clusters = 1,
+                                   n_strong_cluster_vars = 1, snr = 2)
+  testthat::expect_true(is.list(retW))
+  testthat::expect_identical(names(retW), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ncol(retW$X), 3)
+
+  retR <- genClusteredDataWeightedRandom(n = 20, p = 3, k_unclustered = 1,
+                                         cluster_size = 2, n_clusters = 1,
+                                         snr = 2)
+  testthat::expect_true(is.list(retR))
+  testthat::expect_identical(names(retR), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ncol(retR$X), 3)
+})
+
+testthat::test_that("genZmuY sig_clusters == 0 yields a null latent model (#124 bug 2)", {
+  # The zero-beta case MUST bypass genClusteredData: its validator rejects
+  # beta_unclustered == 0 / beta_latent == 0, so exercise the internal helper
+  # directly. sig_clusters == 0 AND beta_unclustered == 0 => mu is exactly 0
+  # (no latent term, no weak-signal term).
+  set.seed(53)
+  g0 <- genZmuY(n = 20, p = 6, k_unclustered = 1, cluster_size = 2,
+                       n_clusters = 2, sig_clusters = 0, beta_latent = 1.5,
+                       beta_unclustered = 0, snr = NA, sigma_eps_sq = 0.5)
+  testthat::expect_true(all(g0$mu == 0))
+
+  # Contrast, n_clusters > 1: reset the seed before EACH call so the SAME
+  # orig_feat_mat (hence the same Z and weak-signal block) is drawn; then
+  # g1$mu - g0$mu isolates the pure latent term Z[, 1] * beta_latent.
+  cfgA <- list(n = 20, p = 6, k_unclustered = 1, cluster_size = 2,
+               n_clusters = 2, beta_latent = 1.5, beta_unclustered = 1,
+               snr = NA, sigma_eps_sq = 0.5)
+  set.seed(51)
+  g0A <- do.call(genZmuY, c(cfgA, sig_clusters = 0))
+  set.seed(51)
+  g1A <- do.call(genZmuY, c(cfgA, sig_clusters = 1))
+  testthat::expect_equal(g1A$Z, g0A$Z)              # same orig_feat_mat drawn
+  testthat::expect_false(all(g0A$mu == 0))          # weak signal still retained
+  testthat::expect_equal(g1A$mu - g0A$mu, as.numeric(g1A$Z[, 1] * 1.5))
+  # Lock the n_clusters > 1 & sig_clusters == 1 branch with an explicit
+  # expected value (no characterization snapshot covers it).
+  testthat::expect_equal(g1A$mu[1:4], c(1.71187484261165, -1.8816097377914,
+    -0.434623721956133, 0.201053072650191))
+
+  # Contrast, n_clusters == 1 (Z is a bare vector; the else branch).
+  cfgB <- list(n = 20, p = 4, k_unclustered = 1, cluster_size = 2,
+               n_clusters = 1, beta_latent = 1.5, beta_unclustered = 1,
+               snr = NA, sigma_eps_sq = 0.5)
+  set.seed(52)
+  g0B <- do.call(genZmuY, c(cfgB, sig_clusters = 0))
+  set.seed(52)
+  g1B <- do.call(genZmuY, c(cfgB, sig_clusters = 1))
+  testthat::expect_equal(g1B$mu - g0B$mu, as.numeric(g1B$Z * 1.5))
+  testthat::expect_equal(g1B$mu[1:4], c(-1.35778032140589, 0.59232273049822,
+    2.44822804281879, -0.29256382836018))
+
+  # End-to-end: genClusteredData with sig_clusters = 0 and NONZERO default
+  # betas returns valid data (no error; the weak-signal features still
+  # legitimately contribute, only the latent part is zeroed).
+  ret <- genClusteredData(n = 20, p = 6, k_unclustered = 1, cluster_size = 2,
+                          n_clusters = 2, sig_clusters = 0, sigma_eps_sq = 0.5)
+  testthat::expect_true(is.list(ret))
+  testthat::expect_identical(names(ret), c("X", "y", "Z", "mu"))
+  testthat::expect_equal(ncol(ret$X), 6)
+})
+
 testthat::test_that("getLassoLambda works", {
   set.seed(7252)
   

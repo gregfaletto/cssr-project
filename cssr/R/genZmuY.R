@@ -73,18 +73,19 @@ genZmuY <- function(n, p, k_unclustered, cluster_size, n_clusters, sig_clusters,
     # signal features. Any remaining features are noise features.
     Z <- orig_feat_mat[, 1:n_clusters]
 
-    other_X <- orig_feat_mat[, (n_clusters + 1):p_orig_feat_mat]
+    other_X <- orig_feat_mat[, (n_clusters + 1):p_orig_feat_mat, drop = FALSE]
 
     # Ready to create mu and y
-    if(n_clusters > 1){
+    if(sig_clusters == 0){
+        mu <- rep(0, n)                 # null latent model; weak-signal features add below
+    } else if(n_clusters > 1){
         if(sig_clusters > 1){
-            mu <- Z[, 1:sig_clusters] %*% rep(beta_latent, sig_clusters)
-            
+            mu <- Z[, seq_len(sig_clusters)] %*% rep(beta_latent, sig_clusters)
         } else{
-            mu <- Z[, 1:sig_clusters] * beta_latent
+            mu <- Z[, 1] * beta_latent
         }
     } else{
-        mu <- Z*beta_latent
+        mu <- Z * beta_latent
     }
     for(j in 1:k_unclustered){
         mu <- mu + beta_unclustered/sqrt(j)*other_X[, j]
