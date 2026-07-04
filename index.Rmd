@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.3.4",
+    Version = "0.3.5",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -2160,13 +2160,13 @@ As in the previous section, we first define each function and then define the he
 #' max_num_clusts are selected, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow
 #' a pure cutoff-based (threshold) selection that returns an empty set when no
 #' cluster's selection proportion meets the cutoff.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @return A named list with three items. \item{selected_clusts}{A named list of
@@ -2284,7 +2284,7 @@ checkWeighting <- function(weighting){
 #'
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param p The number of features; since this is an upper bound on the number
 #' of clusters of features, it is also an upper bound on min_num_clusts.
@@ -2312,12 +2312,12 @@ checkMinNumClusts <- function(min_num_clusts, p, n_clusters){
 #'
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Can be NA, in which case
 #' max_num_clusts will be ignored.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) max_num_clusts must be at least as
 #' large as min_num_clusts.
 #' @param p The number of features; since this is an upper bound on the number
@@ -2382,11 +2382,11 @@ checkMaxNumClusts <- function(max_num_clusts, min_num_clusts, p, n_clusters){
 #' 0 and 1.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
 #' @return A named list with the following elements: \item{selected_clusts}{A
 #' named numeric vector containing the selection proportions for the selected
@@ -2508,11 +2508,11 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
 #' thrown).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) If NA, max_num_clusts is ignored.
 #' @param max_sel_prop Numeric; the maximum selection proportion observed for 
 #' any cluster.
@@ -2799,12 +2799,12 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
 #' are used, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1. May be 0, but an empty
 #' selection then raises an error (no design/predictions possible).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @return A design matrix with either nrow(newX) (or length(train_inds), if
@@ -3036,11 +3036,11 @@ checkXInputResults <- function(newx, css_X){
 #' proportion).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param newx A numeric matrix (preferably) or a data.frame (which will
@@ -3153,11 +3153,11 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 #' proportions equal to at least cutoff. Must be between 0 and 1.
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.)
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.)
 #' @param newx A numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
@@ -3252,12 +3252,12 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 #' are used, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1. May be 0, but an empty
 #' selection then raises an error (no design/predictions possible).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param trainX A numeric matrix (preferably) or a data.frame (which will
@@ -3462,11 +3462,11 @@ olsPredictRankSafe <- function(model, newdata) {
 #' are used, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param trainX A numeric matrix (preferably) or a data.frame (which will
@@ -3634,7 +3634,7 @@ The following are some other functions that are useful for specific tasks.
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
 #' @param rho Integer or numeric; the correlation of the proxies in each cluster
-#' with the latent variable. Must be greater than 0. Default is 0.9.
+#' with the latent variable. Must be in (0, 1] (greater than 0 and at most 1). Default is 0.9.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.
@@ -3846,7 +3846,7 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
 #' @param rho Integer or numeric; the correlation of the proxies in each cluster
-#' with the latent variable. Must be greater than 0. Default is 0.9.
+#' with the latent variable. Must be in (0, 1] (greater than 0 and at most 1). Default is 0.9.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.
@@ -4011,13 +4011,13 @@ No tests for `genZmuY()`.
 #' correlations with Z
 #'
 #' @param cor A numeric vector of desired correlations for each proxy to have
-#' with Z. Note: correlations must be positive.
+#' with Z. Note: correlations must be in (0, 1] (positive and at most 1).
 #' @return A vector of variances of independent Gaussian random variables to add
 #' to Z in order to yield proxies with the desired correlations with Z.
 #' @author Gregory Faletto, Jacob Bien
 #' @examples
 #' # Noise variance needed so a proxy Z + N(0, v) attains each target
-#' # correlation with Z (correlations must be positive).
+#' # correlation with Z (correlations must be in (0, 1] (positive and at most 1)).
 #' getNoiseVar(c(0.9, 0.5, 1))
 #' @export
 getNoiseVar <- function(cor){
@@ -4832,11 +4832,11 @@ buildCssDf <- function(css_results, sel_clusts){
 #' max_num_clusts are, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
@@ -4949,7 +4949,7 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
         # If there is still a tie, break by choosing the first feature of those
         # remaining
         prototypes[i] <- proto_i[1]
-        names(prototypes)[i] <- colnames(css_results$X)[proto_i]
+        names(prototypes)[i] <- colnames(css_results$X)[proto_i[1]]
     }
 
     # Check output
@@ -4976,11 +4976,11 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 #' max_num_clusts are, if max_num_clusts is specified).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than
-#' min_num_clusts clusters, the cutoff will be increased until at least
+#' min_num_clusts clusters, the cutoff will be lowered until at least
 #' min_num_clusts clusters are selected.) Default is 1.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param ... Additional arguments to generic print.data.frame function
@@ -5299,7 +5299,7 @@ The two main disadvantages of these functions are flexibility and computational 
 #' Default is NA (in which case max_num_clusts are used).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' either cutoff is used to choose the number of clusters, or if cutoff was also
 #' unspecified, cssSelect chooses max_num_clusts by cross-validation).
@@ -5438,7 +5438,8 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 #' results as stability selection (so feat_sel_mat will be identical to
 #' clus_sel_mat). Names for the clusters will be needed later; any clusters that
 #' are not given names in the list clusters will be given names automatically by
-#' css. CAUTION: if the provided X is a data.frame that contains a categorical
+#' css. CAUTION: if the provided X_train_selec (or X_test) is a data.frame that
+#' contains a categorical
 #' feature with more than two levels, then the resulting matrix made from
 #' model.matrix will have a different number of columns than the provided
 #' data.frame, some of the feature numbers will change, and the clusters
@@ -5451,17 +5452,19 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 #' @param lambda Optional; the tuning parameter to be used by the lasso for
 #' feature selection in each subsample. If lambda is not provided, cssPredict
 #' will choose one automatically by cross-validation. Default is NA.
-#' @param cutoff Numeric; getCssPreds will make use only of those clusters with
+#' @param cutoff Numeric; cssPredict will make use only of those clusters with
 #' selection proportions equal to at least cutoff. Must be between 0 and 1.
-#' Default is 0 (in which case either all clusters are used, or max_num_clusts
-#' are used, if max_num_clusts is specified).
+#' Default is NA (in which case, if auto_select_size is TRUE (the default), the
+#' number of cluster representatives is chosen automatically by cross-validation;
+#' see auto_select_size).
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
-#' max_num_clusts clusters, the cutoff will be decreased until at most
+#' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' max_num_clusts is ignored).
 #' @param train_inds Optional; an integer or numeric vector containing the
-#' indices of observations in X and y to set aside for model training after
+#' indices of observations in X_train_selec and y_train_selec to set aside for
+#' model training after
 #' feature selection. If train_inds is not provided, half of the data will be
 #' used for feature selection and half for model estimation (chosen at random).
 #' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
@@ -12139,6 +12142,30 @@ testthat::test_that("getSelectionPrototypes skips the correlation tie-break for 
   # tie, incl. the numeric #68 case) that would otherwise fail testthat edition 3.
   res <- suppressWarnings(getSelectionPrototypes(css, list(c(1L, 2L))))
   testthat::expect_identical(unname(res), 1L)   # first tied index, deterministic
+})
+
+testthat::test_that("getSelectionPrototypes emits no warning on an unbroken tie (#126)", {
+  # Item-5 regression (#126): the name-assignment now indexes proto_i[1] (a single
+  # element), not the possibly length>1 proto_i. On an UNBROKEN within-cluster tie
+  # -- here a CHARACTER y, so the numeric correlation tie-break is skipped and
+  # proto_i stays length 2 -- the pre-fix code raised R's "number of items to
+  # replace is not a multiple of replacement length" warning at the names<-
+  # assignment (surfacing through print.cssr / summary.cssr / printCssDf). After
+  # the fix NO warning fires, and the returned prototype is still the first tied
+  # index (value unchanged; only the spurious warning is removed).
+  B <- 10L; p <- 2L; n <- 8L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- letters[1:n]                    # non-numeric (character) response
+  M <- matrix(0L, nrow = B, ncol = p)
+  M[1:5, 1] <- 1L                      # features 1 and 2 tie at proportion 0.5,
+  M[1:5, 2] <- 1L                      # forcing the (unbroken) tie-break path
+  css <- structure(list(X = X, y = y, feat_sel_mat = M), class = "cssr")
+  # No suppressWarnings here: the fix must make this call warning-free.
+  testthat::expect_no_warning(
+      res <- getSelectionPrototypes(css, list(c(1L, 2L))))
+  testthat::expect_identical(unname(res), 1L)    # first tied index, deterministic
+  testthat::expect_identical(names(res), "V1")   # name taken from proto_i[1] only
 })
 ```
 

@@ -83,7 +83,7 @@ cssSelect(
 
   Integer or numeric; the maximum number of clusters to use regardless
   of cutoff. (That is, if the chosen cutoff returns more than
-  max_num_clusts clusters, the cutoff will be decreased until at most
+  max_num_clusts clusters, the cutoff will be raised until at most
   max_num_clusts clusters are selected.) Default is NA (in which case
   either cutoff is used to choose the number of clusters, or if cutoff
   was also unspecified, cssSelect chooses max_num_clusts by

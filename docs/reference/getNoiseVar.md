@@ -14,7 +14,8 @@ getNoiseVar(cor)
 - cor:
 
   A numeric vector of desired correlations for each proxy to have
-  with Z. Note: correlations must be positive.
+  with Z. Note: correlations must be in (0, 1\] (positive and at most
+  1).
 
 ## Value
 
@@ -29,7 +30,7 @@ Gregory Faletto, Jacob Bien
 
 ``` r
 # Noise variance needed so a proxy Z + N(0, v) attains each target
-# correlation with Z (correlations must be positive).
+# correlation with Z (correlations must be in (0, 1] (positive and at most 1)).
 getNoiseVar(c(0.9, 0.5, 1))
 #> [1] 0.2345679 3.0000000 0.0000000
 ```

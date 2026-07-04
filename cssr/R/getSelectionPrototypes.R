@@ -59,7 +59,7 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
         # If there is still a tie, break by choosing the first feature of those
         # remaining
         prototypes[i] <- proto_i[1]
-        names(prototypes)[i] <- colnames(css_results$X)[proto_i]
+        names(prototypes)[i] <- colnames(css_results$X)[proto_i[1]]
     }
 
     # Check output

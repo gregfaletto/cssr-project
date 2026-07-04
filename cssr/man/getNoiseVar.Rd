@@ -9,7 +9,7 @@ getNoiseVar(cor)
 }
 \arguments{
 \item{cor}{A numeric vector of desired correlations for each proxy to have
-with Z. Note: correlations must be positive.}
+with Z. Note: correlations must be in (0, 1] (positive and at most 1).}
 }
 \value{
 A vector of variances of independent Gaussian random variables to add
@@ -21,7 +21,7 @@ correlations with Z
 }
 \examples{
 # Noise variance needed so a proxy Z + N(0, v) attains each target
-# correlation with Z (correlations must be positive).
+# correlation with Z (correlations must be in (0, 1] (positive and at most 1)).
 getNoiseVar(c(0.9, 0.5, 1))
 }
 \author{
