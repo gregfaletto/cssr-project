@@ -1583,26 +1583,35 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb60-118"><a href="sel-and-pred.html#cb60-118" tabindex="-1"></a></span>
 <span id="cb60-119"><a href="sel-and-pred.html#cb60-119" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
 <span id="cb60-120"><a href="sel-and-pred.html#cb60-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(p <span class="sc">==</span> <span class="fu">ncol</span>(trainX))</span>
-<span id="cb60-121"><a href="sel-and-pred.html#cb60-121" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb60-122"><a href="sel-and-pred.html#cb60-122" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)"</span>)</span>
-<span id="cb60-123"><a href="sel-and-pred.html#cb60-123" tabindex="-1"></a>    }</span>
-<span id="cb60-124"><a href="sel-and-pred.html#cb60-124" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb60-125"><a href="sel-and-pred.html#cb60-125" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)"</span>)</span>
-<span id="cb60-126"><a href="sel-and-pred.html#cb60-126" tabindex="-1"></a>    }</span>
-<span id="cb60-127"><a href="sel-and-pred.html#cb60-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
-<span id="cb60-128"><a href="sel-and-pred.html#cb60-128" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(trainX) <span class="sc">==</span> <span class="fu">colnames</span>(testX)))</span>
+<span id="cb60-121"><a href="sel-and-pred.html#cb60-121" tabindex="-1"></a>    <span class="co"># #142: re-attach trainX's names too -- checkNewXProvided strips them, so a</span></span>
+<span id="cb60-122"><a href="sel-and-pred.html#cb60-122" tabindex="-1"></a>    <span class="co"># data.frame trainX arrives here name-less while testX was re-named at :3607,</span></span>
+<span id="cb60-123"><a href="sel-and-pred.html#cb60-123" tabindex="-1"></a>    <span class="co"># spuriously tripping the warnings below and again downstream in</span></span>
+<span id="cb60-124"><a href="sel-and-pred.html#cb60-124" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(newx=trainX). trainX's names were already validated ==</span></span>
+<span id="cb60-125"><a href="sel-and-pred.html#cb60-125" tabindex="-1"></a>    <span class="co"># css_results$X inside checkNewXProvided, and p == ncol(trainX), so feat_names</span></span>
+<span id="cb60-126"><a href="sel-and-pred.html#cb60-126" tabindex="-1"></a>    <span class="co"># is the correct, length-safe, non-masking re-attachment.</span></span>
+<span id="cb60-127"><a href="sel-and-pred.html#cb60-127" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb60-128"><a href="sel-and-pred.html#cb60-128" tabindex="-1"></a>        <span class="fu">colnames</span>(trainX) <span class="ot">&lt;-</span> feat_names</span>
 <span id="cb60-129"><a href="sel-and-pred.html#cb60-129" tabindex="-1"></a>    }</span>
-<span id="cb60-130"><a href="sel-and-pred.html#cb60-130" tabindex="-1"></a></span>
-<span id="cb60-131"><a href="sel-and-pred.html#cb60-131" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb60-132"><a href="sel-and-pred.html#cb60-132" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
-<span id="cb60-133"><a href="sel-and-pred.html#cb60-133" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb60-134"><a href="sel-and-pred.html#cb60-134" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb60-135"><a href="sel-and-pred.html#cb60-135" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb60-136"><a href="sel-and-pred.html#cb60-136" tabindex="-1"></a></span>
-<span id="cb60-137"><a href="sel-and-pred.html#cb60-137" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">trainXProvided=</span>trainXProvided, <span class="at">trainX=</span>trainX, <span class="at">testX=</span>testX,</span>
-<span id="cb60-138"><a href="sel-and-pred.html#cb60-138" tabindex="-1"></a>        <span class="at">feat_names=</span>feat_names, <span class="at">max_num_clusts=</span>max_num_clusts))</span>
+<span id="cb60-130"><a href="sel-and-pred.html#cb60-130" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb60-131"><a href="sel-and-pred.html#cb60-131" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)"</span>)</span>
+<span id="cb60-132"><a href="sel-and-pred.html#cb60-132" tabindex="-1"></a>    }</span>
+<span id="cb60-133"><a href="sel-and-pred.html#cb60-133" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb60-134"><a href="sel-and-pred.html#cb60-134" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)"</span>)</span>
+<span id="cb60-135"><a href="sel-and-pred.html#cb60-135" tabindex="-1"></a>    }</span>
+<span id="cb60-136"><a href="sel-and-pred.html#cb60-136" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(trainX)) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(testX))){</span>
+<span id="cb60-137"><a href="sel-and-pred.html#cb60-137" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(trainX) <span class="sc">==</span> <span class="fu">colnames</span>(testX)))</span>
+<span id="cb60-138"><a href="sel-and-pred.html#cb60-138" tabindex="-1"></a>    }</span>
 <span id="cb60-139"><a href="sel-and-pred.html#cb60-139" tabindex="-1"></a></span>
-<span id="cb60-140"><a href="sel-and-pred.html#cb60-140" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb60-140"><a href="sel-and-pred.html#cb60-140" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb60-141"><a href="sel-and-pred.html#cb60-141" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
+<span id="cb60-142"><a href="sel-and-pred.html#cb60-142" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb60-143"><a href="sel-and-pred.html#cb60-143" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb60-144"><a href="sel-and-pred.html#cb60-144" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb60-145"><a href="sel-and-pred.html#cb60-145" tabindex="-1"></a></span>
+<span id="cb60-146"><a href="sel-and-pred.html#cb60-146" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">trainXProvided=</span>trainXProvided, <span class="at">trainX=</span>trainX, <span class="at">testX=</span>testX,</span>
+<span id="cb60-147"><a href="sel-and-pred.html#cb60-147" tabindex="-1"></a>        <span class="at">feat_names=</span>feat_names, <span class="at">max_num_clusts=</span>max_num_clusts))</span>
+<span id="cb60-148"><a href="sel-and-pred.html#cb60-148" tabindex="-1"></a></span>
+<span id="cb60-149"><a href="sel-and-pred.html#cb60-149" tabindex="-1"></a>}</span></code></pre></div>
 </div>
             </section>
 </div>
