@@ -4170,12 +4170,7 @@ testthat::test_that("getCssPreds works", {
   res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
                         trainX=X_df[train_inds, ], trainY=y[train_inds])
   
-  # TODO(gregfaletto): known issue--the above code produces the following
-  # undesired warnings:
-  # 1: In checkGetCssPredsInputs(css_results, testX, weighting, cutoff,  :
-  # Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
-  # 2: In checkXInputResults(newx, css_results$X) :
-  # New X provided had no variable names (column names) even though the X provided to css did.
+  # Note: this data.frame path currently emits two spurious column-name warnings (see #142).
 
   testthat::expect_true(all(!is.na(res_df)))
   testthat::expect_true(is.numeric(res_df))
@@ -8552,9 +8547,6 @@ testthat::test_that("protolasso works", {
   
 })
 
-# TODO(gregfaletto): deal with the fact that clusters argument doesn't work
-# for a data.frame input that has a categorical random variable with more than
-# two levels (because then p, and the numbering of the features, changes)
 testthat::test_that("clusterRepLasso works", {
   set.seed(61282)
   
