@@ -3383,9 +3383,17 @@ testthat::test_that("getCssDesign works", {
   fit_inds <- setdiff(1:n, selec_inds)
 
   css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  res_df <- getCssDesign(css_results=css_res_df, weighting="simple_avg",
-                          cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
-                          newX=X_df[fit_inds, ])
+  # #142: the data.frame newX path must NOT emit the spurious "no variable names"
+  # warning (checkXInputResults strips the coerced names; getCssDesign re-attaches
+  # the already-validated ones before formCssDesign).
+  df_warns <- character(0)
+  res_df <- withCallingHandlers(
+    getCssDesign(css_results=css_res_df, weighting="simple_avg",
+                 cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
+                 newX=X_df[fit_inds, ]),
+    warning=function(w){ df_warns <<- c(df_warns, conditionMessage(w));
+      invokeRestart("muffleWarning") })
+  testthat::expect_false(any(grepl("no variable names", df_warns, fixed=TRUE)))
 
   testthat::expect_true(is.matrix(res_df))
   testthat::expect_true(is.numeric(res_df))

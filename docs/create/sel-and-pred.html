@@ -898,37 +898,55 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb53-72"><a href="sel-and-pred.html#cb53-72" tabindex="-1"></a></span>
 <span id="cb53-73"><a href="sel-and-pred.html#cb53-73" tabindex="-1"></a>    <span class="fu">rm</span>(check_results)</span>
 <span id="cb53-74"><a href="sel-and-pred.html#cb53-74" tabindex="-1"></a></span>
-<span id="cb53-75"><a href="sel-and-pred.html#cb53-75" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
-<span id="cb53-76"><a href="sel-and-pred.html#cb53-76" tabindex="-1"></a></span>
-<span id="cb53-77"><a href="sel-and-pred.html#cb53-77" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(newX, css_results<span class="sc">$</span>X)</span>
-<span id="cb53-78"><a href="sel-and-pred.html#cb53-78" tabindex="-1"></a></span>
-<span id="cb53-79"><a href="sel-and-pred.html#cb53-79" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
-<span id="cb53-80"><a href="sel-and-pred.html#cb53-80" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
-<span id="cb53-81"><a href="sel-and-pred.html#cb53-81" tabindex="-1"></a></span>
-<span id="cb53-82"><a href="sel-and-pred.html#cb53-82" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
+<span id="cb53-75"><a href="sel-and-pred.html#cb53-75" tabindex="-1"></a>    <span class="co"># #142: checkNewXProvided returns newX with its (already css-validated) column</span></span>
+<span id="cb53-76"><a href="sel-and-pred.html#cb53-76" tabindex="-1"></a>    <span class="co"># names stripped (via checkXInputResults). Re-attach them from css_results$X</span></span>
+<span id="cb53-77"><a href="sel-and-pred.html#cb53-77" tabindex="-1"></a>    <span class="co"># (which they were validated to match; ncol(newX) == ncol(css_results$X) for a</span></span>
+<span id="cb53-78"><a href="sel-and-pred.html#cb53-78" tabindex="-1"></a>    <span class="co"># provided input) so the checkXInputResults call below does not spuriously warn</span></span>
+<span id="cb53-79"><a href="sel-and-pred.html#cb53-79" tabindex="-1"></a>    <span class="co"># on a data.frame newX. Names never enter the numeric design.</span></span>
+<span id="cb53-80"><a href="sel-and-pred.html#cb53-80" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(css_results<span class="sc">$</span>X))){</span>
+<span id="cb53-81"><a href="sel-and-pred.html#cb53-81" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>X)</span>
+<span id="cb53-82"><a href="sel-and-pred.html#cb53-82" tabindex="-1"></a>    }</span>
 <span id="cb53-83"><a href="sel-and-pred.html#cb53-83" tabindex="-1"></a></span>
-<span id="cb53-84"><a href="sel-and-pred.html#cb53-84" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
-<span id="cb53-85"><a href="sel-and-pred.html#cb53-85" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(newX)</span>
-<span id="cb53-86"><a href="sel-and-pred.html#cb53-86" tabindex="-1"></a></span>
-<span id="cb53-87"><a href="sel-and-pred.html#cb53-87" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb53-88"><a href="sel-and-pred.html#cb53-88" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
-<span id="cb53-89"><a href="sel-and-pred.html#cb53-89" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb53-84"><a href="sel-and-pred.html#cb53-84" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
+<span id="cb53-85"><a href="sel-and-pred.html#cb53-85" tabindex="-1"></a></span>
+<span id="cb53-86"><a href="sel-and-pred.html#cb53-86" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(newX, css_results<span class="sc">$</span>X)</span>
+<span id="cb53-87"><a href="sel-and-pred.html#cb53-87" tabindex="-1"></a></span>
+<span id="cb53-88"><a href="sel-and-pred.html#cb53-88" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
+<span id="cb53-89"><a href="sel-and-pred.html#cb53-89" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
 <span id="cb53-90"><a href="sel-and-pred.html#cb53-90" tabindex="-1"></a></span>
-<span id="cb53-91"><a href="sel-and-pred.html#cb53-91" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb53-92"><a href="sel-and-pred.html#cb53-92" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb53-93"><a href="sel-and-pred.html#cb53-93" tabindex="-1"></a></span>
-<span id="cb53-94"><a href="sel-and-pred.html#cb53-94" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
-<span id="cb53-95"><a href="sel-and-pred.html#cb53-95" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
-<span id="cb53-96"><a href="sel-and-pred.html#cb53-96" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided){</span>
-<span id="cb53-97"><a href="sel-and-pred.html#cb53-97" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb53-98"><a href="sel-and-pred.html#cb53-98" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>newX)</span>
-<span id="cb53-99"><a href="sel-and-pred.html#cb53-99" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb53-100"><a href="sel-and-pred.html#cb53-100" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb53-101"><a href="sel-and-pred.html#cb53-101" tabindex="-1"></a>            min_num_clusts, max_num_clusts)</span>
-<span id="cb53-102"><a href="sel-and-pred.html#cb53-102" tabindex="-1"></a>    }</span>
-<span id="cb53-103"><a href="sel-and-pred.html#cb53-103" tabindex="-1"></a></span>
-<span id="cb53-104"><a href="sel-and-pred.html#cb53-104" tabindex="-1"></a>    <span class="fu">return</span>(newX_clusters)</span>
-<span id="cb53-105"><a href="sel-and-pred.html#cb53-105" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb53-91"><a href="sel-and-pred.html#cb53-91" tabindex="-1"></a>    <span class="co"># #142: re-attach newX's (already css-validated) column names that</span></span>
+<span id="cb53-92"><a href="sel-and-pred.html#cb53-92" tabindex="-1"></a>    <span class="co"># checkXInputResults strips, so the downstream <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(newx=newX) call</span></span>
+<span id="cb53-93"><a href="sel-and-pred.html#cb53-93" tabindex="-1"></a>    <span class="co"># doesn't spuriously warn on a data.frame newX. Names never enter the numeric</span></span>
+<span id="cb53-94"><a href="sel-and-pred.html#cb53-94" tabindex="-1"></a>    <span class="co"># design (formCssDesign strips + builds cluster reps positionally), so this</span></span>
+<span id="cb53-95"><a href="sel-and-pred.html#cb53-95" tabindex="-1"></a>    <span class="co"># only silences the warning; mirrors the getCssPreds fix.</span></span>
+<span id="cb53-96"><a href="sel-and-pred.html#cb53-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb53-97"><a href="sel-and-pred.html#cb53-97" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb53-98"><a href="sel-and-pred.html#cb53-98" tabindex="-1"></a>    }</span>
+<span id="cb53-99"><a href="sel-and-pred.html#cb53-99" tabindex="-1"></a></span>
+<span id="cb53-100"><a href="sel-and-pred.html#cb53-100" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
+<span id="cb53-101"><a href="sel-and-pred.html#cb53-101" tabindex="-1"></a></span>
+<span id="cb53-102"><a href="sel-and-pred.html#cb53-102" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
+<span id="cb53-103"><a href="sel-and-pred.html#cb53-103" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(newX)</span>
+<span id="cb53-104"><a href="sel-and-pred.html#cb53-104" tabindex="-1"></a></span>
+<span id="cb53-105"><a href="sel-and-pred.html#cb53-105" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb53-106"><a href="sel-and-pred.html#cb53-106" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
+<span id="cb53-107"><a href="sel-and-pred.html#cb53-107" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb53-108"><a href="sel-and-pred.html#cb53-108" tabindex="-1"></a></span>
+<span id="cb53-109"><a href="sel-and-pred.html#cb53-109" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb53-110"><a href="sel-and-pred.html#cb53-110" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb53-111"><a href="sel-and-pred.html#cb53-111" tabindex="-1"></a></span>
+<span id="cb53-112"><a href="sel-and-pred.html#cb53-112" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
+<span id="cb53-113"><a href="sel-and-pred.html#cb53-113" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
+<span id="cb53-114"><a href="sel-and-pred.html#cb53-114" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided){</span>
+<span id="cb53-115"><a href="sel-and-pred.html#cb53-115" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb53-116"><a href="sel-and-pred.html#cb53-116" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>newX)</span>
+<span id="cb53-117"><a href="sel-and-pred.html#cb53-117" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb53-118"><a href="sel-and-pred.html#cb53-118" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb53-119"><a href="sel-and-pred.html#cb53-119" tabindex="-1"></a>            min_num_clusts, max_num_clusts)</span>
+<span id="cb53-120"><a href="sel-and-pred.html#cb53-120" tabindex="-1"></a>    }</span>
+<span id="cb53-121"><a href="sel-and-pred.html#cb53-121" tabindex="-1"></a></span>
+<span id="cb53-122"><a href="sel-and-pred.html#cb53-122" tabindex="-1"></a>    <span class="fu">return</span>(newX_clusters)</span>
+<span id="cb53-123"><a href="sel-and-pred.html#cb53-123" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>()</code></p>
 <div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="sel-and-pred.html#cb54-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the new X matrix provided to getCssDesign or</span></span>
 <span id="cb54-2"><a href="sel-and-pred.html#cb54-2" tabindex="-1"></a><span class="co">#' getCssPreds matches the characteristics of the X that was provided to css.</span></span>

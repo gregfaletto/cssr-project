@@ -74,12 +74,30 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 
     rm(check_results)
 
+    # #142: checkNewXProvided returns newX with its (already css-validated) column
+    # names stripped (via checkXInputResults). Re-attach them from css_results$X
+    # (which they were validated to match; ncol(newX) == ncol(css_results$X) for a
+    # provided input) so the checkXInputResults call below does not spuriously warn
+    # on a data.frame newX. Names never enter the numeric design.
+    if(newXProvided && !is.null(colnames(css_results$X))){
+        colnames(newX) <- colnames(css_results$X)
+    }
+
     n_train <- nrow(newX)
 
     results <- checkXInputResults(newX, css_results$X)
 
     newX <- results$newx
     feat_names <- results$feat_names
+
+    # #142: re-attach newX's (already css-validated) column names that
+    # checkXInputResults strips, so the downstream formCssDesign(newx=newX) call
+    # doesn't spuriously warn on a data.frame newX. Names never enter the numeric
+    # design (formCssDesign strips + builds cluster reps positionally), so this
+    # only silences the warning; mirrors the getCssPreds fix.
+    if(all(!is.na(feat_names))){
+        colnames(newX) <- feat_names
+    }
 
     rm(results)
 
