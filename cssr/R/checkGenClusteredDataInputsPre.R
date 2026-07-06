@@ -20,11 +20,6 @@ checkGenClusteredDataInputsPre <- function(sig_clusters, n_clusters,
 
     stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
     stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
     stopifnot(n_clusters >= 1)
 
     stopifnot(is.numeric(cluster_size) | is.integer(cluster_size))

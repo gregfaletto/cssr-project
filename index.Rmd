@@ -566,8 +566,7 @@ getSubsamps <- function(n, B, sampling_type){
         subsamples[[i]] <- sort(sample.int(n=n, size=floor(n/2), replace=FALSE))
     }
     stopifnot(length(subsamples) == B)
-    # TODO(gregfaletto): add support for sampling_type="MB"
-    # Not yet reachable: MB is withheld by checkSamplingType (kept for future support).
+    # Only the "SS" branch is implemented; "MB" is withheld by checkSamplingType (see #138).
     if(sampling_type=="SS"){
         for(i in 1:B){
             # For the ith entry, take a subsample of size floor(n/2) from the
@@ -780,8 +779,6 @@ usethis::use_package("parallel")
 cssLasso <- function(X, y, lambda){
     # Check inputs
 
-    # TODO(gregfaletto) allow cssLasso to accept a vector of lambda values rather
-    # than just a single one.
     checkCssLassoInputs(X, y, lambda)
 
     n <- nrow(X)
@@ -3363,10 +3360,6 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 #' @export
 getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     min_num_clusts=1, max_num_clusts=NA, trainX=NA, trainY=NA){
-    # TODO(gregfaletto) Consider adding an argument for a user-provided prediction
-    # function in order to allow for more general kinds of predictions than
-    # OLS.
-
     # Check inputs
     
     check_list <- checkGetCssPredsInputs(css_results, testX, weighting, cutoff,
@@ -3810,11 +3803,6 @@ checkGenClusteredDataInputsPre <- function(sig_clusters, n_clusters,
 
     stopifnot(is.numeric(n_clusters) | is.integer(n_clusters))
     stopifnot(n_clusters == round(n_clusters))
-    # TODO(gregfaletto): is it easy to remove the requirement that n_clusters is
-    # at least 1 (so that it's possible to generate data with no latent
-    # features)? If so, should only check that cluster_size >= 1 if n_clusters
-    # >= 1, and in makeCovarianceMatrix function only need block_size >= 1
-    # rather than 2.
     stopifnot(n_clusters >= 1)
 
     stopifnot(is.numeric(cluster_size) | is.integer(cluster_size))
@@ -10595,12 +10583,7 @@ testthat::test_that("getCssPreds works", {
   res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
                         trainX=X_df[train_inds, ], trainY=y[train_inds])
   
-  # TODO(gregfaletto): known issue--the above code produces the following
-  # undesired warnings:
-  # 1: In checkGetCssPredsInputs(css_results, testX, weighting, cutoff,  :
-  # Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)
-  # 2: In checkXInputResults(newx, css_results$X) :
-  # New X provided had no variable names (column names) even though the X provided to css did.
+  # Note: this data.frame path currently emits two spurious column-name warnings (see #142).
 
   testthat::expect_true(all(!is.na(res_df)))
   testthat::expect_true(is.numeric(res_df))
@@ -15157,9 +15140,6 @@ Tests for `clusterRepLasso()`:
 
 
 ```{r}
-# TODO(gregfaletto): deal with the fact that clusters argument doesn't work
-# for a data.frame input that has a categorical random variable with more than
-# two levels (because then p, and the numbering of the features, changes)
 testthat::test_that("clusterRepLasso works", {
   set.seed(61282)
   

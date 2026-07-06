@@ -39,8 +39,6 @@
 cssLasso <- function(X, y, lambda){
     # Check inputs
 
-    # TODO(gregfaletto) allow cssLasso to accept a vector of lambda values rather
-    # than just a single one.
     checkCssLassoInputs(X, y, lambda)
 
     n <- nrow(X)
