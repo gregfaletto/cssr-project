@@ -1589,6 +1589,102 @@ testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isol
   testthat::expect_identical(par_runs$a, d1)           # serial == parallel
 })
 
+testthat::test_that("discreteYAbortProb estimates the constant-subsample probability (#131)", {
+  # Continuous y: every value is distinct, so no size-floor(n/2) subsample can
+  # be constant. The aggregate underflows to exactly 0 -- assert the inequality,
+  # NOT expect_equal to a tiny value.
+  set.seed(131)
+  y_cont <- stats::rnorm(100)
+  testthat::expect_true(discreteYAbortProb(y_cont, 50L, "SS") < 1e-6)
+
+  # Balanced binary at n = 100: each value's count (50) equals m = 50, so
+  # p_const = 2 * C(50,50)/C(100,50) ~ 2e-29 and the aggregate underflows to 0.
+  # This is the KEY false positive that the naive max(table(y)) >= floor(n/2)
+  # trigger gets wrong (there count == m would fire).
+  y_bin <- rep(0:1, each = 50)
+  testthat::expect_true(discreteYAbortProb(y_bin, 50L, "SS") < 1e-6)
+
+  # Skewed y (95/5): 0 is a strong majority (count 95 >> m = 50), so some
+  # subsample is very likely all-zeros (~94% at B = 50, SS).
+  y_skew <- c(rep(0, 95), rep(1, 5))
+  testthat::expect_true(discreteYAbortProb(y_skew, 50L, "SS") > 0.5)
+
+  # Fully constant y: every subsample is constant -> probability exactly 1.
+  testthat::expect_equal(discreteYAbortProb(rep(0, 100), 50L, "SS"), 1)
+
+  # Monotone in n_sub: "SS" draws 2*B subsamples, a non-"SS" string draws B, so
+  # the SS probability is at least the B-count probability for the same y. (Pure
+  # helper call exercising the n_sub branch; not a css() run.)
+  testthat::expect_true(
+    discreteYAbortProb(y_skew, 50L, "SS") >=
+      discreteYAbortProb(y_skew, 50L, "MB"))
+})
+
+testthat::test_that("css() warns up front on a highly discrete y for the default cssLasso (#131)", {
+  set.seed(2718)
+  n <- 40L
+  x_disc <- matrix(stats::rnorm(n * 6), nrow = n, ncol = 6)
+  # 0 is a strong majority (count 38 >> floor(40/2) = 20), so the estimated
+  # abort probability is ~99% -- well over the 1% threshold. y has 3 unique
+  # values, so it passes input checks and reaches the warning.
+  y_disc <- c(rep(0, 38), 1, 2)
+
+  # (a) discrete y + default cssLasso -> the up-front warning fires. Such a run
+  # also aborts later in the loop (a constant-y subsample), so wrap the call in
+  # try(): the warning is computed before any subsampling/RNG and fires either
+  # way (B = 10L so the small-B checkB warning does not also fire).
+  testthat::expect_warning(
+    try(css(X = x_disc, y = y_disc, lambda = 0.01, B = 10L), silent = TRUE),
+    "highly discrete", fixed = TRUE)
+
+  # The warning message reports a plausible percentage and names cssLasso.
+  disc_warns <- testthat::capture_warnings(
+    try(css(X = x_disc, y = y_disc, lambda = 0.01, B = 10L), silent = TRUE))
+  disc_msg <- disc_warns[grepl("highly discrete", disc_warns, fixed = TRUE)]
+  testthat::expect_length(disc_msg, 1L)
+  testthat::expect_match(disc_msg, "%", fixed = TRUE)
+  testthat::expect_match(disc_msg, "cssLasso", fixed = TRUE)
+
+  # (b) continuous y -> no warning at all (a clean, complete run).
+  set.seed(2719)
+  x_cont <- matrix(stats::rnorm(n * 6), nrow = n, ncol = 6)
+  testthat::expect_no_warning(
+    css(X = x_cont, y = stats::rnorm(n), lambda = 0.01, B = 10L))
+
+  # (c) balanced binary at n = 100 -> NO "highly discrete" warning (the KEY
+  # false-positive guard). At small n balanced binary can legitimately warn, so
+  # keep n large. Capture all warnings and assert none match.
+  set.seed(2720)
+  x_bin <- matrix(stats::rnorm(100 * 6), nrow = 100, ncol = 6)
+  y_bin <- rep(0:1, each = 50)
+  bin_warns <- testthat::capture_warnings(
+    css(X = x_bin, y = y_bin, lambda = 0.01, B = 10L))
+  testthat::expect_false(any(grepl("highly discrete", bin_warns, fixed = TRUE)))
+
+  # (d) custom fitfun with the SAME discrete y -> NO warning (proves the
+  # identical(fitfun, cssLasso) gate). The stub ignores y (so it tolerates a
+  # constant-y subsample) and returns a fixed, valid selected set.
+  tol_fitfun <- function(X, y, lambda){ c(1L, 2L) }
+  testthat::expect_no_warning(
+    css(X = x_disc, y = y_disc, lambda = 0.01, B = 10L, fitfun = tol_fitfun))
+
+  # (e) non-finite numeric y (majority Inf) + default cssLasso -> NO "highly
+  # discrete" warning (proves the all(is.finite(sel_y)) guard). Without the
+  # guard, table() would miscount the 38 Inf cells as a dominating value and
+  # warn (~100%); with it, the diagnostic is skipped and cssLasso instead aborts
+  # on the non-finite value (checkCssLassoInputs). Every size-floor(40/2) = 20
+  # subsample must include an Inf (only 2 finite cells), so the abort is
+  # deterministic; wrap the warning-capture call in try().
+  y_nonfin <- c(rep(Inf, 38), 0, 1)
+  nonfin_warns <- testthat::capture_warnings(
+    try(css(X = x_disc, y = y_nonfin, lambda = 0.01, B = 10L), silent = TRUE))
+  testthat::expect_false(any(grepl("highly discrete", nonfin_warns, fixed = TRUE)))
+  # ...and cssLasso still rejects the non-finite y (no warning to suppress now).
+  testthat::expect_error(
+    css(X = x_disc, y = y_nonfin, lambda = 0.01, B = 10L),
+    "non-finite", fixed = TRUE)
+})
+
 testthat::test_that("checkCutoff works", {
   testthat::expect_null(checkCutoff(0))
   testthat::expect_null(checkCutoff(0.2))

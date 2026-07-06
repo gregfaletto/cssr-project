@@ -187,6 +187,29 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     sel_X <- if(length(train_inds) == 0) X else X[sel_inds, ]
     sel_y <- if(length(train_inds) == 0) y else y[sel_inds]
 
+    # Up-front diagnostic (#131): for the default cssLasso a highly discrete y can
+    # leave some random size-floor(n/2) subsample with only one unique value, which
+    # aborts the run non-deterministically (checkCssLassoInputs). Warn when that
+    # estimated probability is non-negligible. Gated to the default cssLasso (custom
+    # fitfuns may tolerate a constant-y subsample) and to finite numeric/integer y:
+    # a non-numeric or non-finite y fails cssLasso for a different, more basic
+    # reason (checkCssLassoInputs), and a non-finite value (Inf/NA) would otherwise
+    # be miscounted by table() as a dominating value, so a discreteness warning
+    # there would be misleading. Consumes no RNG (table/lchoose only), so the
+    # selection below is byte-identical.
+    if(identical(fitfun, cssLasso) && (is.numeric(sel_y) || is.integer(sel_y)) &&
+            all(is.finite(sel_y))){
+        abort_prob <- discreteYAbortProb(sel_y, B, sampling_type)
+        if(abort_prob > 0.01){
+            warning(paste0("The response y appears highly discrete: there is an ",
+                "estimated ", round(100 * abort_prob), "% chance that at least one ",
+                "random subsample of y (of size floor(n/2)) will contain only one ",
+                "unique value, which aborts the default cssLasso (see its error). ",
+                "Consider a less discrete (more continuous) response, a smaller B, ",
+                "or a custom fitfun that tolerates a constant-y subsample."))
+        }
+    }
+
     feat_sel_mat <- getSelMatrix(sel_X, sel_y, lambda, B,
         sampling_type, subsamps_object, num_cores, fitfun)
 
