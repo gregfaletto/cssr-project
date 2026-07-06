@@ -6294,6 +6294,138 @@ testthat::test_that("selected() and summary() handle an empty selection", {
   testthat::expect_invisible(print(css_res, cutoff=1, min_num_clusts=0))
 })
 
+testthat::test_that("plot.cssr draws cluster proportions and returns them sorted", {
+  # Named X so the feature matrix (tested below) carries feature names.
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  grDevices::pdf(NULL)  # draw to a null device (no file, no window)
+
+  # (a) Clusters (default): runs without error and invisibly returns the sorted
+  # named cluster selection proportions (a deterministic proof of the return).
+  testthat::expect_invisible(plot(css_res))
+  ret <- plot(css_res)
+  testthat::expect_equal(ret,
+    sort(colMeans(css_res$clus_sel_mat), decreasing=TRUE))
+  testthat::expect_false(is.null(names(ret)))  # cluster names guaranteed
+
+  # (b) Features, NAMED X: returns the sorted NAMED feature selection
+  # proportions, and the (index-based) highlight matches getCssSelections().
+  ret_f <- plot(css_res, type="features")
+  props_f <- colMeans(css_res$feat_sel_mat)
+  testthat::expect_equal(ret_f, sort(props_f, decreasing=TRUE))
+  testthat::expect_identical(names(ret_f),
+    paste0("V", order(props_f, decreasing=TRUE)))  # named + correctly ordered
+  sel_f <- getCssSelections(css_res, weighting="sparse")
+  ord <- order(props_f, decreasing=TRUE)
+  is_sel <- (seq_along(props_f) %in% as.integer(sel_f$selected_feats))[ord]
+  testthat::expect_equal(sum(is_sel), length(sel_f$selected_feats))
+  testthat::expect_setequal(ord[is_sel], as.integer(sel_f$selected_feats))
+
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr feature highlight is index-based for unnamed X (B2)", {
+  # genClusteredData returns X with NULL colnames -> feat_sel_mat is UNNAMED.
+  # A name-based feature highlight would silently be all-FALSE; the method uses
+  # an INDEX-based highlight, which must still be non-empty. This is the B2
+  # regression proof.
+  set.seed(721)
+  dat <- genClusteredData(n=60, p=11, k_unclustered=2, cluster_size=4,
+    n_clusters=1, snr=3)
+  clusters <- list(cluster1=1:4)
+  css_res <- suppressWarnings(css(X=dat$X, y=dat$y, lambda=0.01,
+    clusters=clusters, B=10))
+
+  # Precondition for the B2 guard: the feature matrix really is unnamed.
+  testthat::expect_null(colnames(css_res$feat_sel_mat))
+
+  grDevices::pdf(NULL)
+
+  props <- colMeans(css_res$feat_sel_mat)
+  ret <- plot(css_res, type="features", cutoff=0.3)
+  # Returns the plain (unnamed) sorted colMeans regardless of the cutoff.
+  testthat::expect_equal(ret, sort(props, decreasing=TRUE))
+  testthat::expect_null(names(ret))
+
+  # Re-derive the highlight exactly as plot.cssr does: INDEX-based.
+  sel <- getCssSelections(css_res, weighting="sparse", cutoff=0.3)
+  testthat::expect_true(length(sel$selected_feats) > 0)  # there ARE selections
+  ord <- order(props, decreasing=TRUE)
+  is_sel <- (seq_along(props) %in% as.integer(sel$selected_feats))[ord]
+  testthat::expect_true(any(is_sel))                     # NON-empty highlight
+  testthat::expect_equal(sum(is_sel), length(sel$selected_feats))
+  # The highlighted bars are exactly the selected features, by ORIGINAL index.
+  testthat::expect_setequal(ord[is_sel], as.integer(sel$selected_feats))
+
+  # Contrast: a NAME-based highlight WOULD have failed here (names are NULL, so
+  # names(props) %in% ... is logical(0) -> no bar highlighted).
+  testthat::expect_false(any(names(props) %in%
+    as.character(sel$selected_feats)))
+
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr forwards ... to barplot without a duplicate-arg crash (B1)", {
+  # The method builds a SINGLE merged barplot arg list, so graphical params on
+  # ... cannot collide with col/ylim/height (which previously crashed with
+  # "formal argument 'col' matched by multiple actual arguments").
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  grDevices::pdf(NULL)
+  testthat::expect_no_error(plot(css_res, col="red"))
+  testthat::expect_no_error(plot(css_res, ylim=c(0, 0.5)))
+  testthat::expect_no_error(plot(css_res, main="x"))
+  testthat::expect_no_error(plot(css_res, type="features", col="red",
+    main="feats"))
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr handles an empty selection and a single cluster", {
+  # (e) Empty selection: min_num_clusts = 0 with a cutoff strictly above every
+  # cluster proportion selects nothing (min_num_clusts = 1 is never empty). All
+  # bars get unsel_col, there is no highlight, and there is no crash.
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+  max_prop <- max(colMeans(css_res$clus_sel_mat))
+  testthat::expect_true(max_prop < 1)
+  cut <- (max_prop + 1) / 2  # strictly between max_prop and 1 (and <= 1)
+  sel <- getCssSelections(css_res, cutoff=cut, min_num_clusts=0)
+  testthat::expect_length(sel$selected_clusts, 0)  # genuinely empty
+
+  grDevices::pdf(NULL)
+  # A bare call that errored would fail the test -> this asserts "no crash".
+  ret <- plot(css_res, min_num_clusts=0, cutoff=cut)
+  testthat::expect_equal(ret,
+    sort(colMeans(css_res$clus_sel_mat), decreasing=TRUE))
+  grDevices::dev.off()
+
+  # (f) Single-cluster css: clus_sel_mat has exactly one column -> a length-1
+  # barplot, no error.
+  set.seed(1)
+  x1 <- matrix(stats::rnorm(10*4), nrow=10, ncol=4)
+  y1 <- stats::rnorm(10)
+  css_1 <- css(X=x1, y=y1, lambda=0.01, clusters=list(all=1:4), B=10)
+  testthat::expect_equal(ncol(css_1$clus_sel_mat), 1)
+
+  grDevices::pdf(NULL)
+  ret1 <- plot(css_1)
+  testthat::expect_length(ret1, 1)
+  grDevices::dev.off()
+})
+
 testthat::test_that("Opt 2 (#129): formCssDesign weights= equals internal recompute; getCssPreds finite", {
   set.seed(721)
   dat <- genClusteredData(n = 60, p = 11, k_unclustered = 2, cluster_size = 4,

@@ -30,6 +30,8 @@
   size
 - [`getNoiseVar()`](getNoiseVar.md) : Get variance of noise to add to Z
   in order to yield proxies X with desired correlations with Z
+- [`plot(`*`<cssr>`*`)`](plot.cssr.md) : Plot cluster (or feature)
+  selection proportions from cluster stability selection
 - [`print(`*`<cssr>`*`)`](print.cssr.md) : Print cluster stability
   selection output
 - [`printCssDf()`](printCssDf.md) : Prepares a data.frame summarazing

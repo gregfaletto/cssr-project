@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="5 Other useful functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-05">
+<meta name="date" content="2026-07-06">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1544,217 +1544,329 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb76-43"><a href="other-useful.html#cb76-43" tabindex="-1"></a>    }</span>
 <span id="cb76-44"><a href="other-useful.html#cb76-44" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
 <span id="cb76-45"><a href="other-useful.html#cb76-45" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="other-useful.html#plot.cssr">plot.cssr</a>()</code> gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the <code>cutoff</code> drawn as a dashed reference line and the selected clusters (or features) highlighted:</p>
+<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="other-useful.html#cb77-1" tabindex="-1"></a><span class="co">#' Plot cluster (or feature) selection proportions from cluster stability</span></span>
+<span id="cb77-2"><a href="other-useful.html#cb77-2" tabindex="-1"></a><span class="co">#' selection</span></span>
+<span id="cb77-3"><a href="other-useful.html#cb77-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb77-4"><a href="other-useful.html#cb77-4" tabindex="-1"></a><span class="co">#' Produce a base-graphics bar plot of the selection proportions of a fitted</span></span>
+<span id="cb77-5"><a href="other-useful.html#cb77-5" tabindex="-1"></a><span class="co">#' `cssr` object: one bar per cluster (the default) or per feature, sorted in</span></span>
+<span id="cb77-6"><a href="other-useful.html#cb77-6" tabindex="-1"></a><span class="co">#' decreasing order of selection proportion. When `cutoff &gt; 0` a dashed</span></span>
+<span id="cb77-7"><a href="other-useful.html#cb77-7" tabindex="-1"></a><span class="co">#' reference line is drawn at the cutoff, and the bars whose cluster (or</span></span>
+<span id="cb77-8"><a href="other-useful.html#cb77-8" tabindex="-1"></a><span class="co">#' feature) is selected -- at the given `cutoff` and cluster-count constraints</span></span>
+<span id="cb77-9"><a href="other-useful.html#cb77-9" tabindex="-1"></a><span class="co">#' -- are highlighted in `sel_col`, the rest in `unsel_col`.</span></span>
+<span id="cb77-10"><a href="other-useful.html#cb77-10" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb77-11"><a href="other-useful.html#cb77-11" tabindex="-1"></a><span class="co">#' The selection that determines the highlight is obtained from</span></span>
+<span id="cb77-12"><a href="other-useful.html#cb77-12" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] with the same `cutoff`, `min_num_clusts`,</span></span>
+<span id="cb77-13"><a href="other-useful.html#cb77-13" tabindex="-1"></a><span class="co">#' `max_num_clusts`, and `weighting`. Which clusters are selected does not</span></span>
+<span id="cb77-14"><a href="other-useful.html#cb77-14" tabindex="-1"></a><span class="co">#' depend on `weighting`; which features are selected does (the weighting</span></span>
+<span id="cb77-15"><a href="other-useful.html#cb77-15" tabindex="-1"></a><span class="co">#' determines which members of the selected clusters have nonzero weight and are</span></span>
+<span id="cb77-16"><a href="other-useful.html#cb77-16" tabindex="-1"></a><span class="co">#' therefore highlighted when `type = "features"`).</span></span>
+<span id="cb77-17"><a href="other-useful.html#cb77-17" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb77-18"><a href="other-useful.html#cb77-18" tabindex="-1"></a><span class="co">#' Note that, to match the positional argument order of [<a href="other-useful.html#print.cssr">print.cssr</a>()], the</span></span>
+<span id="cb77-19"><a href="other-useful.html#cb77-19" tabindex="-1"></a><span class="co">#' second positional argument is `cutoff`; `type`, `weighting`, and the</span></span>
+<span id="cb77-20"><a href="other-useful.html#cb77-20" tabindex="-1"></a><span class="co">#' graphical parameters must be supplied by name (for example</span></span>
+<span id="cb77-21"><a href="other-useful.html#cb77-21" tabindex="-1"></a><span class="co">#' `plot(x, type = "features")`).</span></span>
+<span id="cb77-22"><a href="other-useful.html#cb77-22" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb77-23"><a href="other-useful.html#cb77-23" tabindex="-1"></a><span class="co">#' @param x An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
+<span id="cb77-24"><a href="other-useful.html#cb77-24" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; the selection-proportion threshold used both to draw</span></span>
+<span id="cb77-25"><a href="other-useful.html#cb77-25" tabindex="-1"></a><span class="co">#' the dashed reference line (when greater than 0) and to determine which bars</span></span>
+<span id="cb77-26"><a href="other-useful.html#cb77-26" tabindex="-1"></a><span class="co">#' are highlighted as selected. Must be between 0 and 1. Default is 0 (in which</span></span>
+<span id="cb77-27"><a href="other-useful.html#cb77-27" tabindex="-1"></a><span class="co">#' case no reference line is drawn and, unless `max_num_clusts` restricts it,</span></span>
+<span id="cb77-28"><a href="other-useful.html#cb77-28" tabindex="-1"></a><span class="co">#' every cluster is treated as selected).</span></span>
+<span id="cb77-29"><a href="other-useful.html#cb77-29" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb77-30"><a href="other-useful.html#cb77-30" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
+<span id="cb77-31"><a href="other-useful.html#cb77-31" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts clusters, the cutoff is effectively lowered until</span></span>
+<span id="cb77-32"><a href="other-useful.html#cb77-32" tabindex="-1"></a><span class="co">#' at least min_num_clusts clusters are selected.) Default is 1. May be set to 0</span></span>
+<span id="cb77-33"><a href="other-useful.html#cb77-33" tabindex="-1"></a><span class="co">#' to allow a pure cutoff-based highlight that can be empty (no bar highlighted)</span></span>
+<span id="cb77-34"><a href="other-useful.html#cb77-34" tabindex="-1"></a><span class="co">#' when no cluster's selection proportion meets the cutoff.</span></span>
+<span id="cb77-35"><a href="other-useful.html#cb77-35" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb77-36"><a href="other-useful.html#cb77-36" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
+<span id="cb77-37"><a href="other-useful.html#cb77-37" tabindex="-1"></a><span class="co">#' more than max_num_clusts clusters, the cutoff is effectively raised until at</span></span>
+<span id="cb77-38"><a href="other-useful.html#cb77-38" tabindex="-1"></a><span class="co">#' most max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb77-39"><a href="other-useful.html#cb77-39" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
+<span id="cb77-40"><a href="other-useful.html#cb77-40" tabindex="-1"></a><span class="co">#' @param type Character; either "clusters" (the default) to plot one bar per</span></span>
+<span id="cb77-41"><a href="other-useful.html#cb77-41" tabindex="-1"></a><span class="co">#' cluster, or "features" to plot one bar per feature. May be abbreviated.</span></span>
+<span id="cb77-42"><a href="other-useful.html#cb77-42" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine which</span></span>
+<span id="cb77-43"><a href="other-useful.html#cb77-43" tabindex="-1"></a><span class="co">#' individual features are selected (and therefore highlighted) when</span></span>
+<span id="cb77-44"><a href="other-useful.html#cb77-44" tabindex="-1"></a><span class="co">#' `type = "features"`. It has no effect on the cluster bars or on which</span></span>
+<span id="cb77-45"><a href="other-useful.html#cb77-45" tabindex="-1"></a><span class="co">#' clusters are highlighted. Must be one of "sparse", "weighted_avg", or</span></span>
+<span id="cb77-46"><a href="other-useful.html#cb77-46" tabindex="-1"></a><span class="co">#' "simple_avg". Default is "sparse" (matching [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] and</span></span>
+<span id="cb77-47"><a href="other-useful.html#cb77-47" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#selected">selected</a>()]).</span></span>
+<span id="cb77-48"><a href="other-useful.html#cb77-48" tabindex="-1"></a><span class="co">#' @param ylim Numeric vector of length 2; the y-axis limits for the bar plot.</span></span>
+<span id="cb77-49"><a href="other-useful.html#cb77-49" tabindex="-1"></a><span class="co">#' Default is `c(0, 1)`, the natural range of a selection proportion.</span></span>
+<span id="cb77-50"><a href="other-useful.html#cb77-50" tabindex="-1"></a><span class="co">#' @param sel_col The colour used to fill the bars of selected clusters (or</span></span>
+<span id="cb77-51"><a href="other-useful.html#cb77-51" tabindex="-1"></a><span class="co">#' features). Default is "steelblue".</span></span>
+<span id="cb77-52"><a href="other-useful.html#cb77-52" tabindex="-1"></a><span class="co">#' @param unsel_col The colour used to fill the bars of unselected clusters (or</span></span>
+<span id="cb77-53"><a href="other-useful.html#cb77-53" tabindex="-1"></a><span class="co">#' features). Default is "grey70".</span></span>
+<span id="cb77-54"><a href="other-useful.html#cb77-54" tabindex="-1"></a><span class="co">#' @param ... Additional graphical parameters passed on to</span></span>
+<span id="cb77-55"><a href="other-useful.html#cb77-55" tabindex="-1"></a><span class="co">#' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,</span></span>
+<span id="cb77-56"><a href="other-useful.html#cb77-56" tabindex="-1"></a><span class="co">#' fill colours, and `ylim` are controlled by this method; supplying `col` or</span></span>
+<span id="cb77-57"><a href="other-useful.html#cb77-57" tabindex="-1"></a><span class="co">#' `ylim` here overrides the highlight colours or the default y-axis limits.</span></span>
+<span id="cb77-58"><a href="other-useful.html#cb77-58" tabindex="-1"></a><span class="co">#' @return Invisibly, the numeric vector of selection proportions that were</span></span>
+<span id="cb77-59"><a href="other-useful.html#cb77-59" tabindex="-1"></a><span class="co">#' plotted: the `colMeans()` of the cluster (or feature) selection matrix,</span></span>
+<span id="cb77-60"><a href="other-useful.html#cb77-60" tabindex="-1"></a><span class="co">#' sorted in decreasing order, named by cluster (always) or by feature (when the</span></span>
+<span id="cb77-61"><a href="other-useful.html#cb77-61" tabindex="-1"></a><span class="co">#' features of `X` were named; unnamed otherwise). Called primarily for its side</span></span>
+<span id="cb77-62"><a href="other-useful.html#cb77-62" tabindex="-1"></a><span class="co">#' effect: drawing the bar plot.</span></span>
+<span id="cb77-63"><a href="other-useful.html#cb77-63" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb77-64"><a href="other-useful.html#cb77-64" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#print.cssr">print.cssr</a>()] and [<a href="other-useful.html#summary.cssr">summary.cssr</a>()] for printed / tabular overviews</span></span>
+<span id="cb77-65"><a href="other-useful.html#cb77-65" tabindex="-1"></a><span class="co">#' of the same selection proportions; [<a href="other-useful.html#selected">selected</a>()] to extract the selected</span></span>
+<span id="cb77-66"><a href="other-useful.html#cb77-66" tabindex="-1"></a><span class="co">#' clusters or features; [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection used</span></span>
+<span id="cb77-67"><a href="other-useful.html#cb77-67" tabindex="-1"></a><span class="co">#' to highlight the bars.</span></span>
+<span id="cb77-68"><a href="other-useful.html#cb77-68" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb77-69"><a href="other-useful.html#cb77-69" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb77-70"><a href="other-useful.html#cb77-70" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb77-71"><a href="other-useful.html#cb77-71" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb77-72"><a href="other-useful.html#cb77-72" tabindex="-1"></a><span class="co">#' # Name the features so the feature plot shows labelled, highlighted bars</span></span>
+<span id="cb77-73"><a href="other-useful.html#cb77-73" tabindex="-1"></a><span class="co">#' # (genClusteredData returns X with no column names).</span></span>
+<span id="cb77-74"><a href="other-useful.html#cb77-74" tabindex="-1"></a><span class="co">#' X &lt;- data$X</span></span>
+<span id="cb77-75"><a href="other-useful.html#cb77-75" tabindex="-1"></a><span class="co">#' colnames(X) &lt;- paste0("V", seq_len(ncol(X)))</span></span>
+<span id="cb77-76"><a href="other-useful.html#cb77-76" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb77-77"><a href="other-useful.html#cb77-77" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = X, y = data$y, lambda = 0.01, clusters = clusters, B = 10)</span></span>
+<span id="cb77-78"><a href="other-useful.html#cb77-78" tabindex="-1"></a><span class="co">#' # Cluster selection proportions (the default):</span></span>
+<span id="cb77-79"><a href="other-useful.html#cb77-79" tabindex="-1"></a><span class="co">#' plot(res)</span></span>
+<span id="cb77-80"><a href="other-useful.html#cb77-80" tabindex="-1"></a><span class="co">#' # Feature selection proportions, highlighting the selected features:</span></span>
+<span id="cb77-81"><a href="other-useful.html#cb77-81" tabindex="-1"></a><span class="co">#' plot(res, type = "features")</span></span>
+<span id="cb77-82"><a href="other-useful.html#cb77-82" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb77-83"><a href="other-useful.html#cb77-83" tabindex="-1"></a><span id="plot.cssr">plot.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff =</span> <span class="dv">0</span>, <span class="at">min_num_clusts =</span> <span class="dv">1</span>, <span class="at">max_num_clusts =</span> <span class="cn">NA</span>,</span>
+<span id="cb77-84"><a href="other-useful.html#cb77-84" tabindex="-1"></a>    <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"clusters"</span>, <span class="st">"features"</span>), <span class="at">weighting =</span> <span class="st">"sparse"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb77-85"><a href="other-useful.html#cb77-85" tabindex="-1"></a>    <span class="at">sel_col =</span> <span class="st">"steelblue"</span>, <span class="at">unsel_col =</span> <span class="st">"grey70"</span>, ...){</span>
+<span id="cb77-86"><a href="other-useful.html#cb77-86" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb77-87"><a href="other-useful.html#cb77-87" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <span class="fu">suppressWarnings</span>(<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(x, <span class="at">weighting =</span> weighting,</span>
+<span id="cb77-88"><a href="other-useful.html#cb77-88" tabindex="-1"></a>        <span class="at">cutoff =</span> cutoff, <span class="at">min_num_clusts =</span> min_num_clusts,</span>
+<span id="cb77-89"><a href="other-useful.html#cb77-89" tabindex="-1"></a>        <span class="at">max_num_clusts =</span> max_num_clusts))</span>
+<span id="cb77-90"><a href="other-useful.html#cb77-90" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"clusters"</span>){</span>
+<span id="cb77-91"><a href="other-useful.html#cb77-91" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>clus_sel_mat)                              <span class="co"># named by cluster (guaranteed)</span></span>
+<span id="cb77-92"><a href="other-useful.html#cb77-92" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">names</span>(props) <span class="sc">%in%</span> <span class="fu">names</span>(sel<span class="sc">$</span>selected_clusts)</span>
+<span id="cb77-93"><a href="other-useful.html#cb77-93" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Cluster selection proportion"</span></span>
+<span id="cb77-94"><a href="other-useful.html#cb77-94" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb77-95"><a href="other-useful.html#cb77-95" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>feat_sel_mat)                             <span class="co"># named iff X was named</span></span>
+<span id="cb77-96"><a href="other-useful.html#cb77-96" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">seq_along</span>(props) <span class="sc">%in%</span> <span class="fu">as.integer</span>(sel<span class="sc">$</span>selected_feats) <span class="co"># INDEX-based -&gt; robust to unnamed X</span></span>
+<span id="cb77-97"><a href="other-useful.html#cb77-97" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Feature selection proportion"</span></span>
+<span id="cb77-98"><a href="other-useful.html#cb77-98" tabindex="-1"></a>    }</span>
+<span id="cb77-99"><a href="other-useful.html#cb77-99" tabindex="-1"></a>    ord    <span class="ot">&lt;-</span> <span class="fu">order</span>(props, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb77-100"><a href="other-useful.html#cb77-100" tabindex="-1"></a>    props  <span class="ot">&lt;-</span> props[ord]; is_sel <span class="ot">&lt;-</span> is_sel[ord]</span>
+<span id="cb77-101"><a href="other-useful.html#cb77-101" tabindex="-1"></a>    labels <span class="ot">&lt;-</span> <span class="fu">names</span>(props); <span class="cf">if</span>(<span class="fu">is.null</span>(labels)) labels <span class="ot">&lt;-</span> <span class="fu">as.character</span>(ord)  <span class="co"># index labels if X unnamed</span></span>
+<span id="cb77-102"><a href="other-useful.html#cb77-102" tabindex="-1"></a>    <span class="co"># method controls height/col/ylim on a SINGLE merged arg list; ... forwards</span></span>
+<span id="cb77-103"><a href="other-useful.html#cb77-103" tabindex="-1"></a>    <span class="co"># main/cex.names/etc. -&gt; no barplot duplicate-argument crash.</span></span>
+<span id="cb77-104"><a href="other-useful.html#cb77-104" tabindex="-1"></a>    args <span class="ot">&lt;-</span> utils<span class="sc">::</span><span class="fu">modifyList</span>(<span class="fu">list</span>(<span class="at">names.arg =</span> labels, <span class="at">las =</span> <span class="dv">2</span>, <span class="at">ylab =</span> ylab), <span class="fu">list</span>(...))</span>
+<span id="cb77-105"><a href="other-useful.html#cb77-105" tabindex="-1"></a>    args<span class="sc">$</span>height <span class="ot">&lt;-</span> props</span>
+<span id="cb77-106"><a href="other-useful.html#cb77-106" tabindex="-1"></a>    args<span class="sc">$</span>col    <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(is_sel, sel_col, unsel_col)</span>
+<span id="cb77-107"><a href="other-useful.html#cb77-107" tabindex="-1"></a>    args<span class="sc">$</span>ylim   <span class="ot">&lt;-</span> ylim</span>
+<span id="cb77-108"><a href="other-useful.html#cb77-108" tabindex="-1"></a>    <span class="fu">do.call</span>(graphics<span class="sc">::</span>barplot, args)</span>
+<span id="cb77-109"><a href="other-useful.html#cb77-109" tabindex="-1"></a>    <span class="cf">if</span>(cutoff <span class="sc">&gt;</span> <span class="dv">0</span>) graphics<span class="sc">::</span><span class="fu">abline</span>(<span class="at">h =</span> cutoff, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span>
+<span id="cb77-110"><a href="other-useful.html#cb77-110" tabindex="-1"></a>    <span class="fu">invisible</span>(props)   <span class="co"># sorted; names as-is (so it equals sort(colMeans(...)) for the test)</span></span>
+<span id="cb77-111"><a href="other-useful.html#cb77-111" tabindex="-1"></a>}</span></code></pre></div>
 <div id="ergonomic-s3-accessors-selected-and-summary.cssr" class="section level2 hasAnchor" number="5.1">
 <h2>
 <span class="header-section-number">5.1</span> Ergonomic S3 accessors: <code><a href="other-useful.html#selected">selected</a>()</code> and <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code><a href="other-useful.html#ergonomic-s3-accessors-selected-and-summary.cssr" class="anchor-section" aria-label="Anchor link to header"></a>
 </h2>
 <p>The functions above (<code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code>, <code><a href="other-useful.html#printCssDf">printCssDf</a>()</code>, <code><a href="other-useful.html#print.cssr">print.cssr</a>()</code>) already expose everything an end user needs, but they take the <code>cssr</code> object as <code>css_results</code> and return heterogeneous output. For a more idiomatic R experience – mirroring the <code><a href="other-useful.html#selected">selected</a>()</code> and <code>summary.stabsel()</code> interface of the <code>stabs</code> package – we add a small S3 layer on top of these internals. <code><a href="other-useful.html#selected">selected</a>()</code> is a generic accessor that returns the selected clusters (or features) from a fitted <code>cssr</code> object, and <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code> returns a compact, computable overview object with its own print method. Both are thin wrappers over <code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code>/<code><a href="other-useful.html#printCssDf">printCssDf</a>()</code>; they introduce no new methodology.</p>
 <p><code><a href="other-useful.html#selected">selected</a>()</code> generic:</p>
-<div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="other-useful.html#cb77-1" tabindex="-1"></a><span class="co">#' Extract the selected clusters or features from cluster stability selection</span></span>
-<span id="cb77-2"><a href="other-useful.html#cb77-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb77-3"><a href="other-useful.html#cb77-3" tabindex="-1"></a><span class="co">#' A convenient S3 accessor for the selected clusters (the default) or the</span></span>
-<span id="cb77-4"><a href="other-useful.html#cb77-4" tabindex="-1"></a><span class="co">#' selected features of a fitted `cssr` object, without re-running the</span></span>
-<span id="cb77-5"><a href="other-useful.html#cb77-5" tabindex="-1"></a><span class="co">#' (computationally expensive) subsampling. This is a thin wrapper around</span></span>
-<span id="cb77-6"><a href="other-useful.html#cb77-6" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()].</span></span>
-<span id="cb77-7"><a href="other-useful.html#cb77-7" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb77-8"><a href="other-useful.html#cb77-8" tabindex="-1"></a><span class="co">#' Note that, unlike the `<a href="other-useful.html#selected">selected</a>()` accessor in the \pkg{stabs} package (which</span></span>
-<span id="cb77-9"><a href="other-useful.html#cb77-9" tabindex="-1"></a><span class="co">#' returns the selected *variables*), the default here returns the selected</span></span>
-<span id="cb77-10"><a href="other-useful.html#cb77-10" tabindex="-1"></a><span class="co">#' *clusters* -- the natural unit of cluster stability selection. Pass</span></span>
-<span id="cb77-11"><a href="other-useful.html#cb77-11" tabindex="-1"></a><span class="co">#' `type = "features"` to obtain the flat integer vector of selected features</span></span>
-<span id="cb77-12"><a href="other-useful.html#cb77-12" tabindex="-1"></a><span class="co">#' instead.</span></span>
-<span id="cb77-13"><a href="other-useful.html#cb77-13" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb77-14"><a href="other-useful.html#cb77-14" tabindex="-1"></a><span class="co">#' @param object An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
-<span id="cb77-15"><a href="other-useful.html#cb77-15" tabindex="-1"></a><span class="co">#' @param ... Additional arguments passed to methods (currently unused).</span></span>
-<span id="cb77-16"><a href="other-useful.html#cb77-16" tabindex="-1"></a><span class="co">#' @return For the `cssr` method: if `type = "clusters"` (the default), a named</span></span>
-<span id="cb77-17"><a href="other-useful.html#cb77-17" tabindex="-1"></a><span class="co">#' list of integer vectors (each the indices of the features in one selected</span></span>
-<span id="cb77-18"><a href="other-useful.html#cb77-18" tabindex="-1"></a><span class="co">#' cluster; an empty list if no cluster is selected); if `type = "features"`, a</span></span>
-<span id="cb77-19"><a href="other-useful.html#cb77-19" tabindex="-1"></a><span class="co">#' named integer vector of the indices of the selected features (an empty integer</span></span>
-<span id="cb77-20"><a href="other-useful.html#cb77-20" tabindex="-1"></a><span class="co">#' vector if none).</span></span>
-<span id="cb77-21"><a href="other-useful.html#cb77-21" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb77-22"><a href="other-useful.html#cb77-22" tabindex="-1"></a><span class="co">#' @references</span></span>
-<span id="cb77-23"><a href="other-useful.html#cb77-23" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
-<span id="cb77-24"><a href="other-useful.html#cb77-24" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#summary.cssr">summary.cssr</a>()] for an overview (counts plus a per-cluster table);</span></span>
-<span id="cb77-25"><a href="other-useful.html#cb77-25" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection (clusters, features, and</span></span>
-<span id="cb77-26"><a href="other-useful.html#cb77-26" tabindex="-1"></a><span class="co">#' weights together); [<a href="other-useful.html#printCssDf">printCssDf</a>()] and [<a href="other-useful.html#print.cssr">print.cssr</a>()] for the printed summary.</span></span>
-<span id="cb77-27"><a href="other-useful.html#cb77-27" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb77-28"><a href="other-useful.html#cb77-28" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb77-29"><a href="other-useful.html#cb77-29" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb77-30"><a href="other-useful.html#cb77-30" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb77-31"><a href="other-useful.html#cb77-31" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb77-32"><a href="other-useful.html#cb77-32" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb77-33"><a href="other-useful.html#cb77-33" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb77-34"><a href="other-useful.html#cb77-34" tabindex="-1"></a><span class="co">#' # Selected clusters (the default):</span></span>
-<span id="cb77-35"><a href="other-useful.html#cb77-35" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#selected">selected</a>(res)</span></span>
-<span id="cb77-36"><a href="other-useful.html#cb77-36" tabindex="-1"></a><span class="co">#' # Selected features (a flat integer vector):</span></span>
-<span id="cb77-37"><a href="other-useful.html#cb77-37" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#selected">selected</a>(res, type = "features")</span></span>
-<span id="cb77-38"><a href="other-useful.html#cb77-38" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb77-39"><a href="other-useful.html#cb77-39" tabindex="-1"></a><span id="selected">selected</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, ...){</span>
-<span id="cb77-40"><a href="other-useful.html#cb77-40" tabindex="-1"></a>    <span class="fu">UseMethod</span>(<span class="st">"selected"</span>)</span>
-<span id="cb77-41"><a href="other-useful.html#cb77-41" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb78-1"><a href="other-useful.html#cb78-1" tabindex="-1"></a><span class="co">#' Extract the selected clusters or features from cluster stability selection</span></span>
+<span id="cb78-2"><a href="other-useful.html#cb78-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-3"><a href="other-useful.html#cb78-3" tabindex="-1"></a><span class="co">#' A convenient S3 accessor for the selected clusters (the default) or the</span></span>
+<span id="cb78-4"><a href="other-useful.html#cb78-4" tabindex="-1"></a><span class="co">#' selected features of a fitted `cssr` object, without re-running the</span></span>
+<span id="cb78-5"><a href="other-useful.html#cb78-5" tabindex="-1"></a><span class="co">#' (computationally expensive) subsampling. This is a thin wrapper around</span></span>
+<span id="cb78-6"><a href="other-useful.html#cb78-6" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()].</span></span>
+<span id="cb78-7"><a href="other-useful.html#cb78-7" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-8"><a href="other-useful.html#cb78-8" tabindex="-1"></a><span class="co">#' Note that, unlike the `<a href="other-useful.html#selected">selected</a>()` accessor in the \pkg{stabs} package (which</span></span>
+<span id="cb78-9"><a href="other-useful.html#cb78-9" tabindex="-1"></a><span class="co">#' returns the selected *variables*), the default here returns the selected</span></span>
+<span id="cb78-10"><a href="other-useful.html#cb78-10" tabindex="-1"></a><span class="co">#' *clusters* -- the natural unit of cluster stability selection. Pass</span></span>
+<span id="cb78-11"><a href="other-useful.html#cb78-11" tabindex="-1"></a><span class="co">#' `type = "features"` to obtain the flat integer vector of selected features</span></span>
+<span id="cb78-12"><a href="other-useful.html#cb78-12" tabindex="-1"></a><span class="co">#' instead.</span></span>
+<span id="cb78-13"><a href="other-useful.html#cb78-13" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-14"><a href="other-useful.html#cb78-14" tabindex="-1"></a><span class="co">#' @param object An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
+<span id="cb78-15"><a href="other-useful.html#cb78-15" tabindex="-1"></a><span class="co">#' @param ... Additional arguments passed to methods (currently unused).</span></span>
+<span id="cb78-16"><a href="other-useful.html#cb78-16" tabindex="-1"></a><span class="co">#' @return For the `cssr` method: if `type = "clusters"` (the default), a named</span></span>
+<span id="cb78-17"><a href="other-useful.html#cb78-17" tabindex="-1"></a><span class="co">#' list of integer vectors (each the indices of the features in one selected</span></span>
+<span id="cb78-18"><a href="other-useful.html#cb78-18" tabindex="-1"></a><span class="co">#' cluster; an empty list if no cluster is selected); if `type = "features"`, a</span></span>
+<span id="cb78-19"><a href="other-useful.html#cb78-19" tabindex="-1"></a><span class="co">#' named integer vector of the indices of the selected features (an empty integer</span></span>
+<span id="cb78-20"><a href="other-useful.html#cb78-20" tabindex="-1"></a><span class="co">#' vector if none).</span></span>
+<span id="cb78-21"><a href="other-useful.html#cb78-21" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb78-22"><a href="other-useful.html#cb78-22" tabindex="-1"></a><span class="co">#' @references</span></span>
+<span id="cb78-23"><a href="other-useful.html#cb78-23" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
+<span id="cb78-24"><a href="other-useful.html#cb78-24" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#summary.cssr">summary.cssr</a>()] for an overview (counts plus a per-cluster table);</span></span>
+<span id="cb78-25"><a href="other-useful.html#cb78-25" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection (clusters, features, and</span></span>
+<span id="cb78-26"><a href="other-useful.html#cb78-26" tabindex="-1"></a><span class="co">#' weights together); [<a href="other-useful.html#printCssDf">printCssDf</a>()] and [<a href="other-useful.html#print.cssr">print.cssr</a>()] for the printed summary.</span></span>
+<span id="cb78-27"><a href="other-useful.html#cb78-27" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb78-28"><a href="other-useful.html#cb78-28" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb78-29"><a href="other-useful.html#cb78-29" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb78-30"><a href="other-useful.html#cb78-30" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb78-31"><a href="other-useful.html#cb78-31" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb78-32"><a href="other-useful.html#cb78-32" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb78-33"><a href="other-useful.html#cb78-33" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb78-34"><a href="other-useful.html#cb78-34" tabindex="-1"></a><span class="co">#' # Selected clusters (the default):</span></span>
+<span id="cb78-35"><a href="other-useful.html#cb78-35" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#selected">selected</a>(res)</span></span>
+<span id="cb78-36"><a href="other-useful.html#cb78-36" tabindex="-1"></a><span class="co">#' # Selected features (a flat integer vector):</span></span>
+<span id="cb78-37"><a href="other-useful.html#cb78-37" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#selected">selected</a>(res, type = "features")</span></span>
+<span id="cb78-38"><a href="other-useful.html#cb78-38" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb78-39"><a href="other-useful.html#cb78-39" tabindex="-1"></a><span id="selected">selected</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, ...){</span>
+<span id="cb78-40"><a href="other-useful.html#cb78-40" tabindex="-1"></a>    <span class="fu">UseMethod</span>(<span class="st">"selected"</span>)</span>
+<span id="cb78-41"><a href="other-useful.html#cb78-41" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#selected.cssr">selected.cssr</a>()</code> method:</p>
-<div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb78-1"><a href="other-useful.html#cb78-1" tabindex="-1"></a><span class="co">#' @param type Character; either "clusters" (the default) to return the named</span></span>
-<span id="cb78-2"><a href="other-useful.html#cb78-2" tabindex="-1"></a><span class="co">#' list of selected clusters, or "features" to return the flat integer vector of</span></span>
-<span id="cb78-3"><a href="other-useful.html#cb78-3" tabindex="-1"></a><span class="co">#' selected features. May be abbreviated.</span></span>
-<span id="cb78-4"><a href="other-useful.html#cb78-4" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; only those clusters with selection proportions equal to</span></span>
-<span id="cb78-5"><a href="other-useful.html#cb78-5" tabindex="-1"></a><span class="co">#' at least cutoff will be selected. Must be between 0 and 1. Default is 0 (in</span></span>
-<span id="cb78-6"><a href="other-useful.html#cb78-6" tabindex="-1"></a><span class="co">#' which case either all clusters are selected, or max_num_clusts are selected,</span></span>
-<span id="cb78-7"><a href="other-useful.html#cb78-7" tabindex="-1"></a><span class="co">#' if max_num_clusts is specified).</span></span>
-<span id="cb78-8"><a href="other-useful.html#cb78-8" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
-<span id="cb78-9"><a href="other-useful.html#cb78-9" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
-<span id="cb78-10"><a href="other-useful.html#cb78-10" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be lowered until at least</span></span>
-<span id="cb78-11"><a href="other-useful.html#cb78-11" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow</span></span>
-<span id="cb78-12"><a href="other-useful.html#cb78-12" tabindex="-1"></a><span class="co">#' a pure cutoff-based (threshold) selection that returns an empty result when no</span></span>
-<span id="cb78-13"><a href="other-useful.html#cb78-13" tabindex="-1"></a><span class="co">#' cluster's selection proportion meets the cutoff.</span></span>
-<span id="cb78-14"><a href="other-useful.html#cb78-14" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb78-15"><a href="other-useful.html#cb78-15" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
-<span id="cb78-16"><a href="other-useful.html#cb78-16" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
-<span id="cb78-17"><a href="other-useful.html#cb78-17" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb78-18"><a href="other-useful.html#cb78-18" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb78-19"><a href="other-useful.html#cb78-19" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine the</span></span>
-<span id="cb78-20"><a href="other-useful.html#cb78-20" tabindex="-1"></a><span class="co">#' weights of individual features within the selected clusters. This affects</span></span>
-<span id="cb78-21"><a href="other-useful.html#cb78-21" tabindex="-1"></a><span class="co">#' ONLY `type = "features"` (it determines which cluster members have nonzero</span></span>
-<span id="cb78-22"><a href="other-useful.html#cb78-22" tabindex="-1"></a><span class="co">#' weight and are therefore returned); it is a no-op for `type = "clusters"`,</span></span>
-<span id="cb78-23"><a href="other-useful.html#cb78-23" tabindex="-1"></a><span class="co">#' whose selected clusters, selection proportions, and sizes do not depend on the</span></span>
-<span id="cb78-24"><a href="other-useful.html#cb78-24" tabindex="-1"></a><span class="co">#' weighting. Must be one of "sparse", "weighted_avg", or "simple_avg". See</span></span>
-<span id="cb78-25"><a href="other-useful.html#cb78-25" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for details. Default is "sparse".</span></span>
-<span id="cb78-26"><a href="other-useful.html#cb78-26" tabindex="-1"></a><span class="co">#' @rdname selected</span></span>
-<span id="cb78-27"><a href="other-useful.html#cb78-27" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb78-28"><a href="other-useful.html#cb78-28" tabindex="-1"></a><span id="selected.cssr">selected.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, <span class="at">type=</span><span class="fu">c</span>(<span class="st">"clusters"</span>, <span class="st">"features"</span>), <span class="at">cutoff=</span><span class="dv">0</span>,</span>
-<span id="cb78-29"><a href="other-useful.html#cb78-29" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">weighting=</span><span class="st">"sparse"</span>, ...){</span>
-<span id="cb78-30"><a href="other-useful.html#cb78-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(object, <span class="st">"cssr"</span>))</span>
-<span id="cb78-31"><a href="other-useful.html#cb78-31" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
-<span id="cb78-32"><a href="other-useful.html#cb78-32" tabindex="-1"></a></span>
-<span id="cb78-33"><a href="other-useful.html#cb78-33" tabindex="-1"></a>    <span class="co"># Thin wrapper: getCssSelections validates all inputs (checkCutoff,</span></span>
-<span id="cb78-34"><a href="other-useful.html#cb78-34" tabindex="-1"></a>    <span class="co"># checkWeighting, checkMinNumClusts, checkMaxNumClusts) and cleanly returns</span></span>
-<span id="cb78-35"><a href="other-useful.html#cb78-35" tabindex="-1"></a>    <span class="co"># empty results on an empty selection (e.g. cutoff = 1, min_num_clusts = 0).</span></span>
-<span id="cb78-36"><a href="other-useful.html#cb78-36" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(object, <span class="at">weighting=</span>weighting, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb78-37"><a href="other-useful.html#cb78-37" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb78-38"><a href="other-useful.html#cb78-38" tabindex="-1"></a></span>
-<span id="cb78-39"><a href="other-useful.html#cb78-39" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"clusters"</span>){</span>
-<span id="cb78-40"><a href="other-useful.html#cb78-40" tabindex="-1"></a>        <span class="fu">return</span>(sel<span class="sc">$</span>selected_clusts)</span>
-<span id="cb78-41"><a href="other-useful.html#cb78-41" tabindex="-1"></a>    }</span>
-<span id="cb78-42"><a href="other-useful.html#cb78-42" tabindex="-1"></a>    <span class="fu">return</span>(sel<span class="sc">$</span>selected_feats)</span>
-<span id="cb78-43"><a href="other-useful.html#cb78-43" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb79-1"><a href="other-useful.html#cb79-1" tabindex="-1"></a><span class="co">#' @param type Character; either "clusters" (the default) to return the named</span></span>
+<span id="cb79-2"><a href="other-useful.html#cb79-2" tabindex="-1"></a><span class="co">#' list of selected clusters, or "features" to return the flat integer vector of</span></span>
+<span id="cb79-3"><a href="other-useful.html#cb79-3" tabindex="-1"></a><span class="co">#' selected features. May be abbreviated.</span></span>
+<span id="cb79-4"><a href="other-useful.html#cb79-4" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; only those clusters with selection proportions equal to</span></span>
+<span id="cb79-5"><a href="other-useful.html#cb79-5" tabindex="-1"></a><span class="co">#' at least cutoff will be selected. Must be between 0 and 1. Default is 0 (in</span></span>
+<span id="cb79-6"><a href="other-useful.html#cb79-6" tabindex="-1"></a><span class="co">#' which case either all clusters are selected, or max_num_clusts are selected,</span></span>
+<span id="cb79-7"><a href="other-useful.html#cb79-7" tabindex="-1"></a><span class="co">#' if max_num_clusts is specified).</span></span>
+<span id="cb79-8"><a href="other-useful.html#cb79-8" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb79-9"><a href="other-useful.html#cb79-9" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
+<span id="cb79-10"><a href="other-useful.html#cb79-10" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be lowered until at least</span></span>
+<span id="cb79-11"><a href="other-useful.html#cb79-11" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow</span></span>
+<span id="cb79-12"><a href="other-useful.html#cb79-12" tabindex="-1"></a><span class="co">#' a pure cutoff-based (threshold) selection that returns an empty result when no</span></span>
+<span id="cb79-13"><a href="other-useful.html#cb79-13" tabindex="-1"></a><span class="co">#' cluster's selection proportion meets the cutoff.</span></span>
+<span id="cb79-14"><a href="other-useful.html#cb79-14" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb79-15"><a href="other-useful.html#cb79-15" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
+<span id="cb79-16"><a href="other-useful.html#cb79-16" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
+<span id="cb79-17"><a href="other-useful.html#cb79-17" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb79-18"><a href="other-useful.html#cb79-18" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
+<span id="cb79-19"><a href="other-useful.html#cb79-19" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine the</span></span>
+<span id="cb79-20"><a href="other-useful.html#cb79-20" tabindex="-1"></a><span class="co">#' weights of individual features within the selected clusters. This affects</span></span>
+<span id="cb79-21"><a href="other-useful.html#cb79-21" tabindex="-1"></a><span class="co">#' ONLY `type = "features"` (it determines which cluster members have nonzero</span></span>
+<span id="cb79-22"><a href="other-useful.html#cb79-22" tabindex="-1"></a><span class="co">#' weight and are therefore returned); it is a no-op for `type = "clusters"`,</span></span>
+<span id="cb79-23"><a href="other-useful.html#cb79-23" tabindex="-1"></a><span class="co">#' whose selected clusters, selection proportions, and sizes do not depend on the</span></span>
+<span id="cb79-24"><a href="other-useful.html#cb79-24" tabindex="-1"></a><span class="co">#' weighting. Must be one of "sparse", "weighted_avg", or "simple_avg". See</span></span>
+<span id="cb79-25"><a href="other-useful.html#cb79-25" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for details. Default is "sparse".</span></span>
+<span id="cb79-26"><a href="other-useful.html#cb79-26" tabindex="-1"></a><span class="co">#' @rdname selected</span></span>
+<span id="cb79-27"><a href="other-useful.html#cb79-27" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb79-28"><a href="other-useful.html#cb79-28" tabindex="-1"></a><span id="selected.cssr">selected.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, <span class="at">type=</span><span class="fu">c</span>(<span class="st">"clusters"</span>, <span class="st">"features"</span>), <span class="at">cutoff=</span><span class="dv">0</span>,</span>
+<span id="cb79-29"><a href="other-useful.html#cb79-29" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">weighting=</span><span class="st">"sparse"</span>, ...){</span>
+<span id="cb79-30"><a href="other-useful.html#cb79-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(object, <span class="st">"cssr"</span>))</span>
+<span id="cb79-31"><a href="other-useful.html#cb79-31" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb79-32"><a href="other-useful.html#cb79-32" tabindex="-1"></a></span>
+<span id="cb79-33"><a href="other-useful.html#cb79-33" tabindex="-1"></a>    <span class="co"># Thin wrapper: getCssSelections validates all inputs (checkCutoff,</span></span>
+<span id="cb79-34"><a href="other-useful.html#cb79-34" tabindex="-1"></a>    <span class="co"># checkWeighting, checkMinNumClusts, checkMaxNumClusts) and cleanly returns</span></span>
+<span id="cb79-35"><a href="other-useful.html#cb79-35" tabindex="-1"></a>    <span class="co"># empty results on an empty selection (e.g. cutoff = 1, min_num_clusts = 0).</span></span>
+<span id="cb79-36"><a href="other-useful.html#cb79-36" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(object, <span class="at">weighting=</span>weighting, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb79-37"><a href="other-useful.html#cb79-37" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb79-38"><a href="other-useful.html#cb79-38" tabindex="-1"></a></span>
+<span id="cb79-39"><a href="other-useful.html#cb79-39" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"clusters"</span>){</span>
+<span id="cb79-40"><a href="other-useful.html#cb79-40" tabindex="-1"></a>        <span class="fu">return</span>(sel<span class="sc">$</span>selected_clusts)</span>
+<span id="cb79-41"><a href="other-useful.html#cb79-41" tabindex="-1"></a>    }</span>
+<span id="cb79-42"><a href="other-useful.html#cb79-42" tabindex="-1"></a>    <span class="fu">return</span>(sel<span class="sc">$</span>selected_feats)</span>
+<span id="cb79-43"><a href="other-useful.html#cb79-43" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code>:</p>
-<div class="sourceCode" id="cb79"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb79-1"><a href="other-useful.html#cb79-1" tabindex="-1"></a><span class="co">#' Summarize cluster stability selection output</span></span>
-<span id="cb79-2"><a href="other-useful.html#cb79-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb79-3"><a href="other-useful.html#cb79-3" tabindex="-1"></a><span class="co">#' Produce a concise, computable overview of a fitted `cssr` object: a header</span></span>
-<span id="cb79-4"><a href="other-useful.html#cb79-4" tabindex="-1"></a><span class="co">#' with the number of selected clusters and features (at the given cutoff), a</span></span>
-<span id="cb79-5"><a href="other-useful.html#cb79-5" tabindex="-1"></a><span class="co">#' per-cluster table built on top of [<a href="other-useful.html#printCssDf">printCssDf</a>()], and a placeholder for</span></span>
-<span id="cb79-6"><a href="other-useful.html#cb79-6" tabindex="-1"></a><span class="co">#' per-family error rate (PFER) error-control content.</span></span>
-<span id="cb79-7"><a href="other-useful.html#cb79-7" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb79-8"><a href="other-useful.html#cb79-8" tabindex="-1"></a><span class="co">#' The returned object has class "summary.cssr" and an accompanying print method</span></span>
-<span id="cb79-9"><a href="other-useful.html#cb79-9" tabindex="-1"></a><span class="co">#' ([<a href="other-useful.html#print.summary.cssr">print.summary.cssr</a>()]). Its `table` element is exactly the data.frame</span></span>
-<span id="cb79-10"><a href="other-useful.html#cb79-10" tabindex="-1"></a><span class="co">#' returned by [<a href="other-useful.html#printCssDf">printCssDf</a>()]: one row per selected cluster, sorted by selection</span></span>
-<span id="cb79-11"><a href="other-useful.html#cb79-11" tabindex="-1"></a><span class="co">#' proportion, with columns ClustName, ClustProtoName (only if the features are</span></span>
-<span id="cb79-12"><a href="other-useful.html#cb79-12" tabindex="-1"></a><span class="co">#' named), ClustProtoNum, ClustSelProp (the cluster's selection proportion) and</span></span>
-<span id="cb79-13"><a href="other-useful.html#cb79-13" tabindex="-1"></a><span class="co">#' ClustSize.</span></span>
-<span id="cb79-14"><a href="other-useful.html#cb79-14" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb79-15"><a href="other-useful.html#cb79-15" tabindex="-1"></a><span class="co">#' If the selection is empty (for example `cutoff = 1` with `min_num_clusts = 0`</span></span>
-<span id="cb79-16"><a href="other-useful.html#cb79-16" tabindex="-1"></a><span class="co">#' when no cluster reaches the cutoff), `summary.cssr` returns a well-formed</span></span>
-<span id="cb79-17"><a href="other-useful.html#cb79-17" tabindex="-1"></a><span class="co">#' zero-row object without error: `table` is NULL and the header reports</span></span>
-<span id="cb79-18"><a href="other-useful.html#cb79-18" tabindex="-1"></a><span class="co">#' "0 clusters / 0 features selected". In this case [<a href="other-useful.html#printCssDf">printCssDf</a>()] and its helper</span></span>
-<span id="cb79-19"><a href="other-useful.html#cb79-19" tabindex="-1"></a><span class="co">#' are deliberately NOT called, as they require at least one selected cluster.</span></span>
-<span id="cb79-20"><a href="other-useful.html#cb79-20" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb79-21"><a href="other-useful.html#cb79-21" tabindex="-1"></a><span class="co">#' The `pfer` element is a documented placeholder (NA) reserved for error-control</span></span>
-<span id="cb79-22"><a href="other-useful.html#cb79-22" tabindex="-1"></a><span class="co">#' content to be filled in by a future release (issue #87).</span></span>
-<span id="cb79-23"><a href="other-useful.html#cb79-23" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb79-24"><a href="other-useful.html#cb79-24" tabindex="-1"></a><span class="co">#' @param object An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
-<span id="cb79-25"><a href="other-useful.html#cb79-25" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; only those clusters with selection proportions equal to</span></span>
-<span id="cb79-26"><a href="other-useful.html#cb79-26" tabindex="-1"></a><span class="co">#' at least cutoff are summarized. Must be between 0 and 1. Default is 0 (in</span></span>
-<span id="cb79-27"><a href="other-useful.html#cb79-27" tabindex="-1"></a><span class="co">#' which case either all clusters are summarized, or max_num_clusts are, if</span></span>
-<span id="cb79-28"><a href="other-useful.html#cb79-28" tabindex="-1"></a><span class="co">#' max_num_clusts is specified).</span></span>
-<span id="cb79-29"><a href="other-useful.html#cb79-29" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
-<span id="cb79-30"><a href="other-useful.html#cb79-30" tabindex="-1"></a><span class="co">#' use regardless of cutoff. Default is 1. May be set to 0 to allow a pure</span></span>
-<span id="cb79-31"><a href="other-useful.html#cb79-31" tabindex="-1"></a><span class="co">#' cutoff-based (threshold) selection that can be empty.</span></span>
-<span id="cb79-32"><a href="other-useful.html#cb79-32" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb79-33"><a href="other-useful.html#cb79-33" tabindex="-1"></a><span class="co">#' use regardless of cutoff. Default is NA (in which case max_num_clusts is</span></span>
-<span id="cb79-34"><a href="other-useful.html#cb79-34" tabindex="-1"></a><span class="co">#' ignored).</span></span>
-<span id="cb79-35"><a href="other-useful.html#cb79-35" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine the</span></span>
-<span id="cb79-36"><a href="other-useful.html#cb79-36" tabindex="-1"></a><span class="co">#' selected features and hence the selected-feature count in the header. As in</span></span>
-<span id="cb79-37"><a href="other-useful.html#cb79-37" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#selected">selected</a>()], it does NOT affect which clusters are selected or the</span></span>
-<span id="cb79-38"><a href="other-useful.html#cb79-38" tabindex="-1"></a><span class="co">#' per-cluster table. Must be one of "sparse", "weighted_avg", or "simple_avg".</span></span>
-<span id="cb79-39"><a href="other-useful.html#cb79-39" tabindex="-1"></a><span class="co">#' Default is "sparse".</span></span>
-<span id="cb79-40"><a href="other-useful.html#cb79-40" tabindex="-1"></a><span class="co">#' @param ... Additional arguments (currently unused).</span></span>
-<span id="cb79-41"><a href="other-useful.html#cb79-41" tabindex="-1"></a><span class="co">#' @return An object of class "summary.cssr": a named list with elements</span></span>
-<span id="cb79-42"><a href="other-useful.html#cb79-42" tabindex="-1"></a><span class="co">#' \item{n_selected_clusts}{Integer; the number of selected clusters.}</span></span>
-<span id="cb79-43"><a href="other-useful.html#cb79-43" tabindex="-1"></a><span class="co">#' \item{n_selected_feats}{Integer; the number of selected features.}</span></span>
-<span id="cb79-44"><a href="other-useful.html#cb79-44" tabindex="-1"></a><span class="co">#' \item{cutoff}{Numeric; the cutoff that was used.}</span></span>
-<span id="cb79-45"><a href="other-useful.html#cb79-45" tabindex="-1"></a><span class="co">#' \item{table}{A data.frame with one row per selected cluster (the output of</span></span>
-<span id="cb79-46"><a href="other-useful.html#cb79-46" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#printCssDf">printCssDf</a>()]), or NULL when the selection is empty.}</span></span>
-<span id="cb79-47"><a href="other-useful.html#cb79-47" tabindex="-1"></a><span class="co">#' \item{pfer}{A placeholder (NA) for per-family error rate error-control</span></span>
-<span id="cb79-48"><a href="other-useful.html#cb79-48" tabindex="-1"></a><span class="co">#' content, to be filled in by a future release (issue #87).}</span></span>
-<span id="cb79-49"><a href="other-useful.html#cb79-49" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb79-50"><a href="other-useful.html#cb79-50" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#selected">selected</a>()] to extract just the selected clusters or features;</span></span>
-<span id="cb79-51"><a href="other-useful.html#cb79-51" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection; [<a href="other-useful.html#printCssDf">printCssDf</a>()] for the</span></span>
-<span id="cb79-52"><a href="other-useful.html#cb79-52" tabindex="-1"></a><span class="co">#' per-cluster data.frame; [<a href="other-useful.html#print.cssr">print.cssr</a>()] for the analogous printed summary.</span></span>
-<span id="cb79-53"><a href="other-useful.html#cb79-53" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb79-54"><a href="other-useful.html#cb79-54" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb79-55"><a href="other-useful.html#cb79-55" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb79-56"><a href="other-useful.html#cb79-56" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb79-57"><a href="other-useful.html#cb79-57" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb79-58"><a href="other-useful.html#cb79-58" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb79-59"><a href="other-useful.html#cb79-59" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb79-60"><a href="other-useful.html#cb79-60" tabindex="-1"></a><span class="co">#' summary(res)</span></span>
-<span id="cb79-61"><a href="other-useful.html#cb79-61" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb79-62"><a href="other-useful.html#cb79-62" tabindex="-1"></a><span id="summary.cssr">summary.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>,</span>
-<span id="cb79-63"><a href="other-useful.html#cb79-63" tabindex="-1"></a>    <span class="at">weighting=</span><span class="st">"sparse"</span>, ...){</span>
-<span id="cb79-64"><a href="other-useful.html#cb79-64" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(object, <span class="st">"cssr"</span>))</span>
-<span id="cb79-65"><a href="other-useful.html#cb79-65" tabindex="-1"></a></span>
-<span id="cb79-66"><a href="other-useful.html#cb79-66" tabindex="-1"></a>    <span class="co"># Selected clusters + features. getCssSelections validates all inputs</span></span>
-<span id="cb79-67"><a href="other-useful.html#cb79-67" tabindex="-1"></a>    <span class="co"># (checkCutoff / checkWeighting / checkMinNumClusts / checkMaxNumClusts) and</span></span>
-<span id="cb79-68"><a href="other-useful.html#cb79-68" tabindex="-1"></a>    <span class="co"># is empty-safe (a clean empty result when e.g. cutoff = 1 and</span></span>
-<span id="cb79-69"><a href="other-useful.html#cb79-69" tabindex="-1"></a>    <span class="co"># min_num_clusts = 0).</span></span>
-<span id="cb79-70"><a href="other-useful.html#cb79-70" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(object, <span class="at">weighting=</span>weighting, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb79-71"><a href="other-useful.html#cb79-71" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
-<span id="cb79-72"><a href="other-useful.html#cb79-72" tabindex="-1"></a></span>
-<span id="cb79-73"><a href="other-useful.html#cb79-73" tabindex="-1"></a>    n_selected_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(sel<span class="sc">$</span>selected_clusts)</span>
-<span id="cb79-74"><a href="other-useful.html#cb79-74" tabindex="-1"></a>    n_selected_feats <span class="ot">&lt;-</span> <span class="fu">length</span>(sel<span class="sc">$</span>selected_feats)</span>
-<span id="cb79-75"><a href="other-useful.html#cb79-75" tabindex="-1"></a></span>
-<span id="cb79-76"><a href="other-useful.html#cb79-76" tabindex="-1"></a>    <span class="co"># Empty-selection path: do NOT call <a href="other-useful.html#printCssDf">printCssDf</a>() / <a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>()</span></span>
-<span id="cb79-77"><a href="other-useful.html#cb79-77" tabindex="-1"></a>    <span class="co"># here. Both assert at least one selected cluster (printCssDf: nrow &gt;= 1;</span></span>
-<span id="cb79-78"><a href="other-useful.html#cb79-78" tabindex="-1"></a>    <span class="co"># getSelectionPrototypes: n_selected_clusts &gt;= 1) and so would die opaquely</span></span>
-<span id="cb79-79"><a href="other-useful.html#cb79-79" tabindex="-1"></a>    <span class="co"># on an empty selection (#107). Return a well-formed zero-row summary.</span></span>
-<span id="cb79-80"><a href="other-useful.html#cb79-80" tabindex="-1"></a>    <span class="cf">if</span>(n_selected_clusts <span class="sc">&gt;=</span> <span class="dv">1</span>){</span>
-<span id="cb79-81"><a href="other-useful.html#cb79-81" tabindex="-1"></a>        <span class="co"># Reuse the sel$selected_clusts already computed above instead of a</span></span>
-<span id="cb79-82"><a href="other-useful.html#cb79-82" tabindex="-1"></a>        <span class="co"># second identical <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>() inside <a href="other-useful.html#printCssDf">printCssDf</a>(). Cluster</span></span>
-<span id="cb79-83"><a href="other-useful.html#cb79-83" tabindex="-1"></a>        <span class="co"># selection is weighting-invariant, so sel$selected_clusts (for this</span></span>
-<span id="cb79-84"><a href="other-useful.html#cb79-84" tabindex="-1"></a>        <span class="co"># weighting) matches the "sparse"-default selection <a href="other-useful.html#printCssDf">printCssDf</a>() would</span></span>
-<span id="cb79-85"><a href="other-useful.html#cb79-85" tabindex="-1"></a>        <span class="co"># recompute -- the resulting table is byte-identical. (#129)</span></span>
-<span id="cb79-86"><a href="other-useful.html#cb79-86" tabindex="-1"></a>        clust_table <span class="ot">&lt;-</span> <a href="other-useful.html#buildCssDf">buildCssDf</a>(object, sel<span class="sc">$</span>selected_clusts)</span>
-<span id="cb79-87"><a href="other-useful.html#cb79-87" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb79-88"><a href="other-useful.html#cb79-88" tabindex="-1"></a>        clust_table <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb79-89"><a href="other-useful.html#cb79-89" tabindex="-1"></a>    }</span>
-<span id="cb79-90"><a href="other-useful.html#cb79-90" tabindex="-1"></a></span>
-<span id="cb79-91"><a href="other-useful.html#cb79-91" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">n_selected_clusts=</span>n_selected_clusts,</span>
-<span id="cb79-92"><a href="other-useful.html#cb79-92" tabindex="-1"></a>        <span class="at">n_selected_feats=</span>n_selected_feats, <span class="at">cutoff=</span>cutoff,</span>
-<span id="cb79-93"><a href="other-useful.html#cb79-93" tabindex="-1"></a>        <span class="at">table=</span>clust_table, <span class="at">pfer=</span><span class="cn">NA_real_</span>)</span>
-<span id="cb79-94"><a href="other-useful.html#cb79-94" tabindex="-1"></a></span>
-<span id="cb79-95"><a href="other-useful.html#cb79-95" tabindex="-1"></a>    <span class="fu">class</span>(out) <span class="ot">&lt;-</span> <span class="st">"summary.cssr"</span></span>
-<span id="cb79-96"><a href="other-useful.html#cb79-96" tabindex="-1"></a></span>
-<span id="cb79-97"><a href="other-useful.html#cb79-97" tabindex="-1"></a>    <span class="fu">return</span>(out)</span>
-<span id="cb79-98"><a href="other-useful.html#cb79-98" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="other-useful.html#cb80-1" tabindex="-1"></a><span class="co">#' Summarize cluster stability selection output</span></span>
+<span id="cb80-2"><a href="other-useful.html#cb80-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-3"><a href="other-useful.html#cb80-3" tabindex="-1"></a><span class="co">#' Produce a concise, computable overview of a fitted `cssr` object: a header</span></span>
+<span id="cb80-4"><a href="other-useful.html#cb80-4" tabindex="-1"></a><span class="co">#' with the number of selected clusters and features (at the given cutoff), a</span></span>
+<span id="cb80-5"><a href="other-useful.html#cb80-5" tabindex="-1"></a><span class="co">#' per-cluster table built on top of [<a href="other-useful.html#printCssDf">printCssDf</a>()], and a placeholder for</span></span>
+<span id="cb80-6"><a href="other-useful.html#cb80-6" tabindex="-1"></a><span class="co">#' per-family error rate (PFER) error-control content.</span></span>
+<span id="cb80-7"><a href="other-useful.html#cb80-7" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-8"><a href="other-useful.html#cb80-8" tabindex="-1"></a><span class="co">#' The returned object has class "summary.cssr" and an accompanying print method</span></span>
+<span id="cb80-9"><a href="other-useful.html#cb80-9" tabindex="-1"></a><span class="co">#' ([<a href="other-useful.html#print.summary.cssr">print.summary.cssr</a>()]). Its `table` element is exactly the data.frame</span></span>
+<span id="cb80-10"><a href="other-useful.html#cb80-10" tabindex="-1"></a><span class="co">#' returned by [<a href="other-useful.html#printCssDf">printCssDf</a>()]: one row per selected cluster, sorted by selection</span></span>
+<span id="cb80-11"><a href="other-useful.html#cb80-11" tabindex="-1"></a><span class="co">#' proportion, with columns ClustName, ClustProtoName (only if the features are</span></span>
+<span id="cb80-12"><a href="other-useful.html#cb80-12" tabindex="-1"></a><span class="co">#' named), ClustProtoNum, ClustSelProp (the cluster's selection proportion) and</span></span>
+<span id="cb80-13"><a href="other-useful.html#cb80-13" tabindex="-1"></a><span class="co">#' ClustSize.</span></span>
+<span id="cb80-14"><a href="other-useful.html#cb80-14" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-15"><a href="other-useful.html#cb80-15" tabindex="-1"></a><span class="co">#' If the selection is empty (for example `cutoff = 1` with `min_num_clusts = 0`</span></span>
+<span id="cb80-16"><a href="other-useful.html#cb80-16" tabindex="-1"></a><span class="co">#' when no cluster reaches the cutoff), `summary.cssr` returns a well-formed</span></span>
+<span id="cb80-17"><a href="other-useful.html#cb80-17" tabindex="-1"></a><span class="co">#' zero-row object without error: `table` is NULL and the header reports</span></span>
+<span id="cb80-18"><a href="other-useful.html#cb80-18" tabindex="-1"></a><span class="co">#' "0 clusters / 0 features selected". In this case [<a href="other-useful.html#printCssDf">printCssDf</a>()] and its helper</span></span>
+<span id="cb80-19"><a href="other-useful.html#cb80-19" tabindex="-1"></a><span class="co">#' are deliberately NOT called, as they require at least one selected cluster.</span></span>
+<span id="cb80-20"><a href="other-useful.html#cb80-20" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-21"><a href="other-useful.html#cb80-21" tabindex="-1"></a><span class="co">#' The `pfer` element is a documented placeholder (NA) reserved for error-control</span></span>
+<span id="cb80-22"><a href="other-useful.html#cb80-22" tabindex="-1"></a><span class="co">#' content to be filled in by a future release (issue #87).</span></span>
+<span id="cb80-23"><a href="other-useful.html#cb80-23" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb80-24"><a href="other-useful.html#cb80-24" tabindex="-1"></a><span class="co">#' @param object An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
+<span id="cb80-25"><a href="other-useful.html#cb80-25" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; only those clusters with selection proportions equal to</span></span>
+<span id="cb80-26"><a href="other-useful.html#cb80-26" tabindex="-1"></a><span class="co">#' at least cutoff are summarized. Must be between 0 and 1. Default is 0 (in</span></span>
+<span id="cb80-27"><a href="other-useful.html#cb80-27" tabindex="-1"></a><span class="co">#' which case either all clusters are summarized, or max_num_clusts are, if</span></span>
+<span id="cb80-28"><a href="other-useful.html#cb80-28" tabindex="-1"></a><span class="co">#' max_num_clusts is specified).</span></span>
+<span id="cb80-29"><a href="other-useful.html#cb80-29" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb80-30"><a href="other-useful.html#cb80-30" tabindex="-1"></a><span class="co">#' use regardless of cutoff. Default is 1. May be set to 0 to allow a pure</span></span>
+<span id="cb80-31"><a href="other-useful.html#cb80-31" tabindex="-1"></a><span class="co">#' cutoff-based (threshold) selection that can be empty.</span></span>
+<span id="cb80-32"><a href="other-useful.html#cb80-32" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb80-33"><a href="other-useful.html#cb80-33" tabindex="-1"></a><span class="co">#' use regardless of cutoff. Default is NA (in which case max_num_clusts is</span></span>
+<span id="cb80-34"><a href="other-useful.html#cb80-34" tabindex="-1"></a><span class="co">#' ignored).</span></span>
+<span id="cb80-35"><a href="other-useful.html#cb80-35" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine the</span></span>
+<span id="cb80-36"><a href="other-useful.html#cb80-36" tabindex="-1"></a><span class="co">#' selected features and hence the selected-feature count in the header. As in</span></span>
+<span id="cb80-37"><a href="other-useful.html#cb80-37" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#selected">selected</a>()], it does NOT affect which clusters are selected or the</span></span>
+<span id="cb80-38"><a href="other-useful.html#cb80-38" tabindex="-1"></a><span class="co">#' per-cluster table. Must be one of "sparse", "weighted_avg", or "simple_avg".</span></span>
+<span id="cb80-39"><a href="other-useful.html#cb80-39" tabindex="-1"></a><span class="co">#' Default is "sparse".</span></span>
+<span id="cb80-40"><a href="other-useful.html#cb80-40" tabindex="-1"></a><span class="co">#' @param ... Additional arguments (currently unused).</span></span>
+<span id="cb80-41"><a href="other-useful.html#cb80-41" tabindex="-1"></a><span class="co">#' @return An object of class "summary.cssr": a named list with elements</span></span>
+<span id="cb80-42"><a href="other-useful.html#cb80-42" tabindex="-1"></a><span class="co">#' \item{n_selected_clusts}{Integer; the number of selected clusters.}</span></span>
+<span id="cb80-43"><a href="other-useful.html#cb80-43" tabindex="-1"></a><span class="co">#' \item{n_selected_feats}{Integer; the number of selected features.}</span></span>
+<span id="cb80-44"><a href="other-useful.html#cb80-44" tabindex="-1"></a><span class="co">#' \item{cutoff}{Numeric; the cutoff that was used.}</span></span>
+<span id="cb80-45"><a href="other-useful.html#cb80-45" tabindex="-1"></a><span class="co">#' \item{table}{A data.frame with one row per selected cluster (the output of</span></span>
+<span id="cb80-46"><a href="other-useful.html#cb80-46" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#printCssDf">printCssDf</a>()]), or NULL when the selection is empty.}</span></span>
+<span id="cb80-47"><a href="other-useful.html#cb80-47" tabindex="-1"></a><span class="co">#' \item{pfer}{A placeholder (NA) for per-family error rate error-control</span></span>
+<span id="cb80-48"><a href="other-useful.html#cb80-48" tabindex="-1"></a><span class="co">#' content, to be filled in by a future release (issue #87).}</span></span>
+<span id="cb80-49"><a href="other-useful.html#cb80-49" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb80-50"><a href="other-useful.html#cb80-50" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#selected">selected</a>()] to extract just the selected clusters or features;</span></span>
+<span id="cb80-51"><a href="other-useful.html#cb80-51" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection; [<a href="other-useful.html#printCssDf">printCssDf</a>()] for the</span></span>
+<span id="cb80-52"><a href="other-useful.html#cb80-52" tabindex="-1"></a><span class="co">#' per-cluster data.frame; [<a href="other-useful.html#print.cssr">print.cssr</a>()] for the analogous printed summary.</span></span>
+<span id="cb80-53"><a href="other-useful.html#cb80-53" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb80-54"><a href="other-useful.html#cb80-54" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb80-55"><a href="other-useful.html#cb80-55" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb80-56"><a href="other-useful.html#cb80-56" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb80-57"><a href="other-useful.html#cb80-57" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb80-58"><a href="other-useful.html#cb80-58" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb80-59"><a href="other-useful.html#cb80-59" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb80-60"><a href="other-useful.html#cb80-60" tabindex="-1"></a><span class="co">#' summary(res)</span></span>
+<span id="cb80-61"><a href="other-useful.html#cb80-61" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb80-62"><a href="other-useful.html#cb80-62" tabindex="-1"></a><span id="summary.cssr">summary.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(object, <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>,</span>
+<span id="cb80-63"><a href="other-useful.html#cb80-63" tabindex="-1"></a>    <span class="at">weighting=</span><span class="st">"sparse"</span>, ...){</span>
+<span id="cb80-64"><a href="other-useful.html#cb80-64" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(object, <span class="st">"cssr"</span>))</span>
+<span id="cb80-65"><a href="other-useful.html#cb80-65" tabindex="-1"></a></span>
+<span id="cb80-66"><a href="other-useful.html#cb80-66" tabindex="-1"></a>    <span class="co"># Selected clusters + features. getCssSelections validates all inputs</span></span>
+<span id="cb80-67"><a href="other-useful.html#cb80-67" tabindex="-1"></a>    <span class="co"># (checkCutoff / checkWeighting / checkMinNumClusts / checkMaxNumClusts) and</span></span>
+<span id="cb80-68"><a href="other-useful.html#cb80-68" tabindex="-1"></a>    <span class="co"># is empty-safe (a clean empty result when e.g. cutoff = 1 and</span></span>
+<span id="cb80-69"><a href="other-useful.html#cb80-69" tabindex="-1"></a>    <span class="co"># min_num_clusts = 0).</span></span>
+<span id="cb80-70"><a href="other-useful.html#cb80-70" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(object, <span class="at">weighting=</span>weighting, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb80-71"><a href="other-useful.html#cb80-71" tabindex="-1"></a>        <span class="at">min_num_clusts=</span>min_num_clusts, <span class="at">max_num_clusts=</span>max_num_clusts)</span>
+<span id="cb80-72"><a href="other-useful.html#cb80-72" tabindex="-1"></a></span>
+<span id="cb80-73"><a href="other-useful.html#cb80-73" tabindex="-1"></a>    n_selected_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(sel<span class="sc">$</span>selected_clusts)</span>
+<span id="cb80-74"><a href="other-useful.html#cb80-74" tabindex="-1"></a>    n_selected_feats <span class="ot">&lt;-</span> <span class="fu">length</span>(sel<span class="sc">$</span>selected_feats)</span>
+<span id="cb80-75"><a href="other-useful.html#cb80-75" tabindex="-1"></a></span>
+<span id="cb80-76"><a href="other-useful.html#cb80-76" tabindex="-1"></a>    <span class="co"># Empty-selection path: do NOT call <a href="other-useful.html#printCssDf">printCssDf</a>() / <a href="other-useful.html#getSelectionPrototypes">getSelectionPrototypes</a>()</span></span>
+<span id="cb80-77"><a href="other-useful.html#cb80-77" tabindex="-1"></a>    <span class="co"># here. Both assert at least one selected cluster (printCssDf: nrow &gt;= 1;</span></span>
+<span id="cb80-78"><a href="other-useful.html#cb80-78" tabindex="-1"></a>    <span class="co"># getSelectionPrototypes: n_selected_clusts &gt;= 1) and so would die opaquely</span></span>
+<span id="cb80-79"><a href="other-useful.html#cb80-79" tabindex="-1"></a>    <span class="co"># on an empty selection (#107). Return a well-formed zero-row summary.</span></span>
+<span id="cb80-80"><a href="other-useful.html#cb80-80" tabindex="-1"></a>    <span class="cf">if</span>(n_selected_clusts <span class="sc">&gt;=</span> <span class="dv">1</span>){</span>
+<span id="cb80-81"><a href="other-useful.html#cb80-81" tabindex="-1"></a>        <span class="co"># Reuse the sel$selected_clusts already computed above instead of a</span></span>
+<span id="cb80-82"><a href="other-useful.html#cb80-82" tabindex="-1"></a>        <span class="co"># second identical <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>() inside <a href="other-useful.html#printCssDf">printCssDf</a>(). Cluster</span></span>
+<span id="cb80-83"><a href="other-useful.html#cb80-83" tabindex="-1"></a>        <span class="co"># selection is weighting-invariant, so sel$selected_clusts (for this</span></span>
+<span id="cb80-84"><a href="other-useful.html#cb80-84" tabindex="-1"></a>        <span class="co"># weighting) matches the "sparse"-default selection <a href="other-useful.html#printCssDf">printCssDf</a>() would</span></span>
+<span id="cb80-85"><a href="other-useful.html#cb80-85" tabindex="-1"></a>        <span class="co"># recompute -- the resulting table is byte-identical. (#129)</span></span>
+<span id="cb80-86"><a href="other-useful.html#cb80-86" tabindex="-1"></a>        clust_table <span class="ot">&lt;-</span> <a href="other-useful.html#buildCssDf">buildCssDf</a>(object, sel<span class="sc">$</span>selected_clusts)</span>
+<span id="cb80-87"><a href="other-useful.html#cb80-87" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb80-88"><a href="other-useful.html#cb80-88" tabindex="-1"></a>        clust_table <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb80-89"><a href="other-useful.html#cb80-89" tabindex="-1"></a>    }</span>
+<span id="cb80-90"><a href="other-useful.html#cb80-90" tabindex="-1"></a></span>
+<span id="cb80-91"><a href="other-useful.html#cb80-91" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">n_selected_clusts=</span>n_selected_clusts,</span>
+<span id="cb80-92"><a href="other-useful.html#cb80-92" tabindex="-1"></a>        <span class="at">n_selected_feats=</span>n_selected_feats, <span class="at">cutoff=</span>cutoff,</span>
+<span id="cb80-93"><a href="other-useful.html#cb80-93" tabindex="-1"></a>        <span class="at">table=</span>clust_table, <span class="at">pfer=</span><span class="cn">NA_real_</span>)</span>
+<span id="cb80-94"><a href="other-useful.html#cb80-94" tabindex="-1"></a></span>
+<span id="cb80-95"><a href="other-useful.html#cb80-95" tabindex="-1"></a>    <span class="fu">class</span>(out) <span class="ot">&lt;-</span> <span class="st">"summary.cssr"</span></span>
+<span id="cb80-96"><a href="other-useful.html#cb80-96" tabindex="-1"></a></span>
+<span id="cb80-97"><a href="other-useful.html#cb80-97" tabindex="-1"></a>    <span class="fu">return</span>(out)</span>
+<span id="cb80-98"><a href="other-useful.html#cb80-98" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#print.summary.cssr">print.summary.cssr</a>()</code> (mirrors the <code><a href="other-useful.html#print.cssr">print.cssr</a>()</code> S3-method pattern – roxygen with <code>@export</code>, no <code>@examples</code>):</p>
-<div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="other-useful.html#cb80-1" tabindex="-1"></a><span class="co">#' @param x An object of class "summary.cssr" (the output of [<a href="other-useful.html#summary.cssr">summary.cssr</a>()]).</span></span>
-<span id="cb80-2"><a href="other-useful.html#cb80-2" tabindex="-1"></a><span class="co">#' @rdname summary.cssr</span></span>
-<span id="cb80-3"><a href="other-useful.html#cb80-3" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb80-4"><a href="other-useful.html#cb80-4" tabindex="-1"></a><span id="print.summary.cssr">print.summary.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...){</span>
-<span id="cb80-5"><a href="other-useful.html#cb80-5" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Cluster stability selection summary</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb80-6"><a href="other-useful.html#cb80-6" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"%d cluster%s / %d feature%s selected at cutoff %s</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb80-7"><a href="other-useful.html#cb80-7" tabindex="-1"></a>        x<span class="sc">$</span>n_selected_clusts, <span class="cf">if</span>(x<span class="sc">$</span>n_selected_clusts <span class="sc">==</span> <span class="dv">1</span>) <span class="st">""</span> <span class="cf">else</span> <span class="st">"s"</span>,</span>
-<span id="cb80-8"><a href="other-useful.html#cb80-8" tabindex="-1"></a>        x<span class="sc">$</span>n_selected_feats, <span class="cf">if</span>(x<span class="sc">$</span>n_selected_feats <span class="sc">==</span> <span class="dv">1</span>) <span class="st">""</span> <span class="cf">else</span> <span class="st">"s"</span>,</span>
-<span id="cb80-9"><a href="other-useful.html#cb80-9" tabindex="-1"></a>        <span class="fu">format</span>(x<span class="sc">$</span>cutoff)))</span>
-<span id="cb80-10"><a href="other-useful.html#cb80-10" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(x<span class="sc">$</span>table)){</span>
-<span id="cb80-11"><a href="other-useful.html#cb80-11" tabindex="-1"></a>        <span class="fu">cat</span>(<span class="st">"(no clusters selected at this cutoff)</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb80-12"><a href="other-useful.html#cb80-12" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb80-13"><a href="other-useful.html#cb80-13" tabindex="-1"></a>        <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
-<span id="cb80-14"><a href="other-useful.html#cb80-14" tabindex="-1"></a>        <span class="fu">print.data.frame</span>(x<span class="sc">$</span>table, ...)</span>
-<span id="cb80-15"><a href="other-useful.html#cb80-15" tabindex="-1"></a>    }</span>
-<span id="cb80-16"><a href="other-useful.html#cb80-16" tabindex="-1"></a>    <span class="co"># PFER placeholder: error-control content to be filled in by issue #87.</span></span>
-<span id="cb80-17"><a href="other-useful.html#cb80-17" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">PFER: %s (not yet implemented; see issue #87)</span><span class="sc">\n</span><span class="st">"</span>,</span>
-<span id="cb80-18"><a href="other-useful.html#cb80-18" tabindex="-1"></a>        <span class="fu">format</span>(x<span class="sc">$</span>pfer)))</span>
-<span id="cb80-19"><a href="other-useful.html#cb80-19" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
-<span id="cb80-20"><a href="other-useful.html#cb80-20" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb81"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb81-1"><a href="other-useful.html#cb81-1" tabindex="-1"></a><span class="co">#' @param x An object of class "summary.cssr" (the output of [<a href="other-useful.html#summary.cssr">summary.cssr</a>()]).</span></span>
+<span id="cb81-2"><a href="other-useful.html#cb81-2" tabindex="-1"></a><span class="co">#' @rdname summary.cssr</span></span>
+<span id="cb81-3"><a href="other-useful.html#cb81-3" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb81-4"><a href="other-useful.html#cb81-4" tabindex="-1"></a><span id="print.summary.cssr">print.summary.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, ...){</span>
+<span id="cb81-5"><a href="other-useful.html#cb81-5" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">"Cluster stability selection summary</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb81-6"><a href="other-useful.html#cb81-6" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"%d cluster%s / %d feature%s selected at cutoff %s</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb81-7"><a href="other-useful.html#cb81-7" tabindex="-1"></a>        x<span class="sc">$</span>n_selected_clusts, <span class="cf">if</span>(x<span class="sc">$</span>n_selected_clusts <span class="sc">==</span> <span class="dv">1</span>) <span class="st">""</span> <span class="cf">else</span> <span class="st">"s"</span>,</span>
+<span id="cb81-8"><a href="other-useful.html#cb81-8" tabindex="-1"></a>        x<span class="sc">$</span>n_selected_feats, <span class="cf">if</span>(x<span class="sc">$</span>n_selected_feats <span class="sc">==</span> <span class="dv">1</span>) <span class="st">""</span> <span class="cf">else</span> <span class="st">"s"</span>,</span>
+<span id="cb81-9"><a href="other-useful.html#cb81-9" tabindex="-1"></a>        <span class="fu">format</span>(x<span class="sc">$</span>cutoff)))</span>
+<span id="cb81-10"><a href="other-useful.html#cb81-10" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(x<span class="sc">$</span>table)){</span>
+<span id="cb81-11"><a href="other-useful.html#cb81-11" tabindex="-1"></a>        <span class="fu">cat</span>(<span class="st">"(no clusters selected at this cutoff)</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb81-12"><a href="other-useful.html#cb81-12" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb81-13"><a href="other-useful.html#cb81-13" tabindex="-1"></a>        <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb81-14"><a href="other-useful.html#cb81-14" tabindex="-1"></a>        <span class="fu">print.data.frame</span>(x<span class="sc">$</span>table, ...)</span>
+<span id="cb81-15"><a href="other-useful.html#cb81-15" tabindex="-1"></a>    }</span>
+<span id="cb81-16"><a href="other-useful.html#cb81-16" tabindex="-1"></a>    <span class="co"># PFER placeholder: error-control content to be filled in by issue #87.</span></span>
+<span id="cb81-17"><a href="other-useful.html#cb81-17" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">PFER: %s (not yet implemented; see issue #87)</span><span class="sc">\n</span><span class="st">"</span>,</span>
+<span id="cb81-18"><a href="other-useful.html#cb81-18" tabindex="-1"></a>        <span class="fu">format</span>(x<span class="sc">$</span>pfer)))</span>
+<span id="cb81-19"><a href="other-useful.html#cb81-19" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
+<span id="cb81-20"><a href="other-useful.html#cb81-20" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </div>
             </section>
