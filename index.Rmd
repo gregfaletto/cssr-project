@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.3.6",
+    Version = "0.4.0",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -5063,6 +5063,122 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
         print.data.frame(df, ...)
     }
     invisible(x)
+}
+```
+
+`plot.cssr()` gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the `cutoff` drawn as a dashed reference line and the selected clusters (or features) highlighted:
+
+```{r}
+#' Plot cluster (or feature) selection proportions from cluster stability
+#' selection
+#'
+#' Produce a base-graphics bar plot of the selection proportions of a fitted
+#' `cssr` object: one bar per cluster (the default) or per feature, sorted in
+#' decreasing order of selection proportion. When `cutoff > 0` a dashed
+#' reference line is drawn at the cutoff, and the bars whose cluster (or
+#' feature) is selected -- at the given `cutoff` and cluster-count constraints
+#' -- are highlighted in `sel_col`, the rest in `unsel_col`.
+#'
+#' The selection that determines the highlight is obtained from
+#' [getCssSelections()] with the same `cutoff`, `min_num_clusts`,
+#' `max_num_clusts`, and `weighting`. Which clusters are selected does not
+#' depend on `weighting`; which features are selected does (the weighting
+#' determines which members of the selected clusters have nonzero weight and are
+#' therefore highlighted when `type = "features"`).
+#'
+#' Note that, to match the positional argument order of [print.cssr()], the
+#' second positional argument is `cutoff`; `type`, `weighting`, and the
+#' graphical parameters must be supplied by name (for example
+#' `plot(x, type = "features")`).
+#'
+#' @param x An object of class "cssr" (the output of the function [css()]).
+#' @param cutoff Numeric; the selection-proportion threshold used both to draw
+#' the dashed reference line (when greater than 0) and to determine which bars
+#' are highlighted as selected. Must be between 0 and 1. Default is 0 (in which
+#' case no reference line is drawn and, unless `max_num_clusts` restricts it,
+#' every cluster is treated as selected).
+#' @param min_num_clusts Integer or numeric; the minimum number of clusters to
+#' treat as selected regardless of cutoff. (If the chosen cutoff would select
+#' fewer than min_num_clusts clusters, the cutoff is effectively lowered until
+#' at least min_num_clusts clusters are selected.) Default is 1. May be set to 0
+#' to allow a pure cutoff-based highlight that can be empty (no bar highlighted)
+#' when no cluster's selection proportion meets the cutoff.
+#' @param max_num_clusts Integer or numeric; the maximum number of clusters to
+#' treat as selected regardless of cutoff. (If the chosen cutoff would select
+#' more than max_num_clusts clusters, the cutoff is effectively raised until at
+#' most max_num_clusts clusters are selected.) Default is NA (in which case
+#' max_num_clusts is ignored).
+#' @param type Character; either "clusters" (the default) to plot one bar per
+#' cluster, or "features" to plot one bar per feature. May be abbreviated.
+#' @param weighting Character; passed to [getCssSelections()] to determine which
+#' individual features are selected (and therefore highlighted) when
+#' `type = "features"`. It has no effect on the cluster bars or on which
+#' clusters are highlighted. Must be one of "sparse", "weighted_avg", or
+#' "simple_avg". Default is "sparse" (matching [getCssSelections()] and
+#' [selected()]).
+#' @param ylim Numeric vector of length 2; the y-axis limits for the bar plot.
+#' Default is `c(0, 1)`, the natural range of a selection proportion.
+#' @param sel_col The colour used to fill the bars of selected clusters (or
+#' features). Default is "steelblue".
+#' @param unsel_col The colour used to fill the bars of unselected clusters (or
+#' features). Default is "grey70".
+#' @param ... Additional graphical parameters passed on to
+#' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,
+#' fill colours, and `ylim` are controlled by this method; supplying `col` or
+#' `ylim` here overrides the highlight colours or the default y-axis limits.
+#' @return Invisibly, the numeric vector of selection proportions that were
+#' plotted: the `colMeans()` of the cluster (or feature) selection matrix,
+#' sorted in decreasing order, named by cluster (always) or by feature (when the
+#' features of `X` were named; unnamed otherwise). Called primarily for its side
+#' effect: drawing the bar plot.
+#' @author Gregory Faletto, Jacob Bien
+#' @seealso [print.cssr()] and [summary.cssr()] for printed / tabular overviews
+#' of the same selection proportions; [selected()] to extract the selected
+#' clusters or features; [getCssSelections()] for the underlying selection used
+#' to highlight the bars.
+#' @examples
+#' set.seed(1)
+#' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+#'   cluster_size = 4, n_clusters = 1, snr = 3)
+#' # Name the features so the feature plot shows labelled, highlighted bars
+#' # (genClusteredData returns X with no column names).
+#' X <- data$X
+#' colnames(X) <- paste0("V", seq_len(ncol(X)))
+#' clusters <- list(cluster1 = 1:4)
+#' res <- css(X = X, y = data$y, lambda = 0.01, clusters = clusters, B = 10)
+#' # Cluster selection proportions (the default):
+#' plot(res)
+#' # Feature selection proportions, highlighting the selected features:
+#' plot(res, type = "features")
+#' @export
+plot.cssr <- function(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA,
+    type = c("clusters", "features"), weighting = "sparse", ylim = c(0, 1),
+    sel_col = "steelblue", unsel_col = "grey70", ...){
+    type <- match.arg(type)
+    sel <- suppressWarnings(getCssSelections(x, weighting = weighting,
+        cutoff = cutoff, min_num_clusts = min_num_clusts,
+        max_num_clusts = max_num_clusts))
+    if(type == "clusters"){
+        props  <- colMeans(x$clus_sel_mat)                              # named by cluster (guaranteed)
+        is_sel <- names(props) %in% names(sel$selected_clusts)
+        ylab   <- "Cluster selection proportion"
+    } else {
+        props  <- colMeans(x$feat_sel_mat)                             # named iff X was named
+        is_sel <- seq_along(props) %in% as.integer(sel$selected_feats) # INDEX-based -> robust to unnamed X
+        ylab   <- "Feature selection proportion"
+    }
+    ord    <- order(props, decreasing = TRUE)
+    props  <- props[ord]; is_sel <- is_sel[ord]
+    labels <- names(props); if(is.null(labels)) labels <- as.character(ord)  # index labels if X unnamed
+    # method controls height/col/ylim on a SINGLE merged arg list; ... forwards
+    # main/cex.names/etc. -> no barplot duplicate-argument crash.
+    args <- utils::modifyList(list(names.arg = labels, las = 2, ylab = ylab), list(...))
+    args$height <- props
+    args$col    <- ifelse(is_sel, sel_col, unsel_col)
+    args$ylim   <- ylim
+    do.call(graphics::barplot, args)
+    if(cutoff > 0) graphics::abline(h = cutoff, lty = 2, col = "red")
+    invisible(props)   # sorted; names as-is (so it equals sort(colMeans(...)) for the test)
 }
 ```
 
@@ -12832,6 +12948,147 @@ testthat::test_that("selected() and summary() handle an empty selection", {
     "no clusters selected")
   testthat::expect_identical(ret, css_res)
   testthat::expect_invisible(print(css_res, cutoff=1, min_num_clusts=0))
+})
+```
+
+Tests for `plot.cssr()`. All plotting is drawn to a null device
+(`grDevices::pdf(NULL)` / `grDevices::dev.off()`) so the tests produce no file
+or window. They cover the return value (the sorted selection proportions), the
+index-based feature highlight for an unnamed `X` (the B2 guard), `...`
+passthrough to `barplot()` without a duplicate-argument crash (the B1 guard),
+and the empty-selection and single-cluster edge cases.
+
+```{r}
+testthat::test_that("plot.cssr draws cluster proportions and returns them sorted", {
+  # Named X so the feature matrix (tested below) carries feature names.
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  grDevices::pdf(NULL)  # draw to a null device (no file, no window)
+
+  # (a) Clusters (default): runs without error and invisibly returns the sorted
+  # named cluster selection proportions (a deterministic proof of the return).
+  testthat::expect_invisible(plot(css_res))
+  ret <- plot(css_res)
+  testthat::expect_equal(ret,
+    sort(colMeans(css_res$clus_sel_mat), decreasing=TRUE))
+  testthat::expect_false(is.null(names(ret)))  # cluster names guaranteed
+
+  # (b) Features, NAMED X: returns the sorted NAMED feature selection
+  # proportions, and the (index-based) highlight matches getCssSelections().
+  ret_f <- plot(css_res, type="features")
+  props_f <- colMeans(css_res$feat_sel_mat)
+  testthat::expect_equal(ret_f, sort(props_f, decreasing=TRUE))
+  testthat::expect_identical(names(ret_f),
+    paste0("V", order(props_f, decreasing=TRUE)))  # named + correctly ordered
+  sel_f <- getCssSelections(css_res, weighting="sparse")
+  ord <- order(props_f, decreasing=TRUE)
+  is_sel <- (seq_along(props_f) %in% as.integer(sel_f$selected_feats))[ord]
+  testthat::expect_equal(sum(is_sel), length(sel_f$selected_feats))
+  testthat::expect_setequal(ord[is_sel], as.integer(sel_f$selected_feats))
+
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr feature highlight is index-based for unnamed X (B2)", {
+  # genClusteredData returns X with NULL colnames -> feat_sel_mat is UNNAMED.
+  # A name-based feature highlight would silently be all-FALSE; the method uses
+  # an INDEX-based highlight, which must still be non-empty. This is the B2
+  # regression proof.
+  set.seed(721)
+  dat <- genClusteredData(n=60, p=11, k_unclustered=2, cluster_size=4,
+    n_clusters=1, snr=3)
+  clusters <- list(cluster1=1:4)
+  css_res <- suppressWarnings(css(X=dat$X, y=dat$y, lambda=0.01,
+    clusters=clusters, B=10))
+
+  # Precondition for the B2 guard: the feature matrix really is unnamed.
+  testthat::expect_null(colnames(css_res$feat_sel_mat))
+
+  grDevices::pdf(NULL)
+
+  props <- colMeans(css_res$feat_sel_mat)
+  ret <- plot(css_res, type="features", cutoff=0.3)
+  # Returns the plain (unnamed) sorted colMeans regardless of the cutoff.
+  testthat::expect_equal(ret, sort(props, decreasing=TRUE))
+  testthat::expect_null(names(ret))
+
+  # Re-derive the highlight exactly as plot.cssr does: INDEX-based.
+  sel <- getCssSelections(css_res, weighting="sparse", cutoff=0.3)
+  testthat::expect_true(length(sel$selected_feats) > 0)  # there ARE selections
+  ord <- order(props, decreasing=TRUE)
+  is_sel <- (seq_along(props) %in% as.integer(sel$selected_feats))[ord]
+  testthat::expect_true(any(is_sel))                     # NON-empty highlight
+  testthat::expect_equal(sum(is_sel), length(sel$selected_feats))
+  # The highlighted bars are exactly the selected features, by ORIGINAL index.
+  testthat::expect_setequal(ord[is_sel], as.integer(sel$selected_feats))
+
+  # Contrast: a NAME-based highlight WOULD have failed here (names are NULL, so
+  # names(props) %in% ... is logical(0) -> no bar highlighted).
+  testthat::expect_false(any(names(props) %in%
+    as.character(sel$selected_feats)))
+
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr forwards ... to barplot without a duplicate-arg crash (B1)", {
+  # The method builds a SINGLE merged barplot arg list, so graphical params on
+  # ... cannot collide with col/ylim/height (which previously crashed with
+  # "formal argument 'col' matched by multiple actual arguments").
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  grDevices::pdf(NULL)
+  testthat::expect_no_error(plot(css_res, col="red"))
+  testthat::expect_no_error(plot(css_res, ylim=c(0, 0.5)))
+  testthat::expect_no_error(plot(css_res, main="x"))
+  testthat::expect_no_error(plot(css_res, type="features", col="red",
+    main="feats"))
+  grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr handles an empty selection and a single cluster", {
+  # (e) Empty selection: min_num_clusts = 0 with a cutoff strictly above every
+  # cluster proportion selects nothing (min_num_clusts = 1 is never empty). All
+  # bars get unsel_col, there is no highlight, and there is no crash.
+  set.seed(8)
+  B <- 10
+  x <- matrix(stats::rnorm(30*8), nrow=30, ncol=8)
+  y <- stats::rnorm(30)
+  css_res <- css(X=x, y=y, lambda=0.5, clusters=list(), B=B)
+  max_prop <- max(colMeans(css_res$clus_sel_mat))
+  testthat::expect_true(max_prop < 1)
+  cut <- (max_prop + 1) / 2  # strictly between max_prop and 1 (and <= 1)
+  sel <- getCssSelections(css_res, cutoff=cut, min_num_clusts=0)
+  testthat::expect_length(sel$selected_clusts, 0)  # genuinely empty
+
+  grDevices::pdf(NULL)
+  # A bare call that errored would fail the test -> this asserts "no crash".
+  ret <- plot(css_res, min_num_clusts=0, cutoff=cut)
+  testthat::expect_equal(ret,
+    sort(colMeans(css_res$clus_sel_mat), decreasing=TRUE))
+  grDevices::dev.off()
+
+  # (f) Single-cluster css: clus_sel_mat has exactly one column -> a length-1
+  # barplot, no error.
+  set.seed(1)
+  x1 <- matrix(stats::rnorm(10*4), nrow=10, ncol=4)
+  y1 <- stats::rnorm(10)
+  css_1 <- css(X=x1, y=y1, lambda=0.01, clusters=list(all=1:4), B=10)
+  testthat::expect_equal(ncol(css_1$clus_sel_mat), 1)
+
+  grDevices::pdf(NULL)
+  ret1 <- plot(css_1)
+  testthat::expect_length(ret1, 1)
+  grDevices::dev.off()
 })
 ```
 
