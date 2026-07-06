@@ -1,0 +1,40 @@
+# Auto-retry the Pages deploy when it hits GitHub's transient backend error.
+#
+# GitHub's Pages *deployment* backend intermittently rejects a deployment that is
+# otherwise fine: in "Deploy docs to GitHub Pages" the artifact uploads and
+# validates, then the deploy step fails fast with
+#   ##[error]Deployment failed, try again later.
+# (the generic `deployment_failed`, NOT the artifact-side `deployment_content_failed`).
+# A re-run -- or simply the next push's deploy -- succeeds. This companion
+# workflow re-runs a failed deploy automatically (after a short delay, up to a
+# few attempts) so the published site self-heals without a manual re-run.
+#
+# Trade-off: GitHub may still email once for the first failed attempt before the
+# retry succeeds; the win is that no human has to re-run it. During a *sustained*
+# Pages outage the attempts are capped (see the `run_attempt` guard) so this
+# never loops.
+name: Retry Pages deploy on failure
+
+on:
+  workflow_run:
+    workflows: ["Deploy docs to GitHub Pages"]
+    types: [completed]
+
+# Needed to re-run the failed deploy run.
+permissions:
+  actions: write
+
+jobs:
+  retry:
+    # Only when the deploy FAILED, and cap total attempts to avoid a retry loop
+    # during a sustained outage (original + up to 2 retries = 3 attempts).
+    if: ${{ github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt < 3 }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for the backend, then re-run the failed deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Deploy run ${{ github.event.workflow_run.id }} (attempt ${{ github.event.workflow_run.run_attempt }}) failed; re-running after a short delay."
+          sleep 60
+          gh run rerun "${{ github.event.workflow_run.id }}" --failed --repo "${{ github.repository }}"
