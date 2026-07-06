@@ -1,0 +1,78 @@
+---
+title: "Exploring cluster stability selection results"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Exploring cluster stability selection results}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+The getting-started guide (the package [home page](https://gregfaletto.github.io/cssr-project/)) shows how to *run* cluster stability selection with `css()`. This vignette shows how to **explore and visualize** a fitted `cssr` object using its S3 methods: `plot()`, `print()`, `summary()`, and `selected()`. All of them read the already-computed selection proportions, so they are cheap to call and let you explore different `cutoff`s without re-running the (relatively expensive) subsampling.
+
+```{r setup}
+library(cssr)
+set.seed(983219)
+
+# Data with a cluster of 10 correlated proxies for a latent variable (features
+# 1-10), plus some unclustered "weak signal" features and noise.
+data <- genClusteredData(n = 80, p = 30, cluster_size = 10,
+                         k_unclustered = 5, snr = 3)
+X <- data$X
+y <- data$y
+
+# css() needs a lambda; getLassoLambda() picks one by cross-validation.
+lambda <- getLassoLambda(X, y)
+
+# Run cluster stability selection, telling css about the cluster of proxies.
+css_output <- css(X, y, lambda, clusters = list("Z_cluster" = 1:10))
+```
+
+## Visualizing selection proportions with `plot()`
+
+`plot()` draws a sorted bar plot of the **cluster selection proportions** -- the proportion of subsamples in which each cluster was selected. The clusters selected at the given `cutoff` are highlighted, and the cutoff is drawn as a dashed reference line.
+
+```{r, fig.width = 7, fig.height = 4.5}
+plot(css_output, cutoff = 0.9)
+```
+
+`"Z_cluster"` (the cluster of proxies) rises to the top -- exactly the vote-splitting fix that cluster stability selection provides. Pass `type = "features"` to plot the individual-feature selection proportions instead:
+
+```{r, fig.width = 7, fig.height = 4.5}
+plot(css_output, type = "features", cutoff = 0.9)
+```
+
+## Tabular summaries: `print()` and `summary()`
+
+Printing a `cssr` object shows one row per cluster, in decreasing order of selection proportion, with each cluster's prototype (its highest-selected member) and size:
+
+```{r}
+print(css_output, cutoff = 0.9)
+```
+
+`summary()` returns a computable overview (the selection counts plus the per-cluster table) with its own print method:
+
+```{r}
+summary(css_output, cutoff = 0.9)
+```
+
+## Extracting the selection with `selected()`
+
+`selected()` returns the selected clusters directly -- a named list giving the feature indices in each. Pass `type = "features"` for the flat vector of all selected features:
+
+```{r}
+selected(css_output, cutoff = 0.9)
+
+selected(css_output, type = "features", cutoff = 0.9)
+```
+
+`plot()`, `print()`, `summary()`, and `selected()` all share the same `cutoff` / `min_num_clusts` / `max_num_clusts` arguments, so you can dial the selection in without re-running `css()`.
+
+## See also
+
+* The getting-started guide (package [home page](https://gregfaletto.github.io/cssr-project/)) for running `css()` and `cssSelect()`.
+* `vignette("prediction", "cssr")` for predicting `y` on new observations with cluster representatives.
+* `?plot.cssr`, `?summary.cssr`, `?selected`, and `?getCssSelections` for the full argument reference.
