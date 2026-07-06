@@ -200,7 +200,10 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     if(identical(fitfun, cssLasso) && (is.numeric(sel_y) || is.integer(sel_y)) &&
             all(is.finite(sel_y))){
         abort_prob <- discreteYAbortProb(sel_y, B, sampling_type)
-        if(abort_prob > 0.01){
+        # Warn only above a 5% estimated abort probability: high enough to stay
+        # silent on common discrete data (balanced/moderate y compute to ~0) while
+        # still catching genuinely majority-dominated y. Tunable constant. (#131)
+        if(abort_prob > 0.05){
             warning(paste0("The response y appears highly discrete: there is an ",
                 "estimated ", round(100 * abort_prob), "% chance that at least one ",
                 "random subsample of y (of size floor(n/2)) will contain only one ",
