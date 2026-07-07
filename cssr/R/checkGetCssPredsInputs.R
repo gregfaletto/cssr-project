@@ -120,6 +120,15 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     stopifnot(n >= 1)
     stopifnot(p == ncol(trainX))
+    # #142: re-attach trainX's names too -- checkNewXProvided strips them, so a
+    # data.frame trainX arrives here name-less while testX was re-named at :3607,
+    # spuriously tripping the warnings below and again downstream in
+    # formCssDesign(newx=trainX). trainX's names were already validated ==
+    # css_results$X inside checkNewXProvided, and p == ncol(trainX), so feat_names
+    # is the correct, length-safe, non-masking re-attachment.
+    if(all(!is.na(feat_names))){
+        colnames(trainX) <- feat_names
+    }
     if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
         warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
     }

@@ -3383,9 +3383,17 @@ testthat::test_that("getCssDesign works", {
   fit_inds <- setdiff(1:n, selec_inds)
 
   css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  res_df <- getCssDesign(css_results=css_res_df, weighting="simple_avg",
-                          cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
-                          newX=X_df[fit_inds, ])
+  # #142: the data.frame newX path must NOT emit the spurious "no variable names"
+  # warning (checkXInputResults strips the coerced names; getCssDesign re-attaches
+  # the already-validated ones before formCssDesign).
+  df_warns <- character(0)
+  res_df <- withCallingHandlers(
+    getCssDesign(css_results=css_res_df, weighting="simple_avg",
+                 cutoff=0.7, min_num_clusts=3, max_num_clusts=NA,
+                 newX=X_df[fit_inds, ]),
+    warning=function(w){ df_warns <<- c(df_warns, conditionMessage(w));
+      invokeRestart("muffleWarning") })
+  testthat::expect_false(any(grepl("no variable names", df_warns, fixed=TRUE)))
 
   testthat::expect_true(is.matrix(res_df))
   testthat::expect_true(is.numeric(res_df))
@@ -4167,10 +4175,24 @@ testthat::test_that("getCssPreds works", {
   X_df$carb <- as.factor(X_df$carb)
 
   css_res_df <- css(X=X_df[selec_inds, ], y=y[selec_inds], lambda=0.01, B = 10)
-  res_df <- getCssPreds(css_res_df, testX=X_df[test_inds, ],
-                        trainX=X_df[train_inds, ], trainY=y[train_inds])
-  
-  # Note: this data.frame path currently emits two spurious column-name warnings (see #142).
+  # #142: this data.frame testX+trainX path used to emit two spurious column-name
+  # warnings -- checkNewXProvided strips trainX's names, so a named testX and a
+  # name-less trainX tripped "provided for testX but not for trainX" and, via
+  # formCssDesign(newx=trainX), "New X provided had no variable names". After the
+  # trainX re-attach in checkGetCssPredsInputs, NEITHER fires. Capture warnings
+  # and assert both #142 messages are absent.
+  df_warns <- character(0)
+  res_df <- withCallingHandlers(
+    getCssPreds(css_res_df, testX=X_df[test_inds, ],
+                trainX=X_df[train_inds, ], trainY=y[train_inds]),
+    warning=function(w){
+      df_warns <<- c(df_warns, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  testthat::expect_false(any(grepl("testX but not for trainX", df_warns,
+                                   fixed=TRUE)))
+  testthat::expect_false(any(grepl("New X provided had no variable names",
+                                   df_warns, fixed=TRUE)))
 
   testthat::expect_true(all(!is.na(res_df)))
   testthat::expect_true(is.numeric(res_df))
@@ -4193,6 +4215,64 @@ testthat::test_that("getCssPreds works", {
     getCssPreds(css_res_chr, testX=matrix(stats::rnorm(3*6), nrow=3, ncol=6)),
     "Can't generate predictions from the data", fixed=TRUE)
 
+})
+
+testthat::test_that("getCssPreds data.frame path is warning-free and matches matrix path (#142)", {
+  set.seed(14200)
+
+  p <- 5
+
+  Xm_select <- matrix(stats::rnorm(24 * p), nrow=24, ncol=p)
+  colnames(Xm_select) <- paste0("V", 1:p)
+  y_select <- stats::rnorm(24)
+
+  Xm_train <- matrix(stats::rnorm(10 * p), nrow=10, ncol=p)
+  colnames(Xm_train) <- paste0("V", 1:p)
+  y_train <- stats::rnorm(10)
+
+  Xm_test <- matrix(stats::rnorm(6 * p), nrow=6, ncol=p)
+  colnames(Xm_test) <- paste0("V", 1:p)
+
+  # Four clusters over five features; at the default cutoff the OLS design has at
+  # most four cluster representatives, and 10 training rows > 4 clears the
+  # lm()-intercept adequacy guard so predictions are produced (rather than
+  # hitting the OLS-size stop).
+  clusters <- list(a=1:2, b=3, c=4, d=5)
+  css_res <- css(X=Xm_select, y=y_select, lambda=0.01, clusters=clusters, B=10)
+
+  Xd_train <- as.data.frame(Xm_train)
+  Xd_test  <- as.data.frame(Xm_test)
+
+  # (a) The data.frame testX+trainX path emits NEITHER #142 warning -- and, for a
+  # clean numeric data.frame with consistent names, no warning at all.
+  df_warns <- character(0)
+  preds_df <- withCallingHandlers(
+    getCssPreds(css_res, testX=Xd_test, trainX=Xd_train, trainY=y_train),
+    warning=function(w){
+      df_warns <<- c(df_warns, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  testthat::expect_false(any(grepl("testX but not for trainX", df_warns,
+                                   fixed=TRUE)))
+  testthat::expect_false(any(grepl("New X provided had no variable names",
+                                   df_warns, fixed=TRUE)))
+  testthat::expect_length(df_warns, 0)
+
+  # (c) Byte-identity: column names never enter the numeric path (formCssDesign
+  # strips them and forms cluster representatives positionally), so the
+  # data.frame-input predictions equal the matrix-input predictions exactly.
+  preds_mat <- getCssPreds(css_res, testX=Xm_test, trainX=Xm_train,
+                           trainY=y_train)
+  testthat::expect_equal(unname(preds_df), unname(preds_mat))
+
+  # (b) A genuine column-name mismatch must still error -- the re-attach uses the
+  # already-validated feat_names and cannot mask a real mismatch: a trainX
+  # data.frame whose names differ from the X css was fit on is rejected.
+  Xd_train_bad <- Xd_train
+  colnames(Xd_train_bad) <- paste0("W", 1:p)
+  testthat::expect_error(
+    getCssPreds(css_res, testX=Xd_test, trainX=Xd_train_bad, trainY=y_train),
+    "identical(feat_names, colnames(css_X)) is not TRUE", fixed=TRUE)
 })
 
 testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
