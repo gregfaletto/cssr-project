@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.2",
+    Version = "0.4.3",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -946,8 +946,9 @@ Several of the entry points below accept either a numeric matrix or a data.frame
 #' a data.frame `X`: if `X` is a data.frame, convert it with
 #' `stats::model.matrix(~ .)` and drop the intercept column. If the column
 #' count changed and clusters were supplied (which would invalidate the
-#' cluster indices), error. If `X` is already a matrix it is returned
-#' unchanged.
+#' cluster indices), error. If `X` is already a numeric matrix it is returned
+#' unchanged; a non-numeric matrix (e.g. a character matrix) is rejected with
+#' an error.
 #' @param X A numeric matrix or a data.frame.
 #' @param clusters A list of integer vectors (the cluster assignments); the
 #' column-count guard only fires when `length(clusters) > 0`.
@@ -977,6 +978,13 @@ coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
                 convert_phrase,
                 " to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."))
         }
+    }
+    if(!is.numeric(X)){
+        stop(paste0("The provided ", arg_name,
+            " must be a numeric matrix; storage mode \"", storage.mode(X),
+            "\" was provided. If ", arg_name,
+            " came from a data.frame, check for character or factor columns."),
+            call. = FALSE)
     }
     X
 }
@@ -6381,6 +6389,41 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
   fac_df <- data.frame(a = factor(c("x", "y", "z", "x", "y", "z", "x", "y")))
   testthat::expect_error(coerceDataFrameToMatrix(fac_df, clusters = list(1)),
     "the number of columns changed", fixed = TRUE)
+
+  # A non-numeric (character) matrix is rejected (#152).
+  testthat::expect_error(
+    coerceDataFrameToMatrix(matrix(letters[1:6], nrow = 3, ncol = 2), clusters = list()),
+    "must be a numeric matrix", fixed = TRUE)
+})
+```
+
+Tests that a non-numeric matrix `X` is rejected at every X entry point (#152). All
+seven entry points funnel through `coerceDataFrameToMatrix()`, so a character
+matrix errors with the same clear message everywhere instead of silently
+producing all-zero selections (`css`) or crashing later (`protolasso`):
+
+```{r}
+testthat::test_that("non-numeric matrix X is rejected at every entry point (#152)", {
+    set.seed(1)
+    cx <- matrix(sample(letters, 20, TRUE), 10, 2)   # character matrix
+    testthat::expect_error(
+        css(X = cx, y = stats::rnorm(10), lambda = 0.01, B = 5),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        protolasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        clusterRepLasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    # getCssPreds(testX = <character matrix>): build a valid css result on
+    # numeric data, then pass a character testX of the SAME ncol so it
+    # reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).
+    nx <- matrix(stats::rnorm(60), 30, 2)
+    res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
+    testthat::expect_error(
+        getCssPreds(res, testX = matrix(sample(letters, 20, TRUE), 10, 2),
+            trainX = nx[21:30, ], trainY = stats::rnorm(10)),
+        "must be a numeric matrix", fixed = TRUE)
 })
 ```
 
@@ -12194,7 +12237,7 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_true(ret_df >= 0)
 
   # Bad inputs
-  testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
+  testthat::expect_error(getLassoLambda(X="x", y=y), "must be a numeric matrix",
                          fixed=TRUE)
   
   testthat::expect_error(getLassoLambda(X=x[1:9, ], y=y),
