@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.3",
+    Version = "0.4.4",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -1173,8 +1173,8 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     stopifnot(class(fitfun) == "function")
     stopifnot(length(fitfun) == 1)
-    if(!identical(formals(fitfun), formals(cssLasso))){
-        err_mess <- paste("fitfun must accept arguments named X, y, and lambda. Detected arguments to fitfun:",
+    if(!setequal(names(formals(fitfun)), c("X", "y", "lambda"))){
+        err_mess <- paste("fitfun must accept exactly the arguments X, y, and lambda (in any order, with or without defaults). Detected arguments to fitfun:",
             paste(names(formals(fitfun)), collapse=", "))
         stop(err_mess)
     }
@@ -8115,6 +8115,37 @@ testthat::test_that("css errors on an X containing NA (#74)", {
     css(X = X, y = y, lambda = 0.01),
     "must not contain missing",
     fixed = TRUE)
+})
+```
+
+The `fitfun` extension point accepts any function whose arguments are exactly `X`, `y`, and `lambda` -- in any order, with or without defaults -- because `cssLoop` calls `fitfun` by keyword (`do.call(fitfun, list(X=..., y=..., lambda=...))`). A wrong or extra argument set is rejected with a message listing the arguments actually detected (issue #154).
+
+```{r}
+testthat::test_that("css accepts any (X, y, lambda) fitfun signature and rejects wrong args (#154)", {
+    set.seed(1)
+    x <- matrix(stats::rnorm(60), 20, 3)
+    y <- stats::rnorm(20)
+
+    # (a) A default on lambda is accepted (rejected on the base by identical()).
+    f_default <- function(X, y, lambda = 0.1) cssLasso(X, y, lambda)
+    res_def <- css(x, y, lambda = 0.01, fitfun = f_default, B = 10)
+    testthat::expect_identical(class(res_def), "cssr")
+
+    # (b) Reordered args are accepted AND produce identical results
+    #     (cssLoop calls fitfun by keyword, so order is irrelevant).
+    f_reordered <- function(y, X, lambda) cssLasso(X, y, lambda)
+    set.seed(7); res_re  <- css(x, y, lambda = 0.01, fitfun = f_reordered, B = 10)
+    set.seed(7); res_ord <- css(x, y, lambda = 0.01, fitfun = cssLasso,    B = 10)
+    testthat::expect_equal(res_re$feat_sel_mat, res_ord$feat_sel_mat)
+
+    # (c) A wrong argument set is rejected, with the message listing the ACTUAL args.
+    testthat::expect_error(
+        css(x, y, lambda = 0.01, fitfun = function(X, y, z) 1L, B = 5),
+        "must accept exactly the arguments X, y, and lambda (in any order, with or without defaults). Detected arguments to fitfun: X, y, z", fixed = TRUE)
+    # (d) Extra args are rejected, with the new "exactly" wording.
+    testthat::expect_error(
+        css(x, y, lambda = 0.01, fitfun = function(X, y, lambda, extra) 1L, B = 5),
+        "must accept exactly the arguments", fixed = TRUE)
 })
 ```
 
