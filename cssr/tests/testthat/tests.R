@@ -164,9 +164,9 @@ testthat::test_that("checkCssClustersInput works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
   
-  testthat::expect_error(checkCssClustersInput(list(2:3, 2:3)),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): the result is identical
+  # to passing the cluster only once.
+  testthat::expect_identical(checkCssClustersInput(list(2:3, 2:3)), list(2:3))
   
   testthat::expect_error(checkCssClustersInput(list(2:3, as.integer(NA))),
                          "!is.na(clusters) are not all TRUE",
@@ -251,11 +251,11 @@ testthat::test_that("checkFormatClustersInput works", {
                                                   y=NA, R=NA),
                          "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkFormatClustersInput(list(2:3, 2:3), p=10,
+  # Duplicate clusters are now silently removed (#156).
+  testthat::expect_identical(checkFormatClustersInput(list(2:3, 2:3), p=10,
                                   clust_names=NA, get_prototypes=FALSE, x=NA,
                                   y=NA, R=NA),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+                             list(2:3))
   
   testthat::expect_error(checkFormatClustersInput(list(2:3, as.integer(NA)),
                                                   p=10,
@@ -478,9 +478,16 @@ testthat::test_that("formatClusters works", {
   testthat::expect_error(formatClusters(list(3:7, 7:10), p=15),
                          "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(formatClusters(list(5:8, 5:8), p=9),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): dropping the duplicate
+  # 5:8 leaves the same 6 formatted clusters (5:8 plus five singletons) as
+  # passing 5:8 once, with multiple = FALSE and 5:8 appearing exactly once.
+  dedup_fc <- formatClusters(list(5:8, 5:8), p=9)
+  testthat::expect_identical(dedup_fc, formatClusters(list(5:8), p=9))
+  testthat::expect_equal(length(dedup_fc$clusters), 6)
+  testthat::expect_false(dedup_fc$multiple)
+  testthat::expect_equal(sum(vapply(dedup_fc$clusters,
+                                    function(z) identical(as.integer(z), 5:8),
+                                    logical(1))), 1)
 
   # Out-of-range cluster index is now caught up front by checkFormatClustersInput
   # (#104, L3) with a message naming the offending index and p, instead of the
@@ -1602,6 +1609,54 @@ testthat::test_that("css works", {
   # Use train_inds argument
   res_train <- css(X=x, y=y, lambda=0.01, B = 10, train_inds=11:15)
   testthat::expect_equal(res_train$train_inds, 11:15)
+
+})
+
+testthat::test_that("duplicate clusters are removed to match the docs (#156)", {
+  set.seed(9156)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  # (i) Unnamed duplicate cluster: css returns the same result as the
+  # deduplicated input (css is stochastic, so seed both calls identically).
+  set.seed(41)
+  res_dup <- css(X=x, y=y, lambda=0.01, clusters=list(1:2, 1:2),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  set.seed(41)
+  res_dedup <- css(X=x, y=y, lambda=0.01, clusters=list(1:2),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  testthat::expect_identical(res_dup, res_dedup)
+
+  # (ii) First name wins, DIRECT helper path (checkFormatClustersInput, finding
+  # 2): the length check now runs before the removal, so a named duplicate keeps
+  # the first occurrence and its name.
+  testthat::expect_identical(
+    checkFormatClustersInput(list(a=2:3, b=2:3), p=10, clust_names=c("a", "b"),
+                             get_prototypes=FALSE, x=NA, y=NA, R=NA),
+    list(a=2:3))
+
+  # (ii) First name wins, END-TO-END css path (checkCssInputs, finding 3): a
+  # named duplicate runs without error and keeps the first occurrence's name.
+  res_named <- css(X=x, y=y, lambda=0.01, clusters=list(myclust=2:3, dup=2:3),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  testthat::expect_true("myclust" %in% names(res_named$clusters))
+  testthat::expect_false("dup" %in% names(res_named$clusters))
+
+  # (iii) cssSelect and cssPredict route through css -> checkCssInputs, so they
+  # inherit the fix: a named duplicate cluster runs without error.
+  sel <- cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3))
+  testthat::expect_identical(names(sel), c("selected_clusts", "selected_feats",
+                                           "weights"))
+
+  test_x <- matrix(stats::rnorm(5*11), nrow=5, ncol=11)
+  preds <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                      clusters=list(myclust=2:3, dup=2:3))
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_equal(length(preds), 5)
 
 })
 
@@ -5814,9 +5869,14 @@ testthat::test_that("getModelSize works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
   
-  testthat::expect_error(getModelSize(X=x, y=y, clusters=list(5:8, 5:8)),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): the model size for a
+  # duplicated cluster equals that of the deduplicated input. getModelSize is
+  # stochastic (cv.glmnet), so seed both calls identically.
+  set.seed(15678)
+  dup_ms <- getModelSize(X=x, y=y, clusters=list(5:8, 5:8))
+  set.seed(15678)
+  dedup_ms <- getModelSize(X=x, y=y, clusters=list(5:8))
+  testthat::expect_equal(dup_ms, dedup_ms)
 
   # Out-of-range cluster index now caught up front by checkFormatClustersInput
   # (#104, L3); x has 11 columns, so index 50 is out of range.
@@ -7484,11 +7544,14 @@ testthat::test_that("processClusterLassoInputs works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
 
-  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+  # Duplicate clusters are now silently removed (#156): identical to passing the
+  # cluster once (processClusterLassoInputs is deterministic here).
+  testthat::expect_identical(processClusterLassoInputs(X=x, y=y,
                                                    clusters=list(2:3, 2:3),
                                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+                             processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(2:3),
+                                                   nlambda=10))
 
   testthat::expect_error(processClusterLassoInputs(X=x, y=y,
                                                    clusters=list(1:4,
@@ -8867,10 +8930,13 @@ testthat::test_that("protolasso works", {
                                     nlambda=10),
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
   
-  testthat::expect_error(protolasso(X=x, y=y, clusters=list(2:3, 2:3),
-                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156); the fitted result for a
+  # duplicated cluster is identical to passing the cluster once (seed both).
+  set.seed(921)
+  dup_pl <- protolasso(X=x, y=y, clusters=list(2:3, 2:3), nlambda=10)
+  set.seed(921)
+  dedup_pl <- protolasso(X=x, y=y, clusters=list(2:3), nlambda=10)
+  testthat::expect_identical(dup_pl, dedup_pl)
   
   testthat::expect_error(protolasso(X=x, y=y,
                                     clusters=list(1:4, as.integer(NA)),
@@ -9250,10 +9316,13 @@ testthat::test_that("clusterRepLasso works", {
                                     nlambda=10),
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
 
-  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3),
-                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156); identical to passing the
+  # cluster once (seed both).
+  set.seed(921)
+  dup_crl <- clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3), nlambda=10)
+  set.seed(921)
+  dedup_crl <- clusterRepLasso(X=x, y=y, clusters=list(2:3), nlambda=10)
+  testthat::expect_identical(dup_crl, dedup_crl)
 
   testthat::expect_error(clusterRepLasso(X=x, y=y,
                                     clusters=list(1:4, as.integer(NA)),

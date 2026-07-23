@@ -27,7 +27,9 @@
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. If the same cluster is
+#' provided more than once, the duplicates will be removed, keeping only the
+#' first occurrence (and its name). Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves). If
 #' clusters is a list of length 0 (or a list only containing clusters of length
