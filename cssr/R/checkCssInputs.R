@@ -138,8 +138,8 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     stopifnot(class(fitfun) == "function")
     stopifnot(length(fitfun) == 1)
-    if(!identical(formals(fitfun), formals(cssLasso))){
-        err_mess <- paste("fitfun must accept arguments named X, y, and lambda. Detected arguments to fitfun:",
+    if(!setequal(names(formals(fitfun)), c("X", "y", "lambda"))){
+        err_mess <- paste("fitfun must accept exactly the arguments X, y, and lambda (in any order, with or without defaults). Detected arguments to fitfun:",
             paste(names(formals(fitfun)), collapse=", "))
         stop(err_mess)
     }
