@@ -56,7 +56,7 @@ getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
     selected_sets <- list()
     selected_clusts_list <- list()
 
-    for(j in 1:max_length){
+    for(j in seq_len(max_length)){
         # Lasso selected set of size j
         lasso_sets_j <- lasso_sets[set_lengths == j]
         # Are there any lasso selected sets of size j? (If not, we will skip to
