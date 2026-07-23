@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.1",
+    Version = "0.4.2",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -3452,9 +3452,15 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
         stop(err_mess)
     }
 
-    df <- data.frame(y=y_train, train_X_clusters)
-    colnames(df)[2:ncol(df)] <- clust_X_names
-    model <- stats::lm(y ~., data=df)
+    # Response name guaranteed distinct from every cluster name (issue #150):
+    # make.unique returns "y" when no cluster is named "y" (bit-identical to
+    # prior behavior) and e.g. "y.1" when one is, so lm() never drops a
+    # cluster representative via a name collision with the response.
+    resp_name <- make.unique(c(clust_X_names, "y"))[length(clust_X_names) + 1L]
+    df <- data.frame(y_train, train_X_clusters)
+    colnames(df) <- c(resp_name, clust_X_names)
+    stopifnot(!anyDuplicated(colnames(df)))
+    model <- stats::lm(stats::as.formula(paste0("`", resp_name, "` ~ .")), data = df)
 
     # Use fitted model to generate predictions on testX. Route through
     # olsPredictRankSafe() so a rank-deficient OLS fit predicts from its
@@ -10838,6 +10844,59 @@ testthat::test_that("getCssPreds data.frame path is warning-free and matches mat
   testthat::expect_error(
     getCssPreds(css_res, testX=Xd_test, trainX=Xd_train_bad, trainY=y_train),
     "identical(feat_names, colnames(css_X)) is not TRUE", fixed=TRUE)
+})
+```
+
+A cluster named after the response variable (`"y"`) is legal (`checkClusters`
+allows any cluster name), but `getCssPreds()` built its OLS design as
+`data.frame(y = y_train, ...)` and then restored the cluster names, yielding two
+columns named `y`; `lm(y ~ .)` then silently dropped the cluster representative
+from the right-hand side and returned wrong (or, if the `"y"`-named cluster was
+the only selected cluster, intercept-only) predictions. Predictions must be
+invariant to cluster names, through both `getCssPreds()` and its `cssPredict()`
+wrapper (#150).
+
+```{r}
+testthat::test_that("getCssPreds/cssPredict: a cluster named 'y' does not corrupt predictions (#150)", {
+  set.seed(42)
+  n <- 100
+  p <- 6
+  X <- matrix(stats::rnorm(n * p), n, p)
+  y <- rowMeans(X[, 1:3]) * 3 + stats::rnorm(n)   # signal in cluster 1:3
+
+  run_preds <- function(cl_name) {
+    res <- css(
+      X[1:60, ], y[1:60], lambda = 0.05,
+      clusters = stats::setNames(list(1:3), cl_name), B = 10
+    )
+    getCssPreds(
+      res, testX = X[61:80, ], trainX = X[81:100, ],
+      trainY = y[81:100], max_num_clusts = 3
+    )
+  }
+
+  set.seed(7)
+  preds_y <- run_preds("y")     # cluster named after the response
+  set.seed(7)
+  preds_ok <- run_preds("sig")  # identical data/RNG, innocuous name
+
+  # The cluster name must not affect predictions.
+  testthat::expect_equal(preds_y, preds_ok)
+
+  # Same guarantee via the cssPredict() entry point.
+  run_cssPredict <- function(cl_name) {
+    cssPredict(
+      X_train_selec = X[1:60, ], y_train_selec = y[1:60],
+      X_test = X[61:80, ],
+      clusters = stats::setNames(list(1:3), cl_name),
+      lambda = 0.05, max_num_clusts = 3
+    )
+  }
+  set.seed(7)
+  cp_y <- run_cssPredict("y")
+  set.seed(7)
+  cp_ok <- run_cssPredict("sig")
+  testthat::expect_equal(cp_y, cp_ok)
 })
 ```
 
