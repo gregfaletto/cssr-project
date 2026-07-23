@@ -149,7 +149,7 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     # size by cross-validation
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
-            max_num_clusts <- getModelSize(X_train_selec[train_inds, ],
+            max_num_clusts <- getModelSize(X_train_selec[train_inds, , drop = FALSE],
                 y_train_selec[train_inds], css_results$clusters, alpha=alpha)
         }
     }
