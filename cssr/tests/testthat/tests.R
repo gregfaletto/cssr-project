@@ -8475,6 +8475,12 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
     }
   }
   
+  # An all-empty lasso path (max_length == 0) must return an empty selection,
+  # not crash with "model_size > 0 is not TRUE" (#157).
+  out_empty <- getClusterSelsFromGlmnet(list(integer(0)), clusters = list(1L),
+      prototypes = 1L, feat_names = NA)
+  testthat::expect_length(out_empty$selected_sets, 0)
+  testthat::expect_length(out_empty$selected_clusts_list, 0)
 })
 
 testthat::test_that("protolasso works", {
@@ -9242,5 +9248,31 @@ testthat::test_that("clusterRepLasso works", {
     clusterRepLasso(X=x, y=y, clusters=list(all=1:11)),
     "need at least 2 cluster representatives to fit the lasso", fixed=TRUE)
   
+})
+
+testthat::test_that("protolasso/clusterRepLasso return an empty selection when the lasso path selects nothing (#157)", {
+    # X'y must be EXACTLY zero to empty the whole glmnet path (see plan note:
+    # floating-point orthogonality drives lambda_max->0 and selects everything).
+    # Paired +1/-1 integer rows give crossprod(X, y) == 0 exactly.
+    y <- as.double(c(1, 1, 1, 1, -1, -1, -1, -1))
+    X <- cbind(c(1,-1,0,0,0,0,0,0), c(0,0,1,-1,0,0,0,0),
+        c(0,0,0,0,1,-1,0,0), c(0,0,0,0,0,0,1,-1))
+    storage.mode(X) <- "double"
+    testthat::expect_identical(max(abs(crossprod(X, y))), 0)   # exactly orthogonal
+
+    # Was: crash "model_size > 0 is not TRUE". Now: empty selection, no error.
+    res_p <- protolasso(X, y)
+    testthat::expect_length(res_p$selected_sets, 0)
+    testthat::expect_length(res_p$selected_clusts_list, 0)
+
+    res_c <- clusterRepLasso(X, y)
+    testthat::expect_length(res_c$selected_sets, 0)
+    testthat::expect_length(res_c$selected_clusts_list, 0)
+
+    # A normal signal case still selects features (guards against over-fixing).
+    set.seed(2)
+    Xs <- matrix(stats::rnorm(24 * 4), 24, 4)
+    ys <- Xs[, 1] * 2 + stats::rnorm(24, sd = 0.1)
+    testthat::expect_gt(length(protolasso(Xs, ys)$selected_sets), 0)
 })
 
