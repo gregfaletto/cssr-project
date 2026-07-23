@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="4 Selection and prediction functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-06">
+<meta name="date" content="2026-07-22">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1429,26 +1429,32 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb58-146"><a href="sel-and-pred.html#cb58-146" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
 <span id="cb58-147"><a href="sel-and-pred.html#cb58-147" tabindex="-1"></a>    }</span>
 <span id="cb58-148"><a href="sel-and-pred.html#cb58-148" tabindex="-1"></a></span>
-<span id="cb58-149"><a href="sel-and-pred.html#cb58-149" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y=</span>y_train, train_X_clusters)</span>
-<span id="cb58-150"><a href="sel-and-pred.html#cb58-150" tabindex="-1"></a>    <span class="fu">colnames</span>(df)[<span class="dv">2</span><span class="sc">:</span><span class="fu">ncol</span>(df)] <span class="ot">&lt;-</span> clust_X_names</span>
-<span id="cb58-151"><a href="sel-and-pred.html#cb58-151" tabindex="-1"></a>    model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(y <span class="sc">~</span>., <span class="at">data=</span>df)</span>
-<span id="cb58-152"><a href="sel-and-pred.html#cb58-152" tabindex="-1"></a></span>
-<span id="cb58-153"><a href="sel-and-pred.html#cb58-153" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX. Route through</span></span>
-<span id="cb58-154"><a href="sel-and-pred.html#cb58-154" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>() so a rank-deficient OLS fit predicts from its</span></span>
-<span id="cb58-155"><a href="sel-and-pred.html#cb58-155" tabindex="-1"></a>    <span class="co"># estimable coefficients instead of crashing under R &gt;= 4.4's predict.lm</span></span>
-<span id="cb58-156"><a href="sel-and-pred.html#cb58-156" tabindex="-1"></a>    <span class="co"># default (see the helper's note and issue #117).</span></span>
-<span id="cb58-157"><a href="sel-and-pred.html#cb58-157" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
-<span id="cb58-158"><a href="sel-and-pred.html#cb58-158" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
-<span id="cb58-159"><a href="sel-and-pred.html#cb58-159" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>(model, df_test)</span>
-<span id="cb58-160"><a href="sel-and-pred.html#cb58-160" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb58-161"><a href="sel-and-pred.html#cb58-161" tabindex="-1"></a></span>
-<span id="cb58-162"><a href="sel-and-pred.html#cb58-162" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb58-163"><a href="sel-and-pred.html#cb58-163" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
-<span id="cb58-164"><a href="sel-and-pred.html#cb58-164" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
-<span id="cb58-165"><a href="sel-and-pred.html#cb58-165" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
-<span id="cb58-166"><a href="sel-and-pred.html#cb58-166" tabindex="-1"></a></span>
-<span id="cb58-167"><a href="sel-and-pred.html#cb58-167" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
-<span id="cb58-168"><a href="sel-and-pred.html#cb58-168" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb58-149"><a href="sel-and-pred.html#cb58-149" tabindex="-1"></a>    <span class="co"># Response name guaranteed distinct from every cluster name (issue #150):</span></span>
+<span id="cb58-150"><a href="sel-and-pred.html#cb58-150" tabindex="-1"></a>    <span class="co"># make.unique returns "y" when no cluster is named "y" (bit-identical to</span></span>
+<span id="cb58-151"><a href="sel-and-pred.html#cb58-151" tabindex="-1"></a>    <span class="co"># prior behavior) and e.g. "y.1" when one is, so lm() never drops a</span></span>
+<span id="cb58-152"><a href="sel-and-pred.html#cb58-152" tabindex="-1"></a>    <span class="co"># cluster representative via a name collision with the response.</span></span>
+<span id="cb58-153"><a href="sel-and-pred.html#cb58-153" tabindex="-1"></a>    resp_name <span class="ot">&lt;-</span> <span class="fu">make.unique</span>(<span class="fu">c</span>(clust_X_names, <span class="st">"y"</span>))[<span class="fu">length</span>(clust_X_names) <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span>]</span>
+<span id="cb58-154"><a href="sel-and-pred.html#cb58-154" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(y_train, train_X_clusters)</span>
+<span id="cb58-155"><a href="sel-and-pred.html#cb58-155" tabindex="-1"></a>    <span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(resp_name, clust_X_names)</span>
+<span id="cb58-156"><a href="sel-and-pred.html#cb58-156" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(<span class="fu">colnames</span>(df)))</span>
+<span id="cb58-157"><a href="sel-and-pred.html#cb58-157" tabindex="-1"></a>    model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(stats<span class="sc">::</span><span class="fu">as.formula</span>(<span class="fu">paste0</span>(<span class="st">"`"</span>, resp_name, <span class="st">"` ~ ."</span>)), <span class="at">data =</span> df)</span>
+<span id="cb58-158"><a href="sel-and-pred.html#cb58-158" tabindex="-1"></a></span>
+<span id="cb58-159"><a href="sel-and-pred.html#cb58-159" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX. Route through</span></span>
+<span id="cb58-160"><a href="sel-and-pred.html#cb58-160" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>() so a rank-deficient OLS fit predicts from its</span></span>
+<span id="cb58-161"><a href="sel-and-pred.html#cb58-161" tabindex="-1"></a>    <span class="co"># estimable coefficients instead of crashing under R &gt;= 4.4's predict.lm</span></span>
+<span id="cb58-162"><a href="sel-and-pred.html#cb58-162" tabindex="-1"></a>    <span class="co"># default (see the helper's note and issue #117).</span></span>
+<span id="cb58-163"><a href="sel-and-pred.html#cb58-163" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
+<span id="cb58-164"><a href="sel-and-pred.html#cb58-164" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
+<span id="cb58-165"><a href="sel-and-pred.html#cb58-165" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>(model, df_test)</span>
+<span id="cb58-166"><a href="sel-and-pred.html#cb58-166" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb58-167"><a href="sel-and-pred.html#cb58-167" tabindex="-1"></a></span>
+<span id="cb58-168"><a href="sel-and-pred.html#cb58-168" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb58-169"><a href="sel-and-pred.html#cb58-169" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
+<span id="cb58-170"><a href="sel-and-pred.html#cb58-170" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
+<span id="cb58-171"><a href="sel-and-pred.html#cb58-171" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
+<span id="cb58-172"><a href="sel-and-pred.html#cb58-172" tabindex="-1"></a></span>
+<span id="cb58-173"><a href="sel-and-pred.html#cb58-173" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
+<span id="cb58-174"><a href="sel-and-pred.html#cb58-174" tabindex="-1"></a>}</span></code></pre></div>
 <p>Internal OLS-prediction helper used by <code><a href="sel-and-pred.html#getCssPreds">getCssPreds</a>()</code> (issue #117):</p>
 <div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="sel-and-pred.html#cb59-1" tabindex="-1"></a><span class="co">#' Predict from a possibly rank-deficient OLS fit without crashing on R &gt;= 4.4</span></span>
 <span id="cb59-2"><a href="sel-and-pred.html#cb59-2" tabindex="-1"></a><span class="co">#'</span></span>
