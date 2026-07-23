@@ -19,6 +19,34 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
   fac_df <- data.frame(a = factor(c("x", "y", "z", "x", "y", "z", "x", "y")))
   testthat::expect_error(coerceDataFrameToMatrix(fac_df, clusters = list(1)),
     "the number of columns changed", fixed = TRUE)
+
+  # A non-numeric (character) matrix is rejected (#152).
+  testthat::expect_error(
+    coerceDataFrameToMatrix(matrix(letters[1:6], nrow = 3, ncol = 2), clusters = list()),
+    "must be a numeric matrix", fixed = TRUE)
+})
+
+testthat::test_that("non-numeric matrix X is rejected at every entry point (#152)", {
+    set.seed(1)
+    cx <- matrix(sample(letters, 20, TRUE), 10, 2)   # character matrix
+    testthat::expect_error(
+        css(X = cx, y = stats::rnorm(10), lambda = 0.01, B = 5),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        protolasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        clusterRepLasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    # getCssPreds(testX = <character matrix>): build a valid css result on
+    # numeric data, then pass a character testX of the SAME ncol so it
+    # reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).
+    nx <- matrix(stats::rnorm(60), 30, 2)
+    res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
+    testthat::expect_error(
+        getCssPreds(res, testX = matrix(sample(letters, 20, TRUE), 10, 2),
+            trainX = nx[21:30, ], trainY = stats::rnorm(10)),
+        "must be a numeric matrix", fixed = TRUE)
 })
 
 testthat::test_that("checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and passes clean input", {
@@ -5526,7 +5554,7 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_true(ret_df >= 0)
 
   # Bad inputs
-  testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
+  testthat::expect_error(getLassoLambda(X="x", y=y), "must be a numeric matrix",
                          fixed=TRUE)
   
   testthat::expect_error(getLassoLambda(X=x[1:9, ], y=y),
