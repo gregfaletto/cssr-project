@@ -4377,6 +4377,48 @@ testthat::test_that("getCssPreds data.frame path is warning-free and matches mat
     "identical(feat_names, colnames(css_X)) is not TRUE", fixed=TRUE)
 })
 
+testthat::test_that("getCssPreds/cssPredict: a cluster named 'y' does not corrupt predictions (#150)", {
+  set.seed(42)
+  n <- 100
+  p <- 6
+  X <- matrix(stats::rnorm(n * p), n, p)
+  y <- rowMeans(X[, 1:3]) * 3 + stats::rnorm(n)   # signal in cluster 1:3
+
+  run_preds <- function(cl_name) {
+    res <- css(
+      X[1:60, ], y[1:60], lambda = 0.05,
+      clusters = stats::setNames(list(1:3), cl_name), B = 10
+    )
+    getCssPreds(
+      res, testX = X[61:80, ], trainX = X[81:100, ],
+      trainY = y[81:100], max_num_clusts = 3
+    )
+  }
+
+  set.seed(7)
+  preds_y <- run_preds("y")     # cluster named after the response
+  set.seed(7)
+  preds_ok <- run_preds("sig")  # identical data/RNG, innocuous name
+
+  # The cluster name must not affect predictions.
+  testthat::expect_equal(preds_y, preds_ok)
+
+  # Same guarantee via the cssPredict() entry point.
+  run_cssPredict <- function(cl_name) {
+    cssPredict(
+      X_train_selec = X[1:60, ], y_train_selec = y[1:60],
+      X_test = X[61:80, ],
+      clusters = stats::setNames(list(1:3), cl_name),
+      lambda = 0.05, max_num_clusts = 3
+    )
+  }
+  set.seed(7)
+  cp_y <- run_cssPredict("y")
+  set.seed(7)
+  cp_ok <- run_cssPredict("sig")
+  testthat::expect_equal(cp_y, cp_ok)
+})
+
 testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
   set.seed(128)
   X <- matrix(stats::rnorm(15 * 6), nrow = 15, ncol = 6)

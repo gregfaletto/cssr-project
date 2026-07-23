@@ -150,9 +150,15 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
         stop(err_mess)
     }
 
-    df <- data.frame(y=y_train, train_X_clusters)
-    colnames(df)[2:ncol(df)] <- clust_X_names
-    model <- stats::lm(y ~., data=df)
+    # Response name guaranteed distinct from every cluster name (issue #150):
+    # make.unique returns "y" when no cluster is named "y" (bit-identical to
+    # prior behavior) and e.g. "y.1" when one is, so lm() never drops a
+    # cluster representative via a name collision with the response.
+    resp_name <- make.unique(c(clust_X_names, "y"))[length(clust_X_names) + 1L]
+    df <- data.frame(y_train, train_X_clusters)
+    colnames(df) <- c(resp_name, clust_X_names)
+    stopifnot(!anyDuplicated(colnames(df)))
+    model <- stats::lm(stats::as.formula(paste0("`", resp_name, "` ~ .")), data = df)
 
     # Use fitted model to generate predictions on testX. Route through
     # olsPredictRankSafe() so a rank-deficient OLS fit predicts from its
