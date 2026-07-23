@@ -82,9 +82,22 @@ cssLoop <- function(input, x, y, lambda, fitfun, seed=NULL){
     selected <- do.call(fitfun, list(X=x[subsample, feats_to_keep],
         y=y[subsample], lambda=lambda))
 
-    selected <- which(feats_to_keep)[selected]
+    # Validate the RAW fitfun return against its documented contract (an
+    # integer vector that is a subset of seq_len(p_sub), where p_sub is the
+    # number of columns handed to fitfun) BEFORE remapping to original
+    # feature indices. Remapping first -- which(feats_to_keep)[selected] --
+    # would let R's index arithmetic silently turn contract violations
+    # (negative, logical, fractional, or NULL returns) into
+    # plausible-but-wrong selections (#151).
+    p_sub <- sum(feats_to_keep)
+    checkCssLoopOutput(selected, p_sub, seq_len(p_sub))
 
-    # Check output
+    selected <- which(feats_to_keep)[as.integer(selected)]
+
+    # Defensive post-remap check: once the raw return validates and the
+    # remap is a plain index lookup, the remapped indices are guaranteed a
+    # valid subset of the original features -- but keep the check as cheap
+    # insurance at the user-code boundary.
     checkCssLoopOutput(selected, p, as.integer(which(feats_to_keep)))
 
     return(as.integer(selected))

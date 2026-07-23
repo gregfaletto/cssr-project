@@ -14,8 +14,11 @@
 #' @keywords internal
 #' @noRd
 checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
-    if(!exists("selected")){
-        stop("The provided feature selection method fitfun failed to return anything on (at least) one subsample")
+    if(is.null(selected)){
+        stop("The provided feature selection method fitfun returned NULL on (at least) one subsample; to select no features, return integer(0).")
+    }
+    if(is.logical(selected)){
+        stop("The provided feature selection method fitfun returned a logical vector on (at least) one subsample; it must return integer indices of the selected features (e.g. which(coef != 0)).")
     }
     if(!is.integer(selected) & !is.numeric(selected)){
         stop("The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample")
