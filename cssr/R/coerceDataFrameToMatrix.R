@@ -6,8 +6,9 @@
 #' a data.frame `X`: if `X` is a data.frame, convert it with
 #' `stats::model.matrix(~ .)` and drop the intercept column. If the column
 #' count changed and clusters were supplied (which would invalidate the
-#' cluster indices), error. If `X` is already a matrix it is returned
-#' unchanged.
+#' cluster indices), error. If `X` is already a numeric matrix it is returned
+#' unchanged; a non-numeric matrix (e.g. a character matrix) is rejected with
+#' an error.
 #' @param X A numeric matrix or a data.frame.
 #' @param clusters A list of integer vectors (the cluster assignments); the
 #' column-count guard only fires when `length(clusters) > 0`.
@@ -37,6 +38,13 @@ coerceDataFrameToMatrix <- function(X, clusters, arg_name = "X",
                 convert_phrase,
                 " to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."))
         }
+    }
+    if(!is.numeric(X)){
+        stop(paste0("The provided ", arg_name,
+            " must be a numeric matrix; storage mode \"", storage.mode(X),
+            "\" was provided. If ", arg_name,
+            " came from a data.frame, check for character or factor columns."),
+            call. = FALSE)
     }
     X
 }

@@ -19,6 +19,34 @@ testthat::test_that("coerceDataFrameToMatrix keeps a single-column data.frame as
   fac_df <- data.frame(a = factor(c("x", "y", "z", "x", "y", "z", "x", "y")))
   testthat::expect_error(coerceDataFrameToMatrix(fac_df, clusters = list(1)),
     "the number of columns changed", fixed = TRUE)
+
+  # A non-numeric (character) matrix is rejected (#152).
+  testthat::expect_error(
+    coerceDataFrameToMatrix(matrix(letters[1:6], nrow = 3, ncol = 2), clusters = list()),
+    "must be a numeric matrix", fixed = TRUE)
+})
+
+testthat::test_that("non-numeric matrix X is rejected at every entry point (#152)", {
+    set.seed(1)
+    cx <- matrix(sample(letters, 20, TRUE), 10, 2)   # character matrix
+    testthat::expect_error(
+        css(X = cx, y = stats::rnorm(10), lambda = 0.01, B = 5),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        protolasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    testthat::expect_error(
+        clusterRepLasso(matrix(sample(letters, 40, TRUE), 20, 2), stats::rnorm(20)),
+        "must be a numeric matrix", fixed = TRUE)
+    # getCssPreds(testX = <character matrix>): build a valid css result on
+    # numeric data, then pass a character testX of the SAME ncol so it
+    # reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).
+    nx <- matrix(stats::rnorm(60), 30, 2)
+    res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
+    testthat::expect_error(
+        getCssPreds(res, testX = matrix(sample(letters, 20, TRUE), 10, 2),
+            trainX = nx[21:30, ], trainY = stats::rnorm(10)),
+        "must be a numeric matrix", fixed = TRUE)
 })
 
 testthat::test_that("checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and passes clean input", {
@@ -813,6 +841,14 @@ testthat::test_that("checkCssLoopOutput works", {
                          "The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample",
                          fixed=TRUE)
 
+  testthat::expect_error(
+    checkCssLoopOutput(selected=c(TRUE, FALSE), p=7, feats_on_subsamp=1:7),
+    "returned a logical vector", fixed=TRUE)
+
+  testthat::expect_error(
+    checkCssLoopOutput(selected=NULL, p=7, feats_on_subsamp=1:7),
+    "returned NULL", fixed=TRUE)
+
 })
 
 testthat::test_that("fitfunFailureMessage surfaces the cause and subsample index (#73)", {
@@ -1035,6 +1071,45 @@ testthat::test_that("cssLoop works", {
                                            y=character(9), lambda=.05,
                                            fitfun=testFitfun)))
 
+})
+
+testthat::test_that("cssLoop validates the raw fitfun return before remapping (#151)", {
+  set.seed(1)
+  n <- 40
+  p <- 6
+  x <- matrix(stats::rnorm(n * p), n, p)
+  y <- stats::rnorm(n)
+  subsample <- as.integer(1:(n %/% 2))
+  feats_to_keep <- c(TRUE, FALSE, TRUE, TRUE, FALSE, TRUE)  # p_sub = 4
+  input <- list(subsample = subsample, feats_to_keep = feats_to_keep)
+
+  mk <- function(val) function(X, y, lambda) val   # fitfun returning a fixed value
+
+  # Each invalid raw return must error (was silently wrong on main #151):
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(-1L)))                # non-positive
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(c(TRUE, FALSE))),     # logical
+                         "logical vector", fixed = TRUE)
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(1.5)))                # fractional
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(NULL)),               # NULL
+                         "NULL", fixed = TRUE)
+  # 5 > p_sub = 4; on main this errors but MIS-reports "NA values" (post-remap
+  # NA). Asserting the message makes this a real regression test AND locks in
+  # the cosmetic fix.
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(5L)),
+                         "index greater than ncol(X)", fixed = TRUE)
+
+  # Valid raw returns still work and remap correctly:
+  testthat::expect_equal(
+    cssLoop(input, x, y, lambda = 0.1, fitfun = mk(integer(0))),  # select nothing
+    integer(0))
+  testthat::expect_equal(
+    cssLoop(input, x, y, lambda = 0.1, fitfun = mk(c(1L, 3L))),   # raw cols 1,3 ...
+    as.integer(which(feats_to_keep)[c(1L, 3L)]))                  # ... remap to 1,4
 })
 
 testthat::test_that("checkGetClusterSelMatrixInput works", {
@@ -1539,6 +1614,33 @@ testthat::test_that("css errors on an X containing NA (#74)", {
     css(X = X, y = y, lambda = 0.01),
     "must not contain missing",
     fixed = TRUE)
+})
+
+testthat::test_that("css accepts any (X, y, lambda) fitfun signature and rejects wrong args (#154)", {
+    set.seed(1)
+    x <- matrix(stats::rnorm(60), 20, 3)
+    y <- stats::rnorm(20)
+
+    # (a) A default on lambda is accepted (rejected on the base by identical()).
+    f_default <- function(X, y, lambda = 0.1) cssLasso(X, y, lambda)
+    res_def <- css(x, y, lambda = 0.01, fitfun = f_default, B = 10)
+    testthat::expect_identical(class(res_def), "cssr")
+
+    # (b) Reordered args are accepted AND produce identical results
+    #     (cssLoop calls fitfun by keyword, so order is irrelevant).
+    f_reordered <- function(y, X, lambda) cssLasso(X, y, lambda)
+    set.seed(7); res_re  <- css(x, y, lambda = 0.01, fitfun = f_reordered, B = 10)
+    set.seed(7); res_ord <- css(x, y, lambda = 0.01, fitfun = cssLasso,    B = 10)
+    testthat::expect_equal(res_re$feat_sel_mat, res_ord$feat_sel_mat)
+
+    # (c) A wrong argument set is rejected, with the message listing the ACTUAL args.
+    testthat::expect_error(
+        css(x, y, lambda = 0.01, fitfun = function(X, y, z) 1L, B = 5),
+        "must accept exactly the arguments X, y, and lambda (in any order, with or without defaults). Detected arguments to fitfun: X, y, z", fixed = TRUE)
+    # (d) Extra args are rejected, with the new "exactly" wording.
+    testthat::expect_error(
+        css(x, y, lambda = 0.01, fitfun = function(X, y, lambda, extra) 1L, B = 5),
+        "must accept exactly the arguments", fixed = TRUE)
 })
 
 testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isolated (#12)", {
@@ -5521,7 +5623,7 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_true(ret_df >= 0)
 
   # Bad inputs
-  testthat::expect_error(getLassoLambda(X="x", y=y), "is.matrix(X) is not TRUE",
+  testthat::expect_error(getLassoLambda(X="x", y=y), "must be a numeric matrix",
                          fixed=TRUE)
   
   testthat::expect_error(getLassoLambda(X=x[1:9, ], y=y),
@@ -8415,6 +8517,12 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
     }
   }
   
+  # An all-empty lasso path (max_length == 0) must return an empty selection,
+  # not crash with "model_size > 0 is not TRUE" (#157).
+  out_empty <- getClusterSelsFromGlmnet(list(integer(0)), clusters = list(1L),
+      prototypes = 1L, feat_names = NA)
+  testthat::expect_length(out_empty$selected_sets, 0)
+  testthat::expect_length(out_empty$selected_clusts_list, 0)
 })
 
 testthat::test_that("protolasso works", {
@@ -9182,5 +9290,31 @@ testthat::test_that("clusterRepLasso works", {
     clusterRepLasso(X=x, y=y, clusters=list(all=1:11)),
     "need at least 2 cluster representatives to fit the lasso", fixed=TRUE)
   
+})
+
+testthat::test_that("protolasso/clusterRepLasso return an empty selection when the lasso path selects nothing (#157)", {
+    # X'y must be EXACTLY zero to empty the whole glmnet path (see plan note:
+    # floating-point orthogonality drives lambda_max->0 and selects everything).
+    # Paired +1/-1 integer rows give crossprod(X, y) == 0 exactly.
+    y <- as.double(c(1, 1, 1, 1, -1, -1, -1, -1))
+    X <- cbind(c(1,-1,0,0,0,0,0,0), c(0,0,1,-1,0,0,0,0),
+        c(0,0,0,0,1,-1,0,0), c(0,0,0,0,0,0,1,-1))
+    storage.mode(X) <- "double"
+    testthat::expect_identical(max(abs(crossprod(X, y))), 0)   # exactly orthogonal
+
+    # Was: crash "model_size > 0 is not TRUE". Now: empty selection, no error.
+    res_p <- protolasso(X, y)
+    testthat::expect_length(res_p$selected_sets, 0)
+    testthat::expect_length(res_p$selected_clusts_list, 0)
+
+    res_c <- clusterRepLasso(X, y)
+    testthat::expect_length(res_c$selected_sets, 0)
+    testthat::expect_length(res_c$selected_clusts_list, 0)
+
+    # A normal signal case still selects features (guards against over-fixing).
+    set.seed(2)
+    Xs <- matrix(stats::rnorm(24 * 4), 24, 4)
+    ys <- Xs[, 1] * 2 + stats::rnorm(24, sd = 0.1)
+    testthat::expect_gt(length(protolasso(Xs, ys)$selected_sets), 0)
 })
 

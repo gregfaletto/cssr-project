@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-22">
+<meta name="date" content="2026-07-23">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -953,47 +953,55 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code> verifies that the input to <code><a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>()</code> is as expected.</li>
 </ul>
 <p>Tests are written for all of these functions. To keep this chapter readable as continuous narrative, the tests are collected in the Tests chapters at the end of this document (the <strong>Tests</strong> part) rather than appearing inline after each function. Because every function is defined before that part, each test still runs only after all of its dependencies have been defined.</p>
-<p>Several of the entry points below accept either a numeric matrix or a data.frame for the design matrix and share the same coercion logic (convert the data.frame with <code>model.matrix</code>, drop the intercept column, and guard against a column-count change that would invalidate supplied cluster indices). We factor that logic into a single internal helper, <code><a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>()</code>, so the six call sites stay in sync.</p>
+<p>Several of the entry points below accept either a numeric matrix or a data.frame for the design matrix and share the same coercion logic (convert the data.frame with <code>model.matrix</code>, drop the intercept column, and guard against a column-count change that would invalidate supplied cluster indices). We factor that logic into a single internal helper, <code><a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>()</code>, so the seven call sites stay in sync.</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="css.html#cb22-1" tabindex="-1"></a><span class="co">#' Coerce a data.frame design matrix to a numeric matrix</span></span>
 <span id="cb22-2"><a href="css.html#cb22-2" tabindex="-1"></a><span class="co">#'</span></span>
 <span id="cb22-3"><a href="css.html#cb22-3" tabindex="-1"></a><span class="co">#' Shared helper for the several entry points that accept either a matrix or</span></span>
 <span id="cb22-4"><a href="css.html#cb22-4" tabindex="-1"></a><span class="co">#' a data.frame `X`: if `X` is a data.frame, convert it with</span></span>
 <span id="cb22-5"><a href="css.html#cb22-5" tabindex="-1"></a><span class="co">#' `stats::model.matrix(~ .)` and drop the intercept column. If the column</span></span>
 <span id="cb22-6"><a href="css.html#cb22-6" tabindex="-1"></a><span class="co">#' count changed and clusters were supplied (which would invalidate the</span></span>
-<span id="cb22-7"><a href="css.html#cb22-7" tabindex="-1"></a><span class="co">#' cluster indices), error. If `X` is already a matrix it is returned</span></span>
-<span id="cb22-8"><a href="css.html#cb22-8" tabindex="-1"></a><span class="co">#' unchanged.</span></span>
-<span id="cb22-9"><a href="css.html#cb22-9" tabindex="-1"></a><span class="co">#' @param X A numeric matrix or a data.frame.</span></span>
-<span id="cb22-10"><a href="css.html#cb22-10" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors (the cluster assignments); the</span></span>
-<span id="cb22-11"><a href="css.html#cb22-11" tabindex="-1"></a><span class="co">#' column-count guard only fires when `length(clusters) &gt; 0`.</span></span>
-<span id="cb22-12"><a href="css.html#cb22-12" tabindex="-1"></a><span class="co">#' @param arg_name Character; the name of the argument as it should appear in</span></span>
-<span id="cb22-13"><a href="css.html#cb22-13" tabindex="-1"></a><span class="co">#' the error message's first sentence. Default "X".</span></span>
-<span id="cb22-14"><a href="css.html#cb22-14" tabindex="-1"></a><span class="co">#' @param convert_phrase Character; the subject of the "Please convert ___"</span></span>
-<span id="cb22-15"><a href="css.html#cb22-15" tabindex="-1"></a><span class="co">#' sentence. Defaults to `arg_name`; cssSelect passes "the data.frame X" to</span></span>
-<span id="cb22-16"><a href="css.html#cb22-16" tabindex="-1"></a><span class="co">#' reproduce its existing message verbatim.</span></span>
-<span id="cb22-17"><a href="css.html#cb22-17" tabindex="-1"></a><span class="co">#' @return The (possibly coerced) numeric matrix.</span></span>
-<span id="cb22-18"><a href="css.html#cb22-18" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb22-19"><a href="css.html#cb22-19" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb22-20"><a href="css.html#cb22-20" tabindex="-1"></a><span id="coerceDataFrameToMatrix">coerceDataFrameToMatrix</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, clusters, <span class="at">arg_name =</span> <span class="st">"X"</span>,</span>
-<span id="cb22-21"><a href="css.html#cb22-21" tabindex="-1"></a>    <span class="at">convert_phrase =</span> arg_name){</span>
-<span id="cb22-22"><a href="css.html#cb22-22" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(X)){</span>
-<span id="cb22-23"><a href="css.html#cb22-23" tabindex="-1"></a>        p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb22-24"><a href="css.html#cb22-24" tabindex="-1"></a>        X <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., X)</span>
-<span id="cb22-25"><a href="css.html#cb22-25" tabindex="-1"></a>        <span class="co"># drop = FALSE: a single non-intercept column must stay a matrix.</span></span>
-<span id="cb22-26"><a href="css.html#cb22-26" tabindex="-1"></a>        <span class="co"># Without it a 1-column data.frame collapses to a vector, ncol(X) is</span></span>
-<span id="cb22-27"><a href="css.html#cb22-27" tabindex="-1"></a>        <span class="co"># NULL, and the guard below evaluates `... &amp; logical(0)` -&gt; the cryptic</span></span>
-<span id="cb22-28"><a href="css.html#cb22-28" tabindex="-1"></a>        <span class="co"># "argument is of length zero" instead of letting the clean downstream</span></span>
-<span id="cb22-29"><a href="css.html#cb22-29" tabindex="-1"></a>        <span class="co"># "p &gt;= 2" check fire (#43).</span></span>
-<span id="cb22-30"><a href="css.html#cb22-30" tabindex="-1"></a>        X <span class="ot">&lt;-</span> X[, <span class="fu">colnames</span>(X) <span class="sc">!=</span> <span class="st">"(Intercept)"</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb22-31"><a href="css.html#cb22-31" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> (p <span class="sc">!=</span> <span class="fu">ncol</span>(X))){</span>
-<span id="cb22-32"><a href="css.html#cb22-32" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"When stats::model.matrix converted the provided data.frame "</span>,</span>
-<span id="cb22-33"><a href="css.html#cb22-33" tabindex="-1"></a>                arg_name,</span>
-<span id="cb22-34"><a href="css.html#cb22-34" tabindex="-1"></a>                <span class="st">" to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert "</span>,</span>
-<span id="cb22-35"><a href="css.html#cb22-35" tabindex="-1"></a>                convert_phrase,</span>
-<span id="cb22-36"><a href="css.html#cb22-36" tabindex="-1"></a>                <span class="st">" to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."</span>))</span>
-<span id="cb22-37"><a href="css.html#cb22-37" tabindex="-1"></a>        }</span>
-<span id="cb22-38"><a href="css.html#cb22-38" tabindex="-1"></a>    }</span>
-<span id="cb22-39"><a href="css.html#cb22-39" tabindex="-1"></a>    X</span>
-<span id="cb22-40"><a href="css.html#cb22-40" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb22-7"><a href="css.html#cb22-7" tabindex="-1"></a><span class="co">#' cluster indices), error. If `X` is already a numeric matrix it is returned</span></span>
+<span id="cb22-8"><a href="css.html#cb22-8" tabindex="-1"></a><span class="co">#' unchanged; a non-numeric matrix (e.g. a character matrix) is rejected with</span></span>
+<span id="cb22-9"><a href="css.html#cb22-9" tabindex="-1"></a><span class="co">#' an error.</span></span>
+<span id="cb22-10"><a href="css.html#cb22-10" tabindex="-1"></a><span class="co">#' @param X A numeric matrix or a data.frame.</span></span>
+<span id="cb22-11"><a href="css.html#cb22-11" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors (the cluster assignments); the</span></span>
+<span id="cb22-12"><a href="css.html#cb22-12" tabindex="-1"></a><span class="co">#' column-count guard only fires when `length(clusters) &gt; 0`.</span></span>
+<span id="cb22-13"><a href="css.html#cb22-13" tabindex="-1"></a><span class="co">#' @param arg_name Character; the name of the argument as it should appear in</span></span>
+<span id="cb22-14"><a href="css.html#cb22-14" tabindex="-1"></a><span class="co">#' the error message's first sentence. Default "X".</span></span>
+<span id="cb22-15"><a href="css.html#cb22-15" tabindex="-1"></a><span class="co">#' @param convert_phrase Character; the subject of the "Please convert ___"</span></span>
+<span id="cb22-16"><a href="css.html#cb22-16" tabindex="-1"></a><span class="co">#' sentence. Defaults to `arg_name`; cssSelect passes "the data.frame X" to</span></span>
+<span id="cb22-17"><a href="css.html#cb22-17" tabindex="-1"></a><span class="co">#' reproduce its existing message verbatim.</span></span>
+<span id="cb22-18"><a href="css.html#cb22-18" tabindex="-1"></a><span class="co">#' @return The (possibly coerced) numeric matrix.</span></span>
+<span id="cb22-19"><a href="css.html#cb22-19" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb22-20"><a href="css.html#cb22-20" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb22-21"><a href="css.html#cb22-21" tabindex="-1"></a><span id="coerceDataFrameToMatrix">coerceDataFrameToMatrix</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, clusters, <span class="at">arg_name =</span> <span class="st">"X"</span>,</span>
+<span id="cb22-22"><a href="css.html#cb22-22" tabindex="-1"></a>    <span class="at">convert_phrase =</span> arg_name){</span>
+<span id="cb22-23"><a href="css.html#cb22-23" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(X)){</span>
+<span id="cb22-24"><a href="css.html#cb22-24" tabindex="-1"></a>        p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb22-25"><a href="css.html#cb22-25" tabindex="-1"></a>        X <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., X)</span>
+<span id="cb22-26"><a href="css.html#cb22-26" tabindex="-1"></a>        <span class="co"># drop = FALSE: a single non-intercept column must stay a matrix.</span></span>
+<span id="cb22-27"><a href="css.html#cb22-27" tabindex="-1"></a>        <span class="co"># Without it a 1-column data.frame collapses to a vector, ncol(X) is</span></span>
+<span id="cb22-28"><a href="css.html#cb22-28" tabindex="-1"></a>        <span class="co"># NULL, and the guard below evaluates `... &amp; logical(0)` -&gt; the cryptic</span></span>
+<span id="cb22-29"><a href="css.html#cb22-29" tabindex="-1"></a>        <span class="co"># "argument is of length zero" instead of letting the clean downstream</span></span>
+<span id="cb22-30"><a href="css.html#cb22-30" tabindex="-1"></a>        <span class="co"># "p &gt;= 2" check fire (#43).</span></span>
+<span id="cb22-31"><a href="css.html#cb22-31" tabindex="-1"></a>        X <span class="ot">&lt;-</span> X[, <span class="fu">colnames</span>(X) <span class="sc">!=</span> <span class="st">"(Intercept)"</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb22-32"><a href="css.html#cb22-32" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;</span> (p <span class="sc">!=</span> <span class="fu">ncol</span>(X))){</span>
+<span id="cb22-33"><a href="css.html#cb22-33" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"When stats::model.matrix converted the provided data.frame "</span>,</span>
+<span id="cb22-34"><a href="css.html#cb22-34" tabindex="-1"></a>                arg_name,</span>
+<span id="cb22-35"><a href="css.html#cb22-35" tabindex="-1"></a>                <span class="st">" to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert "</span>,</span>
+<span id="cb22-36"><a href="css.html#cb22-36" tabindex="-1"></a>                convert_phrase,</span>
+<span id="cb22-37"><a href="css.html#cb22-37" tabindex="-1"></a>                <span class="st">" to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."</span>))</span>
+<span id="cb22-38"><a href="css.html#cb22-38" tabindex="-1"></a>        }</span>
+<span id="cb22-39"><a href="css.html#cb22-39" tabindex="-1"></a>    }</span>
+<span id="cb22-40"><a href="css.html#cb22-40" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(X)){</span>
+<span id="cb22-41"><a href="css.html#cb22-41" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"The provided "</span>, arg_name,</span>
+<span id="cb22-42"><a href="css.html#cb22-42" tabindex="-1"></a>            <span class="st">" must be a numeric matrix; storage mode </span><span class="sc">\"</span><span class="st">"</span>, <span class="fu">storage.mode</span>(X),</span>
+<span id="cb22-43"><a href="css.html#cb22-43" tabindex="-1"></a>            <span class="st">"</span><span class="sc">\"</span><span class="st"> was provided. If "</span>, arg_name,</span>
+<span id="cb22-44"><a href="css.html#cb22-44" tabindex="-1"></a>            <span class="st">" came from a data.frame, check for character or factor columns."</span>),</span>
+<span id="cb22-45"><a href="css.html#cb22-45" tabindex="-1"></a>            <span class="at">call. =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb22-46"><a href="css.html#cb22-46" tabindex="-1"></a>    }</span>
+<span id="cb22-47"><a href="css.html#cb22-47" tabindex="-1"></a>    X</span>
+<span id="cb22-48"><a href="css.html#cb22-48" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code> guards a design matrix against missing and non-finite values, before any data.frame coercion:</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="css.html#cb23-1" tabindex="-1"></a><span class="co">#' Error if a design matrix contains missing or non-finite values</span></span>
 <span id="cb23-2"><a href="css.html#cb23-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -1167,8 +1175,8 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb25-113"><a href="css.html#cb25-113" tabindex="-1"></a></span>
 <span id="cb25-114"><a href="css.html#cb25-114" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">class</span>(fitfun) <span class="sc">==</span> <span class="st">"function"</span>)</span>
 <span id="cb25-115"><a href="css.html#cb25-115" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(fitfun) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb25-116"><a href="css.html#cb25-116" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">identical</span>(<span class="fu">formals</span>(fitfun), <span class="fu">formals</span>(cssLasso))){</span>
-<span id="cb25-117"><a href="css.html#cb25-117" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"fitfun must accept arguments named X, y, and lambda. Detected arguments to fitfun:"</span>,</span>
+<span id="cb25-116"><a href="css.html#cb25-116" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">setequal</span>(<span class="fu">names</span>(<span class="fu">formals</span>(fitfun)), <span class="fu">c</span>(<span class="st">"X"</span>, <span class="st">"y"</span>, <span class="st">"lambda"</span>))){</span>
+<span id="cb25-117"><a href="css.html#cb25-117" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"fitfun must accept exactly the arguments X, y, and lambda (in any order, with or without defaults). Detected arguments to fitfun:"</span>,</span>
 <span id="cb25-118"><a href="css.html#cb25-118" tabindex="-1"></a>            <span class="fu">paste</span>(<span class="fu">names</span>(<span class="fu">formals</span>(fitfun)), <span class="at">collapse=</span><span class="st">", "</span>))</span>
 <span id="cb25-119"><a href="css.html#cb25-119" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
 <span id="cb25-120"><a href="css.html#cb25-120" tabindex="-1"></a>    }</span>
@@ -1894,13 +1902,26 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb37-80"><a href="css.html#cb37-80" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">do.call</span>(fitfun, <span class="fu">list</span>(<span class="at">X=</span>x[subsample, feats_to_keep],</span>
 <span id="cb37-81"><a href="css.html#cb37-81" tabindex="-1"></a>        <span class="at">y=</span>y[subsample], <span class="at">lambda=</span>lambda))</span>
 <span id="cb37-82"><a href="css.html#cb37-82" tabindex="-1"></a></span>
-<span id="cb37-83"><a href="css.html#cb37-83" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[selected]</span>
-<span id="cb37-84"><a href="css.html#cb37-84" tabindex="-1"></a></span>
-<span id="cb37-85"><a href="css.html#cb37-85" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb37-86"><a href="css.html#cb37-86" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
-<span id="cb37-87"><a href="css.html#cb37-87" tabindex="-1"></a></span>
-<span id="cb37-88"><a href="css.html#cb37-88" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
-<span id="cb37-89"><a href="css.html#cb37-89" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb37-83"><a href="css.html#cb37-83" tabindex="-1"></a>    <span class="co"># Validate the RAW fitfun return against its documented contract (an</span></span>
+<span id="cb37-84"><a href="css.html#cb37-84" tabindex="-1"></a>    <span class="co"># integer vector that is a subset of seq_len(p_sub), where p_sub is the</span></span>
+<span id="cb37-85"><a href="css.html#cb37-85" tabindex="-1"></a>    <span class="co"># number of columns handed to fitfun) BEFORE remapping to original</span></span>
+<span id="cb37-86"><a href="css.html#cb37-86" tabindex="-1"></a>    <span class="co"># feature indices. Remapping first -- which(feats_to_keep)[selected] --</span></span>
+<span id="cb37-87"><a href="css.html#cb37-87" tabindex="-1"></a>    <span class="co"># would let R's index arithmetic silently turn contract violations</span></span>
+<span id="cb37-88"><a href="css.html#cb37-88" tabindex="-1"></a>    <span class="co"># (negative, logical, fractional, or NULL returns) into</span></span>
+<span id="cb37-89"><a href="css.html#cb37-89" tabindex="-1"></a>    <span class="co"># plausible-but-wrong selections (#151).</span></span>
+<span id="cb37-90"><a href="css.html#cb37-90" tabindex="-1"></a>    p_sub <span class="ot">&lt;-</span> <span class="fu">sum</span>(feats_to_keep)</span>
+<span id="cb37-91"><a href="css.html#cb37-91" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p_sub, <span class="fu">seq_len</span>(p_sub))</span>
+<span id="cb37-92"><a href="css.html#cb37-92" tabindex="-1"></a></span>
+<span id="cb37-93"><a href="css.html#cb37-93" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[<span class="fu">as.integer</span>(selected)]</span>
+<span id="cb37-94"><a href="css.html#cb37-94" tabindex="-1"></a></span>
+<span id="cb37-95"><a href="css.html#cb37-95" tabindex="-1"></a>    <span class="co"># Defensive post-remap check: once the raw return validates and the</span></span>
+<span id="cb37-96"><a href="css.html#cb37-96" tabindex="-1"></a>    <span class="co"># remap is a plain index lookup, the remapped indices are guaranteed a</span></span>
+<span id="cb37-97"><a href="css.html#cb37-97" tabindex="-1"></a>    <span class="co"># valid subset of the original features -- but keep the check as cheap</span></span>
+<span id="cb37-98"><a href="css.html#cb37-98" tabindex="-1"></a>    <span class="co"># insurance at the user-code boundary.</span></span>
+<span id="cb37-99"><a href="css.html#cb37-99" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
+<span id="cb37-100"><a href="css.html#cb37-100" tabindex="-1"></a></span>
+<span id="cb37-101"><a href="css.html#cb37-101" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
+<span id="cb37-102"><a href="css.html#cb37-102" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>()</code>:</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="css.html#cb38-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the outputs of the provided feature selection</span></span>
 <span id="cb38-2"><a href="css.html#cb38-2" tabindex="-1"></a><span class="co">#' method are as required. </span></span>
@@ -1916,41 +1937,44 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb38-12"><a href="css.html#cb38-12" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
 <span id="cb38-13"><a href="css.html#cb38-13" tabindex="-1"></a><span class="co">#' @noRd</span></span>
 <span id="cb38-14"><a href="css.html#cb38-14" tabindex="-1"></a><span id="checkCssLoopOutput">checkCssLoopOutput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(selected, p, feats_on_subsamp){</span>
-<span id="cb38-15"><a href="css.html#cb38-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">exists</span>(<span class="st">"selected"</span>)){</span>
-<span id="cb38-16"><a href="css.html#cb38-16" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return anything on (at least) one subsample"</span>)</span>
+<span id="cb38-15"><a href="css.html#cb38-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(selected)){</span>
+<span id="cb38-16"><a href="css.html#cb38-16" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned NULL on (at least) one subsample; to select no features, return integer(0)."</span>)</span>
 <span id="cb38-17"><a href="css.html#cb38-17" tabindex="-1"></a>    }</span>
-<span id="cb38-18"><a href="css.html#cb38-18" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(selected) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.numeric</span>(selected)){</span>
-<span id="cb38-19"><a href="css.html#cb38-19" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample"</span>)</span>
+<span id="cb38-18"><a href="css.html#cb38-18" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.logical</span>(selected)){</span>
+<span id="cb38-19"><a href="css.html#cb38-19" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a logical vector on (at least) one subsample; it must return integer indices of the selected features (e.g. which(coef != 0))."</span>)</span>
 <span id="cb38-20"><a href="css.html#cb38-20" tabindex="-1"></a>    }</span>
-<span id="cb38-21"><a href="css.html#cb38-21" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(selected))){</span>
-<span id="cb38-22"><a href="css.html#cb38-22" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample"</span>)</span>
+<span id="cb38-21"><a href="css.html#cb38-21" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(selected) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.numeric</span>(selected)){</span>
+<span id="cb38-22"><a href="css.html#cb38-22" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample"</span>)</span>
 <span id="cb38-23"><a href="css.html#cb38-23" tabindex="-1"></a>    }</span>
-<span id="cb38-24"><a href="css.html#cb38-24" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">==</span> <span class="fu">round</span>(selected))){</span>
-<span id="cb38-25"><a href="css.html#cb38-25" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample"</span>)</span>
+<span id="cb38-24"><a href="css.html#cb38-24" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(selected))){</span>
+<span id="cb38-25"><a href="css.html#cb38-25" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample"</span>)</span>
 <span id="cb38-26"><a href="css.html#cb38-26" tabindex="-1"></a>    }</span>
-<span id="cb38-27"><a href="css.html#cb38-27" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">!=</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected))){</span>
-<span id="cb38-28"><a href="css.html#cb38-28" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample"</span>)</span>
+<span id="cb38-27"><a href="css.html#cb38-27" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">==</span> <span class="fu">round</span>(selected))){</span>
+<span id="cb38-28"><a href="css.html#cb38-28" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample"</span>)</span>
 <span id="cb38-29"><a href="css.html#cb38-29" tabindex="-1"></a>    }</span>
-<span id="cb38-30"><a href="css.html#cb38-30" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> p){</span>
-<span id="cb38-31"><a href="css.html#cb38-31" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample"</span>)</span>
+<span id="cb38-30"><a href="css.html#cb38-30" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">!=</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected))){</span>
+<span id="cb38-31"><a href="css.html#cb38-31" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample"</span>)</span>
 <span id="cb38-32"><a href="css.html#cb38-32" tabindex="-1"></a>    }</span>
-<span id="cb38-33"><a href="css.html#cb38-33" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb38-34"><a href="css.html#cb38-34" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">max</span>(selected) <span class="sc">&gt;</span> p){</span>
-<span id="cb38-35"><a href="css.html#cb38-35" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample"</span>)</span>
-<span id="cb38-36"><a href="css.html#cb38-36" tabindex="-1"></a>        }</span>
-<span id="cb38-37"><a href="css.html#cb38-37" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">min</span>(selected) <span class="sc">&lt;=</span> <span class="dv">0</span>){</span>
-<span id="cb38-38"><a href="css.html#cb38-38" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample"</span>)</span>
+<span id="cb38-33"><a href="css.html#cb38-33" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> p){</span>
+<span id="cb38-34"><a href="css.html#cb38-34" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample"</span>)</span>
+<span id="cb38-35"><a href="css.html#cb38-35" tabindex="-1"></a>    }</span>
+<span id="cb38-36"><a href="css.html#cb38-36" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb38-37"><a href="css.html#cb38-37" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">max</span>(selected) <span class="sc">&gt;</span> p){</span>
+<span id="cb38-38"><a href="css.html#cb38-38" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample"</span>)</span>
 <span id="cb38-39"><a href="css.html#cb38-39" tabindex="-1"></a>        }</span>
-<span id="cb38-40"><a href="css.html#cb38-40" tabindex="-1"></a>    }</span>
-<span id="cb38-41"><a href="css.html#cb38-41" tabindex="-1"></a>    <span class="cf">if</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
-<span id="cb38-42"><a href="css.html#cb38-42" tabindex="-1"></a>        <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span> <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
-<span id="cb38-43"><a href="css.html#cb38-43" tabindex="-1"></a>        <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected)){</span>
-<span id="cb38-44"><a href="css.html#cb38-44" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned an error on (at least) one subsample"</span>)</span>
-<span id="cb38-45"><a href="css.html#cb38-45" tabindex="-1"></a>    }</span>
-<span id="cb38-46"><a href="css.html#cb38-46" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">%in%</span> feats_on_subsamp)){</span>
-<span id="cb38-47"><a href="css.html#cb38-47" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method somehow selected features that were not provided for it to consider."</span>)</span>
+<span id="cb38-40"><a href="css.html#cb38-40" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">min</span>(selected) <span class="sc">&lt;=</span> <span class="dv">0</span>){</span>
+<span id="cb38-41"><a href="css.html#cb38-41" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample"</span>)</span>
+<span id="cb38-42"><a href="css.html#cb38-42" tabindex="-1"></a>        }</span>
+<span id="cb38-43"><a href="css.html#cb38-43" tabindex="-1"></a>    }</span>
+<span id="cb38-44"><a href="css.html#cb38-44" tabindex="-1"></a>    <span class="cf">if</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
+<span id="cb38-45"><a href="css.html#cb38-45" tabindex="-1"></a>        <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span> <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
+<span id="cb38-46"><a href="css.html#cb38-46" tabindex="-1"></a>        <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected)){</span>
+<span id="cb38-47"><a href="css.html#cb38-47" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned an error on (at least) one subsample"</span>)</span>
 <span id="cb38-48"><a href="css.html#cb38-48" tabindex="-1"></a>    }</span>
-<span id="cb38-49"><a href="css.html#cb38-49" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb38-49"><a href="css.html#cb38-49" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">%in%</span> feats_on_subsamp)){</span>
+<span id="cb38-50"><a href="css.html#cb38-50" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method somehow selected features that were not provided for it to consider."</span>)</span>
+<span id="cb38-51"><a href="css.html#cb38-51" tabindex="-1"></a>    }</span>
+<span id="cb38-52"><a href="css.html#cb38-52" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>()</code> builds the informative error that <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> raises when a subsample’s <code>fitfun</code> result is not a valid integer vector (reached only under parallel forking, where the failure arrives as a captured <code>try-error</code>):</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="css.html#cb39-1" tabindex="-1"></a><span class="co">#' Build an informative error for a subsample whose fitfun result is invalid</span></span>
 <span id="cb39-2"><a href="css.html#cb39-2" tabindex="-1"></a><span class="co">#'</span></span>
