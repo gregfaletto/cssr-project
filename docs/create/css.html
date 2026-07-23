@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-06">
+<meta name="date" content="2026-07-22">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1894,13 +1894,26 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb37-80"><a href="css.html#cb37-80" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">do.call</span>(fitfun, <span class="fu">list</span>(<span class="at">X=</span>x[subsample, feats_to_keep],</span>
 <span id="cb37-81"><a href="css.html#cb37-81" tabindex="-1"></a>        <span class="at">y=</span>y[subsample], <span class="at">lambda=</span>lambda))</span>
 <span id="cb37-82"><a href="css.html#cb37-82" tabindex="-1"></a></span>
-<span id="cb37-83"><a href="css.html#cb37-83" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[selected]</span>
-<span id="cb37-84"><a href="css.html#cb37-84" tabindex="-1"></a></span>
-<span id="cb37-85"><a href="css.html#cb37-85" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb37-86"><a href="css.html#cb37-86" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
-<span id="cb37-87"><a href="css.html#cb37-87" tabindex="-1"></a></span>
-<span id="cb37-88"><a href="css.html#cb37-88" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
-<span id="cb37-89"><a href="css.html#cb37-89" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb37-83"><a href="css.html#cb37-83" tabindex="-1"></a>    <span class="co"># Validate the RAW fitfun return against its documented contract (an</span></span>
+<span id="cb37-84"><a href="css.html#cb37-84" tabindex="-1"></a>    <span class="co"># integer vector that is a subset of seq_len(p_sub), where p_sub is the</span></span>
+<span id="cb37-85"><a href="css.html#cb37-85" tabindex="-1"></a>    <span class="co"># number of columns handed to fitfun) BEFORE remapping to original</span></span>
+<span id="cb37-86"><a href="css.html#cb37-86" tabindex="-1"></a>    <span class="co"># feature indices. Remapping first -- which(feats_to_keep)[selected] --</span></span>
+<span id="cb37-87"><a href="css.html#cb37-87" tabindex="-1"></a>    <span class="co"># would let R's index arithmetic silently turn contract violations</span></span>
+<span id="cb37-88"><a href="css.html#cb37-88" tabindex="-1"></a>    <span class="co"># (negative, logical, fractional, or NULL returns) into</span></span>
+<span id="cb37-89"><a href="css.html#cb37-89" tabindex="-1"></a>    <span class="co"># plausible-but-wrong selections (#151).</span></span>
+<span id="cb37-90"><a href="css.html#cb37-90" tabindex="-1"></a>    p_sub <span class="ot">&lt;-</span> <span class="fu">sum</span>(feats_to_keep)</span>
+<span id="cb37-91"><a href="css.html#cb37-91" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p_sub, <span class="fu">seq_len</span>(p_sub))</span>
+<span id="cb37-92"><a href="css.html#cb37-92" tabindex="-1"></a></span>
+<span id="cb37-93"><a href="css.html#cb37-93" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">which</span>(feats_to_keep)[<span class="fu">as.integer</span>(selected)]</span>
+<span id="cb37-94"><a href="css.html#cb37-94" tabindex="-1"></a></span>
+<span id="cb37-95"><a href="css.html#cb37-95" tabindex="-1"></a>    <span class="co"># Defensive post-remap check: once the raw return validates and the</span></span>
+<span id="cb37-96"><a href="css.html#cb37-96" tabindex="-1"></a>    <span class="co"># remap is a plain index lookup, the remapped indices are guaranteed a</span></span>
+<span id="cb37-97"><a href="css.html#cb37-97" tabindex="-1"></a>    <span class="co"># valid subset of the original features -- but keep the check as cheap</span></span>
+<span id="cb37-98"><a href="css.html#cb37-98" tabindex="-1"></a>    <span class="co"># insurance at the user-code boundary.</span></span>
+<span id="cb37-99"><a href="css.html#cb37-99" tabindex="-1"></a>    <a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>(selected, p, <span class="fu">as.integer</span>(<span class="fu">which</span>(feats_to_keep)))</span>
+<span id="cb37-100"><a href="css.html#cb37-100" tabindex="-1"></a></span>
+<span id="cb37-101"><a href="css.html#cb37-101" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(selected))</span>
+<span id="cb37-102"><a href="css.html#cb37-102" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#checkCssLoopOutput">checkCssLoopOutput</a>()</code>:</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="css.html#cb38-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the outputs of the provided feature selection</span></span>
 <span id="cb38-2"><a href="css.html#cb38-2" tabindex="-1"></a><span class="co">#' method are as required. </span></span>
@@ -1916,41 +1929,44 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb38-12"><a href="css.html#cb38-12" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
 <span id="cb38-13"><a href="css.html#cb38-13" tabindex="-1"></a><span class="co">#' @noRd</span></span>
 <span id="cb38-14"><a href="css.html#cb38-14" tabindex="-1"></a><span id="checkCssLoopOutput">checkCssLoopOutput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(selected, p, feats_on_subsamp){</span>
-<span id="cb38-15"><a href="css.html#cb38-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">exists</span>(<span class="st">"selected"</span>)){</span>
-<span id="cb38-16"><a href="css.html#cb38-16" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return anything on (at least) one subsample"</span>)</span>
+<span id="cb38-15"><a href="css.html#cb38-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.null</span>(selected)){</span>
+<span id="cb38-16"><a href="css.html#cb38-16" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned NULL on (at least) one subsample; to select no features, return integer(0)."</span>)</span>
 <span id="cb38-17"><a href="css.html#cb38-17" tabindex="-1"></a>    }</span>
-<span id="cb38-18"><a href="css.html#cb38-18" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(selected) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.numeric</span>(selected)){</span>
-<span id="cb38-19"><a href="css.html#cb38-19" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample"</span>)</span>
+<span id="cb38-18"><a href="css.html#cb38-18" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.logical</span>(selected)){</span>
+<span id="cb38-19"><a href="css.html#cb38-19" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a logical vector on (at least) one subsample; it must return integer indices of the selected features (e.g. which(coef != 0))."</span>)</span>
 <span id="cb38-20"><a href="css.html#cb38-20" tabindex="-1"></a>    }</span>
-<span id="cb38-21"><a href="css.html#cb38-21" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(selected))){</span>
-<span id="cb38-22"><a href="css.html#cb38-22" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample"</span>)</span>
+<span id="cb38-21"><a href="css.html#cb38-21" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(selected) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.numeric</span>(selected)){</span>
+<span id="cb38-22"><a href="css.html#cb38-22" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample"</span>)</span>
 <span id="cb38-23"><a href="css.html#cb38-23" tabindex="-1"></a>    }</span>
-<span id="cb38-24"><a href="css.html#cb38-24" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">==</span> <span class="fu">round</span>(selected))){</span>
-<span id="cb38-25"><a href="css.html#cb38-25" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample"</span>)</span>
+<span id="cb38-24"><a href="css.html#cb38-24" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(selected))){</span>
+<span id="cb38-25"><a href="css.html#cb38-25" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector containing NA values on (at least) one subsample"</span>)</span>
 <span id="cb38-26"><a href="css.html#cb38-26" tabindex="-1"></a>    }</span>
-<span id="cb38-27"><a href="css.html#cb38-27" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">!=</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected))){</span>
-<span id="cb38-28"><a href="css.html#cb38-28" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample"</span>)</span>
+<span id="cb38-27"><a href="css.html#cb38-27" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">==</span> <span class="fu">round</span>(selected))){</span>
+<span id="cb38-28"><a href="css.html#cb38-28" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun failed to return a vector of valid (integer) indices on (at least) one subsample"</span>)</span>
 <span id="cb38-29"><a href="css.html#cb38-29" tabindex="-1"></a>    }</span>
-<span id="cb38-30"><a href="css.html#cb38-30" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> p){</span>
-<span id="cb38-31"><a href="css.html#cb38-31" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample"</span>)</span>
+<span id="cb38-30"><a href="css.html#cb38-30" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">!=</span> <span class="fu">length</span>(<span class="fu">unique</span>(selected))){</span>
+<span id="cb38-31"><a href="css.html#cb38-31" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing repeated indices on (at least) one subsample"</span>)</span>
 <span id="cb38-32"><a href="css.html#cb38-32" tabindex="-1"></a>    }</span>
-<span id="cb38-33"><a href="css.html#cb38-33" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb38-34"><a href="css.html#cb38-34" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">max</span>(selected) <span class="sc">&gt;</span> p){</span>
-<span id="cb38-35"><a href="css.html#cb38-35" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample"</span>)</span>
-<span id="cb38-36"><a href="css.html#cb38-36" tabindex="-1"></a>        }</span>
-<span id="cb38-37"><a href="css.html#cb38-37" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">min</span>(selected) <span class="sc">&lt;=</span> <span class="dv">0</span>){</span>
-<span id="cb38-38"><a href="css.html#cb38-38" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample"</span>)</span>
+<span id="cb38-33"><a href="css.html#cb38-33" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> p){</span>
+<span id="cb38-34"><a href="css.html#cb38-34" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features longer than p on (at least) one subsample"</span>)</span>
+<span id="cb38-35"><a href="css.html#cb38-35" tabindex="-1"></a>    }</span>
+<span id="cb38-36"><a href="css.html#cb38-36" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb38-37"><a href="css.html#cb38-37" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">max</span>(selected) <span class="sc">&gt;</span> p){</span>
+<span id="cb38-38"><a href="css.html#cb38-38" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing an index greater than ncol(X) on (at least) one subsample"</span>)</span>
 <span id="cb38-39"><a href="css.html#cb38-39" tabindex="-1"></a>        }</span>
-<span id="cb38-40"><a href="css.html#cb38-40" tabindex="-1"></a>    }</span>
-<span id="cb38-41"><a href="css.html#cb38-41" tabindex="-1"></a>    <span class="cf">if</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
-<span id="cb38-42"><a href="css.html#cb38-42" tabindex="-1"></a>        <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span> <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
-<span id="cb38-43"><a href="css.html#cb38-43" tabindex="-1"></a>        <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected)){</span>
-<span id="cb38-44"><a href="css.html#cb38-44" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned an error on (at least) one subsample"</span>)</span>
-<span id="cb38-45"><a href="css.html#cb38-45" tabindex="-1"></a>    }</span>
-<span id="cb38-46"><a href="css.html#cb38-46" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">%in%</span> feats_on_subsamp)){</span>
-<span id="cb38-47"><a href="css.html#cb38-47" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method somehow selected features that were not provided for it to consider."</span>)</span>
+<span id="cb38-40"><a href="css.html#cb38-40" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">min</span>(selected) <span class="sc">&lt;=</span> <span class="dv">0</span>){</span>
+<span id="cb38-41"><a href="css.html#cb38-41" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned a vector of selected features containing a non-positive index on (at least) one subsample"</span>)</span>
+<span id="cb38-42"><a href="css.html#cb38-42" tabindex="-1"></a>        }</span>
+<span id="cb38-43"><a href="css.html#cb38-43" tabindex="-1"></a>    }</span>
+<span id="cb38-44"><a href="css.html#cb38-44" tabindex="-1"></a>    <span class="cf">if</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
+<span id="cb38-45"><a href="css.html#cb38-45" tabindex="-1"></a>        <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span> <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected) <span class="sc">|</span></span>
+<span id="cb38-46"><a href="css.html#cb38-46" tabindex="-1"></a>        <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(selected)){</span>
+<span id="cb38-47"><a href="css.html#cb38-47" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method fitfun returned an error on (at least) one subsample"</span>)</span>
 <span id="cb38-48"><a href="css.html#cb38-48" tabindex="-1"></a>    }</span>
-<span id="cb38-49"><a href="css.html#cb38-49" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb38-49"><a href="css.html#cb38-49" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(selected <span class="sc">%in%</span> feats_on_subsamp)){</span>
+<span id="cb38-50"><a href="css.html#cb38-50" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method somehow selected features that were not provided for it to consider."</span>)</span>
+<span id="cb38-51"><a href="css.html#cb38-51" tabindex="-1"></a>    }</span>
+<span id="cb38-52"><a href="css.html#cb38-52" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>()</code> builds the informative error that <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> raises when a subsample’s <code>fitfun</code> result is not a valid integer vector (reached only under parallel forking, where the failure arrives as a captured <code>try-error</code>):</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="css.html#cb39-1" tabindex="-1"></a><span class="co">#' Build an informative error for a subsample whose fitfun result is invalid</span></span>
 <span id="cb39-2"><a href="css.html#cb39-2" tabindex="-1"></a><span class="co">#'</span></span>

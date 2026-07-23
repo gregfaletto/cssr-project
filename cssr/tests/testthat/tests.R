@@ -813,6 +813,14 @@ testthat::test_that("checkCssLoopOutput works", {
                          "The provided feature selection method fitfun failed to return an integer or numeric vector on (at least) one subsample",
                          fixed=TRUE)
 
+  testthat::expect_error(
+    checkCssLoopOutput(selected=c(TRUE, FALSE), p=7, feats_on_subsamp=1:7),
+    "returned a logical vector", fixed=TRUE)
+
+  testthat::expect_error(
+    checkCssLoopOutput(selected=NULL, p=7, feats_on_subsamp=1:7),
+    "returned NULL", fixed=TRUE)
+
 })
 
 testthat::test_that("fitfunFailureMessage surfaces the cause and subsample index (#73)", {
@@ -1035,6 +1043,45 @@ testthat::test_that("cssLoop works", {
                                            y=character(9), lambda=.05,
                                            fitfun=testFitfun)))
 
+})
+
+testthat::test_that("cssLoop validates the raw fitfun return before remapping (#151)", {
+  set.seed(1)
+  n <- 40
+  p <- 6
+  x <- matrix(stats::rnorm(n * p), n, p)
+  y <- stats::rnorm(n)
+  subsample <- as.integer(1:(n %/% 2))
+  feats_to_keep <- c(TRUE, FALSE, TRUE, TRUE, FALSE, TRUE)  # p_sub = 4
+  input <- list(subsample = subsample, feats_to_keep = feats_to_keep)
+
+  mk <- function(val) function(X, y, lambda) val   # fitfun returning a fixed value
+
+  # Each invalid raw return must error (was silently wrong on main #151):
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(-1L)))                # non-positive
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(c(TRUE, FALSE))),     # logical
+                         "logical vector", fixed = TRUE)
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(1.5)))                # fractional
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(NULL)),               # NULL
+                         "NULL", fixed = TRUE)
+  # 5 > p_sub = 4; on main this errors but MIS-reports "NA values" (post-remap
+  # NA). Asserting the message makes this a real regression test AND locks in
+  # the cosmetic fix.
+  testthat::expect_error(cssLoop(input, x, y, lambda = 0.1,
+                                 fitfun = mk(5L)),
+                         "index greater than ncol(X)", fixed = TRUE)
+
+  # Valid raw returns still work and remap correctly:
+  testthat::expect_equal(
+    cssLoop(input, x, y, lambda = 0.1, fitfun = mk(integer(0))),  # select nothing
+    integer(0))
+  testthat::expect_equal(
+    cssLoop(input, x, y, lambda = 0.1, fitfun = mk(c(1L, 3L))),   # raw cols 1,3 ...
+    as.integer(which(feats_to_keep)[c(1L, 3L)]))                  # ... remap to 1,4
 })
 
 testthat::test_that("checkGetClusterSelMatrixInput works", {
