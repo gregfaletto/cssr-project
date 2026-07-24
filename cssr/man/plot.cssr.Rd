@@ -41,7 +41,10 @@ when no cluster's selection proportion meets the cutoff.}
 treat as selected regardless of cutoff. (If the chosen cutoff would select
 more than max_num_clusts clusters, the cutoff is effectively raised until at
 most max_num_clusts clusters are selected.) Default is NA (in which case
-max_num_clusts is ignored).}
+max_num_clusts is ignored). Because clusters can have tied selection
+proportions, ties at the threshold can cause more than max_num_clusts bars
+(or fewer than min_num_clusts) to be highlighted; when the two constraints
+conflict, max_num_clusts takes precedence.}
 
 \item{type}{Character; either "clusters" (the default) to plot one bar per
 cluster, or "features" to plot one bar per feature. May be abbreviated.}

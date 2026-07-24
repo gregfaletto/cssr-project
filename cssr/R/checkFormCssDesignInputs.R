@@ -40,30 +40,22 @@
 #' @keywords internal
 #' @noRd
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
-    min_num_clusts, max_num_clusts, newx){    
+    min_num_clusts, max_num_clusts, newx, validated=FALSE){
     stopifnot(inherits(css_results, "cssr"))
 
-    if(length(newx) == 1){
-        if(is.na(newx)){
-            if(length(css_results$train_inds) == 0){
-                stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
-            }
-            newx <- css_results$X[css_results$train_inds, , drop = FALSE]
-            # feat_names <- colnames(newx)
-        } else{
-            results <- checkXInputResults(newx, css_results$X)
-
-            newx <- results$newx
-            # feat_names <- results$feat_names
-
-            rm(results)
+    if(length(newx) == 1 && is.na(newx)){
+        if(length(css_results$train_inds) == 0){
+            stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
         }
+        newx <- css_results$X[css_results$train_inds, , drop = FALSE]
+    } else if(validated){
+        # newx already validated + coerced by the caller (getCssPreds via
+        # checkGetCssPredsInputs); skip the redundant checkXInputResults that
+        # otherwise re-emits the same name/NA warnings up to 4x/call (#153b).
+        stopifnot(is.matrix(newx))
     } else{
         results <- checkXInputResults(newx, css_results$X)
-
         newx <- results$newx
-        # feat_names <- results$feat_names
-
         rm(results)
     }
 

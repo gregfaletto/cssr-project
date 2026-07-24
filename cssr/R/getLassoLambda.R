@@ -19,7 +19,7 @@
 #' than optimal. See, for example, Bühlmann and Meinshausen 2006, Prop. 1 and
 #' Bühlmann and van de Geer 2011, Section 2.5.1.). Default is "1se".
 #' @param nfolds Numeric or integer; the number of folds for cross-validation.
-#' Must be at least 4 (as specified by cv.glmnet). Default is 10.
+#' Must be at least 3 (the minimum for cv.glmnet). Default is 10.
 #' @param alpha Numeric; the elastic net mixing parameter. Must be in `(0, 1]`.
 #' Default is 1 (in which case the penalty is for lasso).
 #' @return A numeric; the selected value of lambda.
@@ -65,7 +65,7 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     stopifnot(is.numeric(nfolds) | is.integer(nfolds))
     stopifnot(length(nfolds) == 1)
     stopifnot(nfolds == round(nfolds))
-    stopifnot(nfolds > 3)
+    stopifnot(nfolds >= 3)
 
     checkAlpha(alpha)
 

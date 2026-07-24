@@ -23,7 +23,9 @@
 #' vectors; each vector should contain the indices of a cluster of features (a
 #' subset of 1:p). (If there is only one cluster, clusters can either be a list
 #' of length 1 or an integer vector.) All of the provided clusters must be
-#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' non-overlapping. Any identical (duplicated) clusters will be removed, keeping
+#' the first occurrence and its name. Every feature not appearing in any cluster
+#' will be assumed
 #' to be unclustered (that is, they  will be treated as if they are in a
 #' "cluster" containing only themselves). If clusters is a list of length 0 (or
 #' a list only containing clusters of length 1), then css() returns the same
@@ -51,7 +53,10 @@
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' either cutoff is used to choose the number of clusters, or if cutoff was also
-#' unspecified, cssSelect chooses max_num_clusts by cross-validation).
+#' unspecified, cssSelect chooses max_num_clusts by cross-validation). Because
+#' clusters can have tied selection proportions, ties at the threshold can cause
+#' more than max_num_clusts (or fewer than min_num_clusts) clusters to be
+#' returned; when the two constraints conflict, max_num_clusts takes precedence.
 #' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
 #' automatically estimated using the lasso with cross-validation. Default is
 #' TRUE, though this argument is ignored if either cutoff or max_num_clusts is

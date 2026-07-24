@@ -25,7 +25,7 @@ than optimal. See, for example, Bühlmann and Meinshausen 2006, Prop. 1 and
 Bühlmann and van de Geer 2011, Section 2.5.1.). Default is "1se".}
 
 \item{nfolds}{Numeric or integer; the number of folds for cross-validation.
-Must be at least 4 (as specified by cv.glmnet). Default is 10.}
+Must be at least 3 (the minimum for cv.glmnet). Default is 10.}
 
 \item{alpha}{Numeric; the elastic net mixing parameter. Must be in \verb{(0, 1]}.
 Default is 1 (in which case the penalty is for lasso).}
