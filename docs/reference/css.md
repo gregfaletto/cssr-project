@@ -60,7 +60,9 @@ css(
   A list of integer vectors; each vector should contain the indices of a
   cluster of features (a subset of `1:p`). (If there is only one
   cluster, clusters can either be a list of length 1 or an integer
-  vector.) All of the provided clusters must be non-overlapping. Every
+  vector.) All of the provided clusters must be non-overlapping. If the
+  same cluster is provided more than once, the duplicates will be
+  removed, keeping only the first occurrence (and its name). Every
   feature not appearing in any cluster will be assumed to be unclustered
   (that is, they will be treated as if they are in a "cluster"
   containing only themselves). If clusters is a list of length 0 (or a
@@ -147,7 +149,8 @@ css(
   embarrassingly parallel, so on a multi-core Unix or macOS machine
   setting `num_cores > 1` gives a substantial speedup; the result is
   identical regardless of `num_cores` (per-subsample seeds are fixed).
-  Forking is unavailable on Windows, where `mclapply` runs serially.
+  On Windows, forking is unavailable, so `num_cores > 1` is not
+  supported; `css()` warns and runs serially (`num_cores = 1`) there.
   Default is 1 (serial).
 
 ## Value
@@ -238,7 +241,7 @@ print(res)
 #> 7        c7            10         0.90         1
 #> 8        c8            11         0.90         1
 # On a multi-core Unix/macOS machine, set num_cores for a substantial
-# speedup (identical results; mclapply runs serially on Windows):
+# speedup (identical results; num_cores > 1 falls back to serial on Windows):
 # \donttest{
 res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
   B = 10, num_cores = min(2L, parallel::detectCores()))

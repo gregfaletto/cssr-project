@@ -77,14 +77,23 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     trainX <- check_results$newX
     trainXProvided <- check_results$newXProvided
+    trainX_feat_names <- check_results$feat_names
 
     rm(check_results)
 
     n_train <- nrow(trainX)
 
+    # #153d: distinguish an omitted trainY (documented scalar-NA default) from a
+    # trainY that was PROVIDED but invalid (contains NA). The former falls back
+    # to css's train_inds; the latter must error rather than silently switch the
+    # data the model is fit on.
+    trainYProvided <- !(is.atomic(trainY) && length(trainY) == 1 && is.na(trainY))
     if(trainXProvided){
-        if(all(!is.na(trainY)) & length(trainY) > 1){
+        if(trainYProvided){
             stopifnot(is.numeric(trainY))
+            if(any(is.na(trainY))){
+                stop("The provided trainY contains missing (NA) values; trainY must be a complete real-valued response with one value per row of trainX.")
+            }
             stopifnot(n_train == length(trainY))
         } else{
             if(length(css_results$train_inds) == 0){
@@ -97,7 +106,7 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions")
         }
-        if(all(!is.na(trainY)) & length(trainY) > 1){
+        if(trainYProvided){
             warning("trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
         }
     }
@@ -120,23 +129,28 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     stopifnot(n >= 1)
     stopifnot(p == ncol(trainX))
-    # #142: re-attach trainX's names too -- checkNewXProvided strips them, so a
-    # data.frame trainX arrives here name-less while testX was re-named at :3607,
-    # spuriously tripping the warnings below and again downstream in
-    # formCssDesign(newx=trainX). trainX's names were already validated ==
-    # css_results$X inside checkNewXProvided, and p == ncol(trainX), so feat_names
-    # is the correct, length-safe, non-masking re-attachment.
-    if(all(!is.na(feat_names))){
-        colnames(trainX) <- feat_names
+    # #153a: restore trainX's OWN validated names (checkNewXProvided strips them),
+    # from the css object, independently of testX. The old #142 code derived them
+    # from testX, so a named trainX + unnamed testX stayed name-less and tripped a
+    # spurious downstream "no variable names" warning about a matrix the user named.
+    if(trainXProvided && all(!is.na(trainX_feat_names))){
+        colnames(trainX) <- colnames(css_results$X)
     }
-    if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
-        warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
-    }
-    if(is.null(colnames(trainX)) & !is.null(colnames(testX))){
-        warning("Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)")
-    }
-    if(!is.null(colnames(trainX)) & !is.null(colnames(testX))){
-        stopifnot(all(colnames(trainX) == colnames(testX)))
+    # #153c: only compare names when trainX was USER-provided. Guarding here both
+    # revives the previously-dead "testX but not trainX" branch (the old #142
+    # code always re-named trainX from testX, making it unsatisfiable) and
+    # suppresses a false "trainX but not testX" warning on the train_inds default
+    # path (where trainX is the internally-formed, unnamed train set).
+    if(trainXProvided){
+        if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
+            warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
+        }
+        if(is.null(colnames(trainX)) & !is.null(colnames(testX))){
+            warning("Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)")
+        }
+        if(!is.null(colnames(trainX)) & !is.null(colnames(testX))){
+            stopifnot(all(colnames(trainX) == colnames(testX)))
+        }
     }
 
     checkCutoff(cutoff)

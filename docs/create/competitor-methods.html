@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="7 Competitor Methods | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-23">
+<meta name="date" content="2026-07-24">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -195,570 +195,574 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><code><a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()</code></li>
 </ul>
 <p>The shared core of <code><a href="competitor-methods.html#protolasso">protolasso</a>()</code> and <code><a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()</code>. The two procedures differ only in how <code><a href="competitor-methods.html#getXglmnet">getXglmnet</a>()</code> constructs the design matrix (its <code>type</code> argument); the rest of the body – input handling, the glmnet fit, and extracting selected sets – is identical, so it lives here once.</p>
-<div class="sourceCode" id="cb84"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb84-1"><a href="competitor-methods.html#cb84-1" tabindex="-1"></a><span class="co">#' Shared implementation of protolasso and clusterRepLasso</span></span>
-<span id="cb84-2"><a href="competitor-methods.html#cb84-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb84-3"><a href="competitor-methods.html#cb84-3" tabindex="-1"></a><span class="co">#' Internal helper holding the common body of `<a href="competitor-methods.html#protolasso">protolasso</a>()` and</span></span>
-<span id="cb84-4"><a href="competitor-methods.html#cb84-4" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`, which differ only in the `type` passed to `<a href="competitor-methods.html#getXglmnet">getXglmnet</a>()`</span></span>
-<span id="cb84-5"><a href="competitor-methods.html#cb84-5" tabindex="-1"></a><span class="co">#' (the sole point where the two procedures diverge: protolasso discards</span></span>
-<span id="cb84-6"><a href="competitor-methods.html#cb84-6" tabindex="-1"></a><span class="co">#' non-prototype cluster members, clusterRepLasso replaces each cluster with its</span></span>
-<span id="cb84-7"><a href="competitor-methods.html#cb84-7" tabindex="-1"></a><span class="co">#' representative).</span></span>
-<span id="cb84-8"><a href="competitor-methods.html#cb84-8" tabindex="-1"></a><span class="co">#' @param X,y,clusters,nlambda As documented in `<a href="competitor-methods.html#protolasso">protolasso</a>()` /</span></span>
-<span id="cb84-9"><a href="competitor-methods.html#cb84-9" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`.</span></span>
-<span id="cb84-10"><a href="competitor-methods.html#cb84-10" tabindex="-1"></a><span class="co">#' @param type Character; either "protolasso" or "clusterRepLasso", passed to</span></span>
-<span id="cb84-11"><a href="competitor-methods.html#cb84-11" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#getXglmnet">getXglmnet</a>()` to select the design-matrix construction.</span></span>
-<span id="cb84-12"><a href="competitor-methods.html#cb84-12" tabindex="-1"></a><span class="co">#' @return As documented in `<a href="competitor-methods.html#protolasso">protolasso</a>()` / `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`.</span></span>
-<span id="cb84-13"><a href="competitor-methods.html#cb84-13" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb84-14"><a href="competitor-methods.html#cb84-14" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb84-15"><a href="competitor-methods.html#cb84-15" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb84-16"><a href="competitor-methods.html#cb84-16" tabindex="-1"></a><span id="clusterLassoCore">clusterLassoCore</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, nlambda, type){</span>
-<span id="cb84-17"><a href="competitor-methods.html#cb84-17" tabindex="-1"></a></span>
-<span id="cb84-18"><a href="competitor-methods.html#cb84-18" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
-<span id="cb84-19"><a href="competitor-methods.html#cb84-19" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#processClusterLassoInputs">processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
-<span id="cb84-20"><a href="competitor-methods.html#cb84-20" tabindex="-1"></a></span>
-<span id="cb84-21"><a href="competitor-methods.html#cb84-21" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
-<span id="cb84-22"><a href="competitor-methods.html#cb84-22" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
-<span id="cb84-23"><a href="competitor-methods.html#cb84-23" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
-<span id="cb84-24"><a href="competitor-methods.html#cb84-24" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
-<span id="cb84-25"><a href="competitor-methods.html#cb84-25" tabindex="-1"></a></span>
-<span id="cb84-26"><a href="competitor-methods.html#cb84-26" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
-<span id="cb84-27"><a href="competitor-methods.html#cb84-27" tabindex="-1"></a></span>
-<span id="cb84-28"><a href="competitor-methods.html#cb84-28" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the chosen procedure</span></span>
-<span id="cb84-29"><a href="competitor-methods.html#cb84-29" tabindex="-1"></a>    <span class="co"># (type = "protolasso" or "clusterRepLasso"); see <a href="competitor-methods.html#getXglmnet">getXglmnet</a>().</span></span>
-<span id="cb84-30"><a href="competitor-methods.html#cb84-30" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href="competitor-methods.html#getXglmnet">getXglmnet</a>(x, clusters, <span class="at">type=</span>type, <span class="at">prototypes=</span>prototypes)</span>
-<span id="cb84-31"><a href="competitor-methods.html#cb84-31" tabindex="-1"></a></span>
-<span id="cb84-32"><a href="competitor-methods.html#cb84-32" tabindex="-1"></a>    <span class="co"># getXglmnet returns one column per cluster, so a single all-encompassing</span></span>
-<span id="cb84-33"><a href="competitor-methods.html#cb84-33" tabindex="-1"></a>    <span class="co"># cluster (or a genuine p &lt; 2 input, which processClusterLassoInputs does not</span></span>
-<span id="cb84-34"><a href="competitor-methods.html#cb84-34" tabindex="-1"></a>    <span class="co"># rule out) yields a 1-column design that glmnet cannot fit ("x should be a</span></span>
-<span id="cb84-35"><a href="competitor-methods.html#cb84-35" tabindex="-1"></a>    <span class="co"># matrix with 2 or more columns"). Fail early with a message naming both</span></span>
-<span id="cb84-36"><a href="competitor-methods.html#cb84-36" tabindex="-1"></a>    <span class="co"># degenerate causes instead of surfacing glmnet's opaque error. This catches</span></span>
-<span id="cb84-37"><a href="competitor-methods.html#cb84-37" tabindex="-1"></a>    <span class="co"># both <a href="competitor-methods.html#protolasso">protolasso</a>() and <a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>(), which route through here.</span></span>
-<span id="cb84-38"><a href="competitor-methods.html#cb84-38" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
-<span id="cb84-39"><a href="competitor-methods.html#cb84-39" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"<a href="competitor-methods.html#protolasso">protolasso</a>()/<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>() need at least 2 cluster representatives to fit the lasso, but the provided data yields only 1 (all features are in a single cluster, or p &lt; 2)."</span>)</span>
-<span id="cb84-40"><a href="competitor-methods.html#cb84-40" tabindex="-1"></a>    }</span>
-<span id="cb84-41"><a href="competitor-methods.html#cb84-41" tabindex="-1"></a></span>
-<span id="cb84-42"><a href="competitor-methods.html#cb84-42" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster prototypes / representatives</span></span>
-<span id="cb84-43"><a href="competitor-methods.html#cb84-43" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nlambda=</span>nlambda)</span>
-<span id="cb84-44"><a href="competitor-methods.html#cb84-44" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">"nonzero"</span>))</span>
-<span id="cb84-45"><a href="competitor-methods.html#cb84-45" tabindex="-1"></a></span>
-<span id="cb84-46"><a href="competitor-methods.html#cb84-46" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
-<span id="cb84-47"><a href="competitor-methods.html#cb84-47" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
-<span id="cb84-48"><a href="competitor-methods.html#cb84-48" tabindex="-1"></a>        prototypes, feat_names)</span>
-<span id="cb84-49"><a href="competitor-methods.html#cb84-49" tabindex="-1"></a></span>
-<span id="cb84-50"><a href="competitor-methods.html#cb84-50" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
-<span id="cb84-51"><a href="competitor-methods.html#cb84-51" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
-<span id="cb84-52"><a href="competitor-methods.html#cb84-52" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
-<span id="cb84-53"><a href="competitor-methods.html#cb84-53" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="competitor-methods.html#protolasso">protolasso</a>()</code>:</p>
-<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="competitor-methods.html#cb85-1" tabindex="-1"></a><span class="co">#' Select features via the protolasso (Reid and Tibshirani 2016)</span></span>
+<div class="sourceCode" id="cb85"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb85-1"><a href="competitor-methods.html#cb85-1" tabindex="-1"></a><span class="co">#' Shared implementation of protolasso and clusterRepLasso</span></span>
 <span id="cb85-2"><a href="competitor-methods.html#cb85-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb85-3"><a href="competitor-methods.html#cb85-3" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb85-4"><a href="competitor-methods.html#cb85-4" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb85-5"><a href="competitor-methods.html#cb85-5" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
-<span id="cb85-6"><a href="competitor-methods.html#cb85-6" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
-<span id="cb85-7"><a href="competitor-methods.html#cb85-7" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
-<span id="cb85-8"><a href="competitor-methods.html#cb85-8" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
-<span id="cb85-9"><a href="competitor-methods.html#cb85-9" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
-<span id="cb85-10"><a href="competitor-methods.html#cb85-10" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Every feature not</span></span>
-<span id="cb85-11"><a href="competitor-methods.html#cb85-11" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
-<span id="cb85-12"><a href="competitor-methods.html#cb85-12" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
-<span id="cb85-13"><a href="competitor-methods.html#cb85-13" tabindex="-1"></a><span class="co">#' </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
-<span id="cb85-14"><a href="competitor-methods.html#cb85-14" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
-<span id="cb85-15"><a href="competitor-methods.html#cb85-15" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
-<span id="cb85-16"><a href="competitor-methods.html#cb85-16" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
-<span id="cb85-17"><a href="competitor-methods.html#cb85-17" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package).</span></span>
-<span id="cb85-18"><a href="competitor-methods.html#cb85-18" tabindex="-1"></a><span class="co">#' To get correct results in this case, please use model.matrix to convert</span></span>
-<span id="cb85-19"><a href="competitor-methods.html#cb85-19" tabindex="-1"></a><span class="co">#' the data.frame to a numeric matrix on your own, then provide this matrix</span></span>
-<span id="cb85-20"><a href="competitor-methods.html#cb85-20" tabindex="-1"></a><span class="co">#' and cluster assignments with respect to this matrix. Default is list() (so no</span></span>
-<span id="cb85-21"><a href="competitor-methods.html#cb85-21" tabindex="-1"></a><span class="co">#' clusters are specified).</span></span>
-<span id="cb85-22"><a href="competitor-methods.html#cb85-22" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
-<span id="cb85-23"><a href="competitor-methods.html#cb85-23" tabindex="-1"></a><span class="co">#' for the protolasso. Default is 100 (following the default for glmnet). For</span></span>
-<span id="cb85-24"><a href="competitor-methods.html#cb85-24" tabindex="-1"></a><span class="co">#' now, nlambda must be at least 2 (using a single lambda is not supported).</span></span>
-<span id="cb85-25"><a href="competitor-methods.html#cb85-25" tabindex="-1"></a><span class="co">#' @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
-<span id="cb85-26"><a href="competitor-methods.html#cb85-26" tabindex="-1"></a><span class="co">#' vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
-<span id="cb85-27"><a href="competitor-methods.html#cb85-27" tabindex="-1"></a><span class="co">#' size k yielded by the protolasso (If no set of size k was selected, entry k</span></span>
-<span id="cb85-28"><a href="competitor-methods.html#cb85-28" tabindex="-1"></a><span class="co">#' will be empty.)} \item{selected_clusts_list}{A list; each element of the list</span></span>
-<span id="cb85-29"><a href="competitor-methods.html#cb85-29" tabindex="-1"></a><span class="co">#' is a named list of selected clusters. (That is, if a selected set of size k</span></span>
-<span id="cb85-30"><a href="competitor-methods.html#cb85-30" tabindex="-1"></a><span class="co">#' was yielded by the protolasso, then `selected_clusts_list[[k]]` is a named</span></span>
-<span id="cb85-31"><a href="competitor-methods.html#cb85-31" tabindex="-1"></a><span class="co">#' list of length k, where each member of the list is an integer vector</span></span>
-<span id="cb85-32"><a href="competitor-methods.html#cb85-32" tabindex="-1"></a><span class="co">#' of cluster members. In particular, `selected_clusts_lists[[k]][[j]]` will be</span></span>
-<span id="cb85-33"><a href="competitor-methods.html#cb85-33" tabindex="-1"></a><span class="co">#' the cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The</span></span>
-<span id="cb85-34"><a href="competitor-methods.html#cb85-34" tabindex="-1"></a><span class="co">#' beta output from glmnet when the lasso was estimated on a matrix of</span></span>
-<span id="cb85-35"><a href="competitor-methods.html#cb85-35" tabindex="-1"></a><span class="co">#' prototypes. (See documentation for the function glmnet from the glmnet</span></span>
-<span id="cb85-36"><a href="competitor-methods.html#cb85-36" tabindex="-1"></a><span class="co">#' package for details.) The rows of beta correspond, in order, to the clusters</span></span>
-<span id="cb85-37"><a href="competitor-methods.html#cb85-37" tabindex="-1"></a><span class="co">#' in the internally reordered clusters list (the provided clusters in the</span></span>
-<span id="cb85-38"><a href="competitor-methods.html#cb85-38" tabindex="-1"></a><span class="co">#' supplied order, followed by a singleton cluster for each unclustered feature</span></span>
-<span id="cb85-39"><a href="competitor-methods.html#cb85-39" tabindex="-1"></a><span class="co">#' in ascending feature-index order). Each row name is the cluster's name--the</span></span>
-<span id="cb85-40"><a href="competitor-methods.html#cb85-40" tabindex="-1"></a><span class="co">#' provided name for a supplied cluster, or an automatically assigned</span></span>
-<span id="cb85-41"><a href="competitor-methods.html#cb85-41" tabindex="-1"></a><span class="co">#' `c&lt;position&gt;` name (position in the reordered list, not the feature index)</span></span>
-<span id="cb85-42"><a href="competitor-methods.html#cb85-42" tabindex="-1"></a><span class="co">#' for a singleton; a selected cluster's row name coincides with its entry name</span></span>
-<span id="cb85-43"><a href="competitor-methods.html#cb85-43" tabindex="-1"></a><span class="co">#' in `selected_clusts_list[[k]]`.}</span></span>
-<span id="cb85-44"><a href="competitor-methods.html#cb85-44" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb85-45"><a href="competitor-methods.html#cb85-45" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb85-46"><a href="competitor-methods.html#cb85-46" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb85-47"><a href="competitor-methods.html#cb85-47" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
-<span id="cb85-48"><a href="competitor-methods.html#cb85-48" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb85-49"><a href="competitor-methods.html#cb85-49" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb85-50"><a href="competitor-methods.html#cb85-50" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb85-51"><a href="competitor-methods.html#cb85-51" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb85-52"><a href="competitor-methods.html#cb85-52" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb85-53"><a href="competitor-methods.html#cb85-53" tabindex="-1"></a><span class="co">#' res &lt;- <a href="competitor-methods.html#protolasso">protolasso</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
-<span id="cb85-54"><a href="competitor-methods.html#cb85-54" tabindex="-1"></a><span class="co">#' str(res, max.level = 1)</span></span>
-<span id="cb85-55"><a href="competitor-methods.html#cb85-55" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb85-56"><a href="competitor-methods.html#cb85-56" tabindex="-1"></a><span id="protolasso">protolasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
-<span id="cb85-57"><a href="competitor-methods.html#cb85-57" tabindex="-1"></a>    <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>(X, y, clusters, nlambda, <span class="at">type=</span><span class="st">"protolasso"</span>)</span>
-<span id="cb85-58"><a href="competitor-methods.html#cb85-58" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb85-3"><a href="competitor-methods.html#cb85-3" tabindex="-1"></a><span class="co">#' Internal helper holding the common body of `<a href="competitor-methods.html#protolasso">protolasso</a>()` and</span></span>
+<span id="cb85-4"><a href="competitor-methods.html#cb85-4" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`, which differ only in the `type` passed to `<a href="competitor-methods.html#getXglmnet">getXglmnet</a>()`</span></span>
+<span id="cb85-5"><a href="competitor-methods.html#cb85-5" tabindex="-1"></a><span class="co">#' (the sole point where the two procedures diverge: protolasso discards</span></span>
+<span id="cb85-6"><a href="competitor-methods.html#cb85-6" tabindex="-1"></a><span class="co">#' non-prototype cluster members, clusterRepLasso replaces each cluster with its</span></span>
+<span id="cb85-7"><a href="competitor-methods.html#cb85-7" tabindex="-1"></a><span class="co">#' representative).</span></span>
+<span id="cb85-8"><a href="competitor-methods.html#cb85-8" tabindex="-1"></a><span class="co">#' @param X,y,clusters,nlambda As documented in `<a href="competitor-methods.html#protolasso">protolasso</a>()` /</span></span>
+<span id="cb85-9"><a href="competitor-methods.html#cb85-9" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`.</span></span>
+<span id="cb85-10"><a href="competitor-methods.html#cb85-10" tabindex="-1"></a><span class="co">#' @param type Character; either "protolasso" or "clusterRepLasso", passed to</span></span>
+<span id="cb85-11"><a href="competitor-methods.html#cb85-11" tabindex="-1"></a><span class="co">#' `<a href="competitor-methods.html#getXglmnet">getXglmnet</a>()` to select the design-matrix construction.</span></span>
+<span id="cb85-12"><a href="competitor-methods.html#cb85-12" tabindex="-1"></a><span class="co">#' @return As documented in `<a href="competitor-methods.html#protolasso">protolasso</a>()` / `<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()`.</span></span>
+<span id="cb85-13"><a href="competitor-methods.html#cb85-13" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb85-14"><a href="competitor-methods.html#cb85-14" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb85-15"><a href="competitor-methods.html#cb85-15" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb85-16"><a href="competitor-methods.html#cb85-16" tabindex="-1"></a><span id="clusterLassoCore">clusterLassoCore</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, nlambda, type){</span>
+<span id="cb85-17"><a href="competitor-methods.html#cb85-17" tabindex="-1"></a></span>
+<span id="cb85-18"><a href="competitor-methods.html#cb85-18" tabindex="-1"></a>    <span class="co"># Handle and format inputs; get cluster prototypes</span></span>
+<span id="cb85-19"><a href="competitor-methods.html#cb85-19" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#processClusterLassoInputs">processClusterLassoInputs</a>(X, y, clusters, nlambda)</span>
+<span id="cb85-20"><a href="competitor-methods.html#cb85-20" tabindex="-1"></a></span>
+<span id="cb85-21"><a href="competitor-methods.html#cb85-21" tabindex="-1"></a>    x <span class="ot">&lt;-</span> ret<span class="sc">$</span>x</span>
+<span id="cb85-22"><a href="competitor-methods.html#cb85-22" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> ret<span class="sc">$</span>clusters</span>
+<span id="cb85-23"><a href="competitor-methods.html#cb85-23" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> ret<span class="sc">$</span>prototypes</span>
+<span id="cb85-24"><a href="competitor-methods.html#cb85-24" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> ret<span class="sc">$</span>var_names</span>
+<span id="cb85-25"><a href="competitor-methods.html#cb85-25" tabindex="-1"></a></span>
+<span id="cb85-26"><a href="competitor-methods.html#cb85-26" tabindex="-1"></a>    <span class="fu">rm</span>(ret)</span>
+<span id="cb85-27"><a href="competitor-methods.html#cb85-27" tabindex="-1"></a></span>
+<span id="cb85-28"><a href="competitor-methods.html#cb85-28" tabindex="-1"></a>    <span class="co"># Format the design matrix for glmnet according to the chosen procedure</span></span>
+<span id="cb85-29"><a href="competitor-methods.html#cb85-29" tabindex="-1"></a>    <span class="co"># (type = "protolasso" or "clusterRepLasso"); see <a href="competitor-methods.html#getXglmnet">getXglmnet</a>().</span></span>
+<span id="cb85-30"><a href="competitor-methods.html#cb85-30" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <a href="competitor-methods.html#getXglmnet">getXglmnet</a>(x, clusters, <span class="at">type=</span>type, <span class="at">prototypes=</span>prototypes)</span>
+<span id="cb85-31"><a href="competitor-methods.html#cb85-31" tabindex="-1"></a></span>
+<span id="cb85-32"><a href="competitor-methods.html#cb85-32" tabindex="-1"></a>    <span class="co"># getXglmnet returns one column per cluster, so a single all-encompassing</span></span>
+<span id="cb85-33"><a href="competitor-methods.html#cb85-33" tabindex="-1"></a>    <span class="co"># cluster (or a genuine p &lt; 2 input, which processClusterLassoInputs does not</span></span>
+<span id="cb85-34"><a href="competitor-methods.html#cb85-34" tabindex="-1"></a>    <span class="co"># rule out) yields a 1-column design that glmnet cannot fit ("x should be a</span></span>
+<span id="cb85-35"><a href="competitor-methods.html#cb85-35" tabindex="-1"></a>    <span class="co"># matrix with 2 or more columns"). Fail early with a message naming both</span></span>
+<span id="cb85-36"><a href="competitor-methods.html#cb85-36" tabindex="-1"></a>    <span class="co"># degenerate causes instead of surfacing glmnet's opaque error. This catches</span></span>
+<span id="cb85-37"><a href="competitor-methods.html#cb85-37" tabindex="-1"></a>    <span class="co"># both <a href="competitor-methods.html#protolasso">protolasso</a>() and <a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>(), which route through here.</span></span>
+<span id="cb85-38"><a href="competitor-methods.html#cb85-38" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
+<span id="cb85-39"><a href="competitor-methods.html#cb85-39" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"<a href="competitor-methods.html#protolasso">protolasso</a>()/<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>() need at least 2 cluster representatives to fit the lasso, but the provided data yields only 1 (all features are in a single cluster, or p &lt; 2)."</span>)</span>
+<span id="cb85-40"><a href="competitor-methods.html#cb85-40" tabindex="-1"></a>    }</span>
+<span id="cb85-41"><a href="competitor-methods.html#cb85-41" tabindex="-1"></a></span>
+<span id="cb85-42"><a href="competitor-methods.html#cb85-42" tabindex="-1"></a>    <span class="co"># Estimate the lasso on the cluster prototypes / representatives</span></span>
+<span id="cb85-43"><a href="competitor-methods.html#cb85-43" tabindex="-1"></a>    fit <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X_glmnet, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nlambda=</span>nlambda)</span>
+<span id="cb85-44"><a href="competitor-methods.html#cb85-44" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit, <span class="at">type=</span><span class="st">"nonzero"</span>))</span>
+<span id="cb85-45"><a href="competitor-methods.html#cb85-45" tabindex="-1"></a></span>
+<span id="cb85-46"><a href="competitor-methods.html#cb85-46" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
+<span id="cb85-47"><a href="competitor-methods.html#cb85-47" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
+<span id="cb85-48"><a href="competitor-methods.html#cb85-48" tabindex="-1"></a>        prototypes, feat_names)</span>
+<span id="cb85-49"><a href="competitor-methods.html#cb85-49" tabindex="-1"></a></span>
+<span id="cb85-50"><a href="competitor-methods.html#cb85-50" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
+<span id="cb85-51"><a href="competitor-methods.html#cb85-51" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
+<span id="cb85-52"><a href="competitor-methods.html#cb85-52" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
+<span id="cb85-53"><a href="competitor-methods.html#cb85-53" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="competitor-methods.html#protolasso">protolasso</a>()</code>:</p>
+<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb86-1"><a href="competitor-methods.html#cb86-1" tabindex="-1"></a><span class="co">#' Select features via the protolasso (Reid and Tibshirani 2016)</span></span>
+<span id="cb86-2"><a href="competitor-methods.html#cb86-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb86-3"><a href="competitor-methods.html#cb86-3" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb86-4"><a href="competitor-methods.html#cb86-4" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb86-5"><a href="competitor-methods.html#cb86-5" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
+<span id="cb86-6"><a href="competitor-methods.html#cb86-6" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
+<span id="cb86-7"><a href="competitor-methods.html#cb86-7" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
+<span id="cb86-8"><a href="competitor-methods.html#cb86-8" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
+<span id="cb86-9"><a href="competitor-methods.html#cb86-9" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
+<span id="cb86-10"><a href="competitor-methods.html#cb86-10" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Any identical</span></span>
+<span id="cb86-11"><a href="competitor-methods.html#cb86-11" tabindex="-1"></a><span class="co">#' (duplicated) clusters will be removed, keeping the first occurrence and its</span></span>
+<span id="cb86-12"><a href="competitor-methods.html#cb86-12" tabindex="-1"></a><span class="co">#' name. Every feature not</span></span>
+<span id="cb86-13"><a href="competitor-methods.html#cb86-13" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
+<span id="cb86-14"><a href="competitor-methods.html#cb86-14" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
+<span id="cb86-15"><a href="competitor-methods.html#cb86-15" tabindex="-1"></a><span class="co">#' </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
+<span id="cb86-16"><a href="competitor-methods.html#cb86-16" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
+<span id="cb86-17"><a href="competitor-methods.html#cb86-17" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
+<span id="cb86-18"><a href="competitor-methods.html#cb86-18" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
+<span id="cb86-19"><a href="competitor-methods.html#cb86-19" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package).</span></span>
+<span id="cb86-20"><a href="competitor-methods.html#cb86-20" tabindex="-1"></a><span class="co">#' To get correct results in this case, please use model.matrix to convert</span></span>
+<span id="cb86-21"><a href="competitor-methods.html#cb86-21" tabindex="-1"></a><span class="co">#' the data.frame to a numeric matrix on your own, then provide this matrix</span></span>
+<span id="cb86-22"><a href="competitor-methods.html#cb86-22" tabindex="-1"></a><span class="co">#' and cluster assignments with respect to this matrix. Default is list() (so no</span></span>
+<span id="cb86-23"><a href="competitor-methods.html#cb86-23" tabindex="-1"></a><span class="co">#' clusters are specified).</span></span>
+<span id="cb86-24"><a href="competitor-methods.html#cb86-24" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
+<span id="cb86-25"><a href="competitor-methods.html#cb86-25" tabindex="-1"></a><span class="co">#' for the protolasso. Default is 100 (following the default for glmnet). For</span></span>
+<span id="cb86-26"><a href="competitor-methods.html#cb86-26" tabindex="-1"></a><span class="co">#' now, nlambda must be at least 2 (using a single lambda is not supported).</span></span>
+<span id="cb86-27"><a href="competitor-methods.html#cb86-27" tabindex="-1"></a><span class="co">#' @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
+<span id="cb86-28"><a href="competitor-methods.html#cb86-28" tabindex="-1"></a><span class="co">#' vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
+<span id="cb86-29"><a href="competitor-methods.html#cb86-29" tabindex="-1"></a><span class="co">#' size k yielded by the protolasso (If no set of size k was selected, entry k</span></span>
+<span id="cb86-30"><a href="competitor-methods.html#cb86-30" tabindex="-1"></a><span class="co">#' will be empty.)} \item{selected_clusts_list}{A list; each element of the list</span></span>
+<span id="cb86-31"><a href="competitor-methods.html#cb86-31" tabindex="-1"></a><span class="co">#' is a named list of selected clusters. (That is, if a selected set of size k</span></span>
+<span id="cb86-32"><a href="competitor-methods.html#cb86-32" tabindex="-1"></a><span class="co">#' was yielded by the protolasso, then `selected_clusts_list[[k]]` is a named</span></span>
+<span id="cb86-33"><a href="competitor-methods.html#cb86-33" tabindex="-1"></a><span class="co">#' list of length k, where each member of the list is an integer vector</span></span>
+<span id="cb86-34"><a href="competitor-methods.html#cb86-34" tabindex="-1"></a><span class="co">#' of cluster members. In particular, `selected_clusts_lists[[k]][[j]]` will be</span></span>
+<span id="cb86-35"><a href="competitor-methods.html#cb86-35" tabindex="-1"></a><span class="co">#' the cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The</span></span>
+<span id="cb86-36"><a href="competitor-methods.html#cb86-36" tabindex="-1"></a><span class="co">#' beta output from glmnet when the lasso was estimated on a matrix of</span></span>
+<span id="cb86-37"><a href="competitor-methods.html#cb86-37" tabindex="-1"></a><span class="co">#' prototypes. (See documentation for the function glmnet from the glmnet</span></span>
+<span id="cb86-38"><a href="competitor-methods.html#cb86-38" tabindex="-1"></a><span class="co">#' package for details.) The rows of beta correspond, in order, to the clusters</span></span>
+<span id="cb86-39"><a href="competitor-methods.html#cb86-39" tabindex="-1"></a><span class="co">#' in the internally reordered clusters list (the provided clusters in the</span></span>
+<span id="cb86-40"><a href="competitor-methods.html#cb86-40" tabindex="-1"></a><span class="co">#' supplied order, followed by a singleton cluster for each unclustered feature</span></span>
+<span id="cb86-41"><a href="competitor-methods.html#cb86-41" tabindex="-1"></a><span class="co">#' in ascending feature-index order). Each row name is the cluster's name--the</span></span>
+<span id="cb86-42"><a href="competitor-methods.html#cb86-42" tabindex="-1"></a><span class="co">#' provided name for a supplied cluster, or an automatically assigned</span></span>
+<span id="cb86-43"><a href="competitor-methods.html#cb86-43" tabindex="-1"></a><span class="co">#' `c&lt;position&gt;` name (position in the reordered list, not the feature index)</span></span>
+<span id="cb86-44"><a href="competitor-methods.html#cb86-44" tabindex="-1"></a><span class="co">#' for a singleton; a selected cluster's row name coincides with its entry name</span></span>
+<span id="cb86-45"><a href="competitor-methods.html#cb86-45" tabindex="-1"></a><span class="co">#' in `selected_clusts_list[[k]]`.}</span></span>
+<span id="cb86-46"><a href="competitor-methods.html#cb86-46" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb86-47"><a href="competitor-methods.html#cb86-47" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb86-48"><a href="competitor-methods.html#cb86-48" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb86-49"><a href="competitor-methods.html#cb86-49" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
+<span id="cb86-50"><a href="competitor-methods.html#cb86-50" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb86-51"><a href="competitor-methods.html#cb86-51" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb86-52"><a href="competitor-methods.html#cb86-52" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb86-53"><a href="competitor-methods.html#cb86-53" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb86-54"><a href="competitor-methods.html#cb86-54" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb86-55"><a href="competitor-methods.html#cb86-55" tabindex="-1"></a><span class="co">#' res &lt;- <a href="competitor-methods.html#protolasso">protolasso</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
+<span id="cb86-56"><a href="competitor-methods.html#cb86-56" tabindex="-1"></a><span class="co">#' str(res, max.level = 1)</span></span>
+<span id="cb86-57"><a href="competitor-methods.html#cb86-57" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb86-58"><a href="competitor-methods.html#cb86-58" tabindex="-1"></a><span id="protolasso">protolasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
+<span id="cb86-59"><a href="competitor-methods.html#cb86-59" tabindex="-1"></a>    <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>(X, y, clusters, nlambda, <span class="at">type=</span><span class="st">"protolasso"</span>)</span>
+<span id="cb86-60"><a href="competitor-methods.html#cb86-60" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#processClusterLassoInputs">processClusterLassoInputs</a>()</code>:</p>
-<div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb86-1"><a href="competitor-methods.html#cb86-1" tabindex="-1"></a><span class="co">#' Check the inputs to protolasso and clusterRepLasso, format clusters, and</span></span>
-<span id="cb86-2"><a href="competitor-methods.html#cb86-2" tabindex="-1"></a><span class="co">#' identify prototypes for each cluster</span></span>
-<span id="cb86-3"><a href="competitor-methods.html#cb86-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb86-4"><a href="competitor-methods.html#cb86-4" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb86-5"><a href="competitor-methods.html#cb86-5" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb86-6"><a href="competitor-methods.html#cb86-6" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors</span></span>
-<span id="cb86-7"><a href="competitor-methods.html#cb86-7" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
-<span id="cb86-8"><a href="competitor-methods.html#cb86-8" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
-<span id="cb86-9"><a href="competitor-methods.html#cb86-9" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
-<span id="cb86-10"><a href="competitor-methods.html#cb86-10" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
-<span id="cb86-11"><a href="competitor-methods.html#cb86-11" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Every feature not</span></span>
-<span id="cb86-12"><a href="competitor-methods.html#cb86-12" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
-<span id="cb86-13"><a href="competitor-methods.html#cb86-13" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
-<span id="cb86-14"><a href="competitor-methods.html#cb86-14" tabindex="-1"></a><span class="co">#' Default is list() (so no clusters are specified).</span></span>
-<span id="cb86-15"><a href="competitor-methods.html#cb86-15" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
-<span id="cb86-16"><a href="competitor-methods.html#cb86-16" tabindex="-1"></a><span class="co">#' for the protolasso. Default is 100 (following the default for glmnet). For</span></span>
-<span id="cb86-17"><a href="competitor-methods.html#cb86-17" tabindex="-1"></a><span class="co">#' now, nlambda must be at least 2 (using a single lambda is not supported).</span></span>
-<span id="cb86-18"><a href="competitor-methods.html#cb86-18" tabindex="-1"></a><span class="co">#' @return A list with four elements. \item{x}{The provided X, converted to a</span></span>
-<span id="cb86-19"><a href="competitor-methods.html#cb86-19" tabindex="-1"></a><span class="co">#' matrix if it was provided as a data.frame, and with column names removed.}</span></span>
-<span id="cb86-20"><a href="competitor-methods.html#cb86-20" tabindex="-1"></a><span class="co">#' \item{clusters}{A named list where each entry is an integer vector of indices</span></span>
-<span id="cb86-21"><a href="competitor-methods.html#cb86-21" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
-<span id="cb86-22"><a href="competitor-methods.html#cb86-22" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters are</span></span>
-<span id="cb86-23"><a href="competitor-methods.html#cb86-23" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
-<span id="cb86-24"><a href="competitor-methods.html#cb86-24" tabindex="-1"></a><span class="co">#' features will be put in their own "cluster" of size 1).}</span></span>
-<span id="cb86-25"><a href="competitor-methods.html#cb86-25" tabindex="-1"></a><span class="co">#' \item{prototypes}{An integer vector whose length is equal to the number of</span></span>
-<span id="cb86-26"><a href="competitor-methods.html#cb86-26" tabindex="-1"></a><span class="co">#' clusters. Entry i is the index of the feature belonging to cluster i that is</span></span>
-<span id="cb86-27"><a href="competitor-methods.html#cb86-27" tabindex="-1"></a><span class="co">#' most highly correlated with y (that is, the prototype for the cluster, as in</span></span>
-<span id="cb86-28"><a href="competitor-methods.html#cb86-28" tabindex="-1"></a><span class="co">#' the protolasso; see Reid and Tibshirani 2016).} \item{var_names}{If the</span></span>
-<span id="cb86-29"><a href="competitor-methods.html#cb86-29" tabindex="-1"></a><span class="co">#' provided X matrix had column names, the names of the featurrs in the provided</span></span>
-<span id="cb86-30"><a href="competitor-methods.html#cb86-30" tabindex="-1"></a><span class="co">#' X matrix. If no names were provided, feat_names will be NA.}</span></span>
-<span id="cb86-31"><a href="competitor-methods.html#cb86-31" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb86-32"><a href="competitor-methods.html#cb86-32" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb86-33"><a href="competitor-methods.html#cb86-33" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb86-34"><a href="competitor-methods.html#cb86-34" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
-<span id="cb86-35"><a href="competitor-methods.html#cb86-35" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb86-36"><a href="competitor-methods.html#cb86-36" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb86-37"><a href="competitor-methods.html#cb86-37" tabindex="-1"></a><span id="processClusterLassoInputs">processClusterLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, nlambda){</span>
-<span id="cb86-38"><a href="competitor-methods.html#cb86-38" tabindex="-1"></a></span>
-<span id="cb86-39"><a href="competitor-methods.html#cb86-39" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
-<span id="cb86-40"><a href="competitor-methods.html#cb86-40" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
-<span id="cb86-41"><a href="competitor-methods.html#cb86-41" tabindex="-1"></a></span>
-<span id="cb86-42"><a href="competitor-methods.html#cb86-42" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
-<span id="cb86-43"><a href="competitor-methods.html#cb86-43" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
-<span id="cb86-44"><a href="competitor-methods.html#cb86-44" tabindex="-1"></a></span>
-<span id="cb86-45"><a href="competitor-methods.html#cb86-45" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb86-46"><a href="competitor-methods.html#cb86-46" tabindex="-1"></a></span>
-<span id="cb86-47"><a href="competitor-methods.html#cb86-47" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb86-48"><a href="competitor-methods.html#cb86-48" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
-<span id="cb86-49"><a href="competitor-methods.html#cb86-49" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
-<span id="cb86-50"><a href="competitor-methods.html#cb86-50" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb86-51"><a href="competitor-methods.html#cb86-51" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Some features in provided X matrix had valid names and some had NA names; please either name all features in X or remove the names altogether."</span>)</span>
-<span id="cb86-52"><a href="competitor-methods.html#cb86-52" tabindex="-1"></a>        }</span>
-<span id="cb86-53"><a href="competitor-methods.html#cb86-53" tabindex="-1"></a>    }</span>
-<span id="cb86-54"><a href="competitor-methods.html#cb86-54" tabindex="-1"></a></span>
-<span id="cb86-55"><a href="competitor-methods.html#cb86-55" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb86-56"><a href="competitor-methods.html#cb86-56" tabindex="-1"></a></span>
-<span id="cb86-57"><a href="competitor-methods.html#cb86-57" tabindex="-1"></a>    <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
-<span id="cb86-58"><a href="competitor-methods.html#cb86-58" tabindex="-1"></a></span>
-<span id="cb86-59"><a href="competitor-methods.html#cb86-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(y) <span class="sc">|</span> <span class="fu">is.integer</span>(y))</span>
-<span id="cb86-60"><a href="competitor-methods.html#cb86-60" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">==</span> <span class="fu">length</span>(y))</span>
-<span id="cb86-61"><a href="competitor-methods.html#cb86-61" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(y)))</span>
-<span id="cb86-62"><a href="competitor-methods.html#cb86-62" tabindex="-1"></a></span>
-<span id="cb86-63"><a href="competitor-methods.html#cb86-63" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
-<span id="cb86-64"><a href="competitor-methods.html#cb86-64" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
-<span id="cb86-65"><a href="competitor-methods.html#cb86-65" tabindex="-1"></a></span>
-<span id="cb86-66"><a href="competitor-methods.html#cb86-66" tabindex="-1"></a>    <span class="co"># Format clusters into a list where all features are in exactly one</span></span>
-<span id="cb86-67"><a href="competitor-methods.html#cb86-67" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
-<span id="cb86-68"><a href="competitor-methods.html#cb86-68" tabindex="-1"></a>    <span class="co"># 1).</span></span>
-<span id="cb86-69"><a href="competitor-methods.html#cb86-69" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb86-70"><a href="competitor-methods.html#cb86-70" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
-<span id="cb86-71"><a href="competitor-methods.html#cb86-71" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb86-72"><a href="competitor-methods.html#cb86-72" tabindex="-1"></a>    }</span>
-<span id="cb86-73"><a href="competitor-methods.html#cb86-73" tabindex="-1"></a></span>
-<span id="cb86-74"><a href="competitor-methods.html#cb86-74" tabindex="-1"></a>    cluster_results <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
-<span id="cb86-75"><a href="competitor-methods.html#cb86-75" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names, <span class="at">get_prototypes=</span><span class="cn">TRUE</span>, <span class="at">x=</span>X, <span class="at">y=</span>y)</span>
-<span id="cb86-76"><a href="competitor-methods.html#cb86-76" tabindex="-1"></a></span>
-<span id="cb86-77"><a href="competitor-methods.html#cb86-77" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> cluster_results<span class="sc">$</span>clusters</span>
-<span id="cb86-78"><a href="competitor-methods.html#cb86-78" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> cluster_results<span class="sc">$</span>prototypes</span>
-<span id="cb86-79"><a href="competitor-methods.html#cb86-79" tabindex="-1"></a></span>
-<span id="cb86-80"><a href="competitor-methods.html#cb86-80" tabindex="-1"></a>    <span class="fu">rm</span>(cluster_results)</span>
-<span id="cb86-81"><a href="competitor-methods.html#cb86-81" tabindex="-1"></a></span>
-<span id="cb86-82"><a href="competitor-methods.html#cb86-82" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(clusters) <span class="sc">==</span> <span class="fu">length</span>(prototypes))</span>
-<span id="cb86-83"><a href="competitor-methods.html#cb86-83" tabindex="-1"></a></span>
-<span id="cb86-84"><a href="competitor-methods.html#cb86-84" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(nlambda) <span class="sc">|</span> <span class="fu">is.integer</span>(nlambda))</span>
-<span id="cb86-85"><a href="competitor-methods.html#cb86-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(nlambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb86-86"><a href="competitor-methods.html#cb86-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(nlambda))</span>
-<span id="cb86-87"><a href="competitor-methods.html#cb86-87" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nlambda <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
-<span id="cb86-88"><a href="competitor-methods.html#cb86-88" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nlambda <span class="sc">==</span> <span class="fu">round</span>(nlambda))</span>
-<span id="cb86-89"><a href="competitor-methods.html#cb86-89" tabindex="-1"></a></span>
-<span id="cb86-90"><a href="competitor-methods.html#cb86-90" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">x=</span>X, <span class="at">clusters=</span>clusters, <span class="at">prototypes=</span>prototypes,</span>
-<span id="cb86-91"><a href="competitor-methods.html#cb86-91" tabindex="-1"></a>        <span class="at">var_names=</span>feat_names))</span>
-<span id="cb86-92"><a href="competitor-methods.html#cb86-92" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="competitor-methods.html#getXglmnet">getXglmnet</a>()</code>:</p>
-<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="competitor-methods.html#cb87-1" tabindex="-1"></a><span class="co">#' Converts the provided design matrix to an appropriate format for either the</span></span>
-<span id="cb87-2"><a href="competitor-methods.html#cb87-2" tabindex="-1"></a><span class="co">#' protolasso or the cluster representative lasso.</span></span>
+<div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="competitor-methods.html#cb87-1" tabindex="-1"></a><span class="co">#' Check the inputs to protolasso and clusterRepLasso, format clusters, and</span></span>
+<span id="cb87-2"><a href="competitor-methods.html#cb87-2" tabindex="-1"></a><span class="co">#' identify prototypes for each cluster</span></span>
 <span id="cb87-3"><a href="competitor-methods.html#cb87-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb87-4"><a href="competitor-methods.html#cb87-4" tabindex="-1"></a><span class="co">#' Creates design matrix for glmnet by dealing with clusters (for</span></span>
-<span id="cb87-5"><a href="competitor-methods.html#cb87-5" tabindex="-1"></a><span class="co">#' type="protolasso", discards all cluster members except prototype; for</span></span>
-<span id="cb87-6"><a href="competitor-methods.html#cb87-6" tabindex="-1"></a><span class="co">#' type="clusterRepLasso", replaces all cluster members with a simple</span></span>
-<span id="cb87-7"><a href="competitor-methods.html#cb87-7" tabindex="-1"></a><span class="co">#' average of all the cluster members).</span></span>
-<span id="cb87-8"><a href="competitor-methods.html#cb87-8" tabindex="-1"></a><span class="co">#' @param x A numeric matrix; the provided matrix with n observations and p</span></span>
-<span id="cb87-9"><a href="competitor-methods.html#cb87-9" tabindex="-1"></a><span class="co">#' features.</span></span>
-<span id="cb87-10"><a href="competitor-methods.html#cb87-10" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb87-11"><a href="competitor-methods.html#cb87-11" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters should</span></span>
-<span id="cb87-12"><a href="competitor-methods.html#cb87-12" tabindex="-1"></a><span class="co">#' be equal to the number of clusters.) All identified clusters should be</span></span>
-<span id="cb87-13"><a href="competitor-methods.html#cb87-13" tabindex="-1"></a><span class="co">#' non-overlapping. All features should appear in exactly one cluster (any</span></span>
-<span id="cb87-14"><a href="competitor-methods.html#cb87-14" tabindex="-1"></a><span class="co">#' unclustered features should be put in their own "cluster" of size 1).</span></span>
-<span id="cb87-15"><a href="competitor-methods.html#cb87-15" tabindex="-1"></a><span class="co">#' @param type Character; "protolasso" for the protolasso or "clusterRepLasso"</span></span>
-<span id="cb87-16"><a href="competitor-methods.html#cb87-16" tabindex="-1"></a><span class="co">#' for the cluster representative lasso.</span></span>
-<span id="cb87-17"><a href="competitor-methods.html#cb87-17" tabindex="-1"></a><span class="co">#' @param prototypes Only required for type "protolasso". An integer vector</span></span>
-<span id="cb87-18"><a href="competitor-methods.html#cb87-18" tabindex="-1"></a><span class="co">#' whose length is equal to the number of clusters. Entry i should be the</span></span>
-<span id="cb87-19"><a href="competitor-methods.html#cb87-19" tabindex="-1"></a><span class="co">#' prototype for cluster i (the feature belonging to cluster i that is most</span></span>
-<span id="cb87-20"><a href="competitor-methods.html#cb87-20" tabindex="-1"></a><span class="co">#' highly correlated with y; see Reid and Tibshirani 2016).</span></span>
-<span id="cb87-21"><a href="competitor-methods.html#cb87-21" tabindex="-1"></a><span class="co">#' @return A numeric matrix; the design matrix as required for the protolasso or</span></span>
-<span id="cb87-22"><a href="competitor-methods.html#cb87-22" tabindex="-1"></a><span class="co">#' cluster representative lasso, prepared for input to glmnet.</span></span>
-<span id="cb87-23"><a href="competitor-methods.html#cb87-23" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb87-24"><a href="competitor-methods.html#cb87-24" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb87-25"><a href="competitor-methods.html#cb87-25" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb87-26"><a href="competitor-methods.html#cb87-26" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
-<span id="cb87-27"><a href="competitor-methods.html#cb87-27" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb87-28"><a href="competitor-methods.html#cb87-28" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb87-29"><a href="competitor-methods.html#cb87-29" tabindex="-1"></a><span id="getXglmnet">getXglmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, clusters, type, <span class="at">prototypes=</span><span class="cn">NA</span>){</span>
-<span id="cb87-30"><a href="competitor-methods.html#cb87-30" tabindex="-1"></a>    </span>
-<span id="cb87-31"><a href="competitor-methods.html#cb87-31" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb87-32"><a href="competitor-methods.html#cb87-32" tabindex="-1"></a>    <a href="competitor-methods.html#checkGetXglmnetInputs">checkGetXglmnetInputs</a>(x, clusters, type, prototypes)</span>
-<span id="cb87-33"><a href="competitor-methods.html#cb87-33" tabindex="-1"></a></span>
-<span id="cb87-34"><a href="competitor-methods.html#cb87-34" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)</span>
-<span id="cb87-35"><a href="competitor-methods.html#cb87-35" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)</span>
-<span id="cb87-36"><a href="competitor-methods.html#cb87-36" tabindex="-1"></a></span>
-<span id="cb87-37"><a href="competitor-methods.html#cb87-37" tabindex="-1"></a>    X_glmnet_cols <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="fu">length</span>(clusters))</span>
-<span id="cb87-38"><a href="competitor-methods.html#cb87-38" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
-<span id="cb87-39"><a href="competitor-methods.html#cb87-39" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
-<span id="cb87-40"><a href="competitor-methods.html#cb87-40" tabindex="-1"></a></span>
-<span id="cb87-41"><a href="competitor-methods.html#cb87-41" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb87-42"><a href="competitor-methods.html#cb87-42" tabindex="-1"></a>            X_glmnet_i <span class="ot">&lt;-</span> x[, cluster_i]</span>
-<span id="cb87-43"><a href="competitor-methods.html#cb87-43" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb87-44"><a href="competitor-methods.html#cb87-44" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
-<span id="cb87-45"><a href="competitor-methods.html#cb87-45" tabindex="-1"></a></span>
-<span id="cb87-46"><a href="competitor-methods.html#cb87-46" tabindex="-1"></a>            <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"protolasso"</span>){</span>
-<span id="cb87-47"><a href="competitor-methods.html#cb87-47" tabindex="-1"></a>                prototype_ind_i <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> cluster_i)</span>
-<span id="cb87-48"><a href="competitor-methods.html#cb87-48" tabindex="-1"></a>                <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototype_ind_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb87-49"><a href="competitor-methods.html#cb87-49" tabindex="-1"></a>                prototype_i <span class="ot">&lt;-</span> prototypes[prototype_ind_i]</span>
-<span id="cb87-50"><a href="competitor-methods.html#cb87-50" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> x[, prototype_i]</span>
-<span id="cb87-51"><a href="competitor-methods.html#cb87-51" tabindex="-1"></a>            } <span class="cf">else</span> {</span>
-<span id="cb87-52"><a href="competitor-methods.html#cb87-52" tabindex="-1"></a>                <span class="fu">stopifnot</span>(type <span class="sc">==</span> <span class="st">"clusterRepLasso"</span>)</span>
-<span id="cb87-53"><a href="competitor-methods.html#cb87-53" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(x[, cluster_i])</span>
-<span id="cb87-54"><a href="competitor-methods.html#cb87-54" tabindex="-1"></a>            }</span>
-<span id="cb87-55"><a href="competitor-methods.html#cb87-55" tabindex="-1"></a>        }</span>
+<span id="cb87-4"><a href="competitor-methods.html#cb87-4" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb87-5"><a href="competitor-methods.html#cb87-5" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb87-6"><a href="competitor-methods.html#cb87-6" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors</span></span>
+<span id="cb87-7"><a href="competitor-methods.html#cb87-7" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
+<span id="cb87-8"><a href="competitor-methods.html#cb87-8" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
+<span id="cb87-9"><a href="competitor-methods.html#cb87-9" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
+<span id="cb87-10"><a href="competitor-methods.html#cb87-10" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
+<span id="cb87-11"><a href="competitor-methods.html#cb87-11" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Every feature not</span></span>
+<span id="cb87-12"><a href="competitor-methods.html#cb87-12" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
+<span id="cb87-13"><a href="competitor-methods.html#cb87-13" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
+<span id="cb87-14"><a href="competitor-methods.html#cb87-14" tabindex="-1"></a><span class="co">#' Default is list() (so no clusters are specified).</span></span>
+<span id="cb87-15"><a href="competitor-methods.html#cb87-15" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
+<span id="cb87-16"><a href="competitor-methods.html#cb87-16" tabindex="-1"></a><span class="co">#' for the protolasso. Default is 100 (following the default for glmnet). For</span></span>
+<span id="cb87-17"><a href="competitor-methods.html#cb87-17" tabindex="-1"></a><span class="co">#' now, nlambda must be at least 2 (using a single lambda is not supported).</span></span>
+<span id="cb87-18"><a href="competitor-methods.html#cb87-18" tabindex="-1"></a><span class="co">#' @return A list with four elements. \item{x}{The provided X, converted to a</span></span>
+<span id="cb87-19"><a href="competitor-methods.html#cb87-19" tabindex="-1"></a><span class="co">#' matrix if it was provided as a data.frame, and with column names removed.}</span></span>
+<span id="cb87-20"><a href="competitor-methods.html#cb87-20" tabindex="-1"></a><span class="co">#' \item{clusters}{A named list where each entry is an integer vector of indices</span></span>
+<span id="cb87-21"><a href="competitor-methods.html#cb87-21" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
+<span id="cb87-22"><a href="competitor-methods.html#cb87-22" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters are</span></span>
+<span id="cb87-23"><a href="competitor-methods.html#cb87-23" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
+<span id="cb87-24"><a href="competitor-methods.html#cb87-24" tabindex="-1"></a><span class="co">#' features will be put in their own "cluster" of size 1).}</span></span>
+<span id="cb87-25"><a href="competitor-methods.html#cb87-25" tabindex="-1"></a><span class="co">#' \item{prototypes}{An integer vector whose length is equal to the number of</span></span>
+<span id="cb87-26"><a href="competitor-methods.html#cb87-26" tabindex="-1"></a><span class="co">#' clusters. Entry i is the index of the feature belonging to cluster i that is</span></span>
+<span id="cb87-27"><a href="competitor-methods.html#cb87-27" tabindex="-1"></a><span class="co">#' most highly correlated with y (that is, the prototype for the cluster, as in</span></span>
+<span id="cb87-28"><a href="competitor-methods.html#cb87-28" tabindex="-1"></a><span class="co">#' the protolasso; see Reid and Tibshirani 2016).} \item{var_names}{If the</span></span>
+<span id="cb87-29"><a href="competitor-methods.html#cb87-29" tabindex="-1"></a><span class="co">#' provided X matrix had column names, the names of the featurrs in the provided</span></span>
+<span id="cb87-30"><a href="competitor-methods.html#cb87-30" tabindex="-1"></a><span class="co">#' X matrix. If no names were provided, feat_names will be NA.}</span></span>
+<span id="cb87-31"><a href="competitor-methods.html#cb87-31" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb87-32"><a href="competitor-methods.html#cb87-32" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb87-33"><a href="competitor-methods.html#cb87-33" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb87-34"><a href="competitor-methods.html#cb87-34" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
+<span id="cb87-35"><a href="competitor-methods.html#cb87-35" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb87-36"><a href="competitor-methods.html#cb87-36" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb87-37"><a href="competitor-methods.html#cb87-37" tabindex="-1"></a><span id="processClusterLassoInputs">processClusterLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, nlambda){</span>
+<span id="cb87-38"><a href="competitor-methods.html#cb87-38" tabindex="-1"></a></span>
+<span id="cb87-39"><a href="competitor-methods.html#cb87-39" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
+<span id="cb87-40"><a href="competitor-methods.html#cb87-40" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
+<span id="cb87-41"><a href="competitor-methods.html#cb87-41" tabindex="-1"></a></span>
+<span id="cb87-42"><a href="competitor-methods.html#cb87-42" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
+<span id="cb87-43"><a href="competitor-methods.html#cb87-43" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
+<span id="cb87-44"><a href="competitor-methods.html#cb87-44" tabindex="-1"></a></span>
+<span id="cb87-45"><a href="competitor-methods.html#cb87-45" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb87-46"><a href="competitor-methods.html#cb87-46" tabindex="-1"></a></span>
+<span id="cb87-47"><a href="competitor-methods.html#cb87-47" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb87-48"><a href="competitor-methods.html#cb87-48" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(X))){</span>
+<span id="cb87-49"><a href="competitor-methods.html#cb87-49" tabindex="-1"></a>        feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(X)</span>
+<span id="cb87-50"><a href="competitor-methods.html#cb87-50" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb87-51"><a href="competitor-methods.html#cb87-51" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Some features in provided X matrix had valid names and some had NA names; please either name all features in X or remove the names altogether."</span>)</span>
+<span id="cb87-52"><a href="competitor-methods.html#cb87-52" tabindex="-1"></a>        }</span>
+<span id="cb87-53"><a href="competitor-methods.html#cb87-53" tabindex="-1"></a>    }</span>
+<span id="cb87-54"><a href="competitor-methods.html#cb87-54" tabindex="-1"></a></span>
+<span id="cb87-55"><a href="competitor-methods.html#cb87-55" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
 <span id="cb87-56"><a href="competitor-methods.html#cb87-56" tabindex="-1"></a></span>
-<span id="cb87-57"><a href="competitor-methods.html#cb87-57" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(X_glmnet_i) <span class="sc">==</span> n)</span>
+<span id="cb87-57"><a href="competitor-methods.html#cb87-57" tabindex="-1"></a>    <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> <span class="fu">character</span>()</span>
 <span id="cb87-58"><a href="competitor-methods.html#cb87-58" tabindex="-1"></a></span>
-<span id="cb87-59"><a href="competitor-methods.html#cb87-59" tabindex="-1"></a>        X_glmnet_cols[[i]] <span class="ot">&lt;-</span> X_glmnet_i</span>
-<span id="cb87-60"><a href="competitor-methods.html#cb87-60" tabindex="-1"></a>    }</span>
-<span id="cb87-61"><a href="competitor-methods.html#cb87-61" tabindex="-1"></a>    <span class="co"># do.call(cbind, ...) reproduces cbind's exact type-promotion (and so</span></span>
-<span id="cb87-62"><a href="competitor-methods.html#cb87-62" tabindex="-1"></a>    <span class="co"># preserves the integer storage of an integer x) while avoiding the</span></span>
-<span id="cb87-63"><a href="competitor-methods.html#cb87-63" tabindex="-1"></a>    <span class="co"># O(n*k^2) copying of growing X_glmnet column by column (#58).</span></span>
-<span id="cb87-64"><a href="competitor-methods.html#cb87-64" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <span class="fu">do.call</span>(cbind, X_glmnet_cols)</span>
+<span id="cb87-59"><a href="competitor-methods.html#cb87-59" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(y) <span class="sc">|</span> <span class="fu">is.integer</span>(y))</span>
+<span id="cb87-60"><a href="competitor-methods.html#cb87-60" tabindex="-1"></a>    <span class="fu">stopifnot</span>(n <span class="sc">==</span> <span class="fu">length</span>(y))</span>
+<span id="cb87-61"><a href="competitor-methods.html#cb87-61" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(y)))</span>
+<span id="cb87-62"><a href="competitor-methods.html#cb87-62" tabindex="-1"></a></span>
+<span id="cb87-63"><a href="competitor-methods.html#cb87-63" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
+<span id="cb87-64"><a href="competitor-methods.html#cb87-64" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
 <span id="cb87-65"><a href="competitor-methods.html#cb87-65" tabindex="-1"></a></span>
-<span id="cb87-66"><a href="competitor-methods.html#cb87-66" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
-<span id="cb87-67"><a href="competitor-methods.html#cb87-67" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
-<span id="cb87-68"><a href="competitor-methods.html#cb87-68" tabindex="-1"></a>    <span class="co"># (#158b) name each column with its cluster's name (from the reordered,</span></span>
-<span id="cb87-69"><a href="competitor-methods.html#cb87-69" tabindex="-1"></a>    <span class="co"># formatted clusters list) so glmnet's beta inherits meaningful rownames</span></span>
-<span id="cb87-70"><a href="competitor-methods.html#cb87-70" tabindex="-1"></a>    <span class="co"># matching selected_clusts_list. Column i corresponds to clusters[[i]].</span></span>
-<span id="cb87-71"><a href="competitor-methods.html#cb87-71" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
-<span id="cb87-72"><a href="competitor-methods.html#cb87-72" tabindex="-1"></a>        <span class="fu">colnames</span>(X_glmnet) <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb87-73"><a href="competitor-methods.html#cb87-73" tabindex="-1"></a>    }</span>
-<span id="cb87-74"><a href="competitor-methods.html#cb87-74" tabindex="-1"></a></span>
-<span id="cb87-75"><a href="competitor-methods.html#cb87-75" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb87-76"><a href="competitor-methods.html#cb87-76" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_glmnet))</span>
-<span id="cb87-77"><a href="competitor-methods.html#cb87-77" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(X_glmnet) <span class="sc">==</span> n)</span>
-<span id="cb87-78"><a href="competitor-methods.html#cb87-78" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;=</span> p)</span>
-<span id="cb87-79"><a href="competitor-methods.html#cb87-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb87-80"><a href="competitor-methods.html#cb87-80" tabindex="-1"></a>    </span>
-<span id="cb87-81"><a href="competitor-methods.html#cb87-81" tabindex="-1"></a>    <span class="fu">return</span>(X_glmnet)</span>
-<span id="cb87-82"><a href="competitor-methods.html#cb87-82" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb87-66"><a href="competitor-methods.html#cb87-66" tabindex="-1"></a>    <span class="co"># Format clusters into a list where all features are in exactly one</span></span>
+<span id="cb87-67"><a href="competitor-methods.html#cb87-67" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
+<span id="cb87-68"><a href="competitor-methods.html#cb87-68" tabindex="-1"></a>    <span class="co"># 1).</span></span>
+<span id="cb87-69"><a href="competitor-methods.html#cb87-69" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb87-70"><a href="competitor-methods.html#cb87-70" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
+<span id="cb87-71"><a href="competitor-methods.html#cb87-71" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb87-72"><a href="competitor-methods.html#cb87-72" tabindex="-1"></a>    }</span>
+<span id="cb87-73"><a href="competitor-methods.html#cb87-73" tabindex="-1"></a></span>
+<span id="cb87-74"><a href="competitor-methods.html#cb87-74" tabindex="-1"></a>    cluster_results <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
+<span id="cb87-75"><a href="competitor-methods.html#cb87-75" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names, <span class="at">get_prototypes=</span><span class="cn">TRUE</span>, <span class="at">x=</span>X, <span class="at">y=</span>y)</span>
+<span id="cb87-76"><a href="competitor-methods.html#cb87-76" tabindex="-1"></a></span>
+<span id="cb87-77"><a href="competitor-methods.html#cb87-77" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> cluster_results<span class="sc">$</span>clusters</span>
+<span id="cb87-78"><a href="competitor-methods.html#cb87-78" tabindex="-1"></a>    prototypes <span class="ot">&lt;-</span> cluster_results<span class="sc">$</span>prototypes</span>
+<span id="cb87-79"><a href="competitor-methods.html#cb87-79" tabindex="-1"></a></span>
+<span id="cb87-80"><a href="competitor-methods.html#cb87-80" tabindex="-1"></a>    <span class="fu">rm</span>(cluster_results)</span>
+<span id="cb87-81"><a href="competitor-methods.html#cb87-81" tabindex="-1"></a></span>
+<span id="cb87-82"><a href="competitor-methods.html#cb87-82" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(clusters) <span class="sc">==</span> <span class="fu">length</span>(prototypes))</span>
+<span id="cb87-83"><a href="competitor-methods.html#cb87-83" tabindex="-1"></a></span>
+<span id="cb87-84"><a href="competitor-methods.html#cb87-84" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(nlambda) <span class="sc">|</span> <span class="fu">is.integer</span>(nlambda))</span>
+<span id="cb87-85"><a href="competitor-methods.html#cb87-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(nlambda) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb87-86"><a href="competitor-methods.html#cb87-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(nlambda))</span>
+<span id="cb87-87"><a href="competitor-methods.html#cb87-87" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nlambda <span class="sc">&gt;=</span> <span class="dv">2</span>)</span>
+<span id="cb87-88"><a href="competitor-methods.html#cb87-88" tabindex="-1"></a>    <span class="fu">stopifnot</span>(nlambda <span class="sc">==</span> <span class="fu">round</span>(nlambda))</span>
+<span id="cb87-89"><a href="competitor-methods.html#cb87-89" tabindex="-1"></a></span>
+<span id="cb87-90"><a href="competitor-methods.html#cb87-90" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">x=</span>X, <span class="at">clusters=</span>clusters, <span class="at">prototypes=</span>prototypes,</span>
+<span id="cb87-91"><a href="competitor-methods.html#cb87-91" tabindex="-1"></a>        <span class="at">var_names=</span>feat_names))</span>
+<span id="cb87-92"><a href="competitor-methods.html#cb87-92" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="competitor-methods.html#getXglmnet">getXglmnet</a>()</code>:</p>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="competitor-methods.html#cb88-1" tabindex="-1"></a><span class="co">#' Converts the provided design matrix to an appropriate format for either the</span></span>
+<span id="cb88-2"><a href="competitor-methods.html#cb88-2" tabindex="-1"></a><span class="co">#' protolasso or the cluster representative lasso.</span></span>
+<span id="cb88-3"><a href="competitor-methods.html#cb88-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb88-4"><a href="competitor-methods.html#cb88-4" tabindex="-1"></a><span class="co">#' Creates design matrix for glmnet by dealing with clusters (for</span></span>
+<span id="cb88-5"><a href="competitor-methods.html#cb88-5" tabindex="-1"></a><span class="co">#' type="protolasso", discards all cluster members except prototype; for</span></span>
+<span id="cb88-6"><a href="competitor-methods.html#cb88-6" tabindex="-1"></a><span class="co">#' type="clusterRepLasso", replaces all cluster members with a simple</span></span>
+<span id="cb88-7"><a href="competitor-methods.html#cb88-7" tabindex="-1"></a><span class="co">#' average of all the cluster members).</span></span>
+<span id="cb88-8"><a href="competitor-methods.html#cb88-8" tabindex="-1"></a><span class="co">#' @param x A numeric matrix; the provided matrix with n observations and p</span></span>
+<span id="cb88-9"><a href="competitor-methods.html#cb88-9" tabindex="-1"></a><span class="co">#' features.</span></span>
+<span id="cb88-10"><a href="competitor-methods.html#cb88-10" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb88-11"><a href="competitor-methods.html#cb88-11" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters should</span></span>
+<span id="cb88-12"><a href="competitor-methods.html#cb88-12" tabindex="-1"></a><span class="co">#' be equal to the number of clusters.) All identified clusters should be</span></span>
+<span id="cb88-13"><a href="competitor-methods.html#cb88-13" tabindex="-1"></a><span class="co">#' non-overlapping. All features should appear in exactly one cluster (any</span></span>
+<span id="cb88-14"><a href="competitor-methods.html#cb88-14" tabindex="-1"></a><span class="co">#' unclustered features should be put in their own "cluster" of size 1).</span></span>
+<span id="cb88-15"><a href="competitor-methods.html#cb88-15" tabindex="-1"></a><span class="co">#' @param type Character; "protolasso" for the protolasso or "clusterRepLasso"</span></span>
+<span id="cb88-16"><a href="competitor-methods.html#cb88-16" tabindex="-1"></a><span class="co">#' for the cluster representative lasso.</span></span>
+<span id="cb88-17"><a href="competitor-methods.html#cb88-17" tabindex="-1"></a><span class="co">#' @param prototypes Only required for type "protolasso". An integer vector</span></span>
+<span id="cb88-18"><a href="competitor-methods.html#cb88-18" tabindex="-1"></a><span class="co">#' whose length is equal to the number of clusters. Entry i should be the</span></span>
+<span id="cb88-19"><a href="competitor-methods.html#cb88-19" tabindex="-1"></a><span class="co">#' prototype for cluster i (the feature belonging to cluster i that is most</span></span>
+<span id="cb88-20"><a href="competitor-methods.html#cb88-20" tabindex="-1"></a><span class="co">#' highly correlated with y; see Reid and Tibshirani 2016).</span></span>
+<span id="cb88-21"><a href="competitor-methods.html#cb88-21" tabindex="-1"></a><span class="co">#' @return A numeric matrix; the design matrix as required for the protolasso or</span></span>
+<span id="cb88-22"><a href="competitor-methods.html#cb88-22" tabindex="-1"></a><span class="co">#' cluster representative lasso, prepared for input to glmnet.</span></span>
+<span id="cb88-23"><a href="competitor-methods.html#cb88-23" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb88-24"><a href="competitor-methods.html#cb88-24" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb88-25"><a href="competitor-methods.html#cb88-25" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb88-26"><a href="competitor-methods.html#cb88-26" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
+<span id="cb88-27"><a href="competitor-methods.html#cb88-27" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb88-28"><a href="competitor-methods.html#cb88-28" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb88-29"><a href="competitor-methods.html#cb88-29" tabindex="-1"></a><span id="getXglmnet">getXglmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, clusters, type, <span class="at">prototypes=</span><span class="cn">NA</span>){</span>
+<span id="cb88-30"><a href="competitor-methods.html#cb88-30" tabindex="-1"></a>    </span>
+<span id="cb88-31"><a href="competitor-methods.html#cb88-31" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb88-32"><a href="competitor-methods.html#cb88-32" tabindex="-1"></a>    <a href="competitor-methods.html#checkGetXglmnetInputs">checkGetXglmnetInputs</a>(x, clusters, type, prototypes)</span>
+<span id="cb88-33"><a href="competitor-methods.html#cb88-33" tabindex="-1"></a></span>
+<span id="cb88-34"><a href="competitor-methods.html#cb88-34" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(x)</span>
+<span id="cb88-35"><a href="competitor-methods.html#cb88-35" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(x)</span>
+<span id="cb88-36"><a href="competitor-methods.html#cb88-36" tabindex="-1"></a></span>
+<span id="cb88-37"><a href="competitor-methods.html#cb88-37" tabindex="-1"></a>    X_glmnet_cols <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">"list"</span>, <span class="fu">length</span>(clusters))</span>
+<span id="cb88-38"><a href="competitor-methods.html#cb88-38" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
+<span id="cb88-39"><a href="competitor-methods.html#cb88-39" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
+<span id="cb88-40"><a href="competitor-methods.html#cb88-40" tabindex="-1"></a></span>
+<span id="cb88-41"><a href="competitor-methods.html#cb88-41" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb88-42"><a href="competitor-methods.html#cb88-42" tabindex="-1"></a>            X_glmnet_i <span class="ot">&lt;-</span> x[, cluster_i]</span>
+<span id="cb88-43"><a href="competitor-methods.html#cb88-43" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb88-44"><a href="competitor-methods.html#cb88-44" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>)</span>
+<span id="cb88-45"><a href="competitor-methods.html#cb88-45" tabindex="-1"></a></span>
+<span id="cb88-46"><a href="competitor-methods.html#cb88-46" tabindex="-1"></a>            <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"protolasso"</span>){</span>
+<span id="cb88-47"><a href="competitor-methods.html#cb88-47" tabindex="-1"></a>                prototype_ind_i <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> cluster_i)</span>
+<span id="cb88-48"><a href="competitor-methods.html#cb88-48" tabindex="-1"></a>                <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototype_ind_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb88-49"><a href="competitor-methods.html#cb88-49" tabindex="-1"></a>                prototype_i <span class="ot">&lt;-</span> prototypes[prototype_ind_i]</span>
+<span id="cb88-50"><a href="competitor-methods.html#cb88-50" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> x[, prototype_i]</span>
+<span id="cb88-51"><a href="competitor-methods.html#cb88-51" tabindex="-1"></a>            } <span class="cf">else</span> {</span>
+<span id="cb88-52"><a href="competitor-methods.html#cb88-52" tabindex="-1"></a>                <span class="fu">stopifnot</span>(type <span class="sc">==</span> <span class="st">"clusterRepLasso"</span>)</span>
+<span id="cb88-53"><a href="competitor-methods.html#cb88-53" tabindex="-1"></a>                X_glmnet_i <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(x[, cluster_i])</span>
+<span id="cb88-54"><a href="competitor-methods.html#cb88-54" tabindex="-1"></a>            }</span>
+<span id="cb88-55"><a href="competitor-methods.html#cb88-55" tabindex="-1"></a>        }</span>
+<span id="cb88-56"><a href="competitor-methods.html#cb88-56" tabindex="-1"></a></span>
+<span id="cb88-57"><a href="competitor-methods.html#cb88-57" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(X_glmnet_i) <span class="sc">==</span> n)</span>
+<span id="cb88-58"><a href="competitor-methods.html#cb88-58" tabindex="-1"></a></span>
+<span id="cb88-59"><a href="competitor-methods.html#cb88-59" tabindex="-1"></a>        X_glmnet_cols[[i]] <span class="ot">&lt;-</span> X_glmnet_i</span>
+<span id="cb88-60"><a href="competitor-methods.html#cb88-60" tabindex="-1"></a>    }</span>
+<span id="cb88-61"><a href="competitor-methods.html#cb88-61" tabindex="-1"></a>    <span class="co"># do.call(cbind, ...) reproduces cbind's exact type-promotion (and so</span></span>
+<span id="cb88-62"><a href="competitor-methods.html#cb88-62" tabindex="-1"></a>    <span class="co"># preserves the integer storage of an integer x) while avoiding the</span></span>
+<span id="cb88-63"><a href="competitor-methods.html#cb88-63" tabindex="-1"></a>    <span class="co"># O(n*k^2) copying of growing X_glmnet column by column (#58).</span></span>
+<span id="cb88-64"><a href="competitor-methods.html#cb88-64" tabindex="-1"></a>    X_glmnet <span class="ot">&lt;-</span> <span class="fu">do.call</span>(cbind, X_glmnet_cols)</span>
+<span id="cb88-65"><a href="competitor-methods.html#cb88-65" tabindex="-1"></a></span>
+<span id="cb88-66"><a href="competitor-methods.html#cb88-66" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
+<span id="cb88-67"><a href="competitor-methods.html#cb88-67" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">==</span> <span class="fu">length</span>(clusters))</span>
+<span id="cb88-68"><a href="competitor-methods.html#cb88-68" tabindex="-1"></a>    <span class="co"># (#158b) name each column with its cluster's name (from the reordered,</span></span>
+<span id="cb88-69"><a href="competitor-methods.html#cb88-69" tabindex="-1"></a>    <span class="co"># formatted clusters list) so glmnet's beta inherits meaningful rownames</span></span>
+<span id="cb88-70"><a href="competitor-methods.html#cb88-70" tabindex="-1"></a>    <span class="co"># matching selected_clusts_list. Column i corresponds to clusters[[i]].</span></span>
+<span id="cb88-71"><a href="competitor-methods.html#cb88-71" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
+<span id="cb88-72"><a href="competitor-methods.html#cb88-72" tabindex="-1"></a>        <span class="fu">colnames</span>(X_glmnet) <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb88-73"><a href="competitor-methods.html#cb88-73" tabindex="-1"></a>    }</span>
+<span id="cb88-74"><a href="competitor-methods.html#cb88-74" tabindex="-1"></a></span>
+<span id="cb88-75"><a href="competitor-methods.html#cb88-75" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb88-76"><a href="competitor-methods.html#cb88-76" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X_glmnet))</span>
+<span id="cb88-77"><a href="competitor-methods.html#cb88-77" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(X_glmnet) <span class="sc">==</span> n)</span>
+<span id="cb88-78"><a href="competitor-methods.html#cb88-78" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&lt;=</span> p)</span>
+<span id="cb88-79"><a href="competitor-methods.html#cb88-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(X_glmnet) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb88-80"><a href="competitor-methods.html#cb88-80" tabindex="-1"></a>    </span>
+<span id="cb88-81"><a href="competitor-methods.html#cb88-81" tabindex="-1"></a>    <span class="fu">return</span>(X_glmnet)</span>
+<span id="cb88-82"><a href="competitor-methods.html#cb88-82" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#checkGetXglmnetInputs">checkGetXglmnetInputs</a>()</code>:</p>
-<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="competitor-methods.html#cb88-1" tabindex="-1"></a><span class="co">#' Verifies the inputs for getXglmnet.</span></span>
-<span id="cb88-2"><a href="competitor-methods.html#cb88-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb88-3"><a href="competitor-methods.html#cb88-3" tabindex="-1"></a><span class="co">#' @param x A numeric matrix; the provided matrix with n observations and p</span></span>
-<span id="cb88-4"><a href="competitor-methods.html#cb88-4" tabindex="-1"></a><span class="co">#' features.</span></span>
-<span id="cb88-5"><a href="competitor-methods.html#cb88-5" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb88-6"><a href="competitor-methods.html#cb88-6" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters should</span></span>
-<span id="cb88-7"><a href="competitor-methods.html#cb88-7" tabindex="-1"></a><span class="co">#' be equal to the number of clusters.) All identified clusters should be</span></span>
-<span id="cb88-8"><a href="competitor-methods.html#cb88-8" tabindex="-1"></a><span class="co">#' non-overlapping. All features should appear in exactly one cluster (any</span></span>
-<span id="cb88-9"><a href="competitor-methods.html#cb88-9" tabindex="-1"></a><span class="co">#' unclustered features should be put in their own "cluster" of size 1).</span></span>
-<span id="cb88-10"><a href="competitor-methods.html#cb88-10" tabindex="-1"></a><span class="co">#' @param type Character; "protolasso" for the protolasso or "clusterRepLasso"</span></span>
-<span id="cb88-11"><a href="competitor-methods.html#cb88-11" tabindex="-1"></a><span class="co">#' for the cluster representative lasso.</span></span>
-<span id="cb88-12"><a href="competitor-methods.html#cb88-12" tabindex="-1"></a><span class="co">#' @param prototypes Only required for type "protolasso". An integer vector</span></span>
-<span id="cb88-13"><a href="competitor-methods.html#cb88-13" tabindex="-1"></a><span class="co">#' whose length is equal to the number of clusters. Entry i should be the</span></span>
-<span id="cb88-14"><a href="competitor-methods.html#cb88-14" tabindex="-1"></a><span class="co">#' prototype for cluster i (the feature belonging to cluster i that is most</span></span>
-<span id="cb88-15"><a href="competitor-methods.html#cb88-15" tabindex="-1"></a><span class="co">#' highly correlated with y; see Reid and Tibshirani 2016).</span></span>
-<span id="cb88-16"><a href="competitor-methods.html#cb88-16" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb88-17"><a href="competitor-methods.html#cb88-17" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb88-18"><a href="competitor-methods.html#cb88-18" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb88-19"><a href="competitor-methods.html#cb88-19" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
-<span id="cb88-20"><a href="competitor-methods.html#cb88-20" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb88-21"><a href="competitor-methods.html#cb88-21" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb88-22"><a href="competitor-methods.html#cb88-22" tabindex="-1"></a><span id="checkGetXglmnetInputs">checkGetXglmnetInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, clusters, type, prototypes){</span>
-<span id="cb88-23"><a href="competitor-methods.html#cb88-23" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(x))</span>
-<span id="cb88-24"><a href="competitor-methods.html#cb88-24" tabindex="-1"></a></span>
-<span id="cb88-25"><a href="competitor-methods.html#cb88-25" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(clusters))</span>
-<span id="cb88-26"><a href="competitor-methods.html#cb88-26" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(clusters) <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb88-27"><a href="competitor-methods.html#cb88-27" tabindex="-1"></a></span>
-<span id="cb88-28"><a href="competitor-methods.html#cb88-28" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(type) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb88-29"><a href="competitor-methods.html#cb88-29" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.character</span>(type))</span>
-<span id="cb88-30"><a href="competitor-methods.html#cb88-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(type))</span>
-<span id="cb88-31"><a href="competitor-methods.html#cb88-31" tabindex="-1"></a>    <span class="fu">stopifnot</span>(type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"protolasso"</span>, <span class="st">"clusterRepLasso"</span>))</span>
-<span id="cb88-32"><a href="competitor-methods.html#cb88-32" tabindex="-1"></a></span>
-<span id="cb88-33"><a href="competitor-methods.html#cb88-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes))</span>
-<span id="cb88-34"><a href="competitor-methods.html#cb88-34" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(prototypes))</span>
-<span id="cb88-35"><a href="competitor-methods.html#cb88-35" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes)))</span>
-<span id="cb88-36"><a href="competitor-methods.html#cb88-36" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototypes) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(prototypes)))</span>
-<span id="cb88-37"><a href="competitor-methods.html#cb88-37" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(prototypes <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(x)))</span>
-<span id="cb88-38"><a href="competitor-methods.html#cb88-38" tabindex="-1"></a>    </span>
-<span id="cb88-39"><a href="competitor-methods.html#cb88-39" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
-<span id="cb88-40"><a href="competitor-methods.html#cb88-40" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
-<span id="cb88-41"><a href="competitor-methods.html#cb88-41" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">sum</span>(prototypes <span class="sc">%in%</span> cluster_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb88-42"><a href="competitor-methods.html#cb88-42" tabindex="-1"></a>    }</span>
-<span id="cb88-43"><a href="competitor-methods.html#cb88-43" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb89-1"><a href="competitor-methods.html#cb89-1" tabindex="-1"></a><span class="co">#' Verifies the inputs for getXglmnet.</span></span>
+<span id="cb89-2"><a href="competitor-methods.html#cb89-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb89-3"><a href="competitor-methods.html#cb89-3" tabindex="-1"></a><span class="co">#' @param x A numeric matrix; the provided matrix with n observations and p</span></span>
+<span id="cb89-4"><a href="competitor-methods.html#cb89-4" tabindex="-1"></a><span class="co">#' features.</span></span>
+<span id="cb89-5"><a href="competitor-methods.html#cb89-5" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb89-6"><a href="competitor-methods.html#cb89-6" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters should</span></span>
+<span id="cb89-7"><a href="competitor-methods.html#cb89-7" tabindex="-1"></a><span class="co">#' be equal to the number of clusters.) All identified clusters should be</span></span>
+<span id="cb89-8"><a href="competitor-methods.html#cb89-8" tabindex="-1"></a><span class="co">#' non-overlapping. All features should appear in exactly one cluster (any</span></span>
+<span id="cb89-9"><a href="competitor-methods.html#cb89-9" tabindex="-1"></a><span class="co">#' unclustered features should be put in their own "cluster" of size 1).</span></span>
+<span id="cb89-10"><a href="competitor-methods.html#cb89-10" tabindex="-1"></a><span class="co">#' @param type Character; "protolasso" for the protolasso or "clusterRepLasso"</span></span>
+<span id="cb89-11"><a href="competitor-methods.html#cb89-11" tabindex="-1"></a><span class="co">#' for the cluster representative lasso.</span></span>
+<span id="cb89-12"><a href="competitor-methods.html#cb89-12" tabindex="-1"></a><span class="co">#' @param prototypes Only required for type "protolasso". An integer vector</span></span>
+<span id="cb89-13"><a href="competitor-methods.html#cb89-13" tabindex="-1"></a><span class="co">#' whose length is equal to the number of clusters. Entry i should be the</span></span>
+<span id="cb89-14"><a href="competitor-methods.html#cb89-14" tabindex="-1"></a><span class="co">#' prototype for cluster i (the feature belonging to cluster i that is most</span></span>
+<span id="cb89-15"><a href="competitor-methods.html#cb89-15" tabindex="-1"></a><span class="co">#' highly correlated with y; see Reid and Tibshirani 2016).</span></span>
+<span id="cb89-16"><a href="competitor-methods.html#cb89-16" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb89-17"><a href="competitor-methods.html#cb89-17" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb89-18"><a href="competitor-methods.html#cb89-18" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb89-19"><a href="competitor-methods.html#cb89-19" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
+<span id="cb89-20"><a href="competitor-methods.html#cb89-20" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb89-21"><a href="competitor-methods.html#cb89-21" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb89-22"><a href="competitor-methods.html#cb89-22" tabindex="-1"></a><span id="checkGetXglmnetInputs">checkGetXglmnetInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, clusters, type, prototypes){</span>
+<span id="cb89-23"><a href="competitor-methods.html#cb89-23" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(x))</span>
+<span id="cb89-24"><a href="competitor-methods.html#cb89-24" tabindex="-1"></a></span>
+<span id="cb89-25"><a href="competitor-methods.html#cb89-25" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(clusters))</span>
+<span id="cb89-26"><a href="competitor-methods.html#cb89-26" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">lengths</span>(clusters) <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb89-27"><a href="competitor-methods.html#cb89-27" tabindex="-1"></a></span>
+<span id="cb89-28"><a href="competitor-methods.html#cb89-28" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(type) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb89-29"><a href="competitor-methods.html#cb89-29" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.character</span>(type))</span>
+<span id="cb89-30"><a href="competitor-methods.html#cb89-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(type))</span>
+<span id="cb89-31"><a href="competitor-methods.html#cb89-31" tabindex="-1"></a>    <span class="fu">stopifnot</span>(type <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"protolasso"</span>, <span class="st">"clusterRepLasso"</span>))</span>
+<span id="cb89-32"><a href="competitor-methods.html#cb89-32" tabindex="-1"></a></span>
+<span id="cb89-33"><a href="competitor-methods.html#cb89-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes))</span>
+<span id="cb89-34"><a href="competitor-methods.html#cb89-34" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(prototypes))</span>
+<span id="cb89-35"><a href="competitor-methods.html#cb89-35" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(prototypes)))</span>
+<span id="cb89-36"><a href="competitor-methods.html#cb89-36" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(prototypes) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(prototypes)))</span>
+<span id="cb89-37"><a href="competitor-methods.html#cb89-37" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(prototypes <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(x)))</span>
+<span id="cb89-38"><a href="competitor-methods.html#cb89-38" tabindex="-1"></a>    </span>
+<span id="cb89-39"><a href="competitor-methods.html#cb89-39" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
+<span id="cb89-40"><a href="competitor-methods.html#cb89-40" tabindex="-1"></a>        cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
+<span id="cb89-41"><a href="competitor-methods.html#cb89-41" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">sum</span>(prototypes <span class="sc">%in%</span> cluster_i) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb89-42"><a href="competitor-methods.html#cb89-42" tabindex="-1"></a>    }</span>
+<span id="cb89-43"><a href="competitor-methods.html#cb89-43" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>()</code>:</p>
-<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb89-1"><a href="competitor-methods.html#cb89-1" tabindex="-1"></a><span class="co">#' Extracts selected clusters and cluster prototypes from the glmnet lasso</span></span>
-<span id="cb89-2"><a href="competitor-methods.html#cb89-2" tabindex="-1"></a><span class="co">#' output</span></span>
-<span id="cb89-3"><a href="competitor-methods.html#cb89-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb89-4"><a href="competitor-methods.html#cb89-4" tabindex="-1"></a><span class="co">#' @param lasso_sets A list of integer vectors. Each vector represents a set of</span></span>
-<span id="cb89-5"><a href="competitor-methods.html#cb89-5" tabindex="-1"></a><span class="co">#' features selected by the lasso for a given value of the penalty parameter</span></span>
-<span id="cb89-6"><a href="competitor-methods.html#cb89-6" tabindex="-1"></a><span class="co">#' lambda.</span></span>
-<span id="cb89-7"><a href="competitor-methods.html#cb89-7" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb89-8"><a href="competitor-methods.html#cb89-8" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
-<span id="cb89-9"><a href="competitor-methods.html#cb89-9" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters must be</span></span>
-<span id="cb89-10"><a href="competitor-methods.html#cb89-10" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
-<span id="cb89-11"><a href="competitor-methods.html#cb89-11" tabindex="-1"></a><span class="co">#' features must be in their own "cluster" of size 1).</span></span>
-<span id="cb89-12"><a href="competitor-methods.html#cb89-12" tabindex="-1"></a><span class="co">#' @param prototypes An integer vector whose length must be equal to the number</span></span>
-<span id="cb89-13"><a href="competitor-methods.html#cb89-13" tabindex="-1"></a><span class="co">#' of clusters. Entry i should be the index of the feature belonging to cluster</span></span>
-<span id="cb89-14"><a href="competitor-methods.html#cb89-14" tabindex="-1"></a><span class="co">#' i that is most highly correlated with y (that is, the prototype for the</span></span>
-<span id="cb89-15"><a href="competitor-methods.html#cb89-15" tabindex="-1"></a><span class="co">#' cluster, as in the protolasso; see Reid and Tibshirani 2016).</span></span>
-<span id="cb89-16"><a href="competitor-methods.html#cb89-16" tabindex="-1"></a><span class="co">#' @param feat_names Character vector; the names of the features in X. (If the</span></span>
-<span id="cb89-17"><a href="competitor-methods.html#cb89-17" tabindex="-1"></a><span class="co">#' X provided to protolasso or clusterRepLasso did not have feature names,</span></span>
-<span id="cb89-18"><a href="competitor-methods.html#cb89-18" tabindex="-1"></a><span class="co">#' feat_names will be NA.)</span></span>
-<span id="cb89-19"><a href="competitor-methods.html#cb89-19" tabindex="-1"></a><span class="co">#' @return A list containing the following items: \item{selected_sets}{A list of</span></span>
-<span id="cb89-20"><a href="competitor-methods.html#cb89-20" tabindex="-1"></a><span class="co">#' integer vectors. Entry k of this list contains a selected set of size k</span></span>
-<span id="cb89-21"><a href="competitor-methods.html#cb89-21" tabindex="-1"></a><span class="co">#' yielded by glmnet--each member of the set is the index of a single feature</span></span>
-<span id="cb89-22"><a href="competitor-methods.html#cb89-22" tabindex="-1"></a><span class="co">#' from a cluster selected by either the protolasso or the cluster</span></span>
-<span id="cb89-23"><a href="competitor-methods.html#cb89-23" tabindex="-1"></a><span class="co">#' representative lasso (the prototype from that cluster--the cluster member</span></span>
-<span id="cb89-24"><a href="competitor-methods.html#cb89-24" tabindex="-1"></a><span class="co">#' most highly correlated with y). (If no set of size k was selected, entry k</span></span>
-<span id="cb89-25"><a href="competitor-methods.html#cb89-25" tabindex="-1"></a><span class="co">#' will be NULL.)} \item{selected_clusts_list}{A list of lists; entry k of this</span></span>
-<span id="cb89-26"><a href="competitor-methods.html#cb89-26" tabindex="-1"></a><span class="co">#' list is a list of length k of clusters (the clusters that were selected by</span></span>
-<span id="cb89-27"><a href="competitor-methods.html#cb89-27" tabindex="-1"></a><span class="co">#' the cluster representative lasso). Again, if no set of size k was selected,</span></span>
-<span id="cb89-28"><a href="competitor-methods.html#cb89-28" tabindex="-1"></a><span class="co">#' entry k will be NULL.}</span></span>
-<span id="cb89-29"><a href="competitor-methods.html#cb89-29" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb89-30"><a href="competitor-methods.html#cb89-30" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb89-31"><a href="competitor-methods.html#cb89-31" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb89-32"><a href="competitor-methods.html#cb89-32" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}. \cr Bühlmann, P.,</span></span>
-<span id="cb89-33"><a href="competitor-methods.html#cb89-33" tabindex="-1"></a><span class="co">#' Rütimann, P., van de Geer, S., &amp; Zhang, C. H. (2013). Correlated variables in</span></span>
-<span id="cb89-34"><a href="competitor-methods.html#cb89-34" tabindex="-1"></a><span class="co">#' regression: Clustering and sparse estimation.</span></span>
-<span id="cb89-35"><a href="competitor-methods.html#cb89-35" tabindex="-1"></a><span class="co">#' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
-<span id="cb89-36"><a href="competitor-methods.html#cb89-36" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1016/j.jspi.2013.05.019}.</span></span>
-<span id="cb89-37"><a href="competitor-methods.html#cb89-37" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb89-38"><a href="competitor-methods.html#cb89-38" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb89-39"><a href="competitor-methods.html#cb89-39" tabindex="-1"></a><span id="getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_sets, clusters, prototypes,</span>
-<span id="cb89-40"><a href="competitor-methods.html#cb89-40" tabindex="-1"></a>    feat_names){</span>
-<span id="cb89-41"><a href="competitor-methods.html#cb89-41" tabindex="-1"></a></span>
-<span id="cb89-42"><a href="competitor-methods.html#cb89-42" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb89-43"><a href="competitor-methods.html#cb89-43" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names)))</span>
-<span id="cb89-44"><a href="competitor-methods.html#cb89-44" tabindex="-1"></a>    }</span>
-<span id="cb89-45"><a href="competitor-methods.html#cb89-45" tabindex="-1"></a></span>
-<span id="cb89-46"><a href="competitor-methods.html#cb89-46" tabindex="-1"></a>    <span class="co"># Compute each set's length once (used both for max_length and the</span></span>
-<span id="cb89-47"><a href="competitor-methods.html#cb89-47" tabindex="-1"></a>    <span class="co"># per-size subset below) instead of re-walking lengths every iteration (#58)</span></span>
-<span id="cb89-48"><a href="competitor-methods.html#cb89-48" tabindex="-1"></a>    set_lengths <span class="ot">&lt;-</span> <span class="fu">lengths</span>(lasso_sets)</span>
-<span id="cb89-49"><a href="competitor-methods.html#cb89-49" tabindex="-1"></a></span>
-<span id="cb89-50"><a href="competitor-methods.html#cb89-50" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
-<span id="cb89-51"><a href="competitor-methods.html#cb89-51" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(set_lengths)</span>
-<span id="cb89-52"><a href="competitor-methods.html#cb89-52" tabindex="-1"></a></span>
-<span id="cb89-53"><a href="competitor-methods.html#cb89-53" tabindex="-1"></a>    <span class="co"># Preparing lists to store</span></span>
-<span id="cb89-54"><a href="competitor-methods.html#cb89-54" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb89-55"><a href="competitor-methods.html#cb89-55" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb89-56"><a href="competitor-methods.html#cb89-56" tabindex="-1"></a></span>
-<span id="cb89-57"><a href="competitor-methods.html#cb89-57" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="fu">seq_len</span>(max_length)){</span>
-<span id="cb89-58"><a href="competitor-methods.html#cb89-58" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
-<span id="cb89-59"><a href="competitor-methods.html#cb89-59" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[set_lengths <span class="sc">==</span> j]</span>
-<span id="cb89-60"><a href="competitor-methods.html#cb89-60" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
-<span id="cb89-61"><a href="competitor-methods.html#cb89-61" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
-<span id="cb89-62"><a href="competitor-methods.html#cb89-62" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb89-63"><a href="competitor-methods.html#cb89-63" tabindex="-1"></a></span>
-<span id="cb89-64"><a href="competitor-methods.html#cb89-64" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
-<span id="cb89-65"><a href="competitor-methods.html#cb89-65" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
-<span id="cb89-66"><a href="competitor-methods.html#cb89-66" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
-<span id="cb89-67"><a href="competitor-methods.html#cb89-67" tabindex="-1"></a>            </span>
-<span id="cb89-68"><a href="competitor-methods.html#cb89-68" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
-<span id="cb89-69"><a href="competitor-methods.html#cb89-69" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
-<span id="cb89-70"><a href="competitor-methods.html#cb89-70" tabindex="-1"></a></span>
-<span id="cb89-71"><a href="competitor-methods.html#cb89-71" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
-<span id="cb89-72"><a href="competitor-methods.html#cb89-72" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
-<span id="cb89-73"><a href="competitor-methods.html#cb89-73" tabindex="-1"></a></span>
-<span id="cb89-74"><a href="competitor-methods.html#cb89-74" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
-<span id="cb89-75"><a href="competitor-methods.html#cb89-75" tabindex="-1"></a>        }</span>
-<span id="cb89-76"><a href="competitor-methods.html#cb89-76" tabindex="-1"></a>    }</span>
-<span id="cb89-77"><a href="competitor-methods.html#cb89-77" tabindex="-1"></a></span>
-<span id="cb89-78"><a href="competitor-methods.html#cb89-78" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb89-79"><a href="competitor-methods.html#cb89-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
-<span id="cb89-80"><a href="competitor-methods.html#cb89-80" tabindex="-1"></a></span>
-<span id="cb89-81"><a href="competitor-methods.html#cb89-81" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
-<span id="cb89-82"><a href="competitor-methods.html#cb89-82" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
-<span id="cb89-83"><a href="competitor-methods.html#cb89-83" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>()</code>:</p>
-<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb90-1"><a href="competitor-methods.html#cb90-1" tabindex="-1"></a><span class="co">#' Converts a selected set from X_glmnet to selected sets and selected clusters</span></span>
-<span id="cb90-2"><a href="competitor-methods.html#cb90-2" tabindex="-1"></a><span class="co">#' from the original feature space of X.</span></span>
+<div class="sourceCode" id="cb90"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb90-1"><a href="competitor-methods.html#cb90-1" tabindex="-1"></a><span class="co">#' Extracts selected clusters and cluster prototypes from the glmnet lasso</span></span>
+<span id="cb90-2"><a href="competitor-methods.html#cb90-2" tabindex="-1"></a><span class="co">#' output</span></span>
 <span id="cb90-3"><a href="competitor-methods.html#cb90-3" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb90-4"><a href="competitor-methods.html#cb90-4" tabindex="-1"></a><span class="co">#' @param lasso_set A vector containing the indices of selected cluster</span></span>
-<span id="cb90-5"><a href="competitor-methods.html#cb90-5" tabindex="-1"></a><span class="co">#' representatives or prototypes.</span></span>
-<span id="cb90-6"><a href="competitor-methods.html#cb90-6" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb90-7"><a href="competitor-methods.html#cb90-7" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
-<span id="cb90-8"><a href="competitor-methods.html#cb90-8" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters must be</span></span>
-<span id="cb90-9"><a href="competitor-methods.html#cb90-9" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
-<span id="cb90-10"><a href="competitor-methods.html#cb90-10" tabindex="-1"></a><span class="co">#' features must be in their own "cluster" of size 1).</span></span>
-<span id="cb90-11"><a href="competitor-methods.html#cb90-11" tabindex="-1"></a><span class="co">#' @param prototypes An integer vector whose length must be equal to the number</span></span>
-<span id="cb90-12"><a href="competitor-methods.html#cb90-12" tabindex="-1"></a><span class="co">#' of clusters. Entry i should be the index of the feature belonging to cluster</span></span>
-<span id="cb90-13"><a href="competitor-methods.html#cb90-13" tabindex="-1"></a><span class="co">#' i that is most highly correlated with y (that is, the prototype for the</span></span>
-<span id="cb90-14"><a href="competitor-methods.html#cb90-14" tabindex="-1"></a><span class="co">#' cluster, as in the protolasso).</span></span>
-<span id="cb90-15"><a href="competitor-methods.html#cb90-15" tabindex="-1"></a><span class="co">#' @param feat_names Character vector; the names of the features in X.</span></span>
-<span id="cb90-16"><a href="competitor-methods.html#cb90-16" tabindex="-1"></a><span class="co">#' @return A list containing two items: \item{selected_set}{An integer vector</span></span>
-<span id="cb90-17"><a href="competitor-methods.html#cb90-17" tabindex="-1"></a><span class="co">#' with length equal to lasso_set containing a set of selected features in the</span></span>
-<span id="cb90-18"><a href="competitor-methods.html#cb90-18" tabindex="-1"></a><span class="co">#' original X matrix. (Selections in lasso_set corresponding to a cluster will</span></span>
-<span id="cb90-19"><a href="competitor-methods.html#cb90-19" tabindex="-1"></a><span class="co">#' be replaced by the cluster's prototype from X.)}</span></span>
-<span id="cb90-20"><a href="competitor-methods.html#cb90-20" tabindex="-1"></a><span class="co">#' \item{selected_clusts_list}{A named list of integer vectors with length equal</span></span>
-<span id="cb90-21"><a href="competitor-methods.html#cb90-21" tabindex="-1"></a><span class="co">#' to selected_set. `selected_clusts_list[[k]]` will be an integer vector</span></span>
-<span id="cb90-22"><a href="competitor-methods.html#cb90-22" tabindex="-1"></a><span class="co">#' containing the indices of the features in X that are in the cluster</span></span>
-<span id="cb90-23"><a href="competitor-methods.html#cb90-23" tabindex="-1"></a><span class="co">#' containing prototype `selected_set[k]`.}</span></span>
-<span id="cb90-24"><a href="competitor-methods.html#cb90-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb90-25"><a href="competitor-methods.html#cb90-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb90-26"><a href="competitor-methods.html#cb90-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb90-27"><a href="competitor-methods.html#cb90-27" tabindex="-1"></a><span id="getSelectedSets">getSelectedSets</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_set, clusters, prototypes, feat_names){</span>
-<span id="cb90-28"><a href="competitor-methods.html#cb90-28" tabindex="-1"></a>    </span>
-<span id="cb90-29"><a href="competitor-methods.html#cb90-29" tabindex="-1"></a>    model_size <span class="ot">&lt;-</span> <span class="fu">length</span>(lasso_set)</span>
-<span id="cb90-30"><a href="competitor-methods.html#cb90-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(model_size <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb90-31"><a href="competitor-methods.html#cb90-31" tabindex="-1"></a></span>
-<span id="cb90-32"><a href="competitor-methods.html#cb90-32" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(<span class="fu">unique</span>(lasso_set)) <span class="sc">==</span> model_size)</span>
-<span id="cb90-33"><a href="competitor-methods.html#cb90-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(lasso_set <span class="sc">&lt;=</span> <span class="fu">length</span>(clusters)))</span>
-<span id="cb90-34"><a href="competitor-methods.html#cb90-34" tabindex="-1"></a></span>
-<span id="cb90-35"><a href="competitor-methods.html#cb90-35" tabindex="-1"></a>    selected_set <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb90-36"><a href="competitor-methods.html#cb90-36" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb90-37"><a href="competitor-methods.html#cb90-37" tabindex="-1"></a>    <span class="co"># (#158a) preserve each selected cluster's name so selected_clusts_list is</span></span>
-<span id="cb90-38"><a href="competitor-methods.html#cb90-38" tabindex="-1"></a>    <span class="co"># the named list the docs promise (its names match beta's rownames, #158b).</span></span>
-<span id="cb90-39"><a href="competitor-methods.html#cb90-39" tabindex="-1"></a>    clust_names_out <span class="ot">&lt;-</span> <span class="fu">character</span>(model_size)</span>
-<span id="cb90-40"><a href="competitor-methods.html#cb90-40" tabindex="-1"></a>    <span class="co"># Recover features from original feature space</span></span>
-<span id="cb90-41"><a href="competitor-methods.html#cb90-41" tabindex="-1"></a>    <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>model_size){</span>
-<span id="cb90-42"><a href="competitor-methods.html#cb90-42" tabindex="-1"></a>        selected_cluster_k <span class="ot">&lt;-</span> clusters[[lasso_set[k]]]</span>
-<span id="cb90-43"><a href="competitor-methods.html#cb90-43" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(selected_cluster_k))</span>
-<span id="cb90-44"><a href="competitor-methods.html#cb90-44" tabindex="-1"></a>        selected_clusts_list[[k]] <span class="ot">&lt;-</span> selected_cluster_k</span>
+<span id="cb90-4"><a href="competitor-methods.html#cb90-4" tabindex="-1"></a><span class="co">#' @param lasso_sets A list of integer vectors. Each vector represents a set of</span></span>
+<span id="cb90-5"><a href="competitor-methods.html#cb90-5" tabindex="-1"></a><span class="co">#' features selected by the lasso for a given value of the penalty parameter</span></span>
+<span id="cb90-6"><a href="competitor-methods.html#cb90-6" tabindex="-1"></a><span class="co">#' lambda.</span></span>
+<span id="cb90-7"><a href="competitor-methods.html#cb90-7" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb90-8"><a href="competitor-methods.html#cb90-8" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
+<span id="cb90-9"><a href="competitor-methods.html#cb90-9" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters must be</span></span>
+<span id="cb90-10"><a href="competitor-methods.html#cb90-10" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
+<span id="cb90-11"><a href="competitor-methods.html#cb90-11" tabindex="-1"></a><span class="co">#' features must be in their own "cluster" of size 1).</span></span>
+<span id="cb90-12"><a href="competitor-methods.html#cb90-12" tabindex="-1"></a><span class="co">#' @param prototypes An integer vector whose length must be equal to the number</span></span>
+<span id="cb90-13"><a href="competitor-methods.html#cb90-13" tabindex="-1"></a><span class="co">#' of clusters. Entry i should be the index of the feature belonging to cluster</span></span>
+<span id="cb90-14"><a href="competitor-methods.html#cb90-14" tabindex="-1"></a><span class="co">#' i that is most highly correlated with y (that is, the prototype for the</span></span>
+<span id="cb90-15"><a href="competitor-methods.html#cb90-15" tabindex="-1"></a><span class="co">#' cluster, as in the protolasso; see Reid and Tibshirani 2016).</span></span>
+<span id="cb90-16"><a href="competitor-methods.html#cb90-16" tabindex="-1"></a><span class="co">#' @param feat_names Character vector; the names of the features in X. (If the</span></span>
+<span id="cb90-17"><a href="competitor-methods.html#cb90-17" tabindex="-1"></a><span class="co">#' X provided to protolasso or clusterRepLasso did not have feature names,</span></span>
+<span id="cb90-18"><a href="competitor-methods.html#cb90-18" tabindex="-1"></a><span class="co">#' feat_names will be NA.)</span></span>
+<span id="cb90-19"><a href="competitor-methods.html#cb90-19" tabindex="-1"></a><span class="co">#' @return A list containing the following items: \item{selected_sets}{A list of</span></span>
+<span id="cb90-20"><a href="competitor-methods.html#cb90-20" tabindex="-1"></a><span class="co">#' integer vectors. Entry k of this list contains a selected set of size k</span></span>
+<span id="cb90-21"><a href="competitor-methods.html#cb90-21" tabindex="-1"></a><span class="co">#' yielded by glmnet--each member of the set is the index of a single feature</span></span>
+<span id="cb90-22"><a href="competitor-methods.html#cb90-22" tabindex="-1"></a><span class="co">#' from a cluster selected by either the protolasso or the cluster</span></span>
+<span id="cb90-23"><a href="competitor-methods.html#cb90-23" tabindex="-1"></a><span class="co">#' representative lasso (the prototype from that cluster--the cluster member</span></span>
+<span id="cb90-24"><a href="competitor-methods.html#cb90-24" tabindex="-1"></a><span class="co">#' most highly correlated with y). (If no set of size k was selected, entry k</span></span>
+<span id="cb90-25"><a href="competitor-methods.html#cb90-25" tabindex="-1"></a><span class="co">#' will be NULL.)} \item{selected_clusts_list}{A list of lists; entry k of this</span></span>
+<span id="cb90-26"><a href="competitor-methods.html#cb90-26" tabindex="-1"></a><span class="co">#' list is a list of length k of clusters (the clusters that were selected by</span></span>
+<span id="cb90-27"><a href="competitor-methods.html#cb90-27" tabindex="-1"></a><span class="co">#' the cluster representative lasso). Again, if no set of size k was selected,</span></span>
+<span id="cb90-28"><a href="competitor-methods.html#cb90-28" tabindex="-1"></a><span class="co">#' entry k will be NULL.}</span></span>
+<span id="cb90-29"><a href="competitor-methods.html#cb90-29" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb90-30"><a href="competitor-methods.html#cb90-30" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb90-31"><a href="competitor-methods.html#cb90-31" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb90-32"><a href="competitor-methods.html#cb90-32" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}. \cr Bühlmann, P.,</span></span>
+<span id="cb90-33"><a href="competitor-methods.html#cb90-33" tabindex="-1"></a><span class="co">#' Rütimann, P., van de Geer, S., &amp; Zhang, C. H. (2013). Correlated variables in</span></span>
+<span id="cb90-34"><a href="competitor-methods.html#cb90-34" tabindex="-1"></a><span class="co">#' regression: Clustering and sparse estimation.</span></span>
+<span id="cb90-35"><a href="competitor-methods.html#cb90-35" tabindex="-1"></a><span class="co">#' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
+<span id="cb90-36"><a href="competitor-methods.html#cb90-36" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1016/j.jspi.2013.05.019}.</span></span>
+<span id="cb90-37"><a href="competitor-methods.html#cb90-37" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb90-38"><a href="competitor-methods.html#cb90-38" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb90-39"><a href="competitor-methods.html#cb90-39" tabindex="-1"></a><span id="getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_sets, clusters, prototypes,</span>
+<span id="cb90-40"><a href="competitor-methods.html#cb90-40" tabindex="-1"></a>    feat_names){</span>
+<span id="cb90-41"><a href="competitor-methods.html#cb90-41" tabindex="-1"></a></span>
+<span id="cb90-42"><a href="competitor-methods.html#cb90-42" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb90-43"><a href="competitor-methods.html#cb90-43" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names)))</span>
+<span id="cb90-44"><a href="competitor-methods.html#cb90-44" tabindex="-1"></a>    }</span>
 <span id="cb90-45"><a href="competitor-methods.html#cb90-45" tabindex="-1"></a></span>
-<span id="cb90-46"><a href="competitor-methods.html#cb90-46" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
-<span id="cb90-47"><a href="competitor-methods.html#cb90-47" tabindex="-1"></a>            clust_names_out[k] <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)[lasso_set[k]]</span>
-<span id="cb90-48"><a href="competitor-methods.html#cb90-48" tabindex="-1"></a>        }</span>
+<span id="cb90-46"><a href="competitor-methods.html#cb90-46" tabindex="-1"></a>    <span class="co"># Compute each set's length once (used both for max_length and the</span></span>
+<span id="cb90-47"><a href="competitor-methods.html#cb90-47" tabindex="-1"></a>    <span class="co"># per-size subset below) instead of re-walking lengths every iteration (#58)</span></span>
+<span id="cb90-48"><a href="competitor-methods.html#cb90-48" tabindex="-1"></a>    set_lengths <span class="ot">&lt;-</span> <span class="fu">lengths</span>(lasso_sets)</span>
 <span id="cb90-49"><a href="competitor-methods.html#cb90-49" tabindex="-1"></a></span>
-<span id="cb90-50"><a href="competitor-methods.html#cb90-50" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(selected_cluster_k) <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb90-51"><a href="competitor-methods.html#cb90-51" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="sc">!</span>(selected_cluster_k <span class="sc">%in%</span> selected_set))</span>
-<span id="cb90-52"><a href="competitor-methods.html#cb90-52" tabindex="-1"></a>            selected_set <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_set, selected_cluster_k)</span>
-<span id="cb90-53"><a href="competitor-methods.html#cb90-53" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb90-54"><a href="competitor-methods.html#cb90-54" tabindex="-1"></a>            sel_prototype <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> selected_cluster_k)</span>
-<span id="cb90-55"><a href="competitor-methods.html#cb90-55" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_prototype) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb90-56"><a href="competitor-methods.html#cb90-56" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="sc">!</span>(prototypes[sel_prototype] <span class="sc">%in%</span> selected_set))</span>
-<span id="cb90-57"><a href="competitor-methods.html#cb90-57" tabindex="-1"></a>            selected_set <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_set, prototypes[sel_prototype])</span>
-<span id="cb90-58"><a href="competitor-methods.html#cb90-58" tabindex="-1"></a>        }</span>
-<span id="cb90-59"><a href="competitor-methods.html#cb90-59" tabindex="-1"></a>    }</span>
-<span id="cb90-60"><a href="competitor-methods.html#cb90-60" tabindex="-1"></a></span>
-<span id="cb90-61"><a href="competitor-methods.html#cb90-61" tabindex="-1"></a>    <span class="co"># (#158a) name the returned list with the selected clusters' names so it is</span></span>
-<span id="cb90-62"><a href="competitor-methods.html#cb90-62" tabindex="-1"></a>    <span class="co"># the named list documented for <a href="competitor-methods.html#protolasso">protolasso</a>()/<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>().</span></span>
-<span id="cb90-63"><a href="competitor-methods.html#cb90-63" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
-<span id="cb90-64"><a href="competitor-methods.html#cb90-64" tabindex="-1"></a>        <span class="fu">names</span>(selected_clusts_list) <span class="ot">&lt;-</span> clust_names_out</span>
-<span id="cb90-65"><a href="competitor-methods.html#cb90-65" tabindex="-1"></a>    }</span>
-<span id="cb90-66"><a href="competitor-methods.html#cb90-66" tabindex="-1"></a></span>
-<span id="cb90-67"><a href="competitor-methods.html#cb90-67" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_set) <span class="sc">==</span> model_size)</span>
-<span id="cb90-68"><a href="competitor-methods.html#cb90-68" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(<span class="fu">unique</span>(selected_set)) <span class="sc">==</span> model_size)</span>
-<span id="cb90-69"><a href="competitor-methods.html#cb90-69" tabindex="-1"></a>    </span>
-<span id="cb90-70"><a href="competitor-methods.html#cb90-70" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb90-71"><a href="competitor-methods.html#cb90-71" tabindex="-1"></a>        <span class="fu">names</span>(selected_set) <span class="ot">&lt;-</span> feat_names[selected_set]</span>
-<span id="cb90-72"><a href="competitor-methods.html#cb90-72" tabindex="-1"></a>    }</span>
+<span id="cb90-50"><a href="competitor-methods.html#cb90-50" tabindex="-1"></a>    <span class="co"># Largest selected set among all those in lasso_sets</span></span>
+<span id="cb90-51"><a href="competitor-methods.html#cb90-51" tabindex="-1"></a>    max_length <span class="ot">&lt;-</span> <span class="fu">max</span>(set_lengths)</span>
+<span id="cb90-52"><a href="competitor-methods.html#cb90-52" tabindex="-1"></a></span>
+<span id="cb90-53"><a href="competitor-methods.html#cb90-53" tabindex="-1"></a>    <span class="co"># Preparing lists to store</span></span>
+<span id="cb90-54"><a href="competitor-methods.html#cb90-54" tabindex="-1"></a>    selected_sets <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb90-55"><a href="competitor-methods.html#cb90-55" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb90-56"><a href="competitor-methods.html#cb90-56" tabindex="-1"></a></span>
+<span id="cb90-57"><a href="competitor-methods.html#cb90-57" tabindex="-1"></a>    <span class="cf">for</span>(j <span class="cf">in</span> <span class="fu">seq_len</span>(max_length)){</span>
+<span id="cb90-58"><a href="competitor-methods.html#cb90-58" tabindex="-1"></a>        <span class="co"># Lasso selected set of size j</span></span>
+<span id="cb90-59"><a href="competitor-methods.html#cb90-59" tabindex="-1"></a>        lasso_sets_j <span class="ot">&lt;-</span> lasso_sets[set_lengths <span class="sc">==</span> j]</span>
+<span id="cb90-60"><a href="competitor-methods.html#cb90-60" tabindex="-1"></a>        <span class="co"># Are there any lasso selected sets of size j? (If not, we will skip to</span></span>
+<span id="cb90-61"><a href="competitor-methods.html#cb90-61" tabindex="-1"></a>        <span class="co"># the next j, and slot j in the list will be empty.)</span></span>
+<span id="cb90-62"><a href="competitor-methods.html#cb90-62" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(lasso_sets_j) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb90-63"><a href="competitor-methods.html#cb90-63" tabindex="-1"></a></span>
+<span id="cb90-64"><a href="competitor-methods.html#cb90-64" tabindex="-1"></a>            <span class="co"># Select the first set of size j</span></span>
+<span id="cb90-65"><a href="competitor-methods.html#cb90-65" tabindex="-1"></a>            lasso_set_j <span class="ot">&lt;-</span> lasso_sets_j[[<span class="dv">1</span>]]</span>
+<span id="cb90-66"><a href="competitor-methods.html#cb90-66" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(lasso_set_j) <span class="sc">==</span> j)</span>
+<span id="cb90-67"><a href="competitor-methods.html#cb90-67" tabindex="-1"></a>            </span>
+<span id="cb90-68"><a href="competitor-methods.html#cb90-68" tabindex="-1"></a>            ret <span class="ot">&lt;-</span> <a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>(<span class="at">lasso_set=</span>lasso_set_j, <span class="at">clusters=</span>clusters,</span>
+<span id="cb90-69"><a href="competitor-methods.html#cb90-69" tabindex="-1"></a>                <span class="at">prototypes=</span>prototypes, <span class="at">feat_names=</span>feat_names)</span>
+<span id="cb90-70"><a href="competitor-methods.html#cb90-70" tabindex="-1"></a></span>
+<span id="cb90-71"><a href="competitor-methods.html#cb90-71" tabindex="-1"></a>            selected_sets[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_set</span>
+<span id="cb90-72"><a href="competitor-methods.html#cb90-72" tabindex="-1"></a>            selected_clusts_list[[j]] <span class="ot">&lt;-</span> ret<span class="sc">$</span>selected_clusts_list</span>
 <span id="cb90-73"><a href="competitor-methods.html#cb90-73" tabindex="-1"></a></span>
-<span id="cb90-74"><a href="competitor-methods.html#cb90-74" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">==</span> model_size)</span>
-<span id="cb90-75"><a href="competitor-methods.html#cb90-75" tabindex="-1"></a>    all_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(selected_clusts_list)</span>
-<span id="cb90-76"><a href="competitor-methods.html#cb90-76" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(all_feats) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(all_feats)))</span>
+<span id="cb90-74"><a href="competitor-methods.html#cb90-74" tabindex="-1"></a>            <span class="fu">rm</span>(ret)</span>
+<span id="cb90-75"><a href="competitor-methods.html#cb90-75" tabindex="-1"></a>        }</span>
+<span id="cb90-76"><a href="competitor-methods.html#cb90-76" tabindex="-1"></a>    }</span>
 <span id="cb90-77"><a href="competitor-methods.html#cb90-77" tabindex="-1"></a></span>
-<span id="cb90-78"><a href="competitor-methods.html#cb90-78" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_set=</span>selected_set,</span>
-<span id="cb90-79"><a href="competitor-methods.html#cb90-79" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
-<span id="cb90-80"><a href="competitor-methods.html#cb90-80" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb90-78"><a href="competitor-methods.html#cb90-78" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_sets) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb90-79"><a href="competitor-methods.html#cb90-79" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">&lt;=</span> max_length)</span>
+<span id="cb90-80"><a href="competitor-methods.html#cb90-80" tabindex="-1"></a></span>
+<span id="cb90-81"><a href="competitor-methods.html#cb90-81" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>selected_sets,</span>
+<span id="cb90-82"><a href="competitor-methods.html#cb90-82" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
+<span id="cb90-83"><a href="competitor-methods.html#cb90-83" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="competitor-methods.html#getSelectedSets">getSelectedSets</a>()</code>:</p>
+<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb91-1"><a href="competitor-methods.html#cb91-1" tabindex="-1"></a><span class="co">#' Converts a selected set from X_glmnet to selected sets and selected clusters</span></span>
+<span id="cb91-2"><a href="competitor-methods.html#cb91-2" tabindex="-1"></a><span class="co">#' from the original feature space of X.</span></span>
+<span id="cb91-3"><a href="competitor-methods.html#cb91-3" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb91-4"><a href="competitor-methods.html#cb91-4" tabindex="-1"></a><span class="co">#' @param lasso_set A vector containing the indices of selected cluster</span></span>
+<span id="cb91-5"><a href="competitor-methods.html#cb91-5" tabindex="-1"></a><span class="co">#' representatives or prototypes.</span></span>
+<span id="cb91-6"><a href="competitor-methods.html#cb91-6" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb91-7"><a href="competitor-methods.html#cb91-7" tabindex="-1"></a><span class="co">#' of features that are in a common cluster. (The length of list clusters is</span></span>
+<span id="cb91-8"><a href="competitor-methods.html#cb91-8" tabindex="-1"></a><span class="co">#' equal to the number of clusters.) All identified clusters must be</span></span>
+<span id="cb91-9"><a href="competitor-methods.html#cb91-9" tabindex="-1"></a><span class="co">#' non-overlapping. All features appear in exactly one cluster (any unclustered</span></span>
+<span id="cb91-10"><a href="competitor-methods.html#cb91-10" tabindex="-1"></a><span class="co">#' features must be in their own "cluster" of size 1).</span></span>
+<span id="cb91-11"><a href="competitor-methods.html#cb91-11" tabindex="-1"></a><span class="co">#' @param prototypes An integer vector whose length must be equal to the number</span></span>
+<span id="cb91-12"><a href="competitor-methods.html#cb91-12" tabindex="-1"></a><span class="co">#' of clusters. Entry i should be the index of the feature belonging to cluster</span></span>
+<span id="cb91-13"><a href="competitor-methods.html#cb91-13" tabindex="-1"></a><span class="co">#' i that is most highly correlated with y (that is, the prototype for the</span></span>
+<span id="cb91-14"><a href="competitor-methods.html#cb91-14" tabindex="-1"></a><span class="co">#' cluster, as in the protolasso).</span></span>
+<span id="cb91-15"><a href="competitor-methods.html#cb91-15" tabindex="-1"></a><span class="co">#' @param feat_names Character vector; the names of the features in X.</span></span>
+<span id="cb91-16"><a href="competitor-methods.html#cb91-16" tabindex="-1"></a><span class="co">#' @return A list containing two items: \item{selected_set}{An integer vector</span></span>
+<span id="cb91-17"><a href="competitor-methods.html#cb91-17" tabindex="-1"></a><span class="co">#' with length equal to lasso_set containing a set of selected features in the</span></span>
+<span id="cb91-18"><a href="competitor-methods.html#cb91-18" tabindex="-1"></a><span class="co">#' original X matrix. (Selections in lasso_set corresponding to a cluster will</span></span>
+<span id="cb91-19"><a href="competitor-methods.html#cb91-19" tabindex="-1"></a><span class="co">#' be replaced by the cluster's prototype from X.)}</span></span>
+<span id="cb91-20"><a href="competitor-methods.html#cb91-20" tabindex="-1"></a><span class="co">#' \item{selected_clusts_list}{A named list of integer vectors with length equal</span></span>
+<span id="cb91-21"><a href="competitor-methods.html#cb91-21" tabindex="-1"></a><span class="co">#' to selected_set. `selected_clusts_list[[k]]` will be an integer vector</span></span>
+<span id="cb91-22"><a href="competitor-methods.html#cb91-22" tabindex="-1"></a><span class="co">#' containing the indices of the features in X that are in the cluster</span></span>
+<span id="cb91-23"><a href="competitor-methods.html#cb91-23" tabindex="-1"></a><span class="co">#' containing prototype `selected_set[k]`.}</span></span>
+<span id="cb91-24"><a href="competitor-methods.html#cb91-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb91-25"><a href="competitor-methods.html#cb91-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb91-26"><a href="competitor-methods.html#cb91-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb91-27"><a href="competitor-methods.html#cb91-27" tabindex="-1"></a><span id="getSelectedSets">getSelectedSets</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lasso_set, clusters, prototypes, feat_names){</span>
+<span id="cb91-28"><a href="competitor-methods.html#cb91-28" tabindex="-1"></a>    </span>
+<span id="cb91-29"><a href="competitor-methods.html#cb91-29" tabindex="-1"></a>    model_size <span class="ot">&lt;-</span> <span class="fu">length</span>(lasso_set)</span>
+<span id="cb91-30"><a href="competitor-methods.html#cb91-30" tabindex="-1"></a>    <span class="fu">stopifnot</span>(model_size <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb91-31"><a href="competitor-methods.html#cb91-31" tabindex="-1"></a></span>
+<span id="cb91-32"><a href="competitor-methods.html#cb91-32" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(<span class="fu">unique</span>(lasso_set)) <span class="sc">==</span> model_size)</span>
+<span id="cb91-33"><a href="competitor-methods.html#cb91-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(lasso_set <span class="sc">&lt;=</span> <span class="fu">length</span>(clusters)))</span>
+<span id="cb91-34"><a href="competitor-methods.html#cb91-34" tabindex="-1"></a></span>
+<span id="cb91-35"><a href="competitor-methods.html#cb91-35" tabindex="-1"></a>    selected_set <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb91-36"><a href="competitor-methods.html#cb91-36" tabindex="-1"></a>    selected_clusts_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb91-37"><a href="competitor-methods.html#cb91-37" tabindex="-1"></a>    <span class="co"># (#158a) preserve each selected cluster's name so selected_clusts_list is</span></span>
+<span id="cb91-38"><a href="competitor-methods.html#cb91-38" tabindex="-1"></a>    <span class="co"># the named list the docs promise (its names match beta's rownames, #158b).</span></span>
+<span id="cb91-39"><a href="competitor-methods.html#cb91-39" tabindex="-1"></a>    clust_names_out <span class="ot">&lt;-</span> <span class="fu">character</span>(model_size)</span>
+<span id="cb91-40"><a href="competitor-methods.html#cb91-40" tabindex="-1"></a>    <span class="co"># Recover features from original feature space</span></span>
+<span id="cb91-41"><a href="competitor-methods.html#cb91-41" tabindex="-1"></a>    <span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>model_size){</span>
+<span id="cb91-42"><a href="competitor-methods.html#cb91-42" tabindex="-1"></a>        selected_cluster_k <span class="ot">&lt;-</span> clusters[[lasso_set[k]]]</span>
+<span id="cb91-43"><a href="competitor-methods.html#cb91-43" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">is.integer</span>(selected_cluster_k))</span>
+<span id="cb91-44"><a href="competitor-methods.html#cb91-44" tabindex="-1"></a>        selected_clusts_list[[k]] <span class="ot">&lt;-</span> selected_cluster_k</span>
+<span id="cb91-45"><a href="competitor-methods.html#cb91-45" tabindex="-1"></a></span>
+<span id="cb91-46"><a href="competitor-methods.html#cb91-46" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
+<span id="cb91-47"><a href="competitor-methods.html#cb91-47" tabindex="-1"></a>            clust_names_out[k] <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)[lasso_set[k]]</span>
+<span id="cb91-48"><a href="competitor-methods.html#cb91-48" tabindex="-1"></a>        }</span>
+<span id="cb91-49"><a href="competitor-methods.html#cb91-49" tabindex="-1"></a></span>
+<span id="cb91-50"><a href="competitor-methods.html#cb91-50" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(selected_cluster_k) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb91-51"><a href="competitor-methods.html#cb91-51" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="sc">!</span>(selected_cluster_k <span class="sc">%in%</span> selected_set))</span>
+<span id="cb91-52"><a href="competitor-methods.html#cb91-52" tabindex="-1"></a>            selected_set <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_set, selected_cluster_k)</span>
+<span id="cb91-53"><a href="competitor-methods.html#cb91-53" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb91-54"><a href="competitor-methods.html#cb91-54" tabindex="-1"></a>            sel_prototype <span class="ot">&lt;-</span> <span class="fu">which</span>(prototypes <span class="sc">%in%</span> selected_cluster_k)</span>
+<span id="cb91-55"><a href="competitor-methods.html#cb91-55" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_prototype) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb91-56"><a href="competitor-methods.html#cb91-56" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="sc">!</span>(prototypes[sel_prototype] <span class="sc">%in%</span> selected_set))</span>
+<span id="cb91-57"><a href="competitor-methods.html#cb91-57" tabindex="-1"></a>            selected_set <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_set, prototypes[sel_prototype])</span>
+<span id="cb91-58"><a href="competitor-methods.html#cb91-58" tabindex="-1"></a>        }</span>
+<span id="cb91-59"><a href="competitor-methods.html#cb91-59" tabindex="-1"></a>    }</span>
+<span id="cb91-60"><a href="competitor-methods.html#cb91-60" tabindex="-1"></a></span>
+<span id="cb91-61"><a href="competitor-methods.html#cb91-61" tabindex="-1"></a>    <span class="co"># (#158a) name the returned list with the selected clusters' names so it is</span></span>
+<span id="cb91-62"><a href="competitor-methods.html#cb91-62" tabindex="-1"></a>    <span class="co"># the named list documented for <a href="competitor-methods.html#protolasso">protolasso</a>()/<a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>().</span></span>
+<span id="cb91-63"><a href="competitor-methods.html#cb91-63" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters))){</span>
+<span id="cb91-64"><a href="competitor-methods.html#cb91-64" tabindex="-1"></a>        <span class="fu">names</span>(selected_clusts_list) <span class="ot">&lt;-</span> clust_names_out</span>
+<span id="cb91-65"><a href="competitor-methods.html#cb91-65" tabindex="-1"></a>    }</span>
+<span id="cb91-66"><a href="competitor-methods.html#cb91-66" tabindex="-1"></a></span>
+<span id="cb91-67"><a href="competitor-methods.html#cb91-67" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_set) <span class="sc">==</span> model_size)</span>
+<span id="cb91-68"><a href="competitor-methods.html#cb91-68" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(<span class="fu">unique</span>(selected_set)) <span class="sc">==</span> model_size)</span>
+<span id="cb91-69"><a href="competitor-methods.html#cb91-69" tabindex="-1"></a>    </span>
+<span id="cb91-70"><a href="competitor-methods.html#cb91-70" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb91-71"><a href="competitor-methods.html#cb91-71" tabindex="-1"></a>        <span class="fu">names</span>(selected_set) <span class="ot">&lt;-</span> feat_names[selected_set]</span>
+<span id="cb91-72"><a href="competitor-methods.html#cb91-72" tabindex="-1"></a>    }</span>
+<span id="cb91-73"><a href="competitor-methods.html#cb91-73" tabindex="-1"></a></span>
+<span id="cb91-74"><a href="competitor-methods.html#cb91-74" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts_list) <span class="sc">==</span> model_size)</span>
+<span id="cb91-75"><a href="competitor-methods.html#cb91-75" tabindex="-1"></a>    all_feats <span class="ot">&lt;-</span> <span class="fu">unlist</span>(selected_clusts_list)</span>
+<span id="cb91-76"><a href="competitor-methods.html#cb91-76" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(all_feats) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(all_feats)))</span>
+<span id="cb91-77"><a href="competitor-methods.html#cb91-77" tabindex="-1"></a></span>
+<span id="cb91-78"><a href="competitor-methods.html#cb91-78" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_set=</span>selected_set,</span>
+<span id="cb91-79"><a href="competitor-methods.html#cb91-79" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>selected_clusts_list))</span>
+<span id="cb91-80"><a href="competitor-methods.html#cb91-80" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()</code>:</p>
-<div class="sourceCode" id="cb91"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb91-1"><a href="competitor-methods.html#cb91-1" tabindex="-1"></a><span class="co">#' Select features via the cluster representative lasso (Bühlmann et. al. 2013)</span></span>
-<span id="cb91-2"><a href="competitor-methods.html#cb91-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb91-3"><a href="competitor-methods.html#cb91-3" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb91-4"><a href="competitor-methods.html#cb91-4" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb91-5"><a href="competitor-methods.html#cb91-5" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
-<span id="cb91-6"><a href="competitor-methods.html#cb91-6" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
-<span id="cb91-7"><a href="competitor-methods.html#cb91-7" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
-<span id="cb91-8"><a href="competitor-methods.html#cb91-8" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
-<span id="cb91-9"><a href="competitor-methods.html#cb91-9" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
-<span id="cb91-10"><a href="competitor-methods.html#cb91-10" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Every feature not</span></span>
-<span id="cb91-11"><a href="competitor-methods.html#cb91-11" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
-<span id="cb91-12"><a href="competitor-methods.html#cb91-12" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
-<span id="cb91-13"><a href="competitor-methods.html#cb91-13" tabindex="-1"></a><span class="co">#' </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
-<span id="cb91-14"><a href="competitor-methods.html#cb91-14" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
-<span id="cb91-15"><a href="competitor-methods.html#cb91-15" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
-<span id="cb91-16"><a href="competitor-methods.html#cb91-16" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
-<span id="cb91-17"><a href="competitor-methods.html#cb91-17" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package).</span></span>
-<span id="cb91-18"><a href="competitor-methods.html#cb91-18" tabindex="-1"></a><span class="co">#' To get correct results in this case, please use model.matrix to convert</span></span>
-<span id="cb91-19"><a href="competitor-methods.html#cb91-19" tabindex="-1"></a><span class="co">#' the data.frame to a numeric matrix on your own, then provide this matrix</span></span>
-<span id="cb91-20"><a href="competitor-methods.html#cb91-20" tabindex="-1"></a><span class="co">#' and cluster assignments with respect to this matrix. Default is list() (so no</span></span>
-<span id="cb91-21"><a href="competitor-methods.html#cb91-21" tabindex="-1"></a><span class="co">#' clusters are specified).</span></span>
-<span id="cb91-22"><a href="competitor-methods.html#cb91-22" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
-<span id="cb91-23"><a href="competitor-methods.html#cb91-23" tabindex="-1"></a><span class="co">#' for the cluster representative lasso. Default is 100 (following the default</span></span>
-<span id="cb91-24"><a href="competitor-methods.html#cb91-24" tabindex="-1"></a><span class="co">#' for glmnet). For now, nlambda must be at least 2 (using a single lambda is</span></span>
-<span id="cb91-25"><a href="competitor-methods.html#cb91-25" tabindex="-1"></a><span class="co">#' not supported).</span></span>
-<span id="cb91-26"><a href="competitor-methods.html#cb91-26" tabindex="-1"></a><span class="co">#' @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
-<span id="cb91-27"><a href="competitor-methods.html#cb91-27" tabindex="-1"></a><span class="co">#' vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
-<span id="cb91-28"><a href="competitor-methods.html#cb91-28" tabindex="-1"></a><span class="co">#' size k yielded by the lasso--each member of the set is the index of a single</span></span>
-<span id="cb91-29"><a href="competitor-methods.html#cb91-29" tabindex="-1"></a><span class="co">#' feature from a cluster selected by the cluster representative lasso (the</span></span>
-<span id="cb91-30"><a href="competitor-methods.html#cb91-30" tabindex="-1"></a><span class="co">#' prototype from that cluster--the cluster member most highly correlated with</span></span>
-<span id="cb91-31"><a href="competitor-methods.html#cb91-31" tabindex="-1"></a><span class="co">#' y). (If no set of size k was selected, entry k will be empty.)}</span></span>
-<span id="cb91-32"><a href="competitor-methods.html#cb91-32" tabindex="-1"></a><span class="co">#' \item{selected_clusts_list}{A list; each element of the list is a named list</span></span>
-<span id="cb91-33"><a href="competitor-methods.html#cb91-33" tabindex="-1"></a><span class="co">#' of selected clusters. (That is, if a selected set of size k was yielded by</span></span>
-<span id="cb91-34"><a href="competitor-methods.html#cb91-34" tabindex="-1"></a><span class="co">#' the cluster representative lasso, then `selected_clusts_list[[k]]` is a named</span></span>
-<span id="cb91-35"><a href="competitor-methods.html#cb91-35" tabindex="-1"></a><span class="co">#' list of length k, where each member of the list is an integer vector</span></span>
-<span id="cb91-36"><a href="competitor-methods.html#cb91-36" tabindex="-1"></a><span class="co">#' of cluster members. Note that `selected_clusts_lists[[k]][[j]]` will be the</span></span>
-<span id="cb91-37"><a href="competitor-methods.html#cb91-37" tabindex="-1"></a><span class="co">#' cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The beta</span></span>
-<span id="cb91-38"><a href="competitor-methods.html#cb91-38" tabindex="-1"></a><span class="co">#' output from glmnet when the lasso was estimated on a matrix of cluster</span></span>
-<span id="cb91-39"><a href="competitor-methods.html#cb91-39" tabindex="-1"></a><span class="co">#' representatives (simple averages of the cluster members). (See documentation</span></span>
-<span id="cb91-40"><a href="competitor-methods.html#cb91-40" tabindex="-1"></a><span class="co">#' for the function glmnet from the glmnet package for details.) The rows of</span></span>
-<span id="cb91-41"><a href="competitor-methods.html#cb91-41" tabindex="-1"></a><span class="co">#' beta correspond, in order, to the clusters in the internally reordered</span></span>
-<span id="cb91-42"><a href="competitor-methods.html#cb91-42" tabindex="-1"></a><span class="co">#' clusters list (the provided clusters in the supplied order, followed by a</span></span>
-<span id="cb91-43"><a href="competitor-methods.html#cb91-43" tabindex="-1"></a><span class="co">#' singleton cluster for each unclustered feature in ascending feature-index</span></span>
-<span id="cb91-44"><a href="competitor-methods.html#cb91-44" tabindex="-1"></a><span class="co">#' order). Each row name is the cluster's name--the provided name for a supplied</span></span>
-<span id="cb91-45"><a href="competitor-methods.html#cb91-45" tabindex="-1"></a><span class="co">#' cluster, or an automatically assigned `c&lt;position&gt;` name (position in the</span></span>
-<span id="cb91-46"><a href="competitor-methods.html#cb91-46" tabindex="-1"></a><span class="co">#' reordered list, not the feature index) for a singleton; a selected cluster's</span></span>
-<span id="cb91-47"><a href="competitor-methods.html#cb91-47" tabindex="-1"></a><span class="co">#' row name coincides with its entry name in `selected_clusts_list[[k]]`.}</span></span>
-<span id="cb91-48"><a href="competitor-methods.html#cb91-48" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb91-49"><a href="competitor-methods.html#cb91-49" tabindex="-1"></a><span class="co">#' @references Bühlmann, P., Rütimann, P., van de Geer, S., &amp; Zhang, C. H.</span></span>
-<span id="cb91-50"><a href="competitor-methods.html#cb91-50" tabindex="-1"></a><span class="co">#' (2013). Correlated variables in regression: Clustering and sparse estimation.</span></span>
-<span id="cb91-51"><a href="competitor-methods.html#cb91-51" tabindex="-1"></a><span class="co">#' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
-<span id="cb91-52"><a href="competitor-methods.html#cb91-52" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor</span></span>
-<span id="cb91-53"><a href="competitor-methods.html#cb91-53" tabindex="-1"></a><span class="co">#' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear</span></span>
-<span id="cb91-54"><a href="competitor-methods.html#cb91-54" tabindex="-1"></a><span class="co">#' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)</span></span>
-<span id="cb91-55"><a href="competitor-methods.html#cb91-55" tabindex="-1"></a><span class="co">#' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb91-56"><a href="competitor-methods.html#cb91-56" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb91-57"><a href="competitor-methods.html#cb91-57" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb91-58"><a href="competitor-methods.html#cb91-58" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb91-59"><a href="competitor-methods.html#cb91-59" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb91-60"><a href="competitor-methods.html#cb91-60" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb91-61"><a href="competitor-methods.html#cb91-61" tabindex="-1"></a><span class="co">#' res &lt;- <a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
-<span id="cb91-62"><a href="competitor-methods.html#cb91-62" tabindex="-1"></a><span class="co">#' str(res, max.level = 1)</span></span>
-<span id="cb91-63"><a href="competitor-methods.html#cb91-63" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb91-64"><a href="competitor-methods.html#cb91-64" tabindex="-1"></a><span id="clusterRepLasso">clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
-<span id="cb91-65"><a href="competitor-methods.html#cb91-65" tabindex="-1"></a>    <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>(X, y, clusters, nlambda, <span class="at">type=</span><span class="st">"clusterRepLasso"</span>)</span>
-<span id="cb91-66"><a href="competitor-methods.html#cb91-66" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb92"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb92-1"><a href="competitor-methods.html#cb92-1" tabindex="-1"></a><span class="co">#' Select features via the cluster representative lasso (Bühlmann et. al. 2013)</span></span>
+<span id="cb92-2"><a href="competitor-methods.html#cb92-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb92-3"><a href="competitor-methods.html#cb92-3" tabindex="-1"></a><span class="co">#' @param X An n x p numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb92-4"><a href="competitor-methods.html#cb92-4" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb92-5"><a href="competitor-methods.html#cb92-5" tabindex="-1"></a><span class="co">#' p &gt;= 2 features/predictors. Must not contain missing (`NA`) values.</span></span>
+<span id="cb92-6"><a href="competitor-methods.html#cb92-6" tabindex="-1"></a><span class="co">#' @param y The response; A length n numeric (or integer) real-valued vector.</span></span>
+<span id="cb92-7"><a href="competitor-methods.html#cb92-7" tabindex="-1"></a><span class="co">#' @param clusters A list of integer vectors; each vector should contain the </span></span>
+<span id="cb92-8"><a href="competitor-methods.html#cb92-8" tabindex="-1"></a><span class="co">#' indices of a cluster of features (a subset of 1:p). (If there is only one</span></span>
+<span id="cb92-9"><a href="competitor-methods.html#cb92-9" tabindex="-1"></a><span class="co">#' cluster, clusters can either be a list of length 1 or an integer vector.)</span></span>
+<span id="cb92-10"><a href="competitor-methods.html#cb92-10" tabindex="-1"></a><span class="co">#' All of the provided clusters must be non-overlapping. Any identical</span></span>
+<span id="cb92-11"><a href="competitor-methods.html#cb92-11" tabindex="-1"></a><span class="co">#' (duplicated) clusters will be removed, keeping the first occurrence and its</span></span>
+<span id="cb92-12"><a href="competitor-methods.html#cb92-12" tabindex="-1"></a><span class="co">#' name. Every feature not</span></span>
+<span id="cb92-13"><a href="competitor-methods.html#cb92-13" tabindex="-1"></a><span class="co">#' appearing in any cluster will be assumed to be unclustered (that is, they</span></span>
+<span id="cb92-14"><a href="competitor-methods.html#cb92-14" tabindex="-1"></a><span class="co">#' will be treated as if they are in a "cluster" containing only themselves).</span></span>
+<span id="cb92-15"><a href="competitor-methods.html#cb92-15" tabindex="-1"></a><span class="co">#' </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that contains a categorical</span></span>
+<span id="cb92-16"><a href="competitor-methods.html#cb92-16" tabindex="-1"></a><span class="co">#' feature with more than two levels, then the resulting matrix made from</span></span>
+<span id="cb92-17"><a href="competitor-methods.html#cb92-17" tabindex="-1"></a><span class="co">#' model.matrix will have a different number of columns than the provided</span></span>
+<span id="cb92-18"><a href="competitor-methods.html#cb92-18" tabindex="-1"></a><span class="co">#' data.frame, some of the feature numbers will change, and the clusters</span></span>
+<span id="cb92-19"><a href="competitor-methods.html#cb92-19" tabindex="-1"></a><span class="co">#' argument will not work properly (in the current version of the package).</span></span>
+<span id="cb92-20"><a href="competitor-methods.html#cb92-20" tabindex="-1"></a><span class="co">#' To get correct results in this case, please use model.matrix to convert</span></span>
+<span id="cb92-21"><a href="competitor-methods.html#cb92-21" tabindex="-1"></a><span class="co">#' the data.frame to a numeric matrix on your own, then provide this matrix</span></span>
+<span id="cb92-22"><a href="competitor-methods.html#cb92-22" tabindex="-1"></a><span class="co">#' and cluster assignments with respect to this matrix. Default is list() (so no</span></span>
+<span id="cb92-23"><a href="competitor-methods.html#cb92-23" tabindex="-1"></a><span class="co">#' clusters are specified).</span></span>
+<span id="cb92-24"><a href="competitor-methods.html#cb92-24" tabindex="-1"></a><span class="co">#' @param nlambda Integer; the number of lambda values to use in the lasso fit</span></span>
+<span id="cb92-25"><a href="competitor-methods.html#cb92-25" tabindex="-1"></a><span class="co">#' for the cluster representative lasso. Default is 100 (following the default</span></span>
+<span id="cb92-26"><a href="competitor-methods.html#cb92-26" tabindex="-1"></a><span class="co">#' for glmnet). For now, nlambda must be at least 2 (using a single lambda is</span></span>
+<span id="cb92-27"><a href="competitor-methods.html#cb92-27" tabindex="-1"></a><span class="co">#' not supported).</span></span>
+<span id="cb92-28"><a href="competitor-methods.html#cb92-28" tabindex="-1"></a><span class="co">#' @return A list with three elements. \item{selected_sets}{A list of integer</span></span>
+<span id="cb92-29"><a href="competitor-methods.html#cb92-29" tabindex="-1"></a><span class="co">#' vectors. Entry k of this list contains a selected set (an integer vector) of</span></span>
+<span id="cb92-30"><a href="competitor-methods.html#cb92-30" tabindex="-1"></a><span class="co">#' size k yielded by the lasso--each member of the set is the index of a single</span></span>
+<span id="cb92-31"><a href="competitor-methods.html#cb92-31" tabindex="-1"></a><span class="co">#' feature from a cluster selected by the cluster representative lasso (the</span></span>
+<span id="cb92-32"><a href="competitor-methods.html#cb92-32" tabindex="-1"></a><span class="co">#' prototype from that cluster--the cluster member most highly correlated with</span></span>
+<span id="cb92-33"><a href="competitor-methods.html#cb92-33" tabindex="-1"></a><span class="co">#' y). (If no set of size k was selected, entry k will be empty.)}</span></span>
+<span id="cb92-34"><a href="competitor-methods.html#cb92-34" tabindex="-1"></a><span class="co">#' \item{selected_clusts_list}{A list; each element of the list is a named list</span></span>
+<span id="cb92-35"><a href="competitor-methods.html#cb92-35" tabindex="-1"></a><span class="co">#' of selected clusters. (That is, if a selected set of size k was yielded by</span></span>
+<span id="cb92-36"><a href="competitor-methods.html#cb92-36" tabindex="-1"></a><span class="co">#' the cluster representative lasso, then `selected_clusts_list[[k]]` is a named</span></span>
+<span id="cb92-37"><a href="competitor-methods.html#cb92-37" tabindex="-1"></a><span class="co">#' list of length k, where each member of the list is an integer vector</span></span>
+<span id="cb92-38"><a href="competitor-methods.html#cb92-38" tabindex="-1"></a><span class="co">#' of cluster members. Note that `selected_clusts_lists[[k]][[j]]` will be the</span></span>
+<span id="cb92-39"><a href="competitor-methods.html#cb92-39" tabindex="-1"></a><span class="co">#' cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The beta</span></span>
+<span id="cb92-40"><a href="competitor-methods.html#cb92-40" tabindex="-1"></a><span class="co">#' output from glmnet when the lasso was estimated on a matrix of cluster</span></span>
+<span id="cb92-41"><a href="competitor-methods.html#cb92-41" tabindex="-1"></a><span class="co">#' representatives (simple averages of the cluster members). (See documentation</span></span>
+<span id="cb92-42"><a href="competitor-methods.html#cb92-42" tabindex="-1"></a><span class="co">#' for the function glmnet from the glmnet package for details.) The rows of</span></span>
+<span id="cb92-43"><a href="competitor-methods.html#cb92-43" tabindex="-1"></a><span class="co">#' beta correspond, in order, to the clusters in the internally reordered</span></span>
+<span id="cb92-44"><a href="competitor-methods.html#cb92-44" tabindex="-1"></a><span class="co">#' clusters list (the provided clusters in the supplied order, followed by a</span></span>
+<span id="cb92-45"><a href="competitor-methods.html#cb92-45" tabindex="-1"></a><span class="co">#' singleton cluster for each unclustered feature in ascending feature-index</span></span>
+<span id="cb92-46"><a href="competitor-methods.html#cb92-46" tabindex="-1"></a><span class="co">#' order). Each row name is the cluster's name--the provided name for a supplied</span></span>
+<span id="cb92-47"><a href="competitor-methods.html#cb92-47" tabindex="-1"></a><span class="co">#' cluster, or an automatically assigned `c&lt;position&gt;` name (position in the</span></span>
+<span id="cb92-48"><a href="competitor-methods.html#cb92-48" tabindex="-1"></a><span class="co">#' reordered list, not the feature index) for a singleton; a selected cluster's</span></span>
+<span id="cb92-49"><a href="competitor-methods.html#cb92-49" tabindex="-1"></a><span class="co">#' row name coincides with its entry name in `selected_clusts_list[[k]]`.}</span></span>
+<span id="cb92-50"><a href="competitor-methods.html#cb92-50" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb92-51"><a href="competitor-methods.html#cb92-51" tabindex="-1"></a><span class="co">#' @references Bühlmann, P., Rütimann, P., van de Geer, S., &amp; Zhang, C. H.</span></span>
+<span id="cb92-52"><a href="competitor-methods.html#cb92-52" tabindex="-1"></a><span class="co">#' (2013). Correlated variables in regression: Clustering and sparse estimation.</span></span>
+<span id="cb92-53"><a href="competitor-methods.html#cb92-53" tabindex="-1"></a><span class="co">#' \emph{Journal of Statistical Planning and Inference}, 143(11), 1835–1858.</span></span>
+<span id="cb92-54"><a href="competitor-methods.html#cb92-54" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1016/j.jspi.2013.05.019}. \cr Jerome Friedman, Trevor</span></span>
+<span id="cb92-55"><a href="competitor-methods.html#cb92-55" tabindex="-1"></a><span class="co">#' Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized Linear</span></span>
+<span id="cb92-56"><a href="competitor-methods.html#cb92-56" tabindex="-1"></a><span class="co">#' Models via Coordinate Descent. \emph{Journal of Statistical Software}, 33(1)</span></span>
+<span id="cb92-57"><a href="competitor-methods.html#cb92-57" tabindex="-1"></a><span class="co">#' 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
+<span id="cb92-58"><a href="competitor-methods.html#cb92-58" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb92-59"><a href="competitor-methods.html#cb92-59" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb92-60"><a href="competitor-methods.html#cb92-60" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb92-61"><a href="competitor-methods.html#cb92-61" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb92-62"><a href="competitor-methods.html#cb92-62" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb92-63"><a href="competitor-methods.html#cb92-63" tabindex="-1"></a><span class="co">#' res &lt;- <a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
+<span id="cb92-64"><a href="competitor-methods.html#cb92-64" tabindex="-1"></a><span class="co">#' str(res, max.level = 1)</span></span>
+<span id="cb92-65"><a href="competitor-methods.html#cb92-65" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb92-66"><a href="competitor-methods.html#cb92-66" tabindex="-1"></a><span id="clusterRepLasso">clusterRepLasso</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, <span class="at">clusters=</span><span class="fu">list</span>(), <span class="at">nlambda=</span><span class="dv">100</span>){</span>
+<span id="cb92-67"><a href="competitor-methods.html#cb92-67" tabindex="-1"></a>    <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>(X, y, clusters, nlambda, <span class="at">type=</span><span class="st">"clusterRepLasso"</span>)</span>
+<span id="cb92-68"><a href="competitor-methods.html#cb92-68" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 
 

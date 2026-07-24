@@ -87,8 +87,27 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     seeds <- sample.int(.Machine$integer.max, length(subsamps_object))
 
     res_list <- parallel::mclapply(X=seq_along(subsamps_object),
-        FUN=function(i) cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
-            fitfun=fitfun, seed=seeds[i]),
+        FUN=function(i){
+            warns <- list()
+            value <- withCallingHandlers(
+                tryCatch(
+                    cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
+                        fitfun=fitfun, seed=seeds[i]),
+                    # (#155a) tag the TRUE subsample index at the point of failure
+                    # so prescheduling can't misattribute it in the assembly loop.
+                    error=function(e) structure(list(i=i,
+                        msg=conditionMessage(e)), class="cssr_loop_error")
+                ),
+                # (#155b) collect fitfun warning CONDITIONS from the (possibly
+                # forked) worker; re-emitted in the parent below so they surface
+                # the same regardless of num_cores. Collect the condition object
+                # (not just conditionMessage) so a custom warning's subclass/call
+                # survives (conditions serialize across the fork).
+                warning=function(w){ warns[[length(warns) + 1L]] <<- w;
+                    invokeRestart("muffleWarning") }
+            )
+            list(value=value, warnings=warns)
+        },
         mc.cores=num_cores)
 
     # mclapply returns NULL for any subsample whose worker was killed (e.g. the
@@ -98,6 +117,13 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     # a zero row (which would bias the selection proportions).
     if(any(vapply(res_list, is.null, logical(1)))){
         stop("A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error.")
+    }
+
+    # (#155b) Re-emit fitfun warning conditions in subsample order, then unwrap
+    # so the assembly loop below sees the plain results.
+    for(i in seq_along(res_list)){
+        for(w in res_list[[i]]$warnings){ warning(w) }
+        res_list[[i]] <- res_list[[i]]$value
     }
 
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix

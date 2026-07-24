@@ -27,7 +27,9 @@
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. If the same cluster is
+#' provided more than once, the duplicates will be removed, keeping only the
+#' first occurrence (and its name). Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves). If
 #' clusters is a list of length 0 (or a list only containing clusters of length
@@ -87,7 +89,8 @@
 #' dominant cost and is embarrassingly parallel, so on a multi-core Unix or
 #' macOS machine setting `num_cores > 1` gives a substantial speedup; the result
 #' is identical regardless of `num_cores` (per-subsample seeds are fixed).
-#' Forking is unavailable on Windows, where `mclapply` runs serially. Default is
+#' On Windows, forking is unavailable, so `num_cores > 1` is not supported;
+#' `css()` warns and runs serially (`num_cores = 1`) there. Default is
 #' 1 (serial).
 #' @return A list containing the following items:
 #' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
@@ -133,7 +136,7 @@
 #'   B = 10)
 #' print(res)
 #' # On a multi-core Unix/macOS machine, set num_cores for a substantial
-#' # speedup (identical results; mclapply runs serially on Windows):
+#' # speedup (identical results; num_cores > 1 falls back to serial on Windows):
 #' \donttest{
 #' res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
 #'   B = 10, num_cores = min(2L, parallel::detectCores()))
@@ -154,6 +157,14 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     clusters <- check_list$clusters
 
     rm(check_list)
+
+    # num_cores > 1 needs forking (parallel::mclapply), which is unavailable on
+    # Windows -- there mclapply hard-errors for mc.cores > 1 rather than running
+    # serially. Downgrade to serial with a warning so css() still runs (#155d).
+    if(num_cores > 1L && runningOnWindows()){
+        warning("num_cores > 1 is not supported on Windows (parallel::mclapply requires forking); running serially with num_cores = 1.")
+        num_cores <- 1L
+    }
 
     n <- nrow(X)
     p <- ncol(X)
