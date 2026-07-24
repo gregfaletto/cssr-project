@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.6",
+    Version = "0.4.7",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -5123,7 +5123,7 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 }
 ```
 
-`plot.cssr()` gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the `cutoff` drawn as a dashed reference line and the selected clusters (or features) highlighted:
+`plot.cssr()` gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the `cutoff` drawn as a dashed reference line (for `type = "clusters"`) and the selected clusters (or features) highlighted:
 
 ```{r}
 #' Plot cluster (or feature) selection proportions from cluster stability
@@ -5132,9 +5132,10 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 #' Produce a base-graphics bar plot of the selection proportions of a fitted
 #' `cssr` object: one bar per cluster (the default) or per feature, sorted in
 #' decreasing order of selection proportion. When `cutoff > 0` a dashed
-#' reference line is drawn at the cutoff, and the bars whose cluster (or
-#' feature) is selected -- at the given `cutoff` and cluster-count constraints
-#' -- are highlighted in `sel_col`, the rest in `unsel_col`.
+#' reference line is drawn at the cutoff (for `type = "clusters"`), and the bars
+#' whose cluster (or feature) is selected -- at the given `cutoff` and
+#' cluster-count constraints -- are highlighted in `sel_col`, the rest in
+#' `unsel_col`.
 #'
 #' The selection that determines the highlight is obtained from
 #' [getCssSelections()] with the same `cutoff`, `min_num_clusts`,
@@ -5151,9 +5152,12 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 #' @param x An object of class "cssr" (the output of the function [css()]).
 #' @param cutoff Numeric; the selection-proportion threshold used both to draw
 #' the dashed reference line (when greater than 0) and to determine which bars
-#' are highlighted as selected. Must be between 0 and 1. Default is 0 (in which
-#' case no reference line is drawn and, unless `max_num_clusts` restricts it,
-#' every cluster is treated as selected).
+#' are highlighted as selected. The dashed reference line is drawn only for
+#' `type = "clusters"`; for `type = "features"` no line is drawn, because the
+#' bars show feature proportions while highlighting follows the cluster-level
+#' selection. Must be between 0 and 1. Default is 0 (in which case no reference
+#' line is drawn and, unless `max_num_clusts` restricts it, every cluster is
+#' treated as selected).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' treat as selected regardless of cutoff. (If the chosen cutoff would select
 #' fewer than min_num_clusts clusters, the cutoff is effectively lowered until
@@ -5181,8 +5185,9 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 #' features). Default is "grey70".
 #' @param ... Additional graphical parameters passed on to
 #' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,
-#' fill colours, and `ylim` are controlled by this method; supplying `col` or
-#' `ylim` here overrides the highlight colours or the default y-axis limits.
+#' fill colours, and `ylim` are controlled by this method; supplying `col` here,
+#' or the `ylim` argument, overrides the highlight colours or the default y-axis
+#' limits.
 #' @return Invisibly, the numeric vector of selection proportions that were
 #' plotted: the `colMeans()` of the cluster (or feature) selection matrix,
 #' sorted in decreasing order, named by cluster (always) or by feature (when the
@@ -5227,14 +5232,16 @@ plot.cssr <- function(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA,
     ord    <- order(props, decreasing = TRUE)
     props  <- props[ord]; is_sel <- is_sel[ord]
     labels <- names(props); if(is.null(labels)) labels <- as.character(ord)  # index labels if X unnamed
-    # method controls height/col/ylim on a SINGLE merged arg list; ... forwards
-    # main/cex.names/etc. -> no barplot duplicate-argument crash.
-    args <- utils::modifyList(list(names.arg = labels, las = 2, ylab = ylab), list(...))
+    # Method defaults go on the DEFAULTS side of the merge so a user-supplied col
+    # or ylim in `...` wins (matching the @param ... doc); height is forced AFTER
+    # the merge because the bar heights ARE the selection proportions (#160a).
+    args <- utils::modifyList(
+        list(names.arg = labels, las = 2, ylab = ylab,
+            col = ifelse(is_sel, sel_col, unsel_col), ylim = ylim),
+        list(...))
     args$height <- props
-    args$col    <- ifelse(is_sel, sel_col, unsel_col)
-    args$ylim   <- ylim
     do.call(graphics::barplot, args)
-    if(cutoff > 0) graphics::abline(h = cutoff, lty = 2, col = "red")
+    if(cutoff > 0 && type == "clusters") graphics::abline(h = cutoff, lty = 2, col = "red")
     invisible(props)   # sorted; names as-is (so it equals sort(colMeans(...)) for the test)
 }
 ```
@@ -13408,6 +13415,103 @@ testthat::test_that("plot.cssr handles an empty selection and a single cluster",
   ret1 <- plot(css_1)
   testthat::expect_length(ret1, 1)
   grDevices::dev.off()
+})
+```
+
+Two further tests pin down the issue #160 fixes. Both mock the `graphics`
+drawing primitives with `testthat::with_mocked_bindings()` so they can assert on
+the arguments the method actually passes to them. The first checks that a
+user-supplied `col` in `...` now reaches `barplot()` verbatim -- and that, with
+no `col`, the method's own highlight colours still apply. The second checks that
+the dashed `cutoff` line is drawn only for `type = "clusters"` (whose axis
+matches the highlight) and never for `type = "features"`.
+
+```{r}
+testthat::test_that("plot.cssr honours a user col in ... and otherwise applies the highlight (#160a)", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  # barplot is mocked (nothing is drawn) and cutoff = 0 (no abline), so no real
+  # graphics call is made; the device is opened only defensively.
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add=TRUE)
+
+  # (a1) A user col in ... must reach barplot() verbatim. Before #160a the method
+  # overwrote it with the highlight colours (this asserted "red" but got
+  # steelblue/grey70).
+  captured <- NULL
+  testthat::with_mocked_bindings(
+    barplot = function(...) captured <<- list(...),
+    plot(css_res, col="red"),
+    .package = "graphics"
+  )
+  testthat::expect_identical(captured$col, "red")
+
+  # (a2) With no col the method's own highlight must STILL apply -- guards against
+  # over-fixing (a1) by dropping the default. max_num_clusts=2 forces a genuine
+  # mix (>=1 selected, >=1 unselected) so both ifelse branches are exercised.
+  captured2 <- NULL
+  testthat::with_mocked_bindings(
+    barplot = function(...) captured2 <<- list(...),
+    plot(css_res, max_num_clusts=2),
+    .package = "graphics"
+  )
+  props <- colMeans(css_res$clus_sel_mat)
+  sel <- suppressWarnings(getCssSelections(css_res, weighting="sparse",
+    cutoff=0, min_num_clusts=1, max_num_clusts=2))
+  is_sel <- (names(props) %in% names(sel$selected_clusts))[order(props,
+    decreasing=TRUE)]
+  testthat::expect_identical(captured2$col, ifelse(is_sel, "steelblue", "grey70"))
+  testthat::expect_true("steelblue" %in% captured2$col)  # a genuine mix, so both
+  testthat::expect_true("grey70" %in% captured2$col)     # branches are covered
+})
+
+testthat::test_that("plot.cssr draws the cutoff line only for type='clusters' (#160b)", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  # Real barplot draws to a null device; only abline is mocked (a flag/capture).
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add=TRUE)
+
+  # (b1) type="features": the line would sit on the feature-proportion axis while
+  # highlighting follows cluster selection, so no reference line is drawn (#160b).
+  called <- FALSE
+  testthat::with_mocked_bindings(
+    abline = function(...) called <<- TRUE,
+    plot(css_res, type="features", cutoff=0.6),
+    .package = "graphics"
+  )
+  testthat::expect_false(called)
+
+  # (b2) type="clusters": the line's axis matches the highlight, so it IS drawn at
+  # h = cutoff.
+  called <- FALSE
+  ab_args <- NULL
+  testthat::with_mocked_bindings(
+    abline = function(...) { called <<- TRUE; ab_args <<- list(...) },
+    plot(css_res, type="clusters", cutoff=0.6),
+    .package = "graphics"
+  )
+  testthat::expect_true(called)
+  testthat::expect_equal(ab_args$h, 0.6)
+
+  # (b3) cutoff=0: no line in either mode (unchanged behaviour).
+  called <- FALSE
+  testthat::with_mocked_bindings(
+    abline = function(...) called <<- TRUE,
+    plot(css_res, type="clusters", cutoff=0),
+    .package = "graphics"
+  )
+  testthat::expect_false(called)
 })
 ```
 

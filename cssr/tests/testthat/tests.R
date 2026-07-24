@@ -6650,6 +6650,93 @@ testthat::test_that("plot.cssr handles an empty selection and a single cluster",
   grDevices::dev.off()
 })
 
+testthat::test_that("plot.cssr honours a user col in ... and otherwise applies the highlight (#160a)", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  # barplot is mocked (nothing is drawn) and cutoff = 0 (no abline), so no real
+  # graphics call is made; the device is opened only defensively.
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add=TRUE)
+
+  # (a1) A user col in ... must reach barplot() verbatim. Before #160a the method
+  # overwrote it with the highlight colours (this asserted "red" but got
+  # steelblue/grey70).
+  captured <- NULL
+  testthat::with_mocked_bindings(
+    barplot = function(...) captured <<- list(...),
+    plot(css_res, col="red"),
+    .package = "graphics"
+  )
+  testthat::expect_identical(captured$col, "red")
+
+  # (a2) With no col the method's own highlight must STILL apply -- guards against
+  # over-fixing (a1) by dropping the default. max_num_clusts=2 forces a genuine
+  # mix (>=1 selected, >=1 unselected) so both ifelse branches are exercised.
+  captured2 <- NULL
+  testthat::with_mocked_bindings(
+    barplot = function(...) captured2 <<- list(...),
+    plot(css_res, max_num_clusts=2),
+    .package = "graphics"
+  )
+  props <- colMeans(css_res$clus_sel_mat)
+  sel <- suppressWarnings(getCssSelections(css_res, weighting="sparse",
+    cutoff=0, min_num_clusts=1, max_num_clusts=2))
+  is_sel <- (names(props) %in% names(sel$selected_clusts))[order(props,
+    decreasing=TRUE)]
+  testthat::expect_identical(captured2$col, ifelse(is_sel, "steelblue", "grey70"))
+  testthat::expect_true("steelblue" %in% captured2$col)  # a genuine mix, so both
+  testthat::expect_true("grey70" %in% captured2$col)     # branches are covered
+})
+
+testthat::test_that("plot.cssr draws the cutoff line only for type='clusters' (#160b)", {
+  set.seed(26717)
+  x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
+  colnames(x) <- paste0("V", seq_len(ncol(x)))
+  y <- stats::rnorm(10)
+  good_clusters <- list("apple"=1:2, "banana"=3:4, "cantaloupe"=5)
+  css_res <- css(X=x, y=y, lambda=0.01, clusters=good_clusters, B=10)
+
+  # Real barplot draws to a null device; only abline is mocked (a flag/capture).
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add=TRUE)
+
+  # (b1) type="features": the line would sit on the feature-proportion axis while
+  # highlighting follows cluster selection, so no reference line is drawn (#160b).
+  called <- FALSE
+  testthat::with_mocked_bindings(
+    abline = function(...) called <<- TRUE,
+    plot(css_res, type="features", cutoff=0.6),
+    .package = "graphics"
+  )
+  testthat::expect_false(called)
+
+  # (b2) type="clusters": the line's axis matches the highlight, so it IS drawn at
+  # h = cutoff.
+  called <- FALSE
+  ab_args <- NULL
+  testthat::with_mocked_bindings(
+    abline = function(...) { called <<- TRUE; ab_args <<- list(...) },
+    plot(css_res, type="clusters", cutoff=0.6),
+    .package = "graphics"
+  )
+  testthat::expect_true(called)
+  testthat::expect_equal(ab_args$h, 0.6)
+
+  # (b3) cutoff=0: no line in either mode (unchanged behaviour).
+  called <- FALSE
+  testthat::with_mocked_bindings(
+    abline = function(...) called <<- TRUE,
+    plot(css_res, type="clusters", cutoff=0),
+    .package = "graphics"
+  )
+  testthat::expect_false(called)
+})
+
 testthat::test_that("Opt 2 (#129): formCssDesign weights= equals internal recompute; getCssPreds finite", {
   set.seed(721)
   dat <- genClusteredData(n = 60, p = 11, k_unclustered = 2, cluster_size = 4,

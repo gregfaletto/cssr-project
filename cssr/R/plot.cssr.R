@@ -6,9 +6,10 @@
 #' Produce a base-graphics bar plot of the selection proportions of a fitted
 #' `cssr` object: one bar per cluster (the default) or per feature, sorted in
 #' decreasing order of selection proportion. When `cutoff > 0` a dashed
-#' reference line is drawn at the cutoff, and the bars whose cluster (or
-#' feature) is selected -- at the given `cutoff` and cluster-count constraints
-#' -- are highlighted in `sel_col`, the rest in `unsel_col`.
+#' reference line is drawn at the cutoff (for `type = "clusters"`), and the bars
+#' whose cluster (or feature) is selected -- at the given `cutoff` and
+#' cluster-count constraints -- are highlighted in `sel_col`, the rest in
+#' `unsel_col`.
 #'
 #' The selection that determines the highlight is obtained from
 #' [getCssSelections()] with the same `cutoff`, `min_num_clusts`,
@@ -25,9 +26,12 @@
 #' @param x An object of class "cssr" (the output of the function [css()]).
 #' @param cutoff Numeric; the selection-proportion threshold used both to draw
 #' the dashed reference line (when greater than 0) and to determine which bars
-#' are highlighted as selected. Must be between 0 and 1. Default is 0 (in which
-#' case no reference line is drawn and, unless `max_num_clusts` restricts it,
-#' every cluster is treated as selected).
+#' are highlighted as selected. The dashed reference line is drawn only for
+#' `type = "clusters"`; for `type = "features"` no line is drawn, because the
+#' bars show feature proportions while highlighting follows the cluster-level
+#' selection. Must be between 0 and 1. Default is 0 (in which case no reference
+#' line is drawn and, unless `max_num_clusts` restricts it, every cluster is
+#' treated as selected).
 #' @param min_num_clusts Integer or numeric; the minimum number of clusters to
 #' treat as selected regardless of cutoff. (If the chosen cutoff would select
 #' fewer than min_num_clusts clusters, the cutoff is effectively lowered until
@@ -55,8 +59,9 @@
 #' features). Default is "grey70".
 #' @param ... Additional graphical parameters passed on to
 #' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,
-#' fill colours, and `ylim` are controlled by this method; supplying `col` or
-#' `ylim` here overrides the highlight colours or the default y-axis limits.
+#' fill colours, and `ylim` are controlled by this method; supplying `col` here,
+#' or the `ylim` argument, overrides the highlight colours or the default y-axis
+#' limits.
 #' @return Invisibly, the numeric vector of selection proportions that were
 #' plotted: the `colMeans()` of the cluster (or feature) selection matrix,
 #' sorted in decreasing order, named by cluster (always) or by feature (when the
@@ -101,13 +106,15 @@ plot.cssr <- function(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA,
     ord    <- order(props, decreasing = TRUE)
     props  <- props[ord]; is_sel <- is_sel[ord]
     labels <- names(props); if(is.null(labels)) labels <- as.character(ord)  # index labels if X unnamed
-    # method controls height/col/ylim on a SINGLE merged arg list; ... forwards
-    # main/cex.names/etc. -> no barplot duplicate-argument crash.
-    args <- utils::modifyList(list(names.arg = labels, las = 2, ylab = ylab), list(...))
+    # Method defaults go on the DEFAULTS side of the merge so a user-supplied col
+    # or ylim in `...` wins (matching the @param ... doc); height is forced AFTER
+    # the merge because the bar heights ARE the selection proportions (#160a).
+    args <- utils::modifyList(
+        list(names.arg = labels, las = 2, ylab = ylab,
+            col = ifelse(is_sel, sel_col, unsel_col), ylim = ylim),
+        list(...))
     args$height <- props
-    args$col    <- ifelse(is_sel, sel_col, unsel_col)
-    args$ylim   <- ylim
     do.call(graphics::barplot, args)
-    if(cutoff > 0) graphics::abline(h = cutoff, lty = 2, col = "red")
+    if(cutoff > 0 && type == "clusters") graphics::abline(h = cutoff, lty = 2, col = "red")
     invisible(props)   # sorted; names as-is (so it equals sort(colMeans(...)) for the test)
 }

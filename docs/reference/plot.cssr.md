@@ -3,9 +3,10 @@
 Produce a base-graphics bar plot of the selection proportions of a
 fitted `cssr` object: one bar per cluster (the default) or per feature,
 sorted in decreasing order of selection proportion. When `cutoff > 0` a
-dashed reference line is drawn at the cutoff, and the bars whose cluster
-(or feature) is selected – at the given `cutoff` and cluster-count
-constraints – are highlighted in `sel_col`, the rest in `unsel_col`.
+dashed reference line is drawn at the cutoff (for `type = "clusters"`),
+and the bars whose cluster (or feature) is selected – at the given
+`cutoff` and cluster-count constraints – are highlighted in `sel_col`,
+the rest in `unsel_col`.
 
 ## Usage
 
@@ -36,8 +37,11 @@ plot(
 
   Numeric; the selection-proportion threshold used both to draw the
   dashed reference line (when greater than 0) and to determine which
-  bars are highlighted as selected. Must be between 0 and 1. Default is
-  0 (in which case no reference line is drawn and, unless
+  bars are highlighted as selected. The dashed reference line is drawn
+  only for `type = "clusters"`; for `type = "features"` no line is
+  drawn, because the bars show feature proportions while highlighting
+  follows the cluster-level selection. Must be between 0 and 1. Default
+  is 0 (in which case no reference line is drawn and, unless
   `max_num_clusts` restricts it, every cluster is treated as selected).
 
 - min_num_clusts:
@@ -94,8 +98,9 @@ plot(
   Additional graphical parameters passed on to
   [`graphics::barplot()`](https://rdrr.io/r/graphics/barplot.html) (for
   example `main` or `cex.names`). The bar heights, fill colours, and
-  `ylim` are controlled by this method; supplying `col` or `ylim` here
-  overrides the highlight colours or the default y-axis limits.
+  `ylim` are controlled by this method; supplying `col` here, or the
+  `ylim` argument, overrides the highlight colours or the default y-axis
+  limits.
 
 ## Value
 
