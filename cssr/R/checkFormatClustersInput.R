@@ -25,7 +25,8 @@
 #' ones, all entries must be between 0 and 1, and matrix must be symmetric)
 #' @return A list of integer vectors; each vector will contain the indices of a
 #' cluster of features. Any duplicated clusters provided in the input will be
-#' removed.
+#' removed (when duplicated clusters carry different names, the first
+#' occurrence's name is kept).
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
@@ -68,7 +69,9 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
                 stopifnot(is.integer(clusters[[i]]))
             }
 
-            stopifnot(length(clusters) == length(unique(clusters)))
+            if(any(!is.na(clust_names))){
+                stopifnot(length(clust_names) == length(clusters))
+            }
 
             clusters <- clusters[!duplicated(clusters)]
 
@@ -80,10 +83,6 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
                             clusters[[j]])) == 0)
                     }
                 }
-            }
-
-            if(any(!is.na(clust_names))){
-                stopifnot(length(clust_names) == length(clusters))
             }
         } else if(!is.list(clusters)){
             clusters_temp <- clusters

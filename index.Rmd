@@ -188,7 +188,9 @@ and
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. If the same cluster is
+#' provided more than once, the duplicates will be removed, keeping only the
+#' first occurrence (and its name). Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves). If
 #' clusters is a list of length 0 (or a list only containing clusters of length
@@ -1153,7 +1155,8 @@ checkFiniteY <- function(y, arg_name = "y"){
 #' originally provided as a data.frame, and with feature names removed if they
 #' had been provided.}\item{clusters}{A list of integer vectors; each vector
 #' will contain the indices of a cluster of features. Any duplicated clusters
-#' provided in the input will be removed.}
+#' provided in the input will be removed (when duplicated clusters carry
+#' different names, the first occurrence's name is kept).}
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
@@ -1162,11 +1165,6 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     stopifnot(is.matrix(X) | is.data.frame(X))
     checkNoNAs(X, "X")
-
-    clust_names <- as.character(NA)
-    if(!is.null(names(clusters)) & is.list(clusters)){
-        clust_names <- names(clusters)
-    }
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X <- coerceDataFrameToMatrix(X, clusters)
@@ -1200,6 +1198,14 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     # Check clusters argument
     clusters <- checkCssClustersInput(clusters)
+
+    # Derive cluster names AFTER checkCssClustersInput (which may drop duplicate
+    # clusters), so the names line up with the deduplicated list passed to
+    # formatClusters below (#156).
+    clust_names <- as.character(NA)
+    if(!is.null(names(clusters)) & is.list(clusters)){
+        clust_names <- names(clusters)
+    }
 
     ### Format clusters into a list where all features are in exactly one
     # cluster (any unclustered features are put in their own "cluster" of size
@@ -1260,7 +1266,6 @@ checkCssClustersInput <- function(clusters){
     stopifnot(!is.na(clusters))
     if(is.list(clusters)){
         stopifnot(all(!is.na(clusters)))
-        stopifnot(length(clusters) == length(unique(clusters)))
 
         if(length(clusters) > 0){
             for(i in 1:length(clusters)){
@@ -1271,6 +1276,11 @@ checkCssClustersInput <- function(clusters){
                 stopifnot(all(clusters[[i]] >= 1))
                 clusters[[i]] <- as.integer(clusters[[i]])
             }
+
+            # Remove exact-duplicate clusters (documented behavior; keeps the first
+            # occurrence, so its name wins). Distinct-but-overlapping clusters are
+            # still rejected by the overlap check below (#156).
+            clusters <- clusters[!duplicated(clusters)]
 
             if(length(clusters) >= 2){
                 # Check that clusters are non-overlapping
@@ -1464,7 +1474,8 @@ formatClusters <- function(clusters=NA, p=-1, clust_names=NA,
 #' ones, all entries must be between 0 and 1, and matrix must be symmetric)
 #' @return A list of integer vectors; each vector will contain the indices of a
 #' cluster of features. Any duplicated clusters provided in the input will be
-#' removed.
+#' removed (when duplicated clusters carry different names, the first
+#' occurrence's name is kept).
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
@@ -1507,7 +1518,9 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
                 stopifnot(is.integer(clusters[[i]]))
             }
 
-            stopifnot(length(clusters) == length(unique(clusters)))
+            if(any(!is.na(clust_names))){
+                stopifnot(length(clust_names) == length(clusters))
+            }
 
             clusters <- clusters[!duplicated(clusters)]
 
@@ -1519,10 +1532,6 @@ checkFormatClustersInput <- function(clusters, p, clust_names,
                             clusters[[j]])) == 0)
                     }
                 }
-            }
-
-            if(any(!is.na(clust_names))){
-                stopifnot(length(clust_names) == length(clusters))
             }
         } else if(!is.list(clusters)){
             clusters_temp <- clusters
@@ -3065,6 +3074,11 @@ getCssDesign <- function(css_results, newX=NA, weighting="weighted_avg",
 #' @noRd
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
+    # trainX's own validated column names, captured from checkXInputResults so
+    # the caller (checkGetCssPredsInputs, #153a) can restore them independently
+    # of testX. NA for the not-provided/train_inds branch, where names are
+    # irrelevant.
+    trainX_feat_names <- as.character(NA)
 
     # "Was newX provided?" -- the documented default for trainX is the scalar NA
     # sentinel, so treat trainX as provided UNLESS it is exactly that default
@@ -3085,8 +3099,11 @@ checkNewXProvided <- function(trainX, css_results){
             stop("newX must be a matrix or data.frame with the same columns as the X provided to css().", call. = FALSE)
         }
         newXProvided <- TRUE
-        trainX <- checkXInputResults(trainX, css_results$X)$newx
-        
+        xres <- checkXInputResults(trainX, css_results$X)
+        trainX <- xres$newx
+        trainX_feat_names <- xres$feat_names
+        rm(xres)
+
         n_train <- nrow(trainX)
         # A single-row newX is fine -- the design is just one row of cluster
         # representatives, and getCssPreds/cssPredict already accept a 1-row test
@@ -3103,7 +3120,8 @@ checkNewXProvided <- function(trainX, css_results){
     stopifnot(all(!is.na(trainX)))
     stopifnot(ncol(trainX) >= 2)
 
-    return(list(newX=trainX, newXProvided=newXProvided))
+    return(list(newX=trainX, newXProvided=newXProvided,
+        feat_names=trainX_feat_names))
 }
 ```
 
@@ -3141,7 +3159,6 @@ checkXInputResults <- function(newx, css_X){
     feat_names <- as.character(NA)
     if(!is.null(colnames(newx))){
         feat_names <- colnames(newx)
-        stopifnot(identical(feat_names, colnames(css_X)))
     } else{
         # In this case, newx has no column names, so same better be true of
         # css_X
@@ -3235,11 +3252,11 @@ checkXInputResults <- function(newx, css_X){
 #' @keywords internal
 #' @noRd
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
-    min_num_clusts=1, max_num_clusts=NA, newx=NA, weights=NULL){
+    min_num_clusts=1, max_num_clusts=NA, newx=NA, weights=NULL, validated=FALSE){
 
     # Check inputs
     ret <- checkFormCssDesignInputs(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts, newx)
+        min_num_clusts, max_num_clusts, newx, validated = validated)
 
     newx <- ret$newx
     max_num_clusts <- ret$max_num_clusts
@@ -3352,30 +3369,22 @@ formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
 #' @keywords internal
 #' @noRd
 checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
-    min_num_clusts, max_num_clusts, newx){    
+    min_num_clusts, max_num_clusts, newx, validated=FALSE){
     stopifnot(inherits(css_results, "cssr"))
 
-    if(length(newx) == 1){
-        if(is.na(newx)){
-            if(length(css_results$train_inds) == 0){
-                stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
-            }
-            newx <- css_results$X[css_results$train_inds, , drop = FALSE]
-            # feat_names <- colnames(newx)
-        } else{
-            results <- checkXInputResults(newx, css_results$X)
-
-            newx <- results$newx
-            # feat_names <- results$feat_names
-
-            rm(results)
+    if(length(newx) == 1 && is.na(newx)){
+        if(length(css_results$train_inds) == 0){
+            stop("If css was not provided with indices to set aside for model training, then newx must be provided to formCssDesign")
         }
+        newx <- css_results$X[css_results$train_inds, , drop = FALSE]
+    } else if(validated){
+        # newx already validated + coerced by the caller (getCssPreds via
+        # checkGetCssPredsInputs); skip the redundant checkXInputResults that
+        # otherwise re-emits the same name/NA warnings up to 4x/call (#153b).
+        stopifnot(is.matrix(newx))
     } else{
         results <- checkXInputResults(newx, css_results$X)
-
         newx <- results$newx
-        # feat_names <- results$feat_names
-
         rm(results)
     }
 
@@ -3500,14 +3509,16 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     # matrices of cluster representatives using information from css_results
     if(trainXProvided){
         train_X_clusters <- formCssDesign(css_results, weighting, cutoff,
-            min_num_clusts, max_num_clusts, newx=trainX, weights=sel_weights)
+            min_num_clusts, max_num_clusts, newx=trainX, weights=sel_weights,
+            validated=TRUE)
         if(!is.numeric(trainY) & !is.integer(trainY)){
             stop("The provided trainY must be real-valued, because predictions will be generated by ordinary least squares regression.")
         }
         y_train <- trainY
     } else{
         train_X_clusters <- formCssDesign(css_results, weighting, cutoff,
-            min_num_clusts, max_num_clusts, weights=sel_weights)
+            min_num_clusts, max_num_clusts, weights=sel_weights,
+            validated=TRUE)
         y_train <- css_results$y[css_results$train_inds]
         if(!is.numeric(y_train) & !is.integer(y_train)){
             stop("Can't generate predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression).")
@@ -3517,7 +3528,8 @@ getCssPreds <- function(css_results, testX, weighting="weighted_avg", cutoff=0,
     stopifnot(length(y_train) == nrow(train_X_clusters))
 
     testX_clusters <- formCssDesign(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts, newx=testX, weights=sel_weights)
+        min_num_clusts, max_num_clusts, newx=testX, weights=sel_weights,
+        validated=TRUE)
 
     stopifnot(ncol(testX_clusters) == ncol(train_X_clusters))
 
@@ -3685,14 +3697,23 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     trainX <- check_results$newX
     trainXProvided <- check_results$newXProvided
+    trainX_feat_names <- check_results$feat_names
 
     rm(check_results)
 
     n_train <- nrow(trainX)
 
+    # #153d: distinguish an omitted trainY (documented scalar-NA default) from a
+    # trainY that was PROVIDED but invalid (contains NA). The former falls back
+    # to css's train_inds; the latter must error rather than silently switch the
+    # data the model is fit on.
+    trainYProvided <- !(is.atomic(trainY) && length(trainY) == 1 && is.na(trainY))
     if(trainXProvided){
-        if(all(!is.na(trainY)) & length(trainY) > 1){
+        if(trainYProvided){
             stopifnot(is.numeric(trainY))
+            if(any(is.na(trainY))){
+                stop("The provided trainY contains missing (NA) values; trainY must be a complete real-valued response with one value per row of trainX.")
+            }
             stopifnot(n_train == length(trainY))
         } else{
             if(length(css_results$train_inds) == 0){
@@ -3705,7 +3726,7 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
         if(length(css_results$train_inds) == 0){
             stop("css was not provided with indices to set aside for model training (train_inds), so must provide both trainX and trainY in order to generate predictions")
         }
-        if(all(!is.na(trainY)) & length(trainY) > 1){
+        if(trainYProvided){
             warning("trainY provided but no trainX provided; instead, training model using the train_inds observations provided to css to set aside for model training.")
         }
     }
@@ -3728,23 +3749,28 @@ checkGetCssPredsInputs <- function(css_results, testX, weighting, cutoff,
 
     stopifnot(n >= 1)
     stopifnot(p == ncol(trainX))
-    # #142: re-attach trainX's names too -- checkNewXProvided strips them, so a
-    # data.frame trainX arrives here name-less while testX was re-named at :3607,
-    # spuriously tripping the warnings below and again downstream in
-    # formCssDesign(newx=trainX). trainX's names were already validated ==
-    # css_results$X inside checkNewXProvided, and p == ncol(trainX), so feat_names
-    # is the correct, length-safe, non-masking re-attachment.
-    if(all(!is.na(feat_names))){
-        colnames(trainX) <- feat_names
+    # #153a: restore trainX's OWN validated names (checkNewXProvided strips them),
+    # from the css object, independently of testX. The old #142 code derived them
+    # from testX, so a named trainX + unnamed testX stayed name-less and tripped a
+    # spurious downstream "no variable names" warning about a matrix the user named.
+    if(trainXProvided && all(!is.na(trainX_feat_names))){
+        colnames(trainX) <- colnames(css_results$X)
     }
-    if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
-        warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
-    }
-    if(is.null(colnames(trainX)) & !is.null(colnames(testX))){
-        warning("Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)")
-    }
-    if(!is.null(colnames(trainX)) & !is.null(colnames(testX))){
-        stopifnot(all(colnames(trainX) == colnames(testX)))
+    # #153c: only compare names when trainX was USER-provided. Guarding here both
+    # revives the previously-dead "testX but not trainX" branch (the old #142
+    # code always re-named trainX from testX, making it unsatisfiable) and
+    # suppresses a false "trainX but not testX" warning on the train_inds default
+    # path (where trainX is the internally-formed, unnamed train set).
+    if(trainXProvided){
+        if(!is.null(colnames(trainX)) & is.null(colnames(testX))){
+            warning("Column names were provided for trainX but not for testX (are you sure they both contain identical features in the same order?)")
+        }
+        if(is.null(colnames(trainX)) & !is.null(colnames(testX))){
+            warning("Column names were provided for testX but not for trainX (are you sure they both contain identical features in the same order?)")
+        }
+        if(!is.null(colnames(trainX)) & !is.null(colnames(testX))){
+            stopifnot(all(colnames(trainX) == colnames(testX)))
+        }
     }
 
     checkCutoff(cutoff)
@@ -4806,7 +4832,9 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
 #' (The length of list clusters is equal to the number of clusters.) All
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
-#' "cluster" of size 1). CAUTION: if the provided X is a data.frame that
+#' "cluster" of size 1). Any identical (duplicated) clusters will be removed,
+#' keeping the first occurrence and its name. CAUTION: if the provided X is a
+#' data.frame that
 #' contains a categorical feature with more than two levels, then the resulting
 #' matrix made from model.matrix will have a different number of columns than
 #' the provided data.frame, some of the feature numbers will change, and the
@@ -5567,7 +5595,9 @@ The two main disadvantages of these functions are flexibility and computational 
 #' vectors; each vector should contain the indices of a cluster of features (a
 #' subset of 1:p). (If there is only one cluster, clusters can either be a list
 #' of length 1 or an integer vector.) All of the provided clusters must be
-#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' non-overlapping. Any identical (duplicated) clusters will be removed, keeping
+#' the first occurrence and its name. Every feature not appearing in any cluster
+#' will be assumed
 #' to be unclustered (that is, they  will be treated as if they are in a
 #' "cluster" containing only themselves). If clusters is a list of length 0 (or
 #' a list only containing clusters of length 1), then css() returns the same
@@ -5724,7 +5754,9 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 #' vectors; each vector should contain the indices of a cluster of features (a
 #' subset of 1:p). (If there is only one cluster, clusters can either be a list
 #' of length 1 or an integer vector.) All of the provided clusters must be
-#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' non-overlapping. Any identical (duplicated) clusters will be removed, keeping
+#' the first occurrence and its name. Every feature not appearing in any cluster
+#' will be assumed
 #' to be unclustered (that is, they  will be treated as if they are in a
 #' "cluster" containing only themselves). If clusters is a list of length 0 (or
 #' a list only containing clusters of length 1), then css() returns the same
@@ -5840,7 +5872,7 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     # size by cross-validation
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
-            max_num_clusts <- getModelSize(X_train_selec[train_inds, ],
+            max_num_clusts <- getModelSize(X_train_selec[train_inds, , drop = FALSE],
                 y_train_selec[train_inds], css_results$clusters, alpha=alpha)
         }
     }
@@ -5937,7 +5969,9 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of 1:p). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. Any identical
+#' (duplicated) clusters will be removed, keeping the first occurrence and its
+#' name. Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves).
 #' CAUTION: if the provided X is a data.frame that contains a categorical
@@ -6380,7 +6414,9 @@ getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of 1:p). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. Any identical
+#' (duplicated) clusters will be removed, keeping the first occurrence and its
+#' name. Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves).
 #' CAUTION: if the provided X is a data.frame that contains a categorical
@@ -6625,9 +6661,9 @@ testthat::test_that("checkCssClustersInput works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
   
-  testthat::expect_error(checkCssClustersInput(list(2:3, 2:3)),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): the result is identical
+  # to passing the cluster only once.
+  testthat::expect_identical(checkCssClustersInput(list(2:3, 2:3)), list(2:3))
   
   testthat::expect_error(checkCssClustersInput(list(2:3, as.integer(NA))),
                          "!is.na(clusters) are not all TRUE",
@@ -6720,11 +6756,11 @@ testthat::test_that("checkFormatClustersInput works", {
                                                   y=NA, R=NA),
                          "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(checkFormatClustersInput(list(2:3, 2:3), p=10,
+  # Duplicate clusters are now silently removed (#156).
+  testthat::expect_identical(checkFormatClustersInput(list(2:3, 2:3), p=10,
                                   clust_names=NA, get_prototypes=FALSE, x=NA,
                                   y=NA, R=NA),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+                             list(2:3))
   
   testthat::expect_error(checkFormatClustersInput(list(2:3, as.integer(NA)),
                                                   p=10,
@@ -6964,9 +7000,16 @@ testthat::test_that("formatClusters works", {
   testthat::expect_error(formatClusters(list(3:7, 7:10), p=15),
                          "length(intersect(clusters[[i]], clusters[[j]])) == 0 is not TRUE",
                          fixed=TRUE)
-  testthat::expect_error(formatClusters(list(5:8, 5:8), p=9),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): dropping the duplicate
+  # 5:8 leaves the same 6 formatted clusters (5:8 plus five singletons) as
+  # passing 5:8 once, with multiple = FALSE and 5:8 appearing exactly once.
+  dedup_fc <- formatClusters(list(5:8, 5:8), p=9)
+  testthat::expect_identical(dedup_fc, formatClusters(list(5:8), p=9))
+  testthat::expect_equal(length(dedup_fc$clusters), 6)
+  testthat::expect_false(dedup_fc$multiple)
+  testthat::expect_equal(sum(vapply(dedup_fc$clusters,
+                                    function(z) identical(as.integer(z), 5:8),
+                                    logical(1))), 1)
 
   # Out-of-range cluster index is now caught up front by checkFormatClustersInput
   # (#104, L3) with a message naming the offending index and p, instead of the
@@ -8285,6 +8328,54 @@ testthat::test_that("css works", {
 
 })
 
+testthat::test_that("duplicate clusters are removed to match the docs (#156)", {
+  set.seed(9156)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  # (i) Unnamed duplicate cluster: css returns the same result as the
+  # deduplicated input (css is stochastic, so seed both calls identically).
+  set.seed(41)
+  res_dup <- css(X=x, y=y, lambda=0.01, clusters=list(1:2, 1:2),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  set.seed(41)
+  res_dedup <- css(X=x, y=y, lambda=0.01, clusters=list(1:2),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  testthat::expect_identical(res_dup, res_dedup)
+
+  # (ii) First name wins, DIRECT helper path (checkFormatClustersInput, finding
+  # 2): the length check now runs before the removal, so a named duplicate keeps
+  # the first occurrence and its name.
+  testthat::expect_identical(
+    checkFormatClustersInput(list(a=2:3, b=2:3), p=10, clust_names=c("a", "b"),
+                             get_prototypes=FALSE, x=NA, y=NA, R=NA),
+    list(a=2:3))
+
+  # (ii) First name wins, END-TO-END css path (checkCssInputs, finding 3): a
+  # named duplicate runs without error and keeps the first occurrence's name.
+  res_named <- css(X=x, y=y, lambda=0.01, clusters=list(myclust=2:3, dup=2:3),
+    fitfun=cssLasso, sampling_type="SS", B=13, prop_feats_remove=0,
+    train_inds=integer(), num_cores=1L)
+  testthat::expect_true("myclust" %in% names(res_named$clusters))
+  testthat::expect_false("dup" %in% names(res_named$clusters))
+
+  # (iii) cssSelect and cssPredict route through css -> checkCssInputs, so they
+  # inherit the fix: a named duplicate cluster runs without error.
+  sel <- cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3))
+  testthat::expect_identical(names(sel), c("selected_clusts", "selected_feats",
+                                           "weights"))
+
+  test_x <- matrix(stats::rnorm(5*11), nrow=5, ncol=11)
+  preds <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+                      clusters=list(myclust=2:3, dup=2:3))
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_equal(length(preds), 5)
+
+})
+
 testthat::test_that("css errors on an X containing NA (#74)", {
   set.seed(8642)
   X <- matrix(stats::rnorm(20 * 4), nrow = 20, ncol = 4)
@@ -9409,7 +9500,7 @@ testthat::test_that("checkXInputResults works", {
   # Try mismatching variable names
   colnames(x_new) <- LETTERS[2:6]
   testthat::expect_error(checkXInputResults(x_new, css_res_named$X),
-                           "identical(feat_names, colnames(css_X)) is not TRUE",
+                           "Provided feature names for newx do not match feature names provided to css",
                            fixed=TRUE)
   
   colnames(x_new) <- LETTERS[1:5]
@@ -9497,14 +9588,17 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(x_new, css_res)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res$newX))
   testthat::expect_true(is.matrix(res$newX))
   testthat::expect_equal(nrow(res$newX), 8)
   testthat::expect_equal(ncol(res$newX), 5)
   testthat::expect_null(colnames(res$newX))
-  
+  # #153a: an unnamed newx yields feat_names == NA (scalar).
+  testthat::expect_true(is.na(res$feat_names))
+  testthat::expect_equal(length(res$feat_names), 1)
+
   testthat::expect_true(is.logical(res$newXProvided))
   testthat::expect_equal(length(res$newXProvided), 1)
   testthat::expect_true(!is.na(res$newXProvided))
@@ -9519,7 +9613,7 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(x_new, css_res_train)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(all(abs(x_new - res$newX) < 10^(-9)))
   testthat::expect_true(res$newXProvided)
@@ -9529,7 +9623,7 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(NA, css_res_train)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res$newX))
   testthat::expect_true(is.matrix(res$newX))
@@ -9564,7 +9658,7 @@ testthat::test_that("checkNewXProvided works", {
   # Try mismatching variable names
   colnames(x_new) <- LETTERS[2:6]
   testthat::expect_error(checkNewXProvided(x_new, css_res_named),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:5]
@@ -9572,10 +9666,12 @@ testthat::test_that("checkNewXProvided works", {
   res_named <- checkNewXProvided(x_new, css_res_named)
 
   testthat::expect_true(is.list(res_named))
-  testthat::expect_identical(names(res_named), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_named), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(all(abs(x_new - res_named$newX) < 10^(-9)))
   testthat::expect_true(res_named$newXProvided)
+  # #153a: a named newx yields feat_names == the (validated) column names.
+  testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
 
   # Try data.frame input to css and checkNewXProvided
 
@@ -9591,7 +9687,7 @@ testthat::test_that("checkNewXProvided works", {
   res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
 
   testthat::expect_true(is.list(res_df))
-  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res_df$newX))
   testthat::expect_true(is.matrix(res_df$newX))
@@ -9617,7 +9713,7 @@ testthat::test_that("checkNewXProvided works", {
   res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
 
   testthat::expect_true(is.list(res_df))
-  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res_df$newX))
   testthat::expect_true(is.matrix(res_df$newX))
@@ -9747,7 +9843,7 @@ testthat::test_that("checkFormCssDesignInputs works", {
                                                   cutoff=0.2, min_num_clusts=1,
                                                   max_num_clusts=1,
                                                   newx=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -10063,7 +10159,7 @@ testthat::test_that("formCssDesign works", {
                                        weighting="weighted_avg", cutoff=0.2,
                                        min_num_clusts=1, max_num_clusts=1,
                                        newx=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -10278,7 +10374,7 @@ testthat::test_that("getCssDesign works", {
                                       weighting="weighted_avg", cutoff=0.2,
                                       min_num_clusts=1, max_num_clusts=1,
                                       newX=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -10411,6 +10507,30 @@ testthat::test_that("getCssDesign works", {
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
   
+})
+```
+
+A realistic column misalignment -- same-named columns supplied in a different
+order -- surfaces the curated name-mismatch message rather than a raw internal
+`identical(...)` assertion (issue #153, item e).
+
+```{r}
+testthat::test_that("getCssDesign: reordered same-named columns give the curated name-mismatch error (#153e)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  # Reordered (same-named) columns used to surface the raw internal
+  # `identical(feat_names, colnames(css_X)) is not TRUE` assertion instead of the
+  # curated, user-facing message.
+  testthat::expect_error(
+    getCssDesign(res_ti, newX = X[41:60, c(2, 1, 3:8)]),
+    "Provided feature names for newx do not match", fixed = TRUE)
 })
 ```
 
@@ -10725,7 +10845,7 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                 weighting="weighted_avg", cutoff=0,
                                 min_num_clusts=1, max_num_clusts=NA,
                                 trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_train) <- LETTERS[1:6]
@@ -10734,7 +10854,7 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                 weighting="sparse", cutoff=0,
                                 min_num_clusts=1, max_num_clusts=NA,
                                 trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_pred) <- LETTERS[1:6]
@@ -11058,14 +11178,14 @@ testthat::test_that("getCssPreds works", {
   colnames(x_pred) <- LETTERS[1:6]
   testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
                                      trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_train) <- LETTERS[1:6]
   colnames(x_pred) <- LETTERS[2:7]
   testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
                                      trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_pred) <- LETTERS[1:6]
@@ -11218,7 +11338,7 @@ testthat::test_that("getCssPreds data.frame path is warning-free and matches mat
   colnames(Xd_train_bad) <- paste0("W", 1:p)
   testthat::expect_error(
     getCssPreds(css_res, testX=Xd_test, trainX=Xd_train_bad, trainY=y_train),
-    "identical(feat_names, colnames(css_X)) is not TRUE", fixed=TRUE)
+    "Provided feature names for newx do not match feature names provided to css", fixed=TRUE)
 })
 ```
 
@@ -11316,6 +11436,165 @@ testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
   testthat::expect_warning(
     getCssPreds(css_with_train, testX = testX, trainY = c(1, 2, 3)),
     "trainY provided but no trainX", fixed = TRUE)
+})
+```
+
+The prediction-path input checks emit one warning per genuinely-ambiguous input,
+and never a spurious or duplicated one (issue #153, items a--c). trainX keeps its
+own validated names (restored from the css object, not from testX), the design
+validation runs once rather than up to four times per call, and the trainX/testX
+name-asymmetry warnings are both live and correctly directional.
+
+```{r}
+testthat::test_that("getCssPreds: named trainX + unnamed testX warns only about testX (#153a)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_named  <- X[21:40, ]
+  testX_unnamed <- X[41:60, ]; colnames(testX_unnamed) <- NULL
+  trainY        <- y[21:40]
+
+  ww <- character()
+  preds <- withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed, trainX = trainX_named,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+
+  # A named trainX must NOT provoke a spurious "no variable names" warning about
+  # itself: exactly the two legitimate testX warnings fire (one per issue).
+  testthat::expect_length(ww, 2)
+  testthat::expect_equal(
+    sum(grepl("New X provided had no variable names", ww, fixed = TRUE)), 1)
+  testthat::expect_equal(
+    sum(grepl("Column names were provided for trainX but not for testX", ww,
+              fixed = TRUE)), 1)
+  testthat::expect_false(
+    any(grepl("Column names were provided for testX but not for trainX", ww,
+              fixed = TRUE)))
+  testthat::expect_true(is.numeric(preds))
+})
+```
+
+```{r}
+testthat::test_that("getCssPreds: unnamed trainX + unnamed testX warns once per matrix (#153b)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_unnamed <- X[21:40, ]; colnames(trainX_unnamed) <- NULL
+  testX_unnamed  <- X[41:60, ]; colnames(testX_unnamed) <- NULL
+  trainY         <- y[21:40]
+
+  ww <- character()
+  withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed, trainX = trainX_unnamed,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  # Down from 4 identical warnings (one per redundant re-validation) to exactly
+  # one per unnamed matrix.
+  testthat::expect_length(ww, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names", ww,
+                                  fixed = TRUE)))
+
+  # (b') default (train_inds) path + unnamed testX: no FALSE trainX asymmetry
+  # warning, and it still predicts.
+  ww2 <- character()
+  preds <- withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed),
+    warning = function(w){
+      ww2 <<- c(ww2, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  testthat::expect_false(
+    any(grepl("Column names were provided for trainX but not for testX", ww2,
+              fixed = TRUE)))
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_length(preds, 20)
+})
+```
+
+```{r}
+testthat::test_that("getCssPreds: unnamed trainX + named testX fires the testX asymmetry warning (#153c)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_unnamed <- X[21:40, ]; colnames(trainX_unnamed) <- NULL
+  testX_named    <- X[41:60, ]
+  trainY         <- y[21:40]
+
+  ww <- character()
+  withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_named, trainX = trainX_unnamed,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  # This asymmetry warning was previously dead: the old code always re-named
+  # trainX from testX, making its condition unsatisfiable.
+  testthat::expect_true(
+    any(grepl("Column names were provided for testX but not for trainX", ww,
+              fixed = TRUE)))
+})
+```
+
+A trainY that is PROVIDED but invalid (contains `NA`) must error rather than be
+silently reclassified as "not provided" and quietly switch the model to the
+train_inds data (issue #153, item d).
+
+```{r}
+testthat::test_that("getCssPreds: a provided-but-NA trainY errors, never silently switches data (#153d)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti   <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                  B = 10, train_inds = 21:40)
+  res_noti <- css(X = X[1:20, ], y = y[1:20], lambda = 0.01, clusters = clusters,
+                  B = 10)
+
+  trainX_named <- X[21:40, ]
+  testX_named  <- X[41:60, ]
+  trainY       <- y[21:40]
+  trainY_na    <- trainY; trainY_na[5] <- NA
+
+  # With train_inds available: must ERROR on the NA rather than silently fall
+  # back to the train_inds data (the old silent-swap + false "no trainY" warning).
+  testthat::expect_error(
+    getCssPreds(res_ti, testX = testX_named, trainX = trainX_named,
+                trainY = trainY_na),
+    "contains missing (NA)", fixed = TRUE)
+  # Without train_inds: the SAME NA error, not the misleading "must provide both".
+  testthat::expect_error(
+    getCssPreds(res_noti, testX = testX_named, trainX = trainX_named,
+                trainY = trainY_na),
+    "contains missing (NA)", fixed = TRUE)
+  # A valid trainX + trainY still predicts (no regression).
+  preds <- getCssPreds(res_ti, testX = testX_named, trainX = trainX_named,
+                       trainY = trainY)
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_length(preds, 20)
 })
 ```
 
@@ -12766,9 +13045,14 @@ testthat::test_that("getModelSize works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
   
-  testthat::expect_error(getModelSize(X=x, y=y, clusters=list(5:8, 5:8)),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156): the model size for a
+  # duplicated cluster equals that of the deduplicated input. getModelSize is
+  # stochastic (cv.glmnet), so seed both calls identically.
+  set.seed(15678)
+  dup_ms <- getModelSize(X=x, y=y, clusters=list(5:8, 5:8))
+  set.seed(15678)
+  dedup_ms <- getModelSize(X=x, y=y, clusters=list(5:8))
+  testthat::expect_equal(dup_ms, dedup_ms)
 
   # Out-of-range cluster index now caught up front by checkFormatClustersInput
   # (#104, L3); x has 11 columns, so index 50 is out of range.
@@ -14326,6 +14610,39 @@ testthat::test_that("cssPredict works", {
 })
 ```
 
+A length-1 `train_inds` used to collapse `X_train_selec[train_inds, ]` to a
+vector, tripping `getModelSize`'s cryptic `is.matrix(X) | is.data.frame(X)`
+assertion. With `drop = FALSE` it stays a one-row matrix and the error instead
+points informatively at the data (issue #153, item f).
+
+```{r}
+testthat::test_that("cssPredict: length-1 train_inds no longer hits the cryptic is.matrix assertion (#153f)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+
+  # A length-1 train_inds leaves a single training row, so getModelSize's glmnet
+  # cross-validation fails informatively on a constant response -- NOT with the
+  # old cryptic is.matrix stopifnot from the dropped-to-vector subset. Warnings
+  # (e.g. glmnet convergence) are suppressed so we assert on the stop() message.
+  err <- tryCatch(
+    suppressWarnings(
+      cssPredict(X_train_selec = X[1:20, ], y_train_selec = y[1:20],
+                 X_test = X[41:60, ], clusters = clusters, lambda = 0.01,
+                 train_inds = 1L)),
+    error = function(e) conditionMessage(e))
+  testthat::expect_type(err, "character")
+  testthat::expect_true(
+    grepl("y is constant; gaussian glmnet fails at standardization step", err,
+          fixed = TRUE))
+  testthat::expect_false(
+    grepl("is.matrix(X) | is.data.frame(X) is not TRUE", err, fixed = TRUE))
+})
+```
+
 # Tests for competitor methods
 
 Tests for `processClusterLassoInputs()`:
@@ -14502,11 +14819,14 @@ testthat::test_that("processClusterLassoInputs works", {
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.",
                          fixed=TRUE)
 
-  testthat::expect_error(processClusterLassoInputs(X=x, y=y,
+  # Duplicate clusters are now silently removed (#156): identical to passing the
+  # cluster once (processClusterLassoInputs is deterministic here).
+  testthat::expect_identical(processClusterLassoInputs(X=x, y=y,
                                                    clusters=list(2:3, 2:3),
                                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+                             processClusterLassoInputs(X=x, y=y,
+                                                   clusters=list(2:3),
+                                                   nlambda=10))
 
   testthat::expect_error(processClusterLassoInputs(X=x, y=y,
                                                    clusters=list(1:4,
@@ -15906,10 +16226,13 @@ testthat::test_that("protolasso works", {
                                     nlambda=10),
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
   
-  testthat::expect_error(protolasso(X=x, y=y, clusters=list(2:3, 2:3),
-                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156); the fitted result for a
+  # duplicated cluster is identical to passing the cluster once (seed both).
+  set.seed(921)
+  dup_pl <- protolasso(X=x, y=y, clusters=list(2:3, 2:3), nlambda=10)
+  set.seed(921)
+  dedup_pl <- protolasso(X=x, y=y, clusters=list(2:3), nlambda=10)
+  testthat::expect_identical(dup_pl, dedup_pl)
   
   testthat::expect_error(protolasso(X=x, y=y,
                                     clusters=list(1:4, as.integer(NA)),
@@ -16294,10 +16617,13 @@ testthat::test_that("clusterRepLasso works", {
                                     nlambda=10),
                          "Overlapping clusters detected; clusters must be non-overlapping. Overlapping clusters: 1, 2.", fixed=TRUE)
 
-  testthat::expect_error(clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3),
-                                    nlambda=10),
-                         "length(clusters) == length(unique(clusters)) is not TRUE",
-                         fixed=TRUE)
+  # Duplicate clusters are now silently removed (#156); identical to passing the
+  # cluster once (seed both).
+  set.seed(921)
+  dup_crl <- clusterRepLasso(X=x, y=y, clusters=list(2:3, 2:3), nlambda=10)
+  set.seed(921)
+  dedup_crl <- clusterRepLasso(X=x, y=y, clusters=list(2:3), nlambda=10)
+  testthat::expect_identical(dup_crl, dedup_crl)
 
   testthat::expect_error(clusterRepLasso(X=x, y=y,
                                     clusters=list(1:4, as.integer(NA)),

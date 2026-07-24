@@ -53,11 +53,11 @@
 #' @keywords internal
 #' @noRd
 formCssDesign <- function(css_results, weighting="weighted_avg", cutoff=0,
-    min_num_clusts=1, max_num_clusts=NA, newx=NA, weights=NULL){
+    min_num_clusts=1, max_num_clusts=NA, newx=NA, weights=NULL, validated=FALSE){
 
     # Check inputs
     ret <- checkFormCssDesignInputs(css_results, weighting, cutoff,
-        min_num_clusts, max_num_clusts, newx)
+        min_num_clusts, max_num_clusts, newx, validated = validated)
 
     newx <- ret$newx
     max_num_clusts <- ret$max_num_clusts
