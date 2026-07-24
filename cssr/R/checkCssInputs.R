@@ -19,7 +19,9 @@
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of `1:p`). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. If the same cluster is
+#' provided more than once, the duplicates will be removed, keeping only the
+#' first occurrence (and its name). Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves). If
 #' clusters is a list of length 0 (or a list only containing clusters of length
@@ -83,7 +85,8 @@
 #' originally provided as a data.frame, and with feature names removed if they
 #' had been provided.}\item{clusters}{A list of integer vectors; each vector
 #' will contain the indices of a cluster of features. Any duplicated clusters
-#' provided in the input will be removed.}
+#' provided in the input will be removed (when duplicated clusters carry
+#' different names, the first occurrence's name is kept).}
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
@@ -92,11 +95,6 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     stopifnot(is.matrix(X) | is.data.frame(X))
     checkNoNAs(X, "X")
-
-    clust_names <- as.character(NA)
-    if(!is.null(names(clusters)) & is.list(clusters)){
-        clust_names <- names(clusters)
-    }
 
     # Check if x is a matrix; if it's a data.frame, convert to matrix.
     X <- coerceDataFrameToMatrix(X, clusters)
@@ -130,6 +128,14 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
 
     # Check clusters argument
     clusters <- checkCssClustersInput(clusters)
+
+    # Derive cluster names AFTER checkCssClustersInput (which may drop duplicate
+    # clusters), so the names line up with the deduplicated list passed to
+    # formatClusters below (#156).
+    clust_names <- as.character(NA)
+    if(!is.null(names(clusters)) & is.list(clusters)){
+        clust_names <- names(clusters)
+    }
 
     ### Format clusters into a list where all features are in exactly one
     # cluster (any unclustered features are put in their own "cluster" of size

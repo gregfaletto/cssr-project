@@ -20,7 +20,9 @@
 #' (The length of list clusters is equal to the number of clusters.) All
 #' identified clusters must be non-overlapping, and all features must appear in
 #' exactly one cluster (any unclustered features should be in their own
-#' "cluster" of size 1). CAUTION: if the provided X is a data.frame that
+#' "cluster" of size 1). Any identical (duplicated) clusters will be removed,
+#' keeping the first occurrence and its name. CAUTION: if the provided X is a
+#' data.frame that
 #' contains a categorical feature with more than two levels, then the resulting
 #' matrix made from model.matrix will have a different number of columns than
 #' the provided data.frame, some of the feature numbers will change, and the

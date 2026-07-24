@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="5 Other useful functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-07-23">
+<meta name="date" content="2026-07-24">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1179,110 +1179,112 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb72-18"><a href="other-useful.html#cb72-18" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
 <span id="cb72-19"><a href="other-useful.html#cb72-19" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
 <span id="cb72-20"><a href="other-useful.html#cb72-20" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
-<span id="cb72-21"><a href="other-useful.html#cb72-21" tabindex="-1"></a><span class="co">#' "cluster" of size 1). </span><span class="al">CAUTION</span><span class="co">: if the provided X is a data.frame that</span></span>
-<span id="cb72-22"><a href="other-useful.html#cb72-22" tabindex="-1"></a><span class="co">#' contains a categorical feature with more than two levels, then the resulting</span></span>
-<span id="cb72-23"><a href="other-useful.html#cb72-23" tabindex="-1"></a><span class="co">#' matrix made from model.matrix will have a different number of columns than</span></span>
-<span id="cb72-24"><a href="other-useful.html#cb72-24" tabindex="-1"></a><span class="co">#' the provided data.frame, some of the feature numbers will change, and the</span></span>
-<span id="cb72-25"><a href="other-useful.html#cb72-25" tabindex="-1"></a><span class="co">#' clusters argument will not work properly (in the current version of the</span></span>
-<span id="cb72-26"><a href="other-useful.html#cb72-26" tabindex="-1"></a><span class="co">#' package). To get correct results in this case, please use model.matrix to</span></span>
-<span id="cb72-27"><a href="other-useful.html#cb72-27" tabindex="-1"></a><span class="co">#' convert the data.frame to a numeric matrix on your own, then provide this</span></span>
-<span id="cb72-28"><a href="other-useful.html#cb72-28" tabindex="-1"></a><span class="co">#' matrix and cluster assignments with respect to this matrix.</span></span>
-<span id="cb72-29"><a href="other-useful.html#cb72-29" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter for the</span></span>
-<span id="cb72-30"><a href="other-useful.html#cb72-30" tabindex="-1"></a><span class="co">#' cross-validated fit used to estimate the model size. Must be in `(0, 1]`.</span></span>
-<span id="cb72-31"><a href="other-useful.html#cb72-31" tabindex="-1"></a><span class="co">#' Default is 1 (in which case the penalty is the lasso). Set alpha to match</span></span>
-<span id="cb72-32"><a href="other-useful.html#cb72-32" tabindex="-1"></a><span class="co">#' the alpha used for feature selection so the model-size estimate is</span></span>
-<span id="cb72-33"><a href="other-useful.html#cb72-33" tabindex="-1"></a><span class="co">#' consistent with the elastic-net selection (see `cssSelect` / `cssPredict`).</span></span>
-<span id="cb72-34"><a href="other-useful.html#cb72-34" tabindex="-1"></a><span class="co">#' @return An integer; the estimated size of the model. The minimum returned</span></span>
-<span id="cb72-35"><a href="other-useful.html#cb72-35" tabindex="-1"></a><span class="co">#' value is 1, even if the lasso with cross-validation chose no features.</span></span>
-<span id="cb72-36"><a href="other-useful.html#cb72-36" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb72-37"><a href="other-useful.html#cb72-37" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
-<span id="cb72-38"><a href="other-useful.html#cb72-38" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
-<span id="cb72-39"><a href="other-useful.html#cb72-39" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
-<span id="cb72-40"><a href="other-useful.html#cb72-40" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb72-41"><a href="other-useful.html#cb72-41" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb72-42"><a href="other-useful.html#cb72-42" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb72-43"><a href="other-useful.html#cb72-43" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb72-44"><a href="other-useful.html#cb72-44" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb72-45"><a href="other-useful.html#cb72-45" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#getModelSize">getModelSize</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
-<span id="cb72-46"><a href="other-useful.html#cb72-46" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb72-47"><a href="other-useful.html#cb72-47" tabindex="-1"></a><span id="getModelSize">getModelSize</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, <span class="at">alpha =</span> <span class="dv">1</span>){</span>
-<span id="cb72-48"><a href="other-useful.html#cb72-48" tabindex="-1"></a></span>
-<span id="cb72-49"><a href="other-useful.html#cb72-49" tabindex="-1"></a>    <span class="co"># Validate alpha (a single number in (0, 1]). alpha is threaded into the</span></span>
-<span id="cb72-50"><a href="other-useful.html#cb72-50" tabindex="-1"></a>    <span class="co"># cv.glmnet fit below so the model-size estimate uses the same elastic-net</span></span>
-<span id="cb72-51"><a href="other-useful.html#cb72-51" tabindex="-1"></a>    <span class="co"># mixing as feature selection.</span></span>
-<span id="cb72-52"><a href="other-useful.html#cb72-52" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
-<span id="cb72-53"><a href="other-useful.html#cb72-53" tabindex="-1"></a></span>
-<span id="cb72-54"><a href="other-useful.html#cb72-54" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
-<span id="cb72-55"><a href="other-useful.html#cb72-55" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
-<span id="cb72-56"><a href="other-useful.html#cb72-56" tabindex="-1"></a></span>
-<span id="cb72-57"><a href="other-useful.html#cb72-57" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
-<span id="cb72-58"><a href="other-useful.html#cb72-58" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
-<span id="cb72-59"><a href="other-useful.html#cb72-59" tabindex="-1"></a></span>
-<span id="cb72-60"><a href="other-useful.html#cb72-60" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
-<span id="cb72-61"><a href="other-useful.html#cb72-61" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
-<span id="cb72-62"><a href="other-useful.html#cb72-62" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb72-63"><a href="other-useful.html#cb72-63" tabindex="-1"></a></span>
-<span id="cb72-64"><a href="other-useful.html#cb72-64" tabindex="-1"></a>    <span class="co"># Since the model size will be determined by cross-validation, the provided</span></span>
-<span id="cb72-65"><a href="other-useful.html#cb72-65" tabindex="-1"></a>    <span class="co"># y must be real-valued and finite (this should be checked internally in</span></span>
-<span id="cb72-66"><a href="other-useful.html#cb72-66" tabindex="-1"></a>    <span class="co"># other functions before getModelSize is called, but this check is here just</span></span>
-<span id="cb72-67"><a href="other-useful.html#cb72-67" tabindex="-1"></a>    <span class="co"># in case).</span></span>
-<span id="cb72-68"><a href="other-useful.html#cb72-68" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y, <span class="st">"y"</span>)</span>
-<span id="cb72-69"><a href="other-useful.html#cb72-69" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
-<span id="cb72-70"><a href="other-useful.html#cb72-70" tabindex="-1"></a></span>
-<span id="cb72-71"><a href="other-useful.html#cb72-71" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
-<span id="cb72-72"><a href="other-useful.html#cb72-72" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
-<span id="cb72-73"><a href="other-useful.html#cb72-73" tabindex="-1"></a></span>
-<span id="cb72-74"><a href="other-useful.html#cb72-74" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
-<span id="cb72-75"><a href="other-useful.html#cb72-75" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
-<span id="cb72-76"><a href="other-useful.html#cb72-76" tabindex="-1"></a>    <span class="co"># 1).</span></span>
-<span id="cb72-77"><a href="other-useful.html#cb72-77" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
-<span id="cb72-78"><a href="other-useful.html#cb72-78" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
-<span id="cb72-79"><a href="other-useful.html#cb72-79" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
-<span id="cb72-80"><a href="other-useful.html#cb72-80" tabindex="-1"></a>    }</span>
-<span id="cb72-81"><a href="other-useful.html#cb72-81" tabindex="-1"></a></span>
-<span id="cb72-82"><a href="other-useful.html#cb72-82" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
-<span id="cb72-83"><a href="other-useful.html#cb72-83" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
-<span id="cb72-84"><a href="other-useful.html#cb72-84" tabindex="-1"></a></span>
-<span id="cb72-85"><a href="other-useful.html#cb72-85" tabindex="-1"></a>    X_size <span class="ot">&lt;-</span> X</span>
+<span id="cb72-21"><a href="other-useful.html#cb72-21" tabindex="-1"></a><span class="co">#' "cluster" of size 1). Any identical (duplicated) clusters will be removed,</span></span>
+<span id="cb72-22"><a href="other-useful.html#cb72-22" tabindex="-1"></a><span class="co">#' keeping the first occurrence and its name. </span><span class="al">CAUTION</span><span class="co">: if the provided X is a</span></span>
+<span id="cb72-23"><a href="other-useful.html#cb72-23" tabindex="-1"></a><span class="co">#' data.frame that</span></span>
+<span id="cb72-24"><a href="other-useful.html#cb72-24" tabindex="-1"></a><span class="co">#' contains a categorical feature with more than two levels, then the resulting</span></span>
+<span id="cb72-25"><a href="other-useful.html#cb72-25" tabindex="-1"></a><span class="co">#' matrix made from model.matrix will have a different number of columns than</span></span>
+<span id="cb72-26"><a href="other-useful.html#cb72-26" tabindex="-1"></a><span class="co">#' the provided data.frame, some of the feature numbers will change, and the</span></span>
+<span id="cb72-27"><a href="other-useful.html#cb72-27" tabindex="-1"></a><span class="co">#' clusters argument will not work properly (in the current version of the</span></span>
+<span id="cb72-28"><a href="other-useful.html#cb72-28" tabindex="-1"></a><span class="co">#' package). To get correct results in this case, please use model.matrix to</span></span>
+<span id="cb72-29"><a href="other-useful.html#cb72-29" tabindex="-1"></a><span class="co">#' convert the data.frame to a numeric matrix on your own, then provide this</span></span>
+<span id="cb72-30"><a href="other-useful.html#cb72-30" tabindex="-1"></a><span class="co">#' matrix and cluster assignments with respect to this matrix.</span></span>
+<span id="cb72-31"><a href="other-useful.html#cb72-31" tabindex="-1"></a><span class="co">#' @param alpha Numeric; the elastic net mixing parameter for the</span></span>
+<span id="cb72-32"><a href="other-useful.html#cb72-32" tabindex="-1"></a><span class="co">#' cross-validated fit used to estimate the model size. Must be in `(0, 1]`.</span></span>
+<span id="cb72-33"><a href="other-useful.html#cb72-33" tabindex="-1"></a><span class="co">#' Default is 1 (in which case the penalty is the lasso). Set alpha to match</span></span>
+<span id="cb72-34"><a href="other-useful.html#cb72-34" tabindex="-1"></a><span class="co">#' the alpha used for feature selection so the model-size estimate is</span></span>
+<span id="cb72-35"><a href="other-useful.html#cb72-35" tabindex="-1"></a><span class="co">#' consistent with the elastic-net selection (see `cssSelect` / `cssPredict`).</span></span>
+<span id="cb72-36"><a href="other-useful.html#cb72-36" tabindex="-1"></a><span class="co">#' @return An integer; the estimated size of the model. The minimum returned</span></span>
+<span id="cb72-37"><a href="other-useful.html#cb72-37" tabindex="-1"></a><span class="co">#' value is 1, even if the lasso with cross-validation chose no features.</span></span>
+<span id="cb72-38"><a href="other-useful.html#cb72-38" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb72-39"><a href="other-useful.html#cb72-39" tabindex="-1"></a><span class="co">#' @references Reid, S., &amp; Tibshirani, R. (2016). Sparse regression and marginal</span></span>
+<span id="cb72-40"><a href="other-useful.html#cb72-40" tabindex="-1"></a><span class="co">#' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.</span></span>
+<span id="cb72-41"><a href="other-useful.html#cb72-41" tabindex="-1"></a><span class="co">#' \url{https://doi.org/10.1093/biostatistics/kxv049}.</span></span>
+<span id="cb72-42"><a href="other-useful.html#cb72-42" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb72-43"><a href="other-useful.html#cb72-43" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb72-44"><a href="other-useful.html#cb72-44" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb72-45"><a href="other-useful.html#cb72-45" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb72-46"><a href="other-useful.html#cb72-46" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb72-47"><a href="other-useful.html#cb72-47" tabindex="-1"></a><span class="co">#' <a href="other-useful.html#getModelSize">getModelSize</a>(X = data$X, y = data$y, clusters = clusters)</span></span>
+<span id="cb72-48"><a href="other-useful.html#cb72-48" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb72-49"><a href="other-useful.html#cb72-49" tabindex="-1"></a><span id="getModelSize">getModelSize</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, clusters, <span class="at">alpha =</span> <span class="dv">1</span>){</span>
+<span id="cb72-50"><a href="other-useful.html#cb72-50" tabindex="-1"></a></span>
+<span id="cb72-51"><a href="other-useful.html#cb72-51" tabindex="-1"></a>    <span class="co"># Validate alpha (a single number in (0, 1]). alpha is threaded into the</span></span>
+<span id="cb72-52"><a href="other-useful.html#cb72-52" tabindex="-1"></a>    <span class="co"># cv.glmnet fit below so the model-size estimate uses the same elastic-net</span></span>
+<span id="cb72-53"><a href="other-useful.html#cb72-53" tabindex="-1"></a>    <span class="co"># mixing as feature selection.</span></span>
+<span id="cb72-54"><a href="other-useful.html#cb72-54" tabindex="-1"></a>    <a href="css.html#checkAlpha">checkAlpha</a>(alpha)</span>
+<span id="cb72-55"><a href="other-useful.html#cb72-55" tabindex="-1"></a></span>
+<span id="cb72-56"><a href="other-useful.html#cb72-56" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X) <span class="sc">|</span> <span class="fu">is.data.frame</span>(X))</span>
+<span id="cb72-57"><a href="other-useful.html#cb72-57" tabindex="-1"></a>    <a href="css.html#checkNoNAs">checkNoNAs</a>(X, <span class="st">"X"</span>)</span>
+<span id="cb72-58"><a href="other-useful.html#cb72-58" tabindex="-1"></a></span>
+<span id="cb72-59"><a href="other-useful.html#cb72-59" tabindex="-1"></a>    <span class="co"># Check if x is a matrix; if it's a data.frame, convert to matrix.</span></span>
+<span id="cb72-60"><a href="other-useful.html#cb72-60" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <a href="css.html#coerceDataFrameToMatrix">coerceDataFrameToMatrix</a>(X, clusters)</span>
+<span id="cb72-61"><a href="other-useful.html#cb72-61" tabindex="-1"></a></span>
+<span id="cb72-62"><a href="other-useful.html#cb72-62" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(X))</span>
+<span id="cb72-63"><a href="other-useful.html#cb72-63" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(X) <span class="sc">|</span> <span class="fu">is.integer</span>(X))</span>
+<span id="cb72-64"><a href="other-useful.html#cb72-64" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb72-65"><a href="other-useful.html#cb72-65" tabindex="-1"></a></span>
+<span id="cb72-66"><a href="other-useful.html#cb72-66" tabindex="-1"></a>    <span class="co"># Since the model size will be determined by cross-validation, the provided</span></span>
+<span id="cb72-67"><a href="other-useful.html#cb72-67" tabindex="-1"></a>    <span class="co"># y must be real-valued and finite (this should be checked internally in</span></span>
+<span id="cb72-68"><a href="other-useful.html#cb72-68" tabindex="-1"></a>    <span class="co"># other functions before getModelSize is called, but this check is here just</span></span>
+<span id="cb72-69"><a href="other-useful.html#cb72-69" tabindex="-1"></a>    <span class="co"># in case).</span></span>
+<span id="cb72-70"><a href="other-useful.html#cb72-70" tabindex="-1"></a>    <a href="css.html#checkFiniteY">checkFiniteY</a>(y, <span class="st">"y"</span>)</span>
+<span id="cb72-71"><a href="other-useful.html#cb72-71" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y) <span class="sc">==</span> n)</span>
+<span id="cb72-72"><a href="other-useful.html#cb72-72" tabindex="-1"></a></span>
+<span id="cb72-73"><a href="other-useful.html#cb72-73" tabindex="-1"></a>    <span class="co"># Check clusters argument</span></span>
+<span id="cb72-74"><a href="other-useful.html#cb72-74" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#checkCssClustersInput">checkCssClustersInput</a>(clusters)</span>
+<span id="cb72-75"><a href="other-useful.html#cb72-75" tabindex="-1"></a></span>
+<span id="cb72-76"><a href="other-useful.html#cb72-76" tabindex="-1"></a>    <span class="do">### Format clusters into a list where all features are in exactly one</span></span>
+<span id="cb72-77"><a href="other-useful.html#cb72-77" tabindex="-1"></a>    <span class="co"># cluster (any unclustered features are put in their own "cluster" of size</span></span>
+<span id="cb72-78"><a href="other-useful.html#cb72-78" tabindex="-1"></a>    <span class="co"># 1).</span></span>
+<span id="cb72-79"><a href="other-useful.html#cb72-79" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">as.character</span>(<span class="cn">NA</span>)</span>
+<span id="cb72-80"><a href="other-useful.html#cb72-80" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(clusters)) <span class="sc">&amp;</span> <span class="fu">is.list</span>(clusters)){</span>
+<span id="cb72-81"><a href="other-useful.html#cb72-81" tabindex="-1"></a>        clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(clusters)</span>
+<span id="cb72-82"><a href="other-useful.html#cb72-82" tabindex="-1"></a>    }</span>
+<span id="cb72-83"><a href="other-useful.html#cb72-83" tabindex="-1"></a></span>
+<span id="cb72-84"><a href="other-useful.html#cb72-84" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> <a href="css.html#formatClusters">formatClusters</a>(clusters, <span class="at">p=</span><span class="fu">ncol</span>(X),</span>
+<span id="cb72-85"><a href="other-useful.html#cb72-85" tabindex="-1"></a>        <span class="at">clust_names=</span>clust_names)<span class="sc">$</span>clusters</span>
 <span id="cb72-86"><a href="other-useful.html#cb72-86" tabindex="-1"></a></span>
-<span id="cb72-87"><a href="other-useful.html#cb72-87" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb72-88"><a href="other-useful.html#cb72-88" tabindex="-1"></a>        <span class="co"># Create modified design matrix by dropping all but one feature from</span></span>
-<span id="cb72-89"><a href="other-useful.html#cb72-89" tabindex="-1"></a>        <span class="co"># each cluster</span></span>
-<span id="cb72-90"><a href="other-useful.html#cb72-90" tabindex="-1"></a>        feats_to_drop <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb72-91"><a href="other-useful.html#cb72-91" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
-<span id="cb72-92"><a href="other-useful.html#cb72-92" tabindex="-1"></a>            cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
-<span id="cb72-93"><a href="other-useful.html#cb72-93" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb72-94"><a href="other-useful.html#cb72-94" tabindex="-1"></a>                feat_to_keep <span class="ot">&lt;-</span> <a href="css.html#identifyPrototype">identifyPrototype</a>(cluster_i, X, y)</span>
-<span id="cb72-95"><a href="other-useful.html#cb72-95" tabindex="-1"></a>                feats_to_drop <span class="ot">&lt;-</span> <span class="fu">c</span>(feats_to_drop, <span class="fu">setdiff</span>(cluster_i,</span>
-<span id="cb72-96"><a href="other-useful.html#cb72-96" tabindex="-1"></a>                    feat_to_keep))</span>
-<span id="cb72-97"><a href="other-useful.html#cb72-97" tabindex="-1"></a>            }</span>
-<span id="cb72-98"><a href="other-useful.html#cb72-98" tabindex="-1"></a>        }</span>
-<span id="cb72-99"><a href="other-useful.html#cb72-99" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(feats_to_drop) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
-<span id="cb72-100"><a href="other-useful.html#cb72-100" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop, drop<span class="ot">=</span><span class="cn">FALSE</span>]</span>
-<span id="cb72-101"><a href="other-useful.html#cb72-101" tabindex="-1"></a>        }</span>
-<span id="cb72-102"><a href="other-useful.html#cb72-102" tabindex="-1"></a>    }</span>
-<span id="cb72-103"><a href="other-useful.html#cb72-103" tabindex="-1"></a></span>
-<span id="cb72-104"><a href="other-useful.html#cb72-104" tabindex="-1"></a>    <span class="co"># cv.glmnet requires at least two columns; if cluster reduction leaves a</span></span>
-<span id="cb72-105"><a href="other-useful.html#cb72-105" tabindex="-1"></a>    <span class="co"># single feature, the only possible model size is 1.</span></span>
-<span id="cb72-106"><a href="other-useful.html#cb72-106" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_size) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
-<span id="cb72-107"><a href="other-useful.html#cb72-107" tabindex="-1"></a>        <span class="fu">return</span>(<span class="dv">1</span><span class="dt">L</span>)</span>
-<span id="cb72-108"><a href="other-useful.html#cb72-108" tabindex="-1"></a>    }</span>
-<span id="cb72-109"><a href="other-useful.html#cb72-109" tabindex="-1"></a></span>
-<span id="cb72-110"><a href="other-useful.html#cb72-110" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>,</span>
-<span id="cb72-111"><a href="other-useful.html#cb72-111" tabindex="-1"></a>        <span class="at">alpha=</span>alpha)</span>
-<span id="cb72-112"><a href="other-useful.html#cb72-112" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
-<span id="cb72-113"><a href="other-useful.html#cb72-113" tabindex="-1"></a></span>
-<span id="cb72-114"><a href="other-useful.html#cb72-114" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
-<span id="cb72-115"><a href="other-useful.html#cb72-115" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
-<span id="cb72-116"><a href="other-useful.html#cb72-116" tabindex="-1"></a></span>
-<span id="cb72-117"><a href="other-useful.html#cb72-117" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb72-118"><a href="other-useful.html#cb72-118" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
-<span id="cb72-119"><a href="other-useful.html#cb72-119" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
-<span id="cb72-120"><a href="other-useful.html#cb72-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb72-121"><a href="other-useful.html#cb72-121" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
-<span id="cb72-122"><a href="other-useful.html#cb72-122" tabindex="-1"></a></span>
-<span id="cb72-123"><a href="other-useful.html#cb72-123" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
-<span id="cb72-124"><a href="other-useful.html#cb72-124" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb72-87"><a href="other-useful.html#cb72-87" tabindex="-1"></a>    X_size <span class="ot">&lt;-</span> X</span>
+<span id="cb72-88"><a href="other-useful.html#cb72-88" tabindex="-1"></a></span>
+<span id="cb72-89"><a href="other-useful.html#cb72-89" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(clusters) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb72-90"><a href="other-useful.html#cb72-90" tabindex="-1"></a>        <span class="co"># Create modified design matrix by dropping all but one feature from</span></span>
+<span id="cb72-91"><a href="other-useful.html#cb72-91" tabindex="-1"></a>        <span class="co"># each cluster</span></span>
+<span id="cb72-92"><a href="other-useful.html#cb72-92" tabindex="-1"></a>        feats_to_drop <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb72-93"><a href="other-useful.html#cb72-93" tabindex="-1"></a>        <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(clusters)){</span>
+<span id="cb72-94"><a href="other-useful.html#cb72-94" tabindex="-1"></a>            cluster_i <span class="ot">&lt;-</span> clusters[[i]]</span>
+<span id="cb72-95"><a href="other-useful.html#cb72-95" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">length</span>(cluster_i) <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb72-96"><a href="other-useful.html#cb72-96" tabindex="-1"></a>                feat_to_keep <span class="ot">&lt;-</span> <a href="css.html#identifyPrototype">identifyPrototype</a>(cluster_i, X, y)</span>
+<span id="cb72-97"><a href="other-useful.html#cb72-97" tabindex="-1"></a>                feats_to_drop <span class="ot">&lt;-</span> <span class="fu">c</span>(feats_to_drop, <span class="fu">setdiff</span>(cluster_i,</span>
+<span id="cb72-98"><a href="other-useful.html#cb72-98" tabindex="-1"></a>                    feat_to_keep))</span>
+<span id="cb72-99"><a href="other-useful.html#cb72-99" tabindex="-1"></a>            }</span>
+<span id="cb72-100"><a href="other-useful.html#cb72-100" tabindex="-1"></a>        }</span>
+<span id="cb72-101"><a href="other-useful.html#cb72-101" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(feats_to_drop) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb72-102"><a href="other-useful.html#cb72-102" tabindex="-1"></a>            X_size <span class="ot">&lt;-</span> X_size[, <span class="sc">-</span><span class="dv">1</span><span class="sc">*</span>feats_to_drop, drop<span class="ot">=</span><span class="cn">FALSE</span>]</span>
+<span id="cb72-103"><a href="other-useful.html#cb72-103" tabindex="-1"></a>        }</span>
+<span id="cb72-104"><a href="other-useful.html#cb72-104" tabindex="-1"></a>    }</span>
+<span id="cb72-105"><a href="other-useful.html#cb72-105" tabindex="-1"></a></span>
+<span id="cb72-106"><a href="other-useful.html#cb72-106" tabindex="-1"></a>    <span class="co"># cv.glmnet requires at least two columns; if cluster reduction leaves a</span></span>
+<span id="cb72-107"><a href="other-useful.html#cb72-107" tabindex="-1"></a>    <span class="co"># single feature, the only possible model size is 1.</span></span>
+<span id="cb72-108"><a href="other-useful.html#cb72-108" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">ncol</span>(X_size) <span class="sc">&lt;</span> <span class="dv">2</span>){</span>
+<span id="cb72-109"><a href="other-useful.html#cb72-109" tabindex="-1"></a>        <span class="fu">return</span>(<span class="dv">1</span><span class="dt">L</span>)</span>
+<span id="cb72-110"><a href="other-useful.html#cb72-110" tabindex="-1"></a>    }</span>
+<span id="cb72-111"><a href="other-useful.html#cb72-111" tabindex="-1"></a></span>
+<span id="cb72-112"><a href="other-useful.html#cb72-112" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>,</span>
+<span id="cb72-113"><a href="other-useful.html#cb72-113" tabindex="-1"></a>        <span class="at">alpha=</span>alpha)</span>
+<span id="cb72-114"><a href="other-useful.html#cb72-114" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
+<span id="cb72-115"><a href="other-useful.html#cb72-115" tabindex="-1"></a></span>
+<span id="cb72-116"><a href="other-useful.html#cb72-116" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
+<span id="cb72-117"><a href="other-useful.html#cb72-117" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb72-118"><a href="other-useful.html#cb72-118" tabindex="-1"></a></span>
+<span id="cb72-119"><a href="other-useful.html#cb72-119" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb72-120"><a href="other-useful.html#cb72-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
+<span id="cb72-121"><a href="other-useful.html#cb72-121" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
+<span id="cb72-122"><a href="other-useful.html#cb72-122" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb72-123"><a href="other-useful.html#cb72-123" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
+<span id="cb72-124"><a href="other-useful.html#cb72-124" tabindex="-1"></a></span>
+<span id="cb72-125"><a href="other-useful.html#cb72-125" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
+<span id="cb72-126"><a href="other-useful.html#cb72-126" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#buildCssDf">buildCssDf</a>()</code> builds the printable cluster-summary data.frame from a <code>css_results</code> object and an already-obtained named vector of selected clusters. It is factored out of <code><a href="other-useful.html#printCssDf">printCssDf</a>()</code> (issue #129) so that a caller which has <em>already</em> computed the selected clusters – notably <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code>, which calls <code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code> itself – can reuse that result instead of triggering a second identical <code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code> call. It is an internal (<code>@noRd</code>) helper, so the exported <code><a href="other-useful.html#printCssDf">printCssDf</a>()</code> keeps its exact signature and man page:</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="other-useful.html#cb73-1" tabindex="-1"></a><span class="co">#' Build the printable cluster-summary data.frame from selected clusters</span></span>
 <span id="cb73-2"><a href="other-useful.html#cb73-2" tabindex="-1"></a><span class="co">#'</span></span>
