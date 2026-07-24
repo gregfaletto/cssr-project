@@ -2664,7 +2664,7 @@ testthat::test_that("checkXInputResults works", {
   # Try mismatching variable names
   colnames(x_new) <- LETTERS[2:6]
   testthat::expect_error(checkXInputResults(x_new, css_res_named$X),
-                           "identical(feat_names, colnames(css_X)) is not TRUE",
+                           "Provided feature names for newx do not match feature names provided to css",
                            fixed=TRUE)
   
   colnames(x_new) <- LETTERS[1:5]
@@ -2748,14 +2748,17 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(x_new, css_res)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res$newX))
   testthat::expect_true(is.matrix(res$newX))
   testthat::expect_equal(nrow(res$newX), 8)
   testthat::expect_equal(ncol(res$newX), 5)
   testthat::expect_null(colnames(res$newX))
-  
+  # #153a: an unnamed newx yields feat_names == NA (scalar).
+  testthat::expect_true(is.na(res$feat_names))
+  testthat::expect_equal(length(res$feat_names), 1)
+
   testthat::expect_true(is.logical(res$newXProvided))
   testthat::expect_equal(length(res$newXProvided), 1)
   testthat::expect_true(!is.na(res$newXProvided))
@@ -2770,7 +2773,7 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(x_new, css_res_train)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(all(abs(x_new - res$newX) < 10^(-9)))
   testthat::expect_true(res$newXProvided)
@@ -2780,7 +2783,7 @@ testthat::test_that("checkNewXProvided works", {
   res <- checkNewXProvided(NA, css_res_train)
 
   testthat::expect_true(is.list(res))
-  testthat::expect_identical(names(res), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res$newX))
   testthat::expect_true(is.matrix(res$newX))
@@ -2815,7 +2818,7 @@ testthat::test_that("checkNewXProvided works", {
   # Try mismatching variable names
   colnames(x_new) <- LETTERS[2:6]
   testthat::expect_error(checkNewXProvided(x_new, css_res_named),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:5]
@@ -2823,10 +2826,12 @@ testthat::test_that("checkNewXProvided works", {
   res_named <- checkNewXProvided(x_new, css_res_named)
 
   testthat::expect_true(is.list(res_named))
-  testthat::expect_identical(names(res_named), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_named), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(all(abs(x_new - res_named$newX) < 10^(-9)))
   testthat::expect_true(res_named$newXProvided)
+  # #153a: a named newx yields feat_names == the (validated) column names.
+  testthat::expect_identical(res_named$feat_names, LETTERS[1:5])
 
   # Try data.frame input to css and checkNewXProvided
 
@@ -2842,7 +2847,7 @@ testthat::test_that("checkNewXProvided works", {
   res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
 
   testthat::expect_true(is.list(res_df))
-  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res_df$newX))
   testthat::expect_true(is.matrix(res_df$newX))
@@ -2868,7 +2873,7 @@ testthat::test_that("checkNewXProvided works", {
   res_df <- checkNewXProvided(X_df[fit_inds, ], css_res_df)
 
   testthat::expect_true(is.list(res_df))
-  testthat::expect_identical(names(res_df), c("newX", "newXProvided"))
+  testthat::expect_identical(names(res_df), c("newX", "newXProvided", "feat_names"))
   
   testthat::expect_true(is.numeric(res_df$newX))
   testthat::expect_true(is.matrix(res_df$newX))
@@ -2994,7 +2999,7 @@ testthat::test_that("checkFormCssDesignInputs works", {
                                                   cutoff=0.2, min_num_clusts=1,
                                                   max_num_clusts=1,
                                                   newx=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -3305,7 +3310,7 @@ testthat::test_that("formCssDesign works", {
                                        weighting="weighted_avg", cutoff=0.2,
                                        min_num_clusts=1, max_num_clusts=1,
                                        newx=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -3514,7 +3519,7 @@ testthat::test_that("getCssDesign works", {
                                       weighting="weighted_avg", cutoff=0.2,
                                       min_num_clusts=1, max_num_clusts=1,
                                       newX=x_new),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_new) <- LETTERS[1:6]
@@ -3647,6 +3652,24 @@ testthat::test_that("getCssDesign works", {
                          "max_num_clusts <= p is not TRUE", fixed=TRUE)
 
   
+})
+
+testthat::test_that("getCssDesign: reordered same-named columns give the curated name-mismatch error (#153e)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  # Reordered (same-named) columns used to surface the raw internal
+  # `identical(feat_names, colnames(css_X)) is not TRUE` assertion instead of the
+  # curated, user-facing message.
+  testthat::expect_error(
+    getCssDesign(res_ti, newX = X[41:60, c(2, 1, 3:8)]),
+    "Provided feature names for newx do not match", fixed = TRUE)
 })
 
 testthat::test_that("getCssDesign/getCssPreds handle length-1 train_inds (#127)", {
@@ -3949,7 +3972,7 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                 weighting="weighted_avg", cutoff=0,
                                 min_num_clusts=1, max_num_clusts=NA,
                                 trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_train) <- LETTERS[1:6]
@@ -3958,7 +3981,7 @@ testthat::test_that("checkGetCssPredsInputs works", {
                                 weighting="sparse", cutoff=0,
                                 min_num_clusts=1, max_num_clusts=NA,
                                 trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_pred) <- LETTERS[1:6]
@@ -4278,14 +4301,14 @@ testthat::test_that("getCssPreds works", {
   colnames(x_pred) <- LETTERS[1:6]
   testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
                                      trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_train) <- LETTERS[1:6]
   colnames(x_pred) <- LETTERS[2:7]
   testthat::expect_error(getCssPreds(css_res_named, testX=x_pred,
                                      trainX=x_train, trainY=y_train),
-                         "identical(feat_names, colnames(css_X)) is not TRUE",
+                         "Provided feature names for newx do not match feature names provided to css",
                          fixed=TRUE)
 
   colnames(x_pred) <- LETTERS[1:6]
@@ -4429,7 +4452,7 @@ testthat::test_that("getCssPreds data.frame path is warning-free and matches mat
   colnames(Xd_train_bad) <- paste0("W", 1:p)
   testthat::expect_error(
     getCssPreds(css_res, testX=Xd_test, trainX=Xd_train_bad, trainY=y_train),
-    "identical(feat_names, colnames(css_X)) is not TRUE", fixed=TRUE)
+    "Provided feature names for newx do not match feature names provided to css", fixed=TRUE)
 })
 
 testthat::test_that("getCssPreds/cssPredict: a cluster named 'y' does not corrupt predictions (#150)", {
@@ -4509,6 +4532,147 @@ testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
   testthat::expect_warning(
     getCssPreds(css_with_train, testX = testX, trainY = c(1, 2, 3)),
     "trainY provided but no trainX", fixed = TRUE)
+})
+
+testthat::test_that("getCssPreds: named trainX + unnamed testX warns only about testX (#153a)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_named  <- X[21:40, ]
+  testX_unnamed <- X[41:60, ]; colnames(testX_unnamed) <- NULL
+  trainY        <- y[21:40]
+
+  ww <- character()
+  preds <- withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed, trainX = trainX_named,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+
+  # A named trainX must NOT provoke a spurious "no variable names" warning about
+  # itself: exactly the two legitimate testX warnings fire (one per issue).
+  testthat::expect_length(ww, 2)
+  testthat::expect_equal(
+    sum(grepl("New X provided had no variable names", ww, fixed = TRUE)), 1)
+  testthat::expect_equal(
+    sum(grepl("Column names were provided for trainX but not for testX", ww,
+              fixed = TRUE)), 1)
+  testthat::expect_false(
+    any(grepl("Column names were provided for testX but not for trainX", ww,
+              fixed = TRUE)))
+  testthat::expect_true(is.numeric(preds))
+})
+
+testthat::test_that("getCssPreds: unnamed trainX + unnamed testX warns once per matrix (#153b)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_unnamed <- X[21:40, ]; colnames(trainX_unnamed) <- NULL
+  testX_unnamed  <- X[41:60, ]; colnames(testX_unnamed) <- NULL
+  trainY         <- y[21:40]
+
+  ww <- character()
+  withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed, trainX = trainX_unnamed,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  # Down from 4 identical warnings (one per redundant re-validation) to exactly
+  # one per unnamed matrix.
+  testthat::expect_length(ww, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names", ww,
+                                  fixed = TRUE)))
+
+  # (b') default (train_inds) path + unnamed testX: no FALSE trainX asymmetry
+  # warning, and it still predicts.
+  ww2 <- character()
+  preds <- withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_unnamed),
+    warning = function(w){
+      ww2 <<- c(ww2, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  testthat::expect_false(
+    any(grepl("Column names were provided for trainX but not for testX", ww2,
+              fixed = TRUE)))
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_length(preds, 20)
+})
+
+testthat::test_that("getCssPreds: unnamed trainX + named testX fires the testX asymmetry warning (#153c)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                B = 10, train_inds = 21:40)
+
+  trainX_unnamed <- X[21:40, ]; colnames(trainX_unnamed) <- NULL
+  testX_named    <- X[41:60, ]
+  trainY         <- y[21:40]
+
+  ww <- character()
+  withCallingHandlers(
+    getCssPreds(res_ti, testX = testX_named, trainX = trainX_unnamed,
+                trainY = trainY),
+    warning = function(w){
+      ww <<- c(ww, conditionMessage(w)); invokeRestart("muffleWarning")
+    })
+  # This asymmetry warning was previously dead: the old code always re-named
+  # trainX from testX, making its condition unsatisfiable.
+  testthat::expect_true(
+    any(grepl("Column names were provided for testX but not for trainX", ww,
+              fixed = TRUE)))
+})
+
+testthat::test_that("getCssPreds: a provided-but-NA trainY errors, never silently switches data (#153d)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+  res_ti   <- css(X = X[1:40, ], y = y[1:40], lambda = 0.01, clusters = clusters,
+                  B = 10, train_inds = 21:40)
+  res_noti <- css(X = X[1:20, ], y = y[1:20], lambda = 0.01, clusters = clusters,
+                  B = 10)
+
+  trainX_named <- X[21:40, ]
+  testX_named  <- X[41:60, ]
+  trainY       <- y[21:40]
+  trainY_na    <- trainY; trainY_na[5] <- NA
+
+  # With train_inds available: must ERROR on the NA rather than silently fall
+  # back to the train_inds data (the old silent-swap + false "no trainY" warning).
+  testthat::expect_error(
+    getCssPreds(res_ti, testX = testX_named, trainX = trainX_named,
+                trainY = trainY_na),
+    "contains missing (NA)", fixed = TRUE)
+  # Without train_inds: the SAME NA error, not the misleading "must provide both".
+  testthat::expect_error(
+    getCssPreds(res_noti, testX = testX_named, trainX = trainX_named,
+                trainY = trainY_na),
+    "contains missing (NA)", fixed = TRUE)
+  # A valid trainX + trainY still predicts (no regression).
+  preds <- getCssPreds(res_ti, testX = testX_named, trainX = trainX_named,
+                       trainY = trainY)
+  testthat::expect_true(is.numeric(preds))
+  testthat::expect_length(preds, 20)
 })
 
 testthat::test_that("olsPredictRankSafe predicts from rank-deficient OLS without crashing (#117)", {
@@ -7371,6 +7535,32 @@ testthat::test_that("cssPredict works", {
                y_train_selec=stats::rnorm(40),
                X_test=matrix(stats::rnorm(10), nrow=10, ncol=1)),
     "p >= 2 is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("cssPredict: length-1 train_inds no longer hits the cryptic is.matrix assertion (#153f)", {
+  set.seed(153)
+  n <- 60; p <- 8
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- paste0("V", 1:p)
+  y <- X[, 1] + X[, 2] + stats::rnorm(n)
+  clusters <- list(c1 = 1:3)
+
+  # A length-1 train_inds leaves a single training row, so getModelSize's glmnet
+  # cross-validation fails informatively on a constant response -- NOT with the
+  # old cryptic is.matrix stopifnot from the dropped-to-vector subset. Warnings
+  # (e.g. glmnet convergence) are suppressed so we assert on the stop() message.
+  err <- tryCatch(
+    suppressWarnings(
+      cssPredict(X_train_selec = X[1:20, ], y_train_selec = y[1:20],
+                 X_test = X[41:60, ], clusters = clusters, lambda = 0.01,
+                 train_inds = 1L)),
+    error = function(e) conditionMessage(e))
+  testthat::expect_type(err, "character")
+  testthat::expect_true(
+    grepl("y is constant; gaussian glmnet fails at standardization step", err,
+          fixed = TRUE))
+  testthat::expect_false(
+    grepl("is.matrix(X) | is.data.frame(X) is not TRUE", err, fixed = TRUE))
 })
 
 testthat::test_that("processClusterLassoInputs works", {

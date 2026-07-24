@@ -22,6 +22,11 @@
 #' @noRd
 checkNewXProvided <- function(trainX, css_results){
     newXProvided <- FALSE
+    # trainX's own validated column names, captured from checkXInputResults so
+    # the caller (checkGetCssPredsInputs, #153a) can restore them independently
+    # of testX. NA for the not-provided/train_inds branch, where names are
+    # irrelevant.
+    trainX_feat_names <- as.character(NA)
 
     # "Was newX provided?" -- the documented default for trainX is the scalar NA
     # sentinel, so treat trainX as provided UNLESS it is exactly that default
@@ -42,8 +47,11 @@ checkNewXProvided <- function(trainX, css_results){
             stop("newX must be a matrix or data.frame with the same columns as the X provided to css().", call. = FALSE)
         }
         newXProvided <- TRUE
-        trainX <- checkXInputResults(trainX, css_results$X)$newx
-        
+        xres <- checkXInputResults(trainX, css_results$X)
+        trainX <- xres$newx
+        trainX_feat_names <- xres$feat_names
+        rm(xres)
+
         n_train <- nrow(trainX)
         # A single-row newX is fine -- the design is just one row of cluster
         # representatives, and getCssPreds/cssPredict already accept a 1-row test
@@ -60,5 +68,6 @@ checkNewXProvided <- function(trainX, css_results){
     stopifnot(all(!is.na(trainX)))
     stopifnot(ncol(trainX) >= 2)
 
-    return(list(newX=trainX, newXProvided=newXProvided))
+    return(list(newX=trainX, newXProvided=newXProvided,
+        feat_names=trainX_feat_names))
 }
