@@ -63,16 +63,14 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
     B <- nrow(css_results$feat_sel_mat)
 
-    # Selection proportions are multiples of 1/B, but `cutoff` is adjusted by
-    # repeated +/- 1/B in the loops below, which accumulates floating-point
-    # error. Compare against `cutoff` minus half a step so a cluster sitting
-    # exactly at the threshold is included robustly (snaps to the nearest
-    # count); otherwise a tie could be dropped and, e.g., the max_num_clusts
-    # loop could break early and return more clusters than max_num_clusts.
-    tol <- 1 / (2 * B)
+    # Selection proportions are exact multiples of 1/B; work in integer count
+    # space so the documented ">= cutoff" holds exactly (no float snapping) and
+    # the loop thresholds step by whole counts (retires the #42 class). (#159a)
+    counts <- round(clus_sel_props * B)
+    thresh <- ceiling(cutoff * B - 1e-9)
 
     # Get selected clusters
-    selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+    selected_clusts <- clus_sel_props[counts >= thresh]
 
     # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
@@ -84,25 +82,22 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
         if(length(selected_clusts) == length(clus_sel_props)){
             break
         }
-        cutoff <- cutoff - 1/B
-        selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+        thresh <- thresh - 1L
+        selected_clusts <- clus_sel_props[counts >= thresh]
     }
 
     # Check that selected_clusts has length at most max_num_clusts
     if(!is.na(max_num_clusts)){
-        n_clusters <- ncol(css_results$clus_sel_mat)
         while(length(selected_clusts) > max_num_clusts){
-            cutoff <- cutoff + 1/B
-            # Apply the same tol to the upper bound: cutoff accumulates +1/B and
-            # B*(1/B) can float just above 1, which would break before the
-            # cutoff == 1 filter runs and leave a cluster below proportion 1 in
-            # the selection (#42).
-            if(cutoff > 1 + tol){
+            thresh <- thresh + 1L
+            # Once the threshold exceeds B no count can meet it, so stop before
+            # emptying the selection (retires the #42 float-accumulation break).
+            if(thresh > B){
                 break
             }
             # Make sure we don't reduce to a selected set of size 0
-            if(any(clus_sel_props >= cutoff - tol)){
-                selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+            if(any(counts >= thresh)){
+                selected_clusts <- clus_sel_props[counts >= thresh]
             } else{
                 break
             }

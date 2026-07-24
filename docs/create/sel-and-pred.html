@@ -252,84 +252,89 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb44-12"><a href="sel-and-pred.html#cb44-12" tabindex="-1"></a><span class="co">#' selected individual cluster member (or divided equally among all the clusters</span></span>
 <span id="cb44-13"><a href="sel-and-pred.html#cb44-13" tabindex="-1"></a><span class="co">#' that are tied for the top selection proportion if there is a tie). For</span></span>
 <span id="cb44-14"><a href="sel-and-pred.html#cb44-14" tabindex="-1"></a><span class="co">#' "weighted_avg", only the features within a selected cluster that were</span></span>
-<span id="cb44-15"><a href="sel-and-pred.html#cb44-15" tabindex="-1"></a><span class="co">#' themselves selected on at least one subsample will have nonzero weight. For</span></span>
-<span id="cb44-16"><a href="sel-and-pred.html#cb44-16" tabindex="-1"></a><span class="co">#' "simple_avg", each cluster member gets equal weight regardless of the</span></span>
-<span id="cb44-17"><a href="sel-and-pred.html#cb44-17" tabindex="-1"></a><span class="co">#' individual feature selection proportions (that is, all cluster members within</span></span>
-<span id="cb44-18"><a href="sel-and-pred.html#cb44-18" tabindex="-1"></a><span class="co">#' each selected cluster will be returned.). See Faletto and Bien (2022) for</span></span>
-<span id="cb44-19"><a href="sel-and-pred.html#cb44-19" tabindex="-1"></a><span class="co">#' details. Default is "sparse".</span></span>
-<span id="cb44-20"><a href="sel-and-pred.html#cb44-20" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssSelections will select and return only of those</span></span>
-<span id="cb44-21"><a href="sel-and-pred.html#cb44-21" tabindex="-1"></a><span class="co">#' clusters with selection proportions equal to at least cutoff. Must be between</span></span>
-<span id="cb44-22"><a href="sel-and-pred.html#cb44-22" tabindex="-1"></a><span class="co">#' 0 and 1. Default is 0 (in which case either all clusters are selected, or</span></span>
-<span id="cb44-23"><a href="sel-and-pred.html#cb44-23" tabindex="-1"></a><span class="co">#' max_num_clusts are selected, if max_num_clusts is specified).</span></span>
-<span id="cb44-24"><a href="sel-and-pred.html#cb44-24" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
-<span id="cb44-25"><a href="sel-and-pred.html#cb44-25" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
-<span id="cb44-26"><a href="sel-and-pred.html#cb44-26" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be lowered until at least</span></span>
-<span id="cb44-27"><a href="sel-and-pred.html#cb44-27" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow</span></span>
-<span id="cb44-28"><a href="sel-and-pred.html#cb44-28" tabindex="-1"></a><span class="co">#' a pure cutoff-based (threshold) selection that returns an empty set when no</span></span>
-<span id="cb44-29"><a href="sel-and-pred.html#cb44-29" tabindex="-1"></a><span class="co">#' cluster's selection proportion meets the cutoff.</span></span>
-<span id="cb44-30"><a href="sel-and-pred.html#cb44-30" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb44-31"><a href="sel-and-pred.html#cb44-31" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
-<span id="cb44-32"><a href="sel-and-pred.html#cb44-32" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
-<span id="cb44-33"><a href="sel-and-pred.html#cb44-33" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb44-34"><a href="sel-and-pred.html#cb44-34" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb44-35"><a href="sel-and-pred.html#cb44-35" tabindex="-1"></a><span class="co">#' @return A named list with three items. \item{selected_clusts}{A named list of</span></span>
-<span id="cb44-36"><a href="sel-and-pred.html#cb44-36" tabindex="-1"></a><span class="co">#' integer vectors; each vector contains the indices of the features in one of</span></span>
-<span id="cb44-37"><a href="sel-and-pred.html#cb44-37" tabindex="-1"></a><span class="co">#' the selected clusters.} \item{selected_feats}{A named integer vector; the</span></span>
-<span id="cb44-38"><a href="sel-and-pred.html#cb44-38" tabindex="-1"></a><span class="co">#' indices of the features with nonzero weights from all of the selected</span></span>
-<span id="cb44-39"><a href="sel-and-pred.html#cb44-39" tabindex="-1"></a><span class="co">#' clusters.} \item{weights}{A named list of the same length as selected_clusts.</span></span>
-<span id="cb44-40"><a href="sel-and-pred.html#cb44-40" tabindex="-1"></a><span class="co">#' Each list element `weights[[j]]` is a numeric vector of the weights to use for</span></span>
-<span id="cb44-41"><a href="sel-and-pred.html#cb44-41" tabindex="-1"></a><span class="co">#' the jth selected cluster, and it has the same name as the cluster it</span></span>
-<span id="cb44-42"><a href="sel-and-pred.html#cb44-42" tabindex="-1"></a><span class="co">#' corresponds to.}</span></span>
-<span id="cb44-43"><a href="sel-and-pred.html#cb44-43" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb44-44"><a href="sel-and-pred.html#cb44-44" tabindex="-1"></a><span class="co">#' @references </span></span>
-<span id="cb44-45"><a href="sel-and-pred.html#cb44-45" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
-<span id="cb44-46"><a href="sel-and-pred.html#cb44-46" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb44-47"><a href="sel-and-pred.html#cb44-47" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb44-48"><a href="sel-and-pred.html#cb44-48" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb44-49"><a href="sel-and-pred.html#cb44-49" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb44-50"><a href="sel-and-pred.html#cb44-50" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb44-51"><a href="sel-and-pred.html#cb44-51" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb44-52"><a href="sel-and-pred.html#cb44-52" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb44-53"><a href="sel-and-pred.html#cb44-53" tabindex="-1"></a><span class="co">#' <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(res)</span></span>
-<span id="cb44-54"><a href="sel-and-pred.html#cb44-54" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb44-55"><a href="sel-and-pred.html#cb44-55" tabindex="-1"></a><span id="getCssSelections">getCssSelections</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">weighting=</span><span class="st">"sparse"</span>, <span class="at">cutoff=</span><span class="dv">0</span>,</span>
-<span id="cb44-56"><a href="sel-and-pred.html#cb44-56" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
-<span id="cb44-57"><a href="sel-and-pred.html#cb44-57" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb44-58"><a href="sel-and-pred.html#cb44-58" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
-<span id="cb44-59"><a href="sel-and-pred.html#cb44-59" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb44-60"><a href="sel-and-pred.html#cb44-60" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
-<span id="cb44-61"><a href="sel-and-pred.html#cb44-61" tabindex="-1"></a></span>
-<span id="cb44-62"><a href="sel-and-pred.html#cb44-62" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
-<span id="cb44-63"><a href="sel-and-pred.html#cb44-63" tabindex="-1"></a></span>
-<span id="cb44-64"><a href="sel-and-pred.html#cb44-64" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb44-65"><a href="sel-and-pred.html#cb44-65" tabindex="-1"></a></span>
-<span id="cb44-66"><a href="sel-and-pred.html#cb44-66" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb44-67"><a href="sel-and-pred.html#cb44-67" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb44-15"><a href="sel-and-pred.html#cb44-15" tabindex="-1"></a><span class="co">#' themselves selected on at least one subsample will have nonzero weight.</span></span>
+<span id="cb44-16"><a href="sel-and-pred.html#cb44-16" tabindex="-1"></a><span class="co">#' (Exception: if no member of a selected cluster was selected on any subsample,</span></span>
+<span id="cb44-17"><a href="sel-and-pred.html#cb44-17" tabindex="-1"></a><span class="co">#' the weights fall back to a simple average, so all of that cluster's members</span></span>
+<span id="cb44-18"><a href="sel-and-pred.html#cb44-18" tabindex="-1"></a><span class="co">#' are returned.) For "simple_avg", each cluster</span></span>
+<span id="cb44-19"><a href="sel-and-pred.html#cb44-19" tabindex="-1"></a><span class="co">#' member gets equal weight regardless of the individual feature selection</span></span>
+<span id="cb44-20"><a href="sel-and-pred.html#cb44-20" tabindex="-1"></a><span class="co">#' proportions (that is, all cluster members within each selected cluster will</span></span>
+<span id="cb44-21"><a href="sel-and-pred.html#cb44-21" tabindex="-1"></a><span class="co">#' be returned.). See Faletto and Bien (2022) for details. Default is "sparse".</span></span>
+<span id="cb44-22"><a href="sel-and-pred.html#cb44-22" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; getCssSelections will select and return only of those</span></span>
+<span id="cb44-23"><a href="sel-and-pred.html#cb44-23" tabindex="-1"></a><span class="co">#' clusters with selection proportions equal to at least cutoff. Must be between</span></span>
+<span id="cb44-24"><a href="sel-and-pred.html#cb44-24" tabindex="-1"></a><span class="co">#' 0 and 1. Default is 0 (in which case either all clusters are selected, or</span></span>
+<span id="cb44-25"><a href="sel-and-pred.html#cb44-25" tabindex="-1"></a><span class="co">#' max_num_clusts are selected, if max_num_clusts is specified).</span></span>
+<span id="cb44-26"><a href="sel-and-pred.html#cb44-26" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb44-27"><a href="sel-and-pred.html#cb44-27" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns fewer than</span></span>
+<span id="cb44-28"><a href="sel-and-pred.html#cb44-28" tabindex="-1"></a><span class="co">#' min_num_clusts clusters, the cutoff will be lowered until at least</span></span>
+<span id="cb44-29"><a href="sel-and-pred.html#cb44-29" tabindex="-1"></a><span class="co">#' min_num_clusts clusters are selected.) Default is 1. May be set to 0 to allow</span></span>
+<span id="cb44-30"><a href="sel-and-pred.html#cb44-30" tabindex="-1"></a><span class="co">#' a pure cutoff-based (threshold) selection that returns an empty set when no</span></span>
+<span id="cb44-31"><a href="sel-and-pred.html#cb44-31" tabindex="-1"></a><span class="co">#' cluster's selection proportion meets the cutoff.</span></span>
+<span id="cb44-32"><a href="sel-and-pred.html#cb44-32" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb44-33"><a href="sel-and-pred.html#cb44-33" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
+<span id="cb44-34"><a href="sel-and-pred.html#cb44-34" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
+<span id="cb44-35"><a href="sel-and-pred.html#cb44-35" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb44-36"><a href="sel-and-pred.html#cb44-36" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored). Because clusters can have tied selection</span></span>
+<span id="cb44-37"><a href="sel-and-pred.html#cb44-37" tabindex="-1"></a><span class="co">#' proportions, ties at the threshold can cause more than max_num_clusts (or</span></span>
+<span id="cb44-38"><a href="sel-and-pred.html#cb44-38" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts) clusters to be returned; when the two constraints</span></span>
+<span id="cb44-39"><a href="sel-and-pred.html#cb44-39" tabindex="-1"></a><span class="co">#' conflict, max_num_clusts takes precedence.</span></span>
+<span id="cb44-40"><a href="sel-and-pred.html#cb44-40" tabindex="-1"></a><span class="co">#' @return A named list with three items. \item{selected_clusts}{A named list of</span></span>
+<span id="cb44-41"><a href="sel-and-pred.html#cb44-41" tabindex="-1"></a><span class="co">#' integer vectors; each vector contains the indices of the features in one of</span></span>
+<span id="cb44-42"><a href="sel-and-pred.html#cb44-42" tabindex="-1"></a><span class="co">#' the selected clusters.} \item{selected_feats}{A named integer vector; the</span></span>
+<span id="cb44-43"><a href="sel-and-pred.html#cb44-43" tabindex="-1"></a><span class="co">#' indices of the features with nonzero weights from all of the selected</span></span>
+<span id="cb44-44"><a href="sel-and-pred.html#cb44-44" tabindex="-1"></a><span class="co">#' clusters.} \item{weights}{A named list of the same length as selected_clusts.</span></span>
+<span id="cb44-45"><a href="sel-and-pred.html#cb44-45" tabindex="-1"></a><span class="co">#' Each list element `weights[[j]]` is a numeric vector of the weights to use for</span></span>
+<span id="cb44-46"><a href="sel-and-pred.html#cb44-46" tabindex="-1"></a><span class="co">#' the jth selected cluster, and it has the same name as the cluster it</span></span>
+<span id="cb44-47"><a href="sel-and-pred.html#cb44-47" tabindex="-1"></a><span class="co">#' corresponds to.}</span></span>
+<span id="cb44-48"><a href="sel-and-pred.html#cb44-48" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb44-49"><a href="sel-and-pred.html#cb44-49" tabindex="-1"></a><span class="co">#' @references </span></span>
+<span id="cb44-50"><a href="sel-and-pred.html#cb44-50" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
+<span id="cb44-51"><a href="sel-and-pred.html#cb44-51" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb44-52"><a href="sel-and-pred.html#cb44-52" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb44-53"><a href="sel-and-pred.html#cb44-53" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb44-54"><a href="sel-and-pred.html#cb44-54" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb44-55"><a href="sel-and-pred.html#cb44-55" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb44-56"><a href="sel-and-pred.html#cb44-56" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb44-57"><a href="sel-and-pred.html#cb44-57" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb44-58"><a href="sel-and-pred.html#cb44-58" tabindex="-1"></a><span class="co">#' <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(res)</span></span>
+<span id="cb44-59"><a href="sel-and-pred.html#cb44-59" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb44-60"><a href="sel-and-pred.html#cb44-60" tabindex="-1"></a><span id="getCssSelections">getCssSelections</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">weighting=</span><span class="st">"sparse"</span>, <span class="at">cutoff=</span><span class="dv">0</span>,</span>
+<span id="cb44-61"><a href="sel-and-pred.html#cb44-61" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
+<span id="cb44-62"><a href="sel-and-pred.html#cb44-62" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb44-63"><a href="sel-and-pred.html#cb44-63" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
+<span id="cb44-64"><a href="sel-and-pred.html#cb44-64" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb44-65"><a href="sel-and-pred.html#cb44-65" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
+<span id="cb44-66"><a href="sel-and-pred.html#cb44-66" tabindex="-1"></a></span>
+<span id="cb44-67"><a href="sel-and-pred.html#cb44-67" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
 <span id="cb44-68"><a href="sel-and-pred.html#cb44-68" tabindex="-1"></a></span>
-<span id="cb44-69"><a href="sel-and-pred.html#cb44-69" tabindex="-1"></a>    sel_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>(css_results, weighting, cutoff,</span>
-<span id="cb44-70"><a href="sel-and-pred.html#cb44-70" tabindex="-1"></a>        min_num_clusts, max_num_clusts)</span>
-<span id="cb44-71"><a href="sel-and-pred.html#cb44-71" tabindex="-1"></a></span>
-<span id="cb44-72"><a href="sel-and-pred.html#cb44-72" tabindex="-1"></a>    <span class="co"># sel_results$selected_clusts is guaranteed to have length at least 1 by</span></span>
-<span id="cb44-73"><a href="sel-and-pred.html#cb44-73" tabindex="-1"></a>    <span class="co"># getSelectedClusters</span></span>
-<span id="cb44-74"><a href="sel-and-pred.html#cb44-74" tabindex="-1"></a>    sel_clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(sel_results<span class="sc">$</span>selected_clusts)</span>
-<span id="cb44-75"><a href="sel-and-pred.html#cb44-75" tabindex="-1"></a></span>
-<span id="cb44-76"><a href="sel-and-pred.html#cb44-76" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_clust_names) <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb44-77"><a href="sel-and-pred.html#cb44-77" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(sel_clust_names <span class="sc">%in%</span> <span class="fu">names</span>(css_results<span class="sc">$</span>clusters)))</span>
-<span id="cb44-78"><a href="sel-and-pred.html#cb44-78" tabindex="-1"></a></span>
-<span id="cb44-79"><a href="sel-and-pred.html#cb44-79" tabindex="-1"></a>    sel_clusts <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb44-80"><a href="sel-and-pred.html#cb44-80" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_along</span>(sel_clust_names)){</span>
-<span id="cb44-81"><a href="sel-and-pred.html#cb44-81" tabindex="-1"></a>        sel_clusts[[i]] <span class="ot">&lt;-</span> css_results<span class="sc">$</span>clusters[[sel_clust_names[i]]]</span>
-<span id="cb44-82"><a href="sel-and-pred.html#cb44-82" tabindex="-1"></a>        <span class="fu">names</span>(sel_clusts)[i] <span class="ot">&lt;-</span> sel_clust_names[i]</span>
-<span id="cb44-83"><a href="sel-and-pred.html#cb44-83" tabindex="-1"></a>    }</span>
-<span id="cb44-84"><a href="sel-and-pred.html#cb44-84" tabindex="-1"></a></span>
-<span id="cb44-85"><a href="sel-and-pred.html#cb44-85" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(sel_clusts))</span>
-<span id="cb44-86"><a href="sel-and-pred.html#cb44-86" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_clusts) <span class="sc">==</span> <span class="fu">length</span>(sel_clust_names))</span>
-<span id="cb44-87"><a href="sel-and-pred.html#cb44-87" tabindex="-1"></a></span>
-<span id="cb44-88"><a href="sel-and-pred.html#cb44-88" tabindex="-1"></a>    <span class="co"># sel_results$selected_feats is guaranteed to have length at least as long</span></span>
-<span id="cb44-89"><a href="sel-and-pred.html#cb44-89" tabindex="-1"></a>    <span class="co"># as sel_results$selected_clusts by getSelectedClusters</span></span>
-<span id="cb44-90"><a href="sel-and-pred.html#cb44-90" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_clusts=</span>sel_clusts,</span>
-<span id="cb44-91"><a href="sel-and-pred.html#cb44-91" tabindex="-1"></a>        <span class="at">selected_feats=</span>sel_results<span class="sc">$</span>selected_feats, <span class="at">weights=</span>sel_results<span class="sc">$</span>weights))</span>
-<span id="cb44-92"><a href="sel-and-pred.html#cb44-92" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb44-69"><a href="sel-and-pred.html#cb44-69" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb44-70"><a href="sel-and-pred.html#cb44-70" tabindex="-1"></a></span>
+<span id="cb44-71"><a href="sel-and-pred.html#cb44-71" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb44-72"><a href="sel-and-pred.html#cb44-72" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb44-73"><a href="sel-and-pred.html#cb44-73" tabindex="-1"></a></span>
+<span id="cb44-74"><a href="sel-and-pred.html#cb44-74" tabindex="-1"></a>    sel_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>(css_results, weighting, cutoff,</span>
+<span id="cb44-75"><a href="sel-and-pred.html#cb44-75" tabindex="-1"></a>        min_num_clusts, max_num_clusts)</span>
+<span id="cb44-76"><a href="sel-and-pred.html#cb44-76" tabindex="-1"></a></span>
+<span id="cb44-77"><a href="sel-and-pred.html#cb44-77" tabindex="-1"></a>    <span class="co"># sel_results$selected_clusts is guaranteed to have length at least 1 by</span></span>
+<span id="cb44-78"><a href="sel-and-pred.html#cb44-78" tabindex="-1"></a>    <span class="co"># getSelectedClusters</span></span>
+<span id="cb44-79"><a href="sel-and-pred.html#cb44-79" tabindex="-1"></a>    sel_clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(sel_results<span class="sc">$</span>selected_clusts)</span>
+<span id="cb44-80"><a href="sel-and-pred.html#cb44-80" tabindex="-1"></a></span>
+<span id="cb44-81"><a href="sel-and-pred.html#cb44-81" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_clust_names) <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb44-82"><a href="sel-and-pred.html#cb44-82" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(sel_clust_names <span class="sc">%in%</span> <span class="fu">names</span>(css_results<span class="sc">$</span>clusters)))</span>
+<span id="cb44-83"><a href="sel-and-pred.html#cb44-83" tabindex="-1"></a></span>
+<span id="cb44-84"><a href="sel-and-pred.html#cb44-84" tabindex="-1"></a>    sel_clusts <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb44-85"><a href="sel-and-pred.html#cb44-85" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_along</span>(sel_clust_names)){</span>
+<span id="cb44-86"><a href="sel-and-pred.html#cb44-86" tabindex="-1"></a>        sel_clusts[[i]] <span class="ot">&lt;-</span> css_results<span class="sc">$</span>clusters[[sel_clust_names[i]]]</span>
+<span id="cb44-87"><a href="sel-and-pred.html#cb44-87" tabindex="-1"></a>        <span class="fu">names</span>(sel_clusts)[i] <span class="ot">&lt;-</span> sel_clust_names[i]</span>
+<span id="cb44-88"><a href="sel-and-pred.html#cb44-88" tabindex="-1"></a>    }</span>
+<span id="cb44-89"><a href="sel-and-pred.html#cb44-89" tabindex="-1"></a></span>
+<span id="cb44-90"><a href="sel-and-pred.html#cb44-90" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(sel_clusts))</span>
+<span id="cb44-91"><a href="sel-and-pred.html#cb44-91" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(sel_clusts) <span class="sc">==</span> <span class="fu">length</span>(sel_clust_names))</span>
+<span id="cb44-92"><a href="sel-and-pred.html#cb44-92" tabindex="-1"></a></span>
+<span id="cb44-93"><a href="sel-and-pred.html#cb44-93" tabindex="-1"></a>    <span class="co"># sel_results$selected_feats is guaranteed to have length at least as long</span></span>
+<span id="cb44-94"><a href="sel-and-pred.html#cb44-94" tabindex="-1"></a>    <span class="co"># as sel_results$selected_clusts by getSelectedClusters</span></span>
+<span id="cb44-95"><a href="sel-and-pred.html#cb44-95" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_clusts=</span>sel_clusts,</span>
+<span id="cb44-96"><a href="sel-and-pred.html#cb44-96" tabindex="-1"></a>        <span class="at">selected_feats=</span>sel_results<span class="sc">$</span>selected_feats, <span class="at">weights=</span>sel_results<span class="sc">$</span>weights))</span>
+<span id="cb44-97"><a href="sel-and-pred.html#cb44-97" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkCutoff">checkCutoff</a>()</code>:</p>
 <div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="sel-and-pred.html#cb45-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the argument cutoff to several functions is</span></span>
 <span id="cb45-2"><a href="sel-and-pred.html#cb45-2" tabindex="-1"></a><span class="co">#' as expected</span></span>
@@ -491,92 +496,87 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb49-61"><a href="sel-and-pred.html#cb49-61" tabindex="-1"></a>    clus_sel_props <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(css_results<span class="sc">$</span>clus_sel_mat)</span>
 <span id="cb49-62"><a href="sel-and-pred.html#cb49-62" tabindex="-1"></a>    B <span class="ot">&lt;-</span> <span class="fu">nrow</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
 <span id="cb49-63"><a href="sel-and-pred.html#cb49-63" tabindex="-1"></a></span>
-<span id="cb49-64"><a href="sel-and-pred.html#cb49-64" tabindex="-1"></a>    <span class="co"># Selection proportions are multiples of 1/B, but `cutoff` is adjusted by</span></span>
-<span id="cb49-65"><a href="sel-and-pred.html#cb49-65" tabindex="-1"></a>    <span class="co"># repeated +/- 1/B in the loops below, which accumulates floating-point</span></span>
-<span id="cb49-66"><a href="sel-and-pred.html#cb49-66" tabindex="-1"></a>    <span class="co"># error. Compare against `cutoff` minus half a step so a cluster sitting</span></span>
-<span id="cb49-67"><a href="sel-and-pred.html#cb49-67" tabindex="-1"></a>    <span class="co"># exactly at the threshold is included robustly (snaps to the nearest</span></span>
-<span id="cb49-68"><a href="sel-and-pred.html#cb49-68" tabindex="-1"></a>    <span class="co"># count); otherwise a tie could be dropped and, e.g., the max_num_clusts</span></span>
-<span id="cb49-69"><a href="sel-and-pred.html#cb49-69" tabindex="-1"></a>    <span class="co"># loop could break early and return more clusters than max_num_clusts.</span></span>
-<span id="cb49-70"><a href="sel-and-pred.html#cb49-70" tabindex="-1"></a>    tol <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> B)</span>
-<span id="cb49-71"><a href="sel-and-pred.html#cb49-71" tabindex="-1"></a></span>
-<span id="cb49-72"><a href="sel-and-pred.html#cb49-72" tabindex="-1"></a>    <span class="co"># Get selected clusters</span></span>
-<span id="cb49-73"><a href="sel-and-pred.html#cb49-73" tabindex="-1"></a>    selected_clusts <span class="ot">&lt;-</span> clus_sel_props[clus_sel_props <span class="sc">&gt;=</span> cutoff <span class="sc">-</span> tol]</span>
-<span id="cb49-74"><a href="sel-and-pred.html#cb49-74" tabindex="-1"></a></span>
-<span id="cb49-75"><a href="sel-and-pred.html#cb49-75" tabindex="-1"></a>    <span class="co"># Check that selected_clusts has length at least min_num_clusts</span></span>
-<span id="cb49-76"><a href="sel-and-pred.html#cb49-76" tabindex="-1"></a>    <span class="cf">while</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&lt;</span> min_num_clusts){</span>
-<span id="cb49-77"><a href="sel-and-pred.html#cb49-77" tabindex="-1"></a>        <span class="co"># Guard against an unbounded decrement if min_num_clusts exceeds the</span></span>
-<span id="cb49-78"><a href="sel-and-pred.html#cb49-78" tabindex="-1"></a>        <span class="co"># number of clusters: once every cluster is selected we can't select</span></span>
-<span id="cb49-79"><a href="sel-and-pred.html#cb49-79" tabindex="-1"></a>        <span class="co"># more, so stop (mirrors the max-loop's break) (#69). Unreachable via the</span></span>
-<span id="cb49-80"><a href="sel-and-pred.html#cb49-80" tabindex="-1"></a>        <span class="co"># public API (checkMinNumClusts enforces min_num_clusts &lt;= n_clusters),</span></span>
-<span id="cb49-81"><a href="sel-and-pred.html#cb49-81" tabindex="-1"></a>        <span class="co"># but a defensive break for any internal caller.</span></span>
-<span id="cb49-82"><a href="sel-and-pred.html#cb49-82" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">==</span> <span class="fu">length</span>(clus_sel_props)){</span>
-<span id="cb49-83"><a href="sel-and-pred.html#cb49-83" tabindex="-1"></a>            <span class="cf">break</span></span>
-<span id="cb49-84"><a href="sel-and-pred.html#cb49-84" tabindex="-1"></a>        }</span>
-<span id="cb49-85"><a href="sel-and-pred.html#cb49-85" tabindex="-1"></a>        cutoff <span class="ot">&lt;-</span> cutoff <span class="sc">-</span> <span class="dv">1</span><span class="sc">/</span>B</span>
-<span id="cb49-86"><a href="sel-and-pred.html#cb49-86" tabindex="-1"></a>        selected_clusts <span class="ot">&lt;-</span> clus_sel_props[clus_sel_props <span class="sc">&gt;=</span> cutoff <span class="sc">-</span> tol]</span>
-<span id="cb49-87"><a href="sel-and-pred.html#cb49-87" tabindex="-1"></a>    }</span>
-<span id="cb49-88"><a href="sel-and-pred.html#cb49-88" tabindex="-1"></a></span>
-<span id="cb49-89"><a href="sel-and-pred.html#cb49-89" tabindex="-1"></a>    <span class="co"># Check that selected_clusts has length at most max_num_clusts</span></span>
-<span id="cb49-90"><a href="sel-and-pred.html#cb49-90" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.na</span>(max_num_clusts)){</span>
-<span id="cb49-91"><a href="sel-and-pred.html#cb49-91" tabindex="-1"></a>        n_clusters <span class="ot">&lt;-</span> <span class="fu">ncol</span>(css_results<span class="sc">$</span>clus_sel_mat)</span>
-<span id="cb49-92"><a href="sel-and-pred.html#cb49-92" tabindex="-1"></a>        <span class="cf">while</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&gt;</span> max_num_clusts){</span>
-<span id="cb49-93"><a href="sel-and-pred.html#cb49-93" tabindex="-1"></a>            cutoff <span class="ot">&lt;-</span> cutoff <span class="sc">+</span> <span class="dv">1</span><span class="sc">/</span>B</span>
-<span id="cb49-94"><a href="sel-and-pred.html#cb49-94" tabindex="-1"></a>            <span class="co"># Apply the same tol to the upper bound: cutoff accumulates +1/B and</span></span>
-<span id="cb49-95"><a href="sel-and-pred.html#cb49-95" tabindex="-1"></a>            <span class="co"># B*(1/B) can float just above 1, which would break before the</span></span>
-<span id="cb49-96"><a href="sel-and-pred.html#cb49-96" tabindex="-1"></a>            <span class="co"># cutoff == 1 filter runs and leave a cluster below proportion 1 in</span></span>
-<span id="cb49-97"><a href="sel-and-pred.html#cb49-97" tabindex="-1"></a>            <span class="co"># the selection (#42).</span></span>
-<span id="cb49-98"><a href="sel-and-pred.html#cb49-98" tabindex="-1"></a>            <span class="cf">if</span>(cutoff <span class="sc">&gt;</span> <span class="dv">1</span> <span class="sc">+</span> tol){</span>
-<span id="cb49-99"><a href="sel-and-pred.html#cb49-99" tabindex="-1"></a>                <span class="cf">break</span></span>
-<span id="cb49-100"><a href="sel-and-pred.html#cb49-100" tabindex="-1"></a>            }</span>
-<span id="cb49-101"><a href="sel-and-pred.html#cb49-101" tabindex="-1"></a>            <span class="co"># Make sure we don't reduce to a selected set of size 0</span></span>
-<span id="cb49-102"><a href="sel-and-pred.html#cb49-102" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">any</span>(clus_sel_props <span class="sc">&gt;=</span> cutoff <span class="sc">-</span> tol)){</span>
-<span id="cb49-103"><a href="sel-and-pred.html#cb49-103" tabindex="-1"></a>                selected_clusts <span class="ot">&lt;-</span> clus_sel_props[clus_sel_props <span class="sc">&gt;=</span> cutoff <span class="sc">-</span> tol]</span>
-<span id="cb49-104"><a href="sel-and-pred.html#cb49-104" tabindex="-1"></a>            } <span class="cf">else</span>{</span>
-<span id="cb49-105"><a href="sel-and-pred.html#cb49-105" tabindex="-1"></a>                <span class="cf">break</span></span>
-<span id="cb49-106"><a href="sel-and-pred.html#cb49-106" tabindex="-1"></a>            }</span>
-<span id="cb49-107"><a href="sel-and-pred.html#cb49-107" tabindex="-1"></a>        }</span>
-<span id="cb49-108"><a href="sel-and-pred.html#cb49-108" tabindex="-1"></a>    }</span>
-<span id="cb49-109"><a href="sel-and-pred.html#cb49-109" tabindex="-1"></a></span>
-<span id="cb49-110"><a href="sel-and-pred.html#cb49-110" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb49-111"><a href="sel-and-pred.html#cb49-111" tabindex="-1"></a></span>
-<span id="cb49-112"><a href="sel-and-pred.html#cb49-112" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(selected_clusts)</span>
-<span id="cb49-113"><a href="sel-and-pred.html#cb49-113" tabindex="-1"></a></span>
-<span id="cb49-114"><a href="sel-and-pred.html#cb49-114" tabindex="-1"></a>    n_sel_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(selected_clusts)</span>
-<span id="cb49-115"><a href="sel-and-pred.html#cb49-115" tabindex="-1"></a></span>
-<span id="cb49-116"><a href="sel-and-pred.html#cb49-116" tabindex="-1"></a>    <span class="co"># Check that n_sel_clusts is as expected, and throw warnings or an error if</span></span>
-<span id="cb49-117"><a href="sel-and-pred.html#cb49-117" tabindex="-1"></a>    <span class="co"># not</span></span>
-<span id="cb49-118"><a href="sel-and-pred.html#cb49-118" tabindex="-1"></a>    <a href="sel-and-pred.html#checkSelectedClusters">checkSelectedClusters</a>(n_sel_clusts, min_num_clusts, max_num_clusts,</span>
-<span id="cb49-119"><a href="sel-and-pred.html#cb49-119" tabindex="-1"></a>        <span class="fu">max</span>(clus_sel_props))</span>
-<span id="cb49-120"><a href="sel-and-pred.html#cb49-120" tabindex="-1"></a>    </span>
-<span id="cb49-121"><a href="sel-and-pred.html#cb49-121" tabindex="-1"></a>    <span class="do">### Get selected features from selected clusters</span></span>
-<span id="cb49-122"><a href="sel-and-pred.html#cb49-122" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> css_results<span class="sc">$</span>clusters</span>
-<span id="cb49-123"><a href="sel-and-pred.html#cb49-123" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(clust_names <span class="sc">%in%</span> <span class="fu">names</span>(clusters)))</span>
-<span id="cb49-124"><a href="sel-and-pred.html#cb49-124" tabindex="-1"></a></span>
-<span id="cb49-125"><a href="sel-and-pred.html#cb49-125" tabindex="-1"></a>    <span class="co"># Get a list of weights for all of the selected clusters</span></span>
-<span id="cb49-126"><a href="sel-and-pred.html#cb49-126" tabindex="-1"></a>    weights <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getAllClustWeights">getAllClustWeights</a>(css_results, selected_clusts, weighting)</span>
-<span id="cb49-127"><a href="sel-and-pred.html#cb49-127" tabindex="-1"></a></span>
-<span id="cb49-128"><a href="sel-and-pred.html#cb49-128" tabindex="-1"></a>    <span class="co"># Get selected features from each cluster (those features with nonzero</span></span>
-<span id="cb49-129"><a href="sel-and-pred.html#cb49-129" tabindex="-1"></a>    <span class="co"># weights)</span></span>
-<span id="cb49-130"><a href="sel-and-pred.html#cb49-130" tabindex="-1"></a>    selected_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb49-131"><a href="sel-and-pred.html#cb49-131" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_len</span>(n_sel_clusts)){</span>
-<span id="cb49-132"><a href="sel-and-pred.html#cb49-132" tabindex="-1"></a>        clus_i_name <span class="ot">&lt;-</span> clust_names[i]</span>
-<span id="cb49-133"><a href="sel-and-pred.html#cb49-133" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> clusters[[clus_i_name]]</span>
-<span id="cb49-134"><a href="sel-and-pred.html#cb49-134" tabindex="-1"></a>        weights_i <span class="ot">&lt;-</span> weights[[i]]</span>
-<span id="cb49-135"><a href="sel-and-pred.html#cb49-135" tabindex="-1"></a>        selected_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_feats, clust_i[weights_i <span class="sc">!=</span> <span class="dv">0</span>])</span>
-<span id="cb49-136"><a href="sel-and-pred.html#cb49-136" tabindex="-1"></a>    }</span>
-<span id="cb49-137"><a href="sel-and-pred.html#cb49-137" tabindex="-1"></a></span>
-<span id="cb49-138"><a href="sel-and-pred.html#cb49-138" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
-<span id="cb49-139"><a href="sel-and-pred.html#cb49-139" tabindex="-1"></a></span>
-<span id="cb49-140"><a href="sel-and-pred.html#cb49-140" tabindex="-1"></a>    <span class="fu">names</span>(selected_feats) <span class="ot">&lt;-</span> feat_names[selected_feats]</span>
+<span id="cb49-64"><a href="sel-and-pred.html#cb49-64" tabindex="-1"></a>    <span class="co"># Selection proportions are exact multiples of 1/B; work in integer count</span></span>
+<span id="cb49-65"><a href="sel-and-pred.html#cb49-65" tabindex="-1"></a>    <span class="co"># space so the documented "&gt;= cutoff" holds exactly (no float snapping) and</span></span>
+<span id="cb49-66"><a href="sel-and-pred.html#cb49-66" tabindex="-1"></a>    <span class="co"># the loop thresholds step by whole counts (retires the #42 class). (#159a)</span></span>
+<span id="cb49-67"><a href="sel-and-pred.html#cb49-67" tabindex="-1"></a>    counts <span class="ot">&lt;-</span> <span class="fu">round</span>(clus_sel_props <span class="sc">*</span> B)</span>
+<span id="cb49-68"><a href="sel-and-pred.html#cb49-68" tabindex="-1"></a>    thresh <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(cutoff <span class="sc">*</span> B <span class="sc">-</span> <span class="fl">1e-9</span>)</span>
+<span id="cb49-69"><a href="sel-and-pred.html#cb49-69" tabindex="-1"></a></span>
+<span id="cb49-70"><a href="sel-and-pred.html#cb49-70" tabindex="-1"></a>    <span class="co"># Get selected clusters</span></span>
+<span id="cb49-71"><a href="sel-and-pred.html#cb49-71" tabindex="-1"></a>    selected_clusts <span class="ot">&lt;-</span> clus_sel_props[counts <span class="sc">&gt;=</span> thresh]</span>
+<span id="cb49-72"><a href="sel-and-pred.html#cb49-72" tabindex="-1"></a></span>
+<span id="cb49-73"><a href="sel-and-pred.html#cb49-73" tabindex="-1"></a>    <span class="co"># Check that selected_clusts has length at least min_num_clusts</span></span>
+<span id="cb49-74"><a href="sel-and-pred.html#cb49-74" tabindex="-1"></a>    <span class="cf">while</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&lt;</span> min_num_clusts){</span>
+<span id="cb49-75"><a href="sel-and-pred.html#cb49-75" tabindex="-1"></a>        <span class="co"># Guard against an unbounded decrement if min_num_clusts exceeds the</span></span>
+<span id="cb49-76"><a href="sel-and-pred.html#cb49-76" tabindex="-1"></a>        <span class="co"># number of clusters: once every cluster is selected we can't select</span></span>
+<span id="cb49-77"><a href="sel-and-pred.html#cb49-77" tabindex="-1"></a>        <span class="co"># more, so stop (mirrors the max-loop's break) (#69). Unreachable via the</span></span>
+<span id="cb49-78"><a href="sel-and-pred.html#cb49-78" tabindex="-1"></a>        <span class="co"># public API (checkMinNumClusts enforces min_num_clusts &lt;= n_clusters),</span></span>
+<span id="cb49-79"><a href="sel-and-pred.html#cb49-79" tabindex="-1"></a>        <span class="co"># but a defensive break for any internal caller.</span></span>
+<span id="cb49-80"><a href="sel-and-pred.html#cb49-80" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">==</span> <span class="fu">length</span>(clus_sel_props)){</span>
+<span id="cb49-81"><a href="sel-and-pred.html#cb49-81" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb49-82"><a href="sel-and-pred.html#cb49-82" tabindex="-1"></a>        }</span>
+<span id="cb49-83"><a href="sel-and-pred.html#cb49-83" tabindex="-1"></a>        thresh <span class="ot">&lt;-</span> thresh <span class="sc">-</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb49-84"><a href="sel-and-pred.html#cb49-84" tabindex="-1"></a>        selected_clusts <span class="ot">&lt;-</span> clus_sel_props[counts <span class="sc">&gt;=</span> thresh]</span>
+<span id="cb49-85"><a href="sel-and-pred.html#cb49-85" tabindex="-1"></a>    }</span>
+<span id="cb49-86"><a href="sel-and-pred.html#cb49-86" tabindex="-1"></a></span>
+<span id="cb49-87"><a href="sel-and-pred.html#cb49-87" tabindex="-1"></a>    <span class="co"># Check that selected_clusts has length at most max_num_clusts</span></span>
+<span id="cb49-88"><a href="sel-and-pred.html#cb49-88" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.na</span>(max_num_clusts)){</span>
+<span id="cb49-89"><a href="sel-and-pred.html#cb49-89" tabindex="-1"></a>        <span class="cf">while</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&gt;</span> max_num_clusts){</span>
+<span id="cb49-90"><a href="sel-and-pred.html#cb49-90" tabindex="-1"></a>            thresh <span class="ot">&lt;-</span> thresh <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb49-91"><a href="sel-and-pred.html#cb49-91" tabindex="-1"></a>            <span class="co"># Once the threshold exceeds B no count can meet it, so stop before</span></span>
+<span id="cb49-92"><a href="sel-and-pred.html#cb49-92" tabindex="-1"></a>            <span class="co"># emptying the selection (retires the #42 float-accumulation break).</span></span>
+<span id="cb49-93"><a href="sel-and-pred.html#cb49-93" tabindex="-1"></a>            <span class="cf">if</span>(thresh <span class="sc">&gt;</span> B){</span>
+<span id="cb49-94"><a href="sel-and-pred.html#cb49-94" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb49-95"><a href="sel-and-pred.html#cb49-95" tabindex="-1"></a>            }</span>
+<span id="cb49-96"><a href="sel-and-pred.html#cb49-96" tabindex="-1"></a>            <span class="co"># Make sure we don't reduce to a selected set of size 0</span></span>
+<span id="cb49-97"><a href="sel-and-pred.html#cb49-97" tabindex="-1"></a>            <span class="cf">if</span>(<span class="fu">any</span>(counts <span class="sc">&gt;=</span> thresh)){</span>
+<span id="cb49-98"><a href="sel-and-pred.html#cb49-98" tabindex="-1"></a>                selected_clusts <span class="ot">&lt;-</span> clus_sel_props[counts <span class="sc">&gt;=</span> thresh]</span>
+<span id="cb49-99"><a href="sel-and-pred.html#cb49-99" tabindex="-1"></a>            } <span class="cf">else</span>{</span>
+<span id="cb49-100"><a href="sel-and-pred.html#cb49-100" tabindex="-1"></a>                <span class="cf">break</span></span>
+<span id="cb49-101"><a href="sel-and-pred.html#cb49-101" tabindex="-1"></a>            }</span>
+<span id="cb49-102"><a href="sel-and-pred.html#cb49-102" tabindex="-1"></a>        }</span>
+<span id="cb49-103"><a href="sel-and-pred.html#cb49-103" tabindex="-1"></a>    }</span>
+<span id="cb49-104"><a href="sel-and-pred.html#cb49-104" tabindex="-1"></a></span>
+<span id="cb49-105"><a href="sel-and-pred.html#cb49-105" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_clusts) <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb49-106"><a href="sel-and-pred.html#cb49-106" tabindex="-1"></a></span>
+<span id="cb49-107"><a href="sel-and-pred.html#cb49-107" tabindex="-1"></a>    clust_names <span class="ot">&lt;-</span> <span class="fu">names</span>(selected_clusts)</span>
+<span id="cb49-108"><a href="sel-and-pred.html#cb49-108" tabindex="-1"></a></span>
+<span id="cb49-109"><a href="sel-and-pred.html#cb49-109" tabindex="-1"></a>    n_sel_clusts <span class="ot">&lt;-</span> <span class="fu">length</span>(selected_clusts)</span>
+<span id="cb49-110"><a href="sel-and-pred.html#cb49-110" tabindex="-1"></a></span>
+<span id="cb49-111"><a href="sel-and-pred.html#cb49-111" tabindex="-1"></a>    <span class="co"># Check that n_sel_clusts is as expected, and throw warnings or an error if</span></span>
+<span id="cb49-112"><a href="sel-and-pred.html#cb49-112" tabindex="-1"></a>    <span class="co"># not</span></span>
+<span id="cb49-113"><a href="sel-and-pred.html#cb49-113" tabindex="-1"></a>    <a href="sel-and-pred.html#checkSelectedClusters">checkSelectedClusters</a>(n_sel_clusts, min_num_clusts, max_num_clusts,</span>
+<span id="cb49-114"><a href="sel-and-pred.html#cb49-114" tabindex="-1"></a>        <span class="fu">max</span>(clus_sel_props))</span>
+<span id="cb49-115"><a href="sel-and-pred.html#cb49-115" tabindex="-1"></a>    </span>
+<span id="cb49-116"><a href="sel-and-pred.html#cb49-116" tabindex="-1"></a>    <span class="do">### Get selected features from selected clusters</span></span>
+<span id="cb49-117"><a href="sel-and-pred.html#cb49-117" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> css_results<span class="sc">$</span>clusters</span>
+<span id="cb49-118"><a href="sel-and-pred.html#cb49-118" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(clust_names <span class="sc">%in%</span> <span class="fu">names</span>(clusters)))</span>
+<span id="cb49-119"><a href="sel-and-pred.html#cb49-119" tabindex="-1"></a></span>
+<span id="cb49-120"><a href="sel-and-pred.html#cb49-120" tabindex="-1"></a>    <span class="co"># Get a list of weights for all of the selected clusters</span></span>
+<span id="cb49-121"><a href="sel-and-pred.html#cb49-121" tabindex="-1"></a>    weights <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getAllClustWeights">getAllClustWeights</a>(css_results, selected_clusts, weighting)</span>
+<span id="cb49-122"><a href="sel-and-pred.html#cb49-122" tabindex="-1"></a></span>
+<span id="cb49-123"><a href="sel-and-pred.html#cb49-123" tabindex="-1"></a>    <span class="co"># Get selected features from each cluster (those features with nonzero</span></span>
+<span id="cb49-124"><a href="sel-and-pred.html#cb49-124" tabindex="-1"></a>    <span class="co"># weights)</span></span>
+<span id="cb49-125"><a href="sel-and-pred.html#cb49-125" tabindex="-1"></a>    selected_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb49-126"><a href="sel-and-pred.html#cb49-126" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_len</span>(n_sel_clusts)){</span>
+<span id="cb49-127"><a href="sel-and-pred.html#cb49-127" tabindex="-1"></a>        clus_i_name <span class="ot">&lt;-</span> clust_names[i]</span>
+<span id="cb49-128"><a href="sel-and-pred.html#cb49-128" tabindex="-1"></a>        clust_i <span class="ot">&lt;-</span> clusters[[clus_i_name]]</span>
+<span id="cb49-129"><a href="sel-and-pred.html#cb49-129" tabindex="-1"></a>        weights_i <span class="ot">&lt;-</span> weights[[i]]</span>
+<span id="cb49-130"><a href="sel-and-pred.html#cb49-130" tabindex="-1"></a>        selected_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(selected_feats, clust_i[weights_i <span class="sc">!=</span> <span class="dv">0</span>])</span>
+<span id="cb49-131"><a href="sel-and-pred.html#cb49-131" tabindex="-1"></a>    }</span>
+<span id="cb49-132"><a href="sel-and-pred.html#cb49-132" tabindex="-1"></a></span>
+<span id="cb49-133"><a href="sel-and-pred.html#cb49-133" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>feat_sel_mat)</span>
+<span id="cb49-134"><a href="sel-and-pred.html#cb49-134" tabindex="-1"></a></span>
+<span id="cb49-135"><a href="sel-and-pred.html#cb49-135" tabindex="-1"></a>    <span class="fu">names</span>(selected_feats) <span class="ot">&lt;-</span> feat_names[selected_feats]</span>
+<span id="cb49-136"><a href="sel-and-pred.html#cb49-136" tabindex="-1"></a></span>
+<span id="cb49-137"><a href="sel-and-pred.html#cb49-137" tabindex="-1"></a>    <span class="co"># Check output (already checked weights wihin getAllClustWeights)</span></span>
+<span id="cb49-138"><a href="sel-and-pred.html#cb49-138" tabindex="-1"></a></span>
+<span id="cb49-139"><a href="sel-and-pred.html#cb49-139" tabindex="-1"></a>    <a href="sel-and-pred.html#checkGetSelectedClustersOutput">checkGetSelectedClustersOutput</a>(selected_clusts, selected_feats,</span>
+<span id="cb49-140"><a href="sel-and-pred.html#cb49-140" tabindex="-1"></a>        weights, <span class="at">n_clusters=</span><span class="fu">length</span>(clusters), <span class="at">p=</span><span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat))</span>
 <span id="cb49-141"><a href="sel-and-pred.html#cb49-141" tabindex="-1"></a></span>
-<span id="cb49-142"><a href="sel-and-pred.html#cb49-142" tabindex="-1"></a>    <span class="co"># Check output (already checked weights wihin getAllClustWeights)</span></span>
-<span id="cb49-143"><a href="sel-and-pred.html#cb49-143" tabindex="-1"></a></span>
-<span id="cb49-144"><a href="sel-and-pred.html#cb49-144" tabindex="-1"></a>    <a href="sel-and-pred.html#checkGetSelectedClustersOutput">checkGetSelectedClustersOutput</a>(selected_clusts, selected_feats,</span>
-<span id="cb49-145"><a href="sel-and-pred.html#cb49-145" tabindex="-1"></a>        weights, <span class="at">n_clusters=</span><span class="fu">length</span>(clusters), <span class="at">p=</span><span class="fu">ncol</span>(css_results<span class="sc">$</span>feat_sel_mat))</span>
-<span id="cb49-146"><a href="sel-and-pred.html#cb49-146" tabindex="-1"></a></span>
-<span id="cb49-147"><a href="sel-and-pred.html#cb49-147" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_clusts=</span>selected_clusts,</span>
-<span id="cb49-148"><a href="sel-and-pred.html#cb49-148" tabindex="-1"></a>        <span class="at">selected_feats=</span>selected_feats, <span class="at">weights=</span>weights))</span>
-<span id="cb49-149"><a href="sel-and-pred.html#cb49-149" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb49-142"><a href="sel-and-pred.html#cb49-142" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_clusts=</span>selected_clusts,</span>
+<span id="cb49-143"><a href="sel-and-pred.html#cb49-143" tabindex="-1"></a>        <span class="at">selected_feats=</span>selected_feats, <span class="at">weights=</span>weights))</span>
+<span id="cb49-144"><a href="sel-and-pred.html#cb49-144" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkSelectedClusters">checkSelectedClusters</a>()</code>:</p>
 <div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="sel-and-pred.html#cb50-1" tabindex="-1"></a><span class="co">#' Helper function to check operations within getSelectedClusters function</span></span>
 <span id="cb50-2"><a href="sel-and-pred.html#cb50-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -868,85 +868,88 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb54-42"><a href="sel-and-pred.html#cb54-42" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
 <span id="cb54-43"><a href="sel-and-pred.html#cb54-43" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
 <span id="cb54-44"><a href="sel-and-pred.html#cb54-44" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb54-45"><a href="sel-and-pred.html#cb54-45" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb54-46"><a href="sel-and-pred.html#cb54-46" tabindex="-1"></a><span class="co">#' @return A design matrix with either nrow(newX) (or length(train_inds), if</span></span>
-<span id="cb54-47"><a href="sel-and-pred.html#cb54-47" tabindex="-1"></a><span class="co">#' train_inds was provided to css and newX was not provided to getCssDesign)</span></span>
-<span id="cb54-48"><a href="sel-and-pred.html#cb54-48" tabindex="-1"></a><span class="co">#' observations and number of columns equal to the number of selected clusters,</span></span>
-<span id="cb54-49"><a href="sel-and-pred.html#cb54-49" tabindex="-1"></a><span class="co">#' containing the cluster representatives for each cluster.</span></span>
-<span id="cb54-50"><a href="sel-and-pred.html#cb54-50" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb54-51"><a href="sel-and-pred.html#cb54-51" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb54-52"><a href="sel-and-pred.html#cb54-52" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb54-53"><a href="sel-and-pred.html#cb54-53" tabindex="-1"></a><span class="co">#' train &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb54-54"><a href="sel-and-pred.html#cb54-54" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb54-55"><a href="sel-and-pred.html#cb54-55" tabindex="-1"></a><span class="co">#' newdata &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 10, p = 11, k_unclustered = 2,</span></span>
-<span id="cb54-56"><a href="sel-and-pred.html#cb54-56" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb54-57"><a href="sel-and-pred.html#cb54-57" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb54-58"><a href="sel-and-pred.html#cb54-58" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = train$X, y = train$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb54-59"><a href="sel-and-pred.html#cb54-59" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb54-60"><a href="sel-and-pred.html#cb54-60" tabindex="-1"></a><span class="co">#' X_design &lt;- <a href="sel-and-pred.html#getCssDesign">getCssDesign</a>(res, newX = newdata$X)</span></span>
-<span id="cb54-61"><a href="sel-and-pred.html#cb54-61" tabindex="-1"></a><span class="co">#' dim(X_design)</span></span>
-<span id="cb54-62"><a href="sel-and-pred.html#cb54-62" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb54-63"><a href="sel-and-pred.html#cb54-63" tabindex="-1"></a><span id="getCssDesign">getCssDesign</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">newX=</span><span class="cn">NA</span>, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
-<span id="cb54-64"><a href="sel-and-pred.html#cb54-64" tabindex="-1"></a>    <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
-<span id="cb54-65"><a href="sel-and-pred.html#cb54-65" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb54-66"><a href="sel-and-pred.html#cb54-66" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
-<span id="cb54-67"><a href="sel-and-pred.html#cb54-67" tabindex="-1"></a></span>
-<span id="cb54-68"><a href="sel-and-pred.html#cb54-68" tabindex="-1"></a>    check_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(newX, css_results)</span>
-<span id="cb54-69"><a href="sel-and-pred.html#cb54-69" tabindex="-1"></a></span>
-<span id="cb54-70"><a href="sel-and-pred.html#cb54-70" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newX</span>
-<span id="cb54-71"><a href="sel-and-pred.html#cb54-71" tabindex="-1"></a>    newXProvided <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newXProvided</span>
+<span id="cb54-45"><a href="sel-and-pred.html#cb54-45" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored). Because clusters can have tied selection</span></span>
+<span id="cb54-46"><a href="sel-and-pred.html#cb54-46" tabindex="-1"></a><span class="co">#' proportions, ties at the threshold can cause more than max_num_clusts (or</span></span>
+<span id="cb54-47"><a href="sel-and-pred.html#cb54-47" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts) clusters to be returned; when the two constraints</span></span>
+<span id="cb54-48"><a href="sel-and-pred.html#cb54-48" tabindex="-1"></a><span class="co">#' conflict, max_num_clusts takes precedence.</span></span>
+<span id="cb54-49"><a href="sel-and-pred.html#cb54-49" tabindex="-1"></a><span class="co">#' @return A design matrix with either nrow(newX) (or length(train_inds), if</span></span>
+<span id="cb54-50"><a href="sel-and-pred.html#cb54-50" tabindex="-1"></a><span class="co">#' train_inds was provided to css and newX was not provided to getCssDesign)</span></span>
+<span id="cb54-51"><a href="sel-and-pred.html#cb54-51" tabindex="-1"></a><span class="co">#' observations and number of columns equal to the number of selected clusters,</span></span>
+<span id="cb54-52"><a href="sel-and-pred.html#cb54-52" tabindex="-1"></a><span class="co">#' containing the cluster representatives for each cluster.</span></span>
+<span id="cb54-53"><a href="sel-and-pred.html#cb54-53" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb54-54"><a href="sel-and-pred.html#cb54-54" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb54-55"><a href="sel-and-pred.html#cb54-55" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb54-56"><a href="sel-and-pred.html#cb54-56" tabindex="-1"></a><span class="co">#' train &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb54-57"><a href="sel-and-pred.html#cb54-57" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb54-58"><a href="sel-and-pred.html#cb54-58" tabindex="-1"></a><span class="co">#' newdata &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 10, p = 11, k_unclustered = 2,</span></span>
+<span id="cb54-59"><a href="sel-and-pred.html#cb54-59" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb54-60"><a href="sel-and-pred.html#cb54-60" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb54-61"><a href="sel-and-pred.html#cb54-61" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = train$X, y = train$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb54-62"><a href="sel-and-pred.html#cb54-62" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb54-63"><a href="sel-and-pred.html#cb54-63" tabindex="-1"></a><span class="co">#' X_design &lt;- <a href="sel-and-pred.html#getCssDesign">getCssDesign</a>(res, newX = newdata$X)</span></span>
+<span id="cb54-64"><a href="sel-and-pred.html#cb54-64" tabindex="-1"></a><span class="co">#' dim(X_design)</span></span>
+<span id="cb54-65"><a href="sel-and-pred.html#cb54-65" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb54-66"><a href="sel-and-pred.html#cb54-66" tabindex="-1"></a><span id="getCssDesign">getCssDesign</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, <span class="at">newX=</span><span class="cn">NA</span>, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>,</span>
+<span id="cb54-67"><a href="sel-and-pred.html#cb54-67" tabindex="-1"></a>    <span class="at">cutoff=</span><span class="dv">0</span>, <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>){</span>
+<span id="cb54-68"><a href="sel-and-pred.html#cb54-68" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb54-69"><a href="sel-and-pred.html#cb54-69" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">inherits</span>(css_results, <span class="st">"cssr"</span>))</span>
+<span id="cb54-70"><a href="sel-and-pred.html#cb54-70" tabindex="-1"></a></span>
+<span id="cb54-71"><a href="sel-and-pred.html#cb54-71" tabindex="-1"></a>    check_results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>(newX, css_results)</span>
 <span id="cb54-72"><a href="sel-and-pred.html#cb54-72" tabindex="-1"></a></span>
-<span id="cb54-73"><a href="sel-and-pred.html#cb54-73" tabindex="-1"></a>    <span class="fu">rm</span>(check_results)</span>
-<span id="cb54-74"><a href="sel-and-pred.html#cb54-74" tabindex="-1"></a></span>
-<span id="cb54-75"><a href="sel-and-pred.html#cb54-75" tabindex="-1"></a>    <span class="co"># #142: checkNewXProvided returns newX with its (already css-validated) column</span></span>
-<span id="cb54-76"><a href="sel-and-pred.html#cb54-76" tabindex="-1"></a>    <span class="co"># names stripped (via checkXInputResults). Re-attach them from css_results$X</span></span>
-<span id="cb54-77"><a href="sel-and-pred.html#cb54-77" tabindex="-1"></a>    <span class="co"># (which they were validated to match; ncol(newX) == ncol(css_results$X) for a</span></span>
-<span id="cb54-78"><a href="sel-and-pred.html#cb54-78" tabindex="-1"></a>    <span class="co"># provided input) so the checkXInputResults call below does not spuriously warn</span></span>
-<span id="cb54-79"><a href="sel-and-pred.html#cb54-79" tabindex="-1"></a>    <span class="co"># on a data.frame newX. Names never enter the numeric design.</span></span>
-<span id="cb54-80"><a href="sel-and-pred.html#cb54-80" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(css_results<span class="sc">$</span>X))){</span>
-<span id="cb54-81"><a href="sel-and-pred.html#cb54-81" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>X)</span>
-<span id="cb54-82"><a href="sel-and-pred.html#cb54-82" tabindex="-1"></a>    }</span>
-<span id="cb54-83"><a href="sel-and-pred.html#cb54-83" tabindex="-1"></a></span>
-<span id="cb54-84"><a href="sel-and-pred.html#cb54-84" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
-<span id="cb54-85"><a href="sel-and-pred.html#cb54-85" tabindex="-1"></a></span>
-<span id="cb54-86"><a href="sel-and-pred.html#cb54-86" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(newX, css_results<span class="sc">$</span>X)</span>
-<span id="cb54-87"><a href="sel-and-pred.html#cb54-87" tabindex="-1"></a></span>
-<span id="cb54-88"><a href="sel-and-pred.html#cb54-88" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
-<span id="cb54-89"><a href="sel-and-pred.html#cb54-89" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
+<span id="cb54-73"><a href="sel-and-pred.html#cb54-73" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newX</span>
+<span id="cb54-74"><a href="sel-and-pred.html#cb54-74" tabindex="-1"></a>    newXProvided <span class="ot">&lt;-</span> check_results<span class="sc">$</span>newXProvided</span>
+<span id="cb54-75"><a href="sel-and-pred.html#cb54-75" tabindex="-1"></a></span>
+<span id="cb54-76"><a href="sel-and-pred.html#cb54-76" tabindex="-1"></a>    <span class="fu">rm</span>(check_results)</span>
+<span id="cb54-77"><a href="sel-and-pred.html#cb54-77" tabindex="-1"></a></span>
+<span id="cb54-78"><a href="sel-and-pred.html#cb54-78" tabindex="-1"></a>    <span class="co"># #142: checkNewXProvided returns newX with its (already css-validated) column</span></span>
+<span id="cb54-79"><a href="sel-and-pred.html#cb54-79" tabindex="-1"></a>    <span class="co"># names stripped (via checkXInputResults). Re-attach them from css_results$X</span></span>
+<span id="cb54-80"><a href="sel-and-pred.html#cb54-80" tabindex="-1"></a>    <span class="co"># (which they were validated to match; ncol(newX) == ncol(css_results$X) for a</span></span>
+<span id="cb54-81"><a href="sel-and-pred.html#cb54-81" tabindex="-1"></a>    <span class="co"># provided input) so the checkXInputResults call below does not spuriously warn</span></span>
+<span id="cb54-82"><a href="sel-and-pred.html#cb54-82" tabindex="-1"></a>    <span class="co"># on a data.frame newX. Names never enter the numeric design.</span></span>
+<span id="cb54-83"><a href="sel-and-pred.html#cb54-83" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(css_results<span class="sc">$</span>X))){</span>
+<span id="cb54-84"><a href="sel-and-pred.html#cb54-84" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(css_results<span class="sc">$</span>X)</span>
+<span id="cb54-85"><a href="sel-and-pred.html#cb54-85" tabindex="-1"></a>    }</span>
+<span id="cb54-86"><a href="sel-and-pred.html#cb54-86" tabindex="-1"></a></span>
+<span id="cb54-87"><a href="sel-and-pred.html#cb54-87" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
+<span id="cb54-88"><a href="sel-and-pred.html#cb54-88" tabindex="-1"></a></span>
+<span id="cb54-89"><a href="sel-and-pred.html#cb54-89" tabindex="-1"></a>    results <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkXInputResults">checkXInputResults</a>(newX, css_results<span class="sc">$</span>X)</span>
 <span id="cb54-90"><a href="sel-and-pred.html#cb54-90" tabindex="-1"></a></span>
-<span id="cb54-91"><a href="sel-and-pred.html#cb54-91" tabindex="-1"></a>    <span class="co"># #142: re-attach newX's (already css-validated) column names that</span></span>
-<span id="cb54-92"><a href="sel-and-pred.html#cb54-92" tabindex="-1"></a>    <span class="co"># checkXInputResults strips, so the downstream <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(newx=newX) call</span></span>
-<span id="cb54-93"><a href="sel-and-pred.html#cb54-93" tabindex="-1"></a>    <span class="co"># doesn't spuriously warn on a data.frame newX. Names never enter the numeric</span></span>
-<span id="cb54-94"><a href="sel-and-pred.html#cb54-94" tabindex="-1"></a>    <span class="co"># design (formCssDesign strips + builds cluster reps positionally), so this</span></span>
-<span id="cb54-95"><a href="sel-and-pred.html#cb54-95" tabindex="-1"></a>    <span class="co"># only silences the warning; mirrors the getCssPreds fix.</span></span>
-<span id="cb54-96"><a href="sel-and-pred.html#cb54-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb54-97"><a href="sel-and-pred.html#cb54-97" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb54-98"><a href="sel-and-pred.html#cb54-98" tabindex="-1"></a>    }</span>
-<span id="cb54-99"><a href="sel-and-pred.html#cb54-99" tabindex="-1"></a></span>
-<span id="cb54-100"><a href="sel-and-pred.html#cb54-100" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
-<span id="cb54-101"><a href="sel-and-pred.html#cb54-101" tabindex="-1"></a></span>
-<span id="cb54-102"><a href="sel-and-pred.html#cb54-102" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
-<span id="cb54-103"><a href="sel-and-pred.html#cb54-103" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(newX)</span>
+<span id="cb54-91"><a href="sel-and-pred.html#cb54-91" tabindex="-1"></a>    newX <span class="ot">&lt;-</span> results<span class="sc">$</span>newx</span>
+<span id="cb54-92"><a href="sel-and-pred.html#cb54-92" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> results<span class="sc">$</span>feat_names</span>
+<span id="cb54-93"><a href="sel-and-pred.html#cb54-93" tabindex="-1"></a></span>
+<span id="cb54-94"><a href="sel-and-pred.html#cb54-94" tabindex="-1"></a>    <span class="co"># #142: re-attach newX's (already css-validated) column names that</span></span>
+<span id="cb54-95"><a href="sel-and-pred.html#cb54-95" tabindex="-1"></a>    <span class="co"># checkXInputResults strips, so the downstream <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(newx=newX) call</span></span>
+<span id="cb54-96"><a href="sel-and-pred.html#cb54-96" tabindex="-1"></a>    <span class="co"># doesn't spuriously warn on a data.frame newX. Names never enter the numeric</span></span>
+<span id="cb54-97"><a href="sel-and-pred.html#cb54-97" tabindex="-1"></a>    <span class="co"># design (formCssDesign strips + builds cluster reps positionally), so this</span></span>
+<span id="cb54-98"><a href="sel-and-pred.html#cb54-98" tabindex="-1"></a>    <span class="co"># only silences the warning; mirrors the getCssPreds fix.</span></span>
+<span id="cb54-99"><a href="sel-and-pred.html#cb54-99" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb54-100"><a href="sel-and-pred.html#cb54-100" tabindex="-1"></a>        <span class="fu">colnames</span>(newX) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb54-101"><a href="sel-and-pred.html#cb54-101" tabindex="-1"></a>    }</span>
+<span id="cb54-102"><a href="sel-and-pred.html#cb54-102" tabindex="-1"></a></span>
+<span id="cb54-103"><a href="sel-and-pred.html#cb54-103" tabindex="-1"></a>    <span class="fu">rm</span>(results)</span>
 <span id="cb54-104"><a href="sel-and-pred.html#cb54-104" tabindex="-1"></a></span>
-<span id="cb54-105"><a href="sel-and-pred.html#cb54-105" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
-<span id="cb54-106"><a href="sel-and-pred.html#cb54-106" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
-<span id="cb54-107"><a href="sel-and-pred.html#cb54-107" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
-<span id="cb54-108"><a href="sel-and-pred.html#cb54-108" tabindex="-1"></a></span>
-<span id="cb54-109"><a href="sel-and-pred.html#cb54-109" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
-<span id="cb54-110"><a href="sel-and-pred.html#cb54-110" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb54-105"><a href="sel-and-pred.html#cb54-105" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(newX)</span>
+<span id="cb54-106"><a href="sel-and-pred.html#cb54-106" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(newX)</span>
+<span id="cb54-107"><a href="sel-and-pred.html#cb54-107" tabindex="-1"></a></span>
+<span id="cb54-108"><a href="sel-and-pred.html#cb54-108" tabindex="-1"></a>    <a href="sel-and-pred.html#checkCutoff">checkCutoff</a>(cutoff)</span>
+<span id="cb54-109"><a href="sel-and-pred.html#cb54-109" tabindex="-1"></a>    <a href="sel-and-pred.html#checkWeighting">checkWeighting</a>(weighting)</span>
+<span id="cb54-110"><a href="sel-and-pred.html#cb54-110" tabindex="-1"></a>    <a href="sel-and-pred.html#checkMinNumClusts">checkMinNumClusts</a>(min_num_clusts, p, <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
 <span id="cb54-111"><a href="sel-and-pred.html#cb54-111" tabindex="-1"></a></span>
-<span id="cb54-112"><a href="sel-and-pred.html#cb54-112" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
-<span id="cb54-113"><a href="sel-and-pred.html#cb54-113" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
-<span id="cb54-114"><a href="sel-and-pred.html#cb54-114" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided){</span>
-<span id="cb54-115"><a href="sel-and-pred.html#cb54-115" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb54-116"><a href="sel-and-pred.html#cb54-116" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>newX)</span>
-<span id="cb54-117"><a href="sel-and-pred.html#cb54-117" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb54-112"><a href="sel-and-pred.html#cb54-112" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkMaxNumClusts">checkMaxNumClusts</a>(max_num_clusts, min_num_clusts, p,</span>
+<span id="cb54-113"><a href="sel-and-pred.html#cb54-113" tabindex="-1"></a>        <span class="fu">length</span>(css_results<span class="sc">$</span>clusters))</span>
+<span id="cb54-114"><a href="sel-and-pred.html#cb54-114" tabindex="-1"></a></span>
+<span id="cb54-115"><a href="sel-and-pred.html#cb54-115" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
+<span id="cb54-116"><a href="sel-and-pred.html#cb54-116" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
+<span id="cb54-117"><a href="sel-and-pred.html#cb54-117" tabindex="-1"></a>    <span class="cf">if</span>(newXProvided){</span>
 <span id="cb54-118"><a href="sel-and-pred.html#cb54-118" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb54-119"><a href="sel-and-pred.html#cb54-119" tabindex="-1"></a>            min_num_clusts, max_num_clusts)</span>
-<span id="cb54-120"><a href="sel-and-pred.html#cb54-120" tabindex="-1"></a>    }</span>
-<span id="cb54-121"><a href="sel-and-pred.html#cb54-121" tabindex="-1"></a></span>
-<span id="cb54-122"><a href="sel-and-pred.html#cb54-122" tabindex="-1"></a>    <span class="fu">return</span>(newX_clusters)</span>
-<span id="cb54-123"><a href="sel-and-pred.html#cb54-123" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb54-119"><a href="sel-and-pred.html#cb54-119" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>newX)</span>
+<span id="cb54-120"><a href="sel-and-pred.html#cb54-120" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb54-121"><a href="sel-and-pred.html#cb54-121" tabindex="-1"></a>        newX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb54-122"><a href="sel-and-pred.html#cb54-122" tabindex="-1"></a>            min_num_clusts, max_num_clusts)</span>
+<span id="cb54-123"><a href="sel-and-pred.html#cb54-123" tabindex="-1"></a>    }</span>
+<span id="cb54-124"><a href="sel-and-pred.html#cb54-124" tabindex="-1"></a></span>
+<span id="cb54-125"><a href="sel-and-pred.html#cb54-125" tabindex="-1"></a>    <span class="fu">return</span>(newX_clusters)</span>
+<span id="cb54-126"><a href="sel-and-pred.html#cb54-126" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="sel-and-pred.html#checkNewXProvided">checkNewXProvided</a>()</code></p>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="sel-and-pred.html#cb55-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the new X matrix provided to getCssDesign or</span></span>
 <span id="cb55-2"><a href="sel-and-pred.html#cb55-2" tabindex="-1"></a><span class="co">#' getCssPreds matches the characteristics of the X that was provided to css.</span></span>
@@ -1317,147 +1320,150 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb59-34"><a href="sel-and-pred.html#cb59-34" tabindex="-1"></a><span class="co">#' use regardless of cutoff. (That is, if the chosen cutoff returns more than</span></span>
 <span id="cb59-35"><a href="sel-and-pred.html#cb59-35" tabindex="-1"></a><span class="co">#' max_num_clusts clusters, the cutoff will be raised until at most</span></span>
 <span id="cb59-36"><a href="sel-and-pred.html#cb59-36" tabindex="-1"></a><span class="co">#' max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb59-37"><a href="sel-and-pred.html#cb59-37" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored).</span></span>
-<span id="cb59-38"><a href="sel-and-pred.html#cb59-38" tabindex="-1"></a><span class="co">#' @param trainX A numeric matrix (preferably) or a data.frame (which will</span></span>
-<span id="cb59-39"><a href="sel-and-pred.html#cb59-39" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
-<span id="cb59-40"><a href="sel-and-pred.html#cb59-40" tabindex="-1"></a><span class="co">#' the data that will be used to estimate the linear model from the selected</span></span>
-<span id="cb59-41"><a href="sel-and-pred.html#cb59-41" tabindex="-1"></a><span class="co">#' clusters. trainX is only necessary to provide if no train_inds were</span></span>
-<span id="cb59-42"><a href="sel-and-pred.html#cb59-42" tabindex="-1"></a><span class="co">#' designated in the css function call to set aside observations for model</span></span>
-<span id="cb59-43"><a href="sel-and-pred.html#cb59-43" tabindex="-1"></a><span class="co">#' estimation (though even if train_inds was provided, trainX and trainY will be</span></span>
-<span id="cb59-44"><a href="sel-and-pred.html#cb59-44" tabindex="-1"></a><span class="co">#' used for model estimation if they are both provided to getCssPreds). Must </span></span>
-<span id="cb59-45"><a href="sel-and-pred.html#cb59-45" tabindex="-1"></a><span class="co">#' contain the same features (in the same number of columns) as the matrix </span></span>
-<span id="cb59-46"><a href="sel-and-pred.html#cb59-46" tabindex="-1"></a><span class="co">#' provided to css, and if the columns of trainX are labeled, the names must</span></span>
-<span id="cb59-47"><a href="sel-and-pred.html#cb59-47" tabindex="-1"></a><span class="co">#' match the variable names provided to css. Must not contain missing (`NA`)</span></span>
-<span id="cb59-48"><a href="sel-and-pred.html#cb59-48" tabindex="-1"></a><span class="co">#' values. Default is NA (in which case getCssPreds uses the observations from</span></span>
-<span id="cb59-49"><a href="sel-and-pred.html#cb59-49" tabindex="-1"></a><span class="co">#' the train_inds that were provided to css to estimate a linear model).</span></span>
-<span id="cb59-50"><a href="sel-and-pred.html#cb59-50" tabindex="-1"></a><span class="co">#' @param trainY The response corresponding to trainX. Must be a real-valued</span></span>
-<span id="cb59-51"><a href="sel-and-pred.html#cb59-51" tabindex="-1"></a><span class="co">#' response (unlike in the general css setup) because predictions will be</span></span>
-<span id="cb59-52"><a href="sel-and-pred.html#cb59-52" tabindex="-1"></a><span class="co">#' generated by an ordinary least squares model. Must have the same length as</span></span>
-<span id="cb59-53"><a href="sel-and-pred.html#cb59-53" tabindex="-1"></a><span class="co">#' the number of rows of trainX. Like trainX, only needs to be provided if no</span></span>
-<span id="cb59-54"><a href="sel-and-pred.html#cb59-54" tabindex="-1"></a><span class="co">#' observations were set aside for model estimation by the parameter train_inds</span></span>
-<span id="cb59-55"><a href="sel-and-pred.html#cb59-55" tabindex="-1"></a><span class="co">#' in the css function call. Default is NA (in which case getCssPreds uses the</span></span>
-<span id="cb59-56"><a href="sel-and-pred.html#cb59-56" tabindex="-1"></a><span class="co">#' observations from the train_inds that were provided to css).</span></span>
-<span id="cb59-57"><a href="sel-and-pred.html#cb59-57" tabindex="-1"></a><span class="co">#' @return A vector of predictions corresponding to the observations from testX.</span></span>
-<span id="cb59-58"><a href="sel-and-pred.html#cb59-58" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb59-59"><a href="sel-and-pred.html#cb59-59" tabindex="-1"></a><span class="co">#' @references </span></span>
-<span id="cb59-60"><a href="sel-and-pred.html#cb59-60" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
-<span id="cb59-61"><a href="sel-and-pred.html#cb59-61" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb59-62"><a href="sel-and-pred.html#cb59-62" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb59-63"><a href="sel-and-pred.html#cb59-63" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 60, p = 11, k_unclustered = 2,</span></span>
-<span id="cb59-64"><a href="sel-and-pred.html#cb59-64" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb59-65"><a href="sel-and-pred.html#cb59-65" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb59-66"><a href="sel-and-pred.html#cb59-66" tabindex="-1"></a><span class="co">#' # Split into selection / training / test rows.</span></span>
-<span id="cb59-67"><a href="sel-and-pred.html#cb59-67" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X[1:20, ], y = data$y[1:20], lambda = 0.01,</span></span>
-<span id="cb59-68"><a href="sel-and-pred.html#cb59-68" tabindex="-1"></a><span class="co">#'   clusters = clusters, B = 10)</span></span>
-<span id="cb59-69"><a href="sel-and-pred.html#cb59-69" tabindex="-1"></a><span class="co">#' preds &lt;- <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(res, testX = data$X[51:60, ],</span></span>
-<span id="cb59-70"><a href="sel-and-pred.html#cb59-70" tabindex="-1"></a><span class="co">#'   trainX = data$X[21:50, ], trainY = data$y[21:50])</span></span>
-<span id="cb59-71"><a href="sel-and-pred.html#cb59-71" tabindex="-1"></a><span class="co">#' preds</span></span>
-<span id="cb59-72"><a href="sel-and-pred.html#cb59-72" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb59-73"><a href="sel-and-pred.html#cb59-73" tabindex="-1"></a><span id="getCssPreds">getCssPreds</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, testX, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>, <span class="at">cutoff=</span><span class="dv">0</span>,</span>
-<span id="cb59-74"><a href="sel-and-pred.html#cb59-74" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">trainX=</span><span class="cn">NA</span>, <span class="at">trainY=</span><span class="cn">NA</span>){</span>
-<span id="cb59-75"><a href="sel-and-pred.html#cb59-75" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb59-76"><a href="sel-and-pred.html#cb59-76" tabindex="-1"></a>    </span>
-<span id="cb59-77"><a href="sel-and-pred.html#cb59-77" tabindex="-1"></a>    check_list <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkGetCssPredsInputs">checkGetCssPredsInputs</a>(css_results, testX, weighting, cutoff,</span>
-<span id="cb59-78"><a href="sel-and-pred.html#cb59-78" tabindex="-1"></a>        min_num_clusts, max_num_clusts, trainX, trainY)</span>
-<span id="cb59-79"><a href="sel-and-pred.html#cb59-79" tabindex="-1"></a></span>
-<span id="cb59-80"><a href="sel-and-pred.html#cb59-80" tabindex="-1"></a>    trainXProvided <span class="ot">&lt;-</span> check_list<span class="sc">$</span>trainXProvided</span>
-<span id="cb59-81"><a href="sel-and-pred.html#cb59-81" tabindex="-1"></a>    trainX <span class="ot">&lt;-</span> check_list<span class="sc">$</span>trainX</span>
-<span id="cb59-82"><a href="sel-and-pred.html#cb59-82" tabindex="-1"></a>    testX <span class="ot">&lt;-</span> check_list<span class="sc">$</span>testX</span>
-<span id="cb59-83"><a href="sel-and-pred.html#cb59-83" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> check_list<span class="sc">$</span>feat_names</span>
-<span id="cb59-84"><a href="sel-and-pred.html#cb59-84" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> check_list<span class="sc">$</span>max_num_clusts</span>
-<span id="cb59-85"><a href="sel-and-pred.html#cb59-85" tabindex="-1"></a></span>
-<span id="cb59-86"><a href="sel-and-pred.html#cb59-86" tabindex="-1"></a>    <span class="fu">rm</span>(check_list)</span>
-<span id="cb59-87"><a href="sel-and-pred.html#cb59-87" tabindex="-1"></a></span>
-<span id="cb59-88"><a href="sel-and-pred.html#cb59-88" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
-<span id="cb59-89"><a href="sel-and-pred.html#cb59-89" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(testX)</span>
-<span id="cb59-90"><a href="sel-and-pred.html#cb59-90" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(testX)</span>
-<span id="cb59-91"><a href="sel-and-pred.html#cb59-91" tabindex="-1"></a></span>
-<span id="cb59-92"><a href="sel-and-pred.html#cb59-92" tabindex="-1"></a>    <span class="co"># The cluster weights depend only on css_results and the (weighting, cutoff,</span></span>
-<span id="cb59-93"><a href="sel-and-pred.html#cb59-93" tabindex="-1"></a>    <span class="co"># min/max_num_clusts) arguments -- not on the design matrix -- so compute</span></span>
-<span id="cb59-94"><a href="sel-and-pred.html#cb59-94" tabindex="-1"></a>    <span class="co"># them ONCE here and reuse for every <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>() call below (train +</span></span>
-<span id="cb59-95"><a href="sel-and-pred.html#cb59-95" tabindex="-1"></a>    <span class="co"># test) instead of letting each call recompute the same <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>()</span></span>
-<span id="cb59-96"><a href="sel-and-pred.html#cb59-96" tabindex="-1"></a>    <span class="co"># (colMeans + cutoff loops + getAllClustWeights). max_num_clusts is already</span></span>
-<span id="cb59-97"><a href="sel-and-pred.html#cb59-97" tabindex="-1"></a>    <span class="co"># checkMaxNumClusts-adjusted by checkGetCssPredsInputs, and checkMaxNumClusts</span></span>
-<span id="cb59-98"><a href="sel-and-pred.html#cb59-98" tabindex="-1"></a>    <span class="co"># is idempotent, so these weights are byte-identical to what each</span></span>
-<span id="cb59-99"><a href="sel-and-pred.html#cb59-99" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>() would otherwise compute internally. (#129)</span></span>
-<span id="cb59-100"><a href="sel-and-pred.html#cb59-100" tabindex="-1"></a>    sel_weights <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>(css_results, weighting, cutoff,</span>
-<span id="cb59-101"><a href="sel-and-pred.html#cb59-101" tabindex="-1"></a>        min_num_clusts, max_num_clusts)<span class="sc">$</span>weights</span>
-<span id="cb59-102"><a href="sel-and-pred.html#cb59-102" tabindex="-1"></a></span>
-<span id="cb59-103"><a href="sel-and-pred.html#cb59-103" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
-<span id="cb59-104"><a href="sel-and-pred.html#cb59-104" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
-<span id="cb59-105"><a href="sel-and-pred.html#cb59-105" tabindex="-1"></a>    <span class="cf">if</span>(trainXProvided){</span>
-<span id="cb59-106"><a href="sel-and-pred.html#cb59-106" tabindex="-1"></a>        train_X_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb59-107"><a href="sel-and-pred.html#cb59-107" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>trainX, <span class="at">weights=</span>sel_weights,</span>
-<span id="cb59-108"><a href="sel-and-pred.html#cb59-108" tabindex="-1"></a>            <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
-<span id="cb59-109"><a href="sel-and-pred.html#cb59-109" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(trainY) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(trainY)){</span>
-<span id="cb59-110"><a href="sel-and-pred.html#cb59-110" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided trainY must be real-valued, because predictions will be generated by ordinary least squares regression."</span>)</span>
-<span id="cb59-111"><a href="sel-and-pred.html#cb59-111" tabindex="-1"></a>        }</span>
-<span id="cb59-112"><a href="sel-and-pred.html#cb59-112" tabindex="-1"></a>        y_train <span class="ot">&lt;-</span> trainY</span>
-<span id="cb59-113"><a href="sel-and-pred.html#cb59-113" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb59-114"><a href="sel-and-pred.html#cb59-114" tabindex="-1"></a>        train_X_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb59-115"><a href="sel-and-pred.html#cb59-115" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">weights=</span>sel_weights,</span>
-<span id="cb59-116"><a href="sel-and-pred.html#cb59-116" tabindex="-1"></a>            <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
-<span id="cb59-117"><a href="sel-and-pred.html#cb59-117" tabindex="-1"></a>        y_train <span class="ot">&lt;-</span> css_results<span class="sc">$</span>y[css_results<span class="sc">$</span>train_inds]</span>
-<span id="cb59-118"><a href="sel-and-pred.html#cb59-118" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y_train) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y_train)){</span>
-<span id="cb59-119"><a href="sel-and-pred.html#cb59-119" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Can't generate predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression)."</span>)</span>
-<span id="cb59-120"><a href="sel-and-pred.html#cb59-120" tabindex="-1"></a>        }</span>
-<span id="cb59-121"><a href="sel-and-pred.html#cb59-121" tabindex="-1"></a>    }</span>
-<span id="cb59-122"><a href="sel-and-pred.html#cb59-122" tabindex="-1"></a></span>
-<span id="cb59-123"><a href="sel-and-pred.html#cb59-123" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y_train) <span class="sc">==</span> <span class="fu">nrow</span>(train_X_clusters))</span>
-<span id="cb59-124"><a href="sel-and-pred.html#cb59-124" tabindex="-1"></a></span>
-<span id="cb59-125"><a href="sel-and-pred.html#cb59-125" tabindex="-1"></a>    testX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
-<span id="cb59-126"><a href="sel-and-pred.html#cb59-126" tabindex="-1"></a>        min_num_clusts, max_num_clusts, <span class="at">newx=</span>testX, <span class="at">weights=</span>sel_weights,</span>
-<span id="cb59-127"><a href="sel-and-pred.html#cb59-127" tabindex="-1"></a>        <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
-<span id="cb59-128"><a href="sel-and-pred.html#cb59-128" tabindex="-1"></a></span>
-<span id="cb59-129"><a href="sel-and-pred.html#cb59-129" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(testX_clusters) <span class="sc">==</span> <span class="fu">ncol</span>(train_X_clusters))</span>
-<span id="cb59-130"><a href="sel-and-pred.html#cb59-130" tabindex="-1"></a></span>
-<span id="cb59-131"><a href="sel-and-pred.html#cb59-131" tabindex="-1"></a>    <span class="co"># Get names for clusters</span></span>
-<span id="cb59-132"><a href="sel-and-pred.html#cb59-132" tabindex="-1"></a>    clust_X_names <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"c_fit_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(testX_clusters), <span class="at">sep=</span><span class="st">""</span>)</span>
-<span id="cb59-133"><a href="sel-and-pred.html#cb59-133" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(train_X_clusters))){</span>
-<span id="cb59-134"><a href="sel-and-pred.html#cb59-134" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">colnames</span>(train_X_clusters), <span class="fu">colnames</span>(testX_clusters)))</span>
-<span id="cb59-135"><a href="sel-and-pred.html#cb59-135" tabindex="-1"></a>        clust_X_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(train_X_clusters)</span>
-<span id="cb59-136"><a href="sel-and-pred.html#cb59-136" tabindex="-1"></a>    }</span>
-<span id="cb59-137"><a href="sel-and-pred.html#cb59-137" tabindex="-1"></a></span>
-<span id="cb59-138"><a href="sel-and-pred.html#cb59-138" tabindex="-1"></a>    <span class="co"># Fit linear model on training data via OLS. lm(y ~ .) adds an intercept, so</span></span>
-<span id="cb59-139"><a href="sel-and-pred.html#cb59-139" tabindex="-1"></a>    <span class="co"># the fit is rank-deficient unless there are strictly more training</span></span>
-<span id="cb59-140"><a href="sel-and-pred.html#cb59-140" tabindex="-1"></a>    <span class="co"># observations than clusters (nrow &gt;= ncol + 1); guard with &lt;= so the</span></span>
-<span id="cb59-141"><a href="sel-and-pred.html#cb59-141" tabindex="-1"></a>    <span class="co"># n_train == n_clusters boundary errors clearly instead of silently fitting a</span></span>
-<span id="cb59-142"><a href="sel-and-pred.html#cb59-142" tabindex="-1"></a>    <span class="co"># rank-deficient model with NA coefficients.</span></span>
-<span id="cb59-143"><a href="sel-and-pred.html#cb59-143" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">nrow</span>(train_X_clusters) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(train_X_clusters)){</span>
-<span id="cb59-144"><a href="sel-and-pred.html#cb59-144" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"css not provided with enough indices to fit OLS model for predictions (number of training indices: "</span>,</span>
-<span id="cb59-145"><a href="sel-and-pred.html#cb59-145" tabindex="-1"></a>            <span class="fu">nrow</span>(train_X_clusters), <span class="st">", number of clusters: "</span>,</span>
-<span id="cb59-146"><a href="sel-and-pred.html#cb59-146" tabindex="-1"></a>            <span class="fu">ncol</span>(train_X_clusters),</span>
-<span id="cb59-147"><a href="sel-and-pred.html#cb59-147" tabindex="-1"></a>            <span class="st">"). The OLS model includes an intercept, so it needs at least one more training observation than the number of clusters. Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices."</span>,</span>
-<span id="cb59-148"><a href="sel-and-pred.html#cb59-148" tabindex="-1"></a>            <span class="at">sep=</span><span class="st">""</span>)</span>
-<span id="cb59-149"><a href="sel-and-pred.html#cb59-149" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
-<span id="cb59-150"><a href="sel-and-pred.html#cb59-150" tabindex="-1"></a>    }</span>
-<span id="cb59-151"><a href="sel-and-pred.html#cb59-151" tabindex="-1"></a></span>
-<span id="cb59-152"><a href="sel-and-pred.html#cb59-152" tabindex="-1"></a>    <span class="co"># Response name guaranteed distinct from every cluster name (issue #150):</span></span>
-<span id="cb59-153"><a href="sel-and-pred.html#cb59-153" tabindex="-1"></a>    <span class="co"># make.unique returns "y" when no cluster is named "y" (bit-identical to</span></span>
-<span id="cb59-154"><a href="sel-and-pred.html#cb59-154" tabindex="-1"></a>    <span class="co"># prior behavior) and e.g. "y.1" when one is, so lm() never drops a</span></span>
-<span id="cb59-155"><a href="sel-and-pred.html#cb59-155" tabindex="-1"></a>    <span class="co"># cluster representative via a name collision with the response.</span></span>
-<span id="cb59-156"><a href="sel-and-pred.html#cb59-156" tabindex="-1"></a>    resp_name <span class="ot">&lt;-</span> <span class="fu">make.unique</span>(<span class="fu">c</span>(clust_X_names, <span class="st">"y"</span>))[<span class="fu">length</span>(clust_X_names) <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span>]</span>
-<span id="cb59-157"><a href="sel-and-pred.html#cb59-157" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(y_train, train_X_clusters)</span>
-<span id="cb59-158"><a href="sel-and-pred.html#cb59-158" tabindex="-1"></a>    <span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(resp_name, clust_X_names)</span>
-<span id="cb59-159"><a href="sel-and-pred.html#cb59-159" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(<span class="fu">colnames</span>(df)))</span>
-<span id="cb59-160"><a href="sel-and-pred.html#cb59-160" tabindex="-1"></a>    model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(stats<span class="sc">::</span><span class="fu">as.formula</span>(<span class="fu">paste0</span>(<span class="st">"`"</span>, resp_name, <span class="st">"` ~ ."</span>)), <span class="at">data =</span> df)</span>
-<span id="cb59-161"><a href="sel-and-pred.html#cb59-161" tabindex="-1"></a></span>
-<span id="cb59-162"><a href="sel-and-pred.html#cb59-162" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX. Route through</span></span>
-<span id="cb59-163"><a href="sel-and-pred.html#cb59-163" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>() so a rank-deficient OLS fit predicts from its</span></span>
-<span id="cb59-164"><a href="sel-and-pred.html#cb59-164" tabindex="-1"></a>    <span class="co"># estimable coefficients instead of crashing under R &gt;= 4.4's predict.lm</span></span>
-<span id="cb59-165"><a href="sel-and-pred.html#cb59-165" tabindex="-1"></a>    <span class="co"># default (see the helper's note and issue #117).</span></span>
-<span id="cb59-166"><a href="sel-and-pred.html#cb59-166" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
-<span id="cb59-167"><a href="sel-and-pred.html#cb59-167" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
-<span id="cb59-168"><a href="sel-and-pred.html#cb59-168" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>(model, df_test)</span>
-<span id="cb59-169"><a href="sel-and-pred.html#cb59-169" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb59-170"><a href="sel-and-pred.html#cb59-170" tabindex="-1"></a></span>
-<span id="cb59-171"><a href="sel-and-pred.html#cb59-171" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb59-172"><a href="sel-and-pred.html#cb59-172" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
-<span id="cb59-173"><a href="sel-and-pred.html#cb59-173" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
-<span id="cb59-174"><a href="sel-and-pred.html#cb59-174" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
-<span id="cb59-175"><a href="sel-and-pred.html#cb59-175" tabindex="-1"></a></span>
-<span id="cb59-176"><a href="sel-and-pred.html#cb59-176" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
-<span id="cb59-177"><a href="sel-and-pred.html#cb59-177" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb59-37"><a href="sel-and-pred.html#cb59-37" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored). Because clusters can have tied selection</span></span>
+<span id="cb59-38"><a href="sel-and-pred.html#cb59-38" tabindex="-1"></a><span class="co">#' proportions, ties at the threshold can cause more than max_num_clusts (or</span></span>
+<span id="cb59-39"><a href="sel-and-pred.html#cb59-39" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts) clusters to be returned; when the two constraints</span></span>
+<span id="cb59-40"><a href="sel-and-pred.html#cb59-40" tabindex="-1"></a><span class="co">#' conflict, max_num_clusts takes precedence.</span></span>
+<span id="cb59-41"><a href="sel-and-pred.html#cb59-41" tabindex="-1"></a><span class="co">#' @param trainX A numeric matrix (preferably) or a data.frame (which will</span></span>
+<span id="cb59-42"><a href="sel-and-pred.html#cb59-42" tabindex="-1"></a><span class="co">#' be coerced internally to a matrix by the function model.matrix) containing</span></span>
+<span id="cb59-43"><a href="sel-and-pred.html#cb59-43" tabindex="-1"></a><span class="co">#' the data that will be used to estimate the linear model from the selected</span></span>
+<span id="cb59-44"><a href="sel-and-pred.html#cb59-44" tabindex="-1"></a><span class="co">#' clusters. trainX is only necessary to provide if no train_inds were</span></span>
+<span id="cb59-45"><a href="sel-and-pred.html#cb59-45" tabindex="-1"></a><span class="co">#' designated in the css function call to set aside observations for model</span></span>
+<span id="cb59-46"><a href="sel-and-pred.html#cb59-46" tabindex="-1"></a><span class="co">#' estimation (though even if train_inds was provided, trainX and trainY will be</span></span>
+<span id="cb59-47"><a href="sel-and-pred.html#cb59-47" tabindex="-1"></a><span class="co">#' used for model estimation if they are both provided to getCssPreds). Must </span></span>
+<span id="cb59-48"><a href="sel-and-pred.html#cb59-48" tabindex="-1"></a><span class="co">#' contain the same features (in the same number of columns) as the matrix </span></span>
+<span id="cb59-49"><a href="sel-and-pred.html#cb59-49" tabindex="-1"></a><span class="co">#' provided to css, and if the columns of trainX are labeled, the names must</span></span>
+<span id="cb59-50"><a href="sel-and-pred.html#cb59-50" tabindex="-1"></a><span class="co">#' match the variable names provided to css. Must not contain missing (`NA`)</span></span>
+<span id="cb59-51"><a href="sel-and-pred.html#cb59-51" tabindex="-1"></a><span class="co">#' values. Default is NA (in which case getCssPreds uses the observations from</span></span>
+<span id="cb59-52"><a href="sel-and-pred.html#cb59-52" tabindex="-1"></a><span class="co">#' the train_inds that were provided to css to estimate a linear model).</span></span>
+<span id="cb59-53"><a href="sel-and-pred.html#cb59-53" tabindex="-1"></a><span class="co">#' @param trainY The response corresponding to trainX. Must be a real-valued</span></span>
+<span id="cb59-54"><a href="sel-and-pred.html#cb59-54" tabindex="-1"></a><span class="co">#' response (unlike in the general css setup) because predictions will be</span></span>
+<span id="cb59-55"><a href="sel-and-pred.html#cb59-55" tabindex="-1"></a><span class="co">#' generated by an ordinary least squares model. Must have the same length as</span></span>
+<span id="cb59-56"><a href="sel-and-pred.html#cb59-56" tabindex="-1"></a><span class="co">#' the number of rows of trainX. Like trainX, only needs to be provided if no</span></span>
+<span id="cb59-57"><a href="sel-and-pred.html#cb59-57" tabindex="-1"></a><span class="co">#' observations were set aside for model estimation by the parameter train_inds</span></span>
+<span id="cb59-58"><a href="sel-and-pred.html#cb59-58" tabindex="-1"></a><span class="co">#' in the css function call. Default is NA (in which case getCssPreds uses the</span></span>
+<span id="cb59-59"><a href="sel-and-pred.html#cb59-59" tabindex="-1"></a><span class="co">#' observations from the train_inds that were provided to css).</span></span>
+<span id="cb59-60"><a href="sel-and-pred.html#cb59-60" tabindex="-1"></a><span class="co">#' @return A vector of predictions corresponding to the observations from testX.</span></span>
+<span id="cb59-61"><a href="sel-and-pred.html#cb59-61" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb59-62"><a href="sel-and-pred.html#cb59-62" tabindex="-1"></a><span class="co">#' @references </span></span>
+<span id="cb59-63"><a href="sel-and-pred.html#cb59-63" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
+<span id="cb59-64"><a href="sel-and-pred.html#cb59-64" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb59-65"><a href="sel-and-pred.html#cb59-65" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb59-66"><a href="sel-and-pred.html#cb59-66" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 60, p = 11, k_unclustered = 2,</span></span>
+<span id="cb59-67"><a href="sel-and-pred.html#cb59-67" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb59-68"><a href="sel-and-pred.html#cb59-68" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb59-69"><a href="sel-and-pred.html#cb59-69" tabindex="-1"></a><span class="co">#' # Split into selection / training / test rows.</span></span>
+<span id="cb59-70"><a href="sel-and-pred.html#cb59-70" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X[1:20, ], y = data$y[1:20], lambda = 0.01,</span></span>
+<span id="cb59-71"><a href="sel-and-pred.html#cb59-71" tabindex="-1"></a><span class="co">#'   clusters = clusters, B = 10)</span></span>
+<span id="cb59-72"><a href="sel-and-pred.html#cb59-72" tabindex="-1"></a><span class="co">#' preds &lt;- <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(res, testX = data$X[51:60, ],</span></span>
+<span id="cb59-73"><a href="sel-and-pred.html#cb59-73" tabindex="-1"></a><span class="co">#'   trainX = data$X[21:50, ], trainY = data$y[21:50])</span></span>
+<span id="cb59-74"><a href="sel-and-pred.html#cb59-74" tabindex="-1"></a><span class="co">#' preds</span></span>
+<span id="cb59-75"><a href="sel-and-pred.html#cb59-75" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb59-76"><a href="sel-and-pred.html#cb59-76" tabindex="-1"></a><span id="getCssPreds">getCssPreds</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(css_results, testX, <span class="at">weighting=</span><span class="st">"weighted_avg"</span>, <span class="at">cutoff=</span><span class="dv">0</span>,</span>
+<span id="cb59-77"><a href="sel-and-pred.html#cb59-77" tabindex="-1"></a>    <span class="at">min_num_clusts=</span><span class="dv">1</span>, <span class="at">max_num_clusts=</span><span class="cn">NA</span>, <span class="at">trainX=</span><span class="cn">NA</span>, <span class="at">trainY=</span><span class="cn">NA</span>){</span>
+<span id="cb59-78"><a href="sel-and-pred.html#cb59-78" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb59-79"><a href="sel-and-pred.html#cb59-79" tabindex="-1"></a>    </span>
+<span id="cb59-80"><a href="sel-and-pred.html#cb59-80" tabindex="-1"></a>    check_list <span class="ot">&lt;-</span> <a href="sel-and-pred.html#checkGetCssPredsInputs">checkGetCssPredsInputs</a>(css_results, testX, weighting, cutoff,</span>
+<span id="cb59-81"><a href="sel-and-pred.html#cb59-81" tabindex="-1"></a>        min_num_clusts, max_num_clusts, trainX, trainY)</span>
+<span id="cb59-82"><a href="sel-and-pred.html#cb59-82" tabindex="-1"></a></span>
+<span id="cb59-83"><a href="sel-and-pred.html#cb59-83" tabindex="-1"></a>    trainXProvided <span class="ot">&lt;-</span> check_list<span class="sc">$</span>trainXProvided</span>
+<span id="cb59-84"><a href="sel-and-pred.html#cb59-84" tabindex="-1"></a>    trainX <span class="ot">&lt;-</span> check_list<span class="sc">$</span>trainX</span>
+<span id="cb59-85"><a href="sel-and-pred.html#cb59-85" tabindex="-1"></a>    testX <span class="ot">&lt;-</span> check_list<span class="sc">$</span>testX</span>
+<span id="cb59-86"><a href="sel-and-pred.html#cb59-86" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> check_list<span class="sc">$</span>feat_names</span>
+<span id="cb59-87"><a href="sel-and-pred.html#cb59-87" tabindex="-1"></a>    max_num_clusts <span class="ot">&lt;-</span> check_list<span class="sc">$</span>max_num_clusts</span>
+<span id="cb59-88"><a href="sel-and-pred.html#cb59-88" tabindex="-1"></a></span>
+<span id="cb59-89"><a href="sel-and-pred.html#cb59-89" tabindex="-1"></a>    <span class="fu">rm</span>(check_list)</span>
+<span id="cb59-90"><a href="sel-and-pred.html#cb59-90" tabindex="-1"></a></span>
+<span id="cb59-91"><a href="sel-and-pred.html#cb59-91" tabindex="-1"></a>    n_train <span class="ot">&lt;-</span> <span class="fu">nrow</span>(trainX)</span>
+<span id="cb59-92"><a href="sel-and-pred.html#cb59-92" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(testX)</span>
+<span id="cb59-93"><a href="sel-and-pred.html#cb59-93" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(testX)</span>
+<span id="cb59-94"><a href="sel-and-pred.html#cb59-94" tabindex="-1"></a></span>
+<span id="cb59-95"><a href="sel-and-pred.html#cb59-95" tabindex="-1"></a>    <span class="co"># The cluster weights depend only on css_results and the (weighting, cutoff,</span></span>
+<span id="cb59-96"><a href="sel-and-pred.html#cb59-96" tabindex="-1"></a>    <span class="co"># min/max_num_clusts) arguments -- not on the design matrix -- so compute</span></span>
+<span id="cb59-97"><a href="sel-and-pred.html#cb59-97" tabindex="-1"></a>    <span class="co"># them ONCE here and reuse for every <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>() call below (train +</span></span>
+<span id="cb59-98"><a href="sel-and-pred.html#cb59-98" tabindex="-1"></a>    <span class="co"># test) instead of letting each call recompute the same <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>()</span></span>
+<span id="cb59-99"><a href="sel-and-pred.html#cb59-99" tabindex="-1"></a>    <span class="co"># (colMeans + cutoff loops + getAllClustWeights). max_num_clusts is already</span></span>
+<span id="cb59-100"><a href="sel-and-pred.html#cb59-100" tabindex="-1"></a>    <span class="co"># checkMaxNumClusts-adjusted by checkGetCssPredsInputs, and checkMaxNumClusts</span></span>
+<span id="cb59-101"><a href="sel-and-pred.html#cb59-101" tabindex="-1"></a>    <span class="co"># is idempotent, so these weights are byte-identical to what each</span></span>
+<span id="cb59-102"><a href="sel-and-pred.html#cb59-102" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>() would otherwise compute internally. (#129)</span></span>
+<span id="cb59-103"><a href="sel-and-pred.html#cb59-103" tabindex="-1"></a>    sel_weights <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>(css_results, weighting, cutoff,</span>
+<span id="cb59-104"><a href="sel-and-pred.html#cb59-104" tabindex="-1"></a>        min_num_clusts, max_num_clusts)<span class="sc">$</span>weights</span>
+<span id="cb59-105"><a href="sel-and-pred.html#cb59-105" tabindex="-1"></a></span>
+<span id="cb59-106"><a href="sel-and-pred.html#cb59-106" tabindex="-1"></a>    <span class="co"># Take provided training design matrix and testX and turn them into</span></span>
+<span id="cb59-107"><a href="sel-and-pred.html#cb59-107" tabindex="-1"></a>    <span class="co"># matrices of cluster representatives using information from css_results</span></span>
+<span id="cb59-108"><a href="sel-and-pred.html#cb59-108" tabindex="-1"></a>    <span class="cf">if</span>(trainXProvided){</span>
+<span id="cb59-109"><a href="sel-and-pred.html#cb59-109" tabindex="-1"></a>        train_X_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb59-110"><a href="sel-and-pred.html#cb59-110" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">newx=</span>trainX, <span class="at">weights=</span>sel_weights,</span>
+<span id="cb59-111"><a href="sel-and-pred.html#cb59-111" tabindex="-1"></a>            <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
+<span id="cb59-112"><a href="sel-and-pred.html#cb59-112" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(trainY) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(trainY)){</span>
+<span id="cb59-113"><a href="sel-and-pred.html#cb59-113" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"The provided trainY must be real-valued, because predictions will be generated by ordinary least squares regression."</span>)</span>
+<span id="cb59-114"><a href="sel-and-pred.html#cb59-114" tabindex="-1"></a>        }</span>
+<span id="cb59-115"><a href="sel-and-pred.html#cb59-115" tabindex="-1"></a>        y_train <span class="ot">&lt;-</span> trainY</span>
+<span id="cb59-116"><a href="sel-and-pred.html#cb59-116" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb59-117"><a href="sel-and-pred.html#cb59-117" tabindex="-1"></a>        train_X_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb59-118"><a href="sel-and-pred.html#cb59-118" tabindex="-1"></a>            min_num_clusts, max_num_clusts, <span class="at">weights=</span>sel_weights,</span>
+<span id="cb59-119"><a href="sel-and-pred.html#cb59-119" tabindex="-1"></a>            <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
+<span id="cb59-120"><a href="sel-and-pred.html#cb59-120" tabindex="-1"></a>        y_train <span class="ot">&lt;-</span> css_results<span class="sc">$</span>y[css_results<span class="sc">$</span>train_inds]</span>
+<span id="cb59-121"><a href="sel-and-pred.html#cb59-121" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y_train) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y_train)){</span>
+<span id="cb59-122"><a href="sel-and-pred.html#cb59-122" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Can't generate predictions from the data that was provided to css because the provided y was not real-valued (getCssPreds generated predictions using ordinary least squares regression)."</span>)</span>
+<span id="cb59-123"><a href="sel-and-pred.html#cb59-123" tabindex="-1"></a>        }</span>
+<span id="cb59-124"><a href="sel-and-pred.html#cb59-124" tabindex="-1"></a>    }</span>
+<span id="cb59-125"><a href="sel-and-pred.html#cb59-125" tabindex="-1"></a></span>
+<span id="cb59-126"><a href="sel-and-pred.html#cb59-126" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y_train) <span class="sc">==</span> <span class="fu">nrow</span>(train_X_clusters))</span>
+<span id="cb59-127"><a href="sel-and-pred.html#cb59-127" tabindex="-1"></a></span>
+<span id="cb59-128"><a href="sel-and-pred.html#cb59-128" tabindex="-1"></a>    testX_clusters <span class="ot">&lt;-</span> <a href="sel-and-pred.html#formCssDesign">formCssDesign</a>(css_results, weighting, cutoff,</span>
+<span id="cb59-129"><a href="sel-and-pred.html#cb59-129" tabindex="-1"></a>        min_num_clusts, max_num_clusts, <span class="at">newx=</span>testX, <span class="at">weights=</span>sel_weights,</span>
+<span id="cb59-130"><a href="sel-and-pred.html#cb59-130" tabindex="-1"></a>        <span class="at">validated=</span><span class="cn">TRUE</span>)</span>
+<span id="cb59-131"><a href="sel-and-pred.html#cb59-131" tabindex="-1"></a></span>
+<span id="cb59-132"><a href="sel-and-pred.html#cb59-132" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(testX_clusters) <span class="sc">==</span> <span class="fu">ncol</span>(train_X_clusters))</span>
+<span id="cb59-133"><a href="sel-and-pred.html#cb59-133" tabindex="-1"></a></span>
+<span id="cb59-134"><a href="sel-and-pred.html#cb59-134" tabindex="-1"></a>    <span class="co"># Get names for clusters</span></span>
+<span id="cb59-135"><a href="sel-and-pred.html#cb59-135" tabindex="-1"></a>    clust_X_names <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"c_fit_"</span>, <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(testX_clusters), <span class="at">sep=</span><span class="st">""</span>)</span>
+<span id="cb59-136"><a href="sel-and-pred.html#cb59-136" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(train_X_clusters))){</span>
+<span id="cb59-137"><a href="sel-and-pred.html#cb59-137" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">colnames</span>(train_X_clusters), <span class="fu">colnames</span>(testX_clusters)))</span>
+<span id="cb59-138"><a href="sel-and-pred.html#cb59-138" tabindex="-1"></a>        clust_X_names <span class="ot">&lt;-</span> <span class="fu">colnames</span>(train_X_clusters)</span>
+<span id="cb59-139"><a href="sel-and-pred.html#cb59-139" tabindex="-1"></a>    }</span>
+<span id="cb59-140"><a href="sel-and-pred.html#cb59-140" tabindex="-1"></a></span>
+<span id="cb59-141"><a href="sel-and-pred.html#cb59-141" tabindex="-1"></a>    <span class="co"># Fit linear model on training data via OLS. lm(y ~ .) adds an intercept, so</span></span>
+<span id="cb59-142"><a href="sel-and-pred.html#cb59-142" tabindex="-1"></a>    <span class="co"># the fit is rank-deficient unless there are strictly more training</span></span>
+<span id="cb59-143"><a href="sel-and-pred.html#cb59-143" tabindex="-1"></a>    <span class="co"># observations than clusters (nrow &gt;= ncol + 1); guard with &lt;= so the</span></span>
+<span id="cb59-144"><a href="sel-and-pred.html#cb59-144" tabindex="-1"></a>    <span class="co"># n_train == n_clusters boundary errors clearly instead of silently fitting a</span></span>
+<span id="cb59-145"><a href="sel-and-pred.html#cb59-145" tabindex="-1"></a>    <span class="co"># rank-deficient model with NA coefficients.</span></span>
+<span id="cb59-146"><a href="sel-and-pred.html#cb59-146" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">nrow</span>(train_X_clusters) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(train_X_clusters)){</span>
+<span id="cb59-147"><a href="sel-and-pred.html#cb59-147" tabindex="-1"></a>        err_mess <span class="ot">&lt;-</span> <span class="fu">paste</span>(<span class="st">"css not provided with enough indices to fit OLS model for predictions (number of training indices: "</span>,</span>
+<span id="cb59-148"><a href="sel-and-pred.html#cb59-148" tabindex="-1"></a>            <span class="fu">nrow</span>(train_X_clusters), <span class="st">", number of clusters: "</span>,</span>
+<span id="cb59-149"><a href="sel-and-pred.html#cb59-149" tabindex="-1"></a>            <span class="fu">ncol</span>(train_X_clusters),</span>
+<span id="cb59-150"><a href="sel-and-pred.html#cb59-150" tabindex="-1"></a>            <span class="st">"). The OLS model includes an intercept, so it needs at least one more training observation than the number of clusters. Try reducing number of clusters by increasing cutoff, or re-run css with a larger number of training indices."</span>,</span>
+<span id="cb59-151"><a href="sel-and-pred.html#cb59-151" tabindex="-1"></a>            <span class="at">sep=</span><span class="st">""</span>)</span>
+<span id="cb59-152"><a href="sel-and-pred.html#cb59-152" tabindex="-1"></a>        <span class="fu">stop</span>(err_mess)</span>
+<span id="cb59-153"><a href="sel-and-pred.html#cb59-153" tabindex="-1"></a>    }</span>
+<span id="cb59-154"><a href="sel-and-pred.html#cb59-154" tabindex="-1"></a></span>
+<span id="cb59-155"><a href="sel-and-pred.html#cb59-155" tabindex="-1"></a>    <span class="co"># Response name guaranteed distinct from every cluster name (issue #150):</span></span>
+<span id="cb59-156"><a href="sel-and-pred.html#cb59-156" tabindex="-1"></a>    <span class="co"># make.unique returns "y" when no cluster is named "y" (bit-identical to</span></span>
+<span id="cb59-157"><a href="sel-and-pred.html#cb59-157" tabindex="-1"></a>    <span class="co"># prior behavior) and e.g. "y.1" when one is, so lm() never drops a</span></span>
+<span id="cb59-158"><a href="sel-and-pred.html#cb59-158" tabindex="-1"></a>    <span class="co"># cluster representative via a name collision with the response.</span></span>
+<span id="cb59-159"><a href="sel-and-pred.html#cb59-159" tabindex="-1"></a>    resp_name <span class="ot">&lt;-</span> <span class="fu">make.unique</span>(<span class="fu">c</span>(clust_X_names, <span class="st">"y"</span>))[<span class="fu">length</span>(clust_X_names) <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span>]</span>
+<span id="cb59-160"><a href="sel-and-pred.html#cb59-160" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(y_train, train_X_clusters)</span>
+<span id="cb59-161"><a href="sel-and-pred.html#cb59-161" tabindex="-1"></a>    <span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(resp_name, clust_X_names)</span>
+<span id="cb59-162"><a href="sel-and-pred.html#cb59-162" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyDuplicated</span>(<span class="fu">colnames</span>(df)))</span>
+<span id="cb59-163"><a href="sel-and-pred.html#cb59-163" tabindex="-1"></a>    model <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">lm</span>(stats<span class="sc">::</span><span class="fu">as.formula</span>(<span class="fu">paste0</span>(<span class="st">"`"</span>, resp_name, <span class="st">"` ~ ."</span>)), <span class="at">data =</span> df)</span>
+<span id="cb59-164"><a href="sel-and-pred.html#cb59-164" tabindex="-1"></a></span>
+<span id="cb59-165"><a href="sel-and-pred.html#cb59-165" tabindex="-1"></a>    <span class="co"># Use fitted model to generate predictions on testX. Route through</span></span>
+<span id="cb59-166"><a href="sel-and-pred.html#cb59-166" tabindex="-1"></a>    <span class="co"># <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>() so a rank-deficient OLS fit predicts from its</span></span>
+<span id="cb59-167"><a href="sel-and-pred.html#cb59-167" tabindex="-1"></a>    <span class="co"># estimable coefficients instead of crashing under R &gt;= 4.4's predict.lm</span></span>
+<span id="cb59-168"><a href="sel-and-pred.html#cb59-168" tabindex="-1"></a>    <span class="co"># default (see the helper's note and issue #117).</span></span>
+<span id="cb59-169"><a href="sel-and-pred.html#cb59-169" tabindex="-1"></a>    df_test <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(testX_clusters)</span>
+<span id="cb59-170"><a href="sel-and-pred.html#cb59-170" tabindex="-1"></a>    <span class="fu">colnames</span>(df_test) <span class="ot">&lt;-</span> clust_X_names</span>
+<span id="cb59-171"><a href="sel-and-pred.html#cb59-171" tabindex="-1"></a>    predictions <span class="ot">&lt;-</span> <a href="sel-and-pred.html#olsPredictRankSafe">olsPredictRankSafe</a>(model, df_test)</span>
+<span id="cb59-172"><a href="sel-and-pred.html#cb59-172" tabindex="-1"></a>    <span class="fu">names</span>(predictions) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb59-173"><a href="sel-and-pred.html#cb59-173" tabindex="-1"></a></span>
+<span id="cb59-174"><a href="sel-and-pred.html#cb59-174" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb59-175"><a href="sel-and-pred.html#cb59-175" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(predictions) <span class="sc">|</span> <span class="fu">is.integer</span>(predictions))</span>
+<span id="cb59-176"><a href="sel-and-pred.html#cb59-176" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(predictions) <span class="sc">==</span> n)</span>
+<span id="cb59-177"><a href="sel-and-pred.html#cb59-177" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.finite</span>(predictions)))</span>
+<span id="cb59-178"><a href="sel-and-pred.html#cb59-178" tabindex="-1"></a></span>
+<span id="cb59-179"><a href="sel-and-pred.html#cb59-179" tabindex="-1"></a>    <span class="fu">return</span>(predictions)</span>
+<span id="cb59-180"><a href="sel-and-pred.html#cb59-180" tabindex="-1"></a>}</span></code></pre></div>
 <p>Internal OLS-prediction helper used by <code><a href="sel-and-pred.html#getCssPreds">getCssPreds</a>()</code> (issue #117):</p>
 <div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="sel-and-pred.html#cb60-1" tabindex="-1"></a><span class="co">#' Predict from a possibly rank-deficient OLS fit without crashing on R &gt;= 4.4</span></span>
 <span id="cb60-2"><a href="sel-and-pred.html#cb60-2" tabindex="-1"></a><span class="co">#'</span></span>

@@ -31,11 +31,14 @@ getCssSelections(
   member (or divided equally among all the clusters that are tied for
   the top selection proportion if there is a tie). For "weighted_avg",
   only the features within a selected cluster that were themselves
-  selected on at least one subsample will have nonzero weight. For
-  "simple_avg", each cluster member gets equal weight regardless of the
-  individual feature selection proportions (that is, all cluster members
-  within each selected cluster will be returned.). See Faletto and
-  Bien (2022) for details. Default is "sparse".
+  selected on at least one subsample will have nonzero weight.
+  (Exception: if no member of a selected cluster was selected on any
+  subsample, the weights fall back to a simple average, so all of that
+  cluster's members are returned.) For "simple_avg", each cluster member
+  gets equal weight regardless of the individual feature selection
+  proportions (that is, all cluster members within each selected cluster
+  will be returned.). See Faletto and Bien (2022) for details. Default
+  is "sparse".
 
 - cutoff:
 
@@ -60,7 +63,10 @@ getCssSelections(
   of cutoff. (That is, if the chosen cutoff returns more than
   max_num_clusts clusters, the cutoff will be raised until at most
   max_num_clusts clusters are selected.) Default is NA (in which case
-  max_num_clusts is ignored).
+  max_num_clusts is ignored). Because clusters can have tied selection
+  proportions, ties at the threshold can cause more than max_num_clusts
+  (or fewer than min_num_clusts) clusters to be returned; when the two
+  constraints conflict, max_num_clusts takes precedence.
 
 ## Value
 
