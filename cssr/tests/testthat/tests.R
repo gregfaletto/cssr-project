@@ -1304,10 +1304,13 @@ testthat::test_that("getSelMatrix works", {
   testthat::expect_true(all(res2 %in% c(0, 1)))
   testthat::expect_true(all(is.integer(res2)))
   
+  # With the per-subsample tryCatch (#155a), cssLoop's is.integer(subsample)
+  # failure is caught and tagged, so the length(res_list) == nrow(res) check
+  # (res_list length 1 vs 24 rows) now trips first.
   testthat::expect_error(getSelMatrix(x=x, y=y, lambda="0.02", B=12, sampling_type="SS",
                       subsamps_object="subsamps_object", num_cores=1,
                       fitfun=testFitfun),
-                      "is.integer(subsample) is not TRUE",
+                      "length(res_list) == nrow(res) is not TRUE",
                       fixed=TRUE)
   testthat::expect_error(getSelMatrix(x=x[1:8, ], y=y, lambda="foo", B=12, sampling_type="SS",
                       subsamps_object=subsamps_object, num_cores=1,
@@ -1344,6 +1347,90 @@ testthat::test_that("getSelMatrix detects a killed parallel worker (#104)", {
                  subsamps_object=subsamps_object, num_cores=1,
                  fitfun=cssLasso),
     "parallel worker failed")
+})
+
+testthat::test_that("fitfunFailureMessage reads the tagged subsample index (#155a)", {
+  msg <- fitfunFailureMessage(
+    structure(list(i=7L, msg="boom"), class="cssr_loop_error"), 999L)
+  testthat::expect_true(grepl("subsample 7", msg, fixed=TRUE))
+  testthat::expect_true(grepl("boom", msg, fixed=TRUE))
+  testthat::expect_false(grepl("subsample 999", msg, fixed=TRUE))
+})
+
+testthat::test_that("a parallel fitfun failure reports the true subsample (#155a)", {
+  B <- 7L
+  K <- 5L      # in 2..B: shares preschedule chunk 1 with the SUCCESSFUL subsample 1
+  n <- 25L
+  p <- 6L
+  set.seed(408)
+  x <- matrix(stats::rnorm(n * p), nrow=n, ncol=p)
+  x[1, 1] <- -999    # sentinel "poison" marker in row 1
+  y <- stats::rnorm(n)
+
+  # floor(n/2) = 12 distinct row indices per subsample; ONLY subsample K holds row 1.
+  half <- floor(n / 2)
+  subsamps_object <- lapply(seq_len(2L * B),
+                            function(j) if(j == K) 1:half else 2:(half + 1L))
+
+  # fitfun stops iff its subsample contains the poison row (row 1), else selects.
+  poison_fitfun <- function(X, y, lambda){
+    if(any(X[, 1] == -999)) stop("poison") else c(1L, 2L)
+  }
+
+  # Probe real forking; skip (rather than fail) where unavailable.
+  forked <- tryCatch({
+    parallel::mclapply(1:2, function(i) i, mc.cores=2L)
+    TRUE
+  }, error=function(e) FALSE)
+  if(!forked){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+
+  err <- tryCatch(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=2L,
+                 fitfun=poison_fitfun),
+    error=function(e) conditionMessage(e))
+  testthat::expect_true(grepl("subsample 5", err, fixed=TRUE))
+  testthat::expect_false(grepl("subsample 1", err, fixed=TRUE))
+})
+
+testthat::test_that("fitfun warnings surface under num_cores > 1 (#155b)", {
+  B <- 6L
+  n <- 25L
+  p <- 6L
+  set.seed(511)
+  x <- matrix(stats::rnorm(n * p), nrow=n, ncol=p)
+  y <- stats::rnorm(n)
+  subsamps_object <- createSubsamples(n=n, p=p, B=B, sampling_type="SS",
+                                      prop_feats_remove=0)
+
+  # One warning per fitfun call; returns a valid selection.
+  warn_fitfun <- function(X, y, lambda){ warning("wfit"); c(1L, 2L) }
+
+  serial_warns <- testthat::capture_warnings(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=1L,
+                 fitfun=warn_fitfun))
+  # one warning per subsample = 2*B
+  testthat::expect_equal(sum(serial_warns == "wfit"), 2L * B)
+
+  # Probe real forking; skip where unavailable.
+  forked <- tryCatch({
+    parallel::mclapply(1:2, function(i) i, mc.cores=2L)
+    TRUE
+  }, error=function(e) FALSE)
+  if(!forked){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+
+  par_warns <- testthat::capture_warnings(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=2L,
+                 fitfun=warn_fitfun))
+  # parallel no longer swallows them: same count AND same messages as serial.
+  testthat::expect_equal(sum(par_warns == "wfit"), 2L * B)
+  testthat::expect_identical(sort(par_warns), sort(serial_warns))
 })
 
 testthat::test_that("cssLasso works", {
@@ -1689,6 +1776,46 @@ testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isol
   }
   testthat::expect_identical(par_runs$a, par_runs$b)   # parallel reproducible
   testthat::expect_identical(par_runs$a, d1)           # serial == parallel
+})
+
+testthat::test_that("detectCores() = NA does not brick css (#155c)", {
+  set.seed(72)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(
+    detectCores = function(...) NA_integer_, .package = "parallel")
+  res <- css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 1L)
+  testthat::expect_s3_class(res, "cssr")
+})
+
+testthat::test_that("num_cores beyond a known core count still errors (#155c)", {
+  set.seed(72)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(
+    detectCores = function(...) 2L, .package = "parallel")
+  testthat::expect_error(
+    css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 5L),
+    "num_cores <= n_cores_avail is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("num_cores > 1 on Windows warns and runs serially (#155d)", {
+  # Mocking a package-internal function needs a package context: local_mocked_bindings
+  # resolves the package via testthat::testing_package(), which is set under
+  # devtools::test and R CMD check but is empty during the bare litr weave (the cssr
+  # functions live in the knit global env with no namespace to mock). Skip there; the
+  # Windows branch is still exercised under devtools::test / R CMD check.
+  if(testthat::testing_package() == ""){
+    testthat::skip("runningOnWindows mock needs a package context (unavailable during the litr weave)")
+  }
+  set.seed(84)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(runningOnWindows = function() TRUE)
+  testthat::expect_warning(
+    res <- css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 2L),
+    "not supported on Windows", fixed = TRUE)
+  testthat::expect_s3_class(res, "cssr")
 })
 
 testthat::test_that("discreteYAbortProb estimates the constant-subsample probability (#131)", {

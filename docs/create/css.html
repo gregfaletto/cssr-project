@@ -294,154 +294,163 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb10-47"><a href="css.html#cb10-47" tabindex="-1"></a><span class="co">#' dominant cost and is embarrassingly parallel, so on a multi-core Unix or</span></span>
 <span id="cb10-48"><a href="css.html#cb10-48" tabindex="-1"></a><span class="co">#' macOS machine setting `num_cores &gt; 1` gives a substantial speedup; the result</span></span>
 <span id="cb10-49"><a href="css.html#cb10-49" tabindex="-1"></a><span class="co">#' is identical regardless of `num_cores` (per-subsample seeds are fixed).</span></span>
-<span id="cb10-50"><a href="css.html#cb10-50" tabindex="-1"></a><span class="co">#' Forking is unavailable on Windows, where `mclapply` runs serially. Default is</span></span>
-<span id="cb10-51"><a href="css.html#cb10-51" tabindex="-1"></a><span class="co">#' 1 (serial).</span></span>
-<span id="cb10-52"><a href="css.html#cb10-52" tabindex="-1"></a><span class="co">#' @return A list containing the following items:</span></span>
-<span id="cb10-53"><a href="css.html#cb10-53" tabindex="-1"></a><span class="co">#' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}</span></span>
-<span id="cb10-54"><a href="css.html#cb10-54" tabindex="-1"></a><span class="co">#' \item{`clus_sel_mat`}{A `B` (or `2*B` for SS sampling) x `length(clusters)` numeric (binary) matrix. `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected by the base feature selection method on subsample `i`, and 0 otherwise.}</span></span>
-<span id="cb10-55"><a href="css.html#cb10-55" tabindex="-1"></a><span class="co">#' \item{`X`}{The `X` matrix provided to `<a href="css.html#css">css</a>()`, coerced from a data.frame to a </span></span>
-<span id="cb10-56"><a href="css.html#cb10-56" tabindex="-1"></a><span class="co">#' matrix if needed.}</span></span>
-<span id="cb10-57"><a href="css.html#cb10-57" tabindex="-1"></a><span class="co">#' \item{`y`}{The `y` vector provided to `<a href="css.html#css">css</a>()`.}</span></span>
-<span id="cb10-58"><a href="css.html#cb10-58" tabindex="-1"></a><span class="co">#' \item{`clusters`}{A named list of integer vectors containing all of the clusters provided to `<a href="css.html#css">css</a>()`, as well as size 1 clusters of any features not listed in any</span></span>
-<span id="cb10-59"><a href="css.html#cb10-59" tabindex="-1"></a><span class="co">#' of the clusters provided to `<a href="css.html#css">css</a>()`. All clusters will have names; any </span></span>
-<span id="cb10-60"><a href="css.html#cb10-60" tabindex="-1"></a><span class="co">#' clusters not provided with a name in the input to `<a href="css.html#css">css</a>()` will be given names</span></span>
-<span id="cb10-61"><a href="css.html#cb10-61" tabindex="-1"></a><span class="co">#' automatically by `<a href="css.html#css">css</a>()` (of the form c1, etc.).}</span></span>
-<span id="cb10-62"><a href="css.html#cb10-62" tabindex="-1"></a><span class="co">#' \item{`train_inds`}{Identical to the `train_inds` provided to `<a href="css.html#css">css</a>()`.}</span></span>
-<span id="cb10-63"><a href="css.html#cb10-63" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb10-64"><a href="css.html#cb10-64" tabindex="-1"></a><span class="co">#' @references</span></span>
-<span id="cb10-65"><a href="css.html#cb10-65" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
-<span id="cb10-66"><a href="css.html#cb10-66" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb10-67"><a href="css.html#cb10-67" tabindex="-1"></a><a href="overview.html#shah2013">&lt;&lt;shah2013&gt;&gt;</a></span>
-<span id="cb10-68"><a href="css.html#cb10-68" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb10-69"><a href="css.html#cb10-69" tabindex="-1"></a><span class="co">#' Meinshausen, N., &amp; Bühlmann, P. (2010). Stability Selection. \emph{Journal of the Royal</span></span>
-<span id="cb10-70"><a href="css.html#cb10-70" tabindex="-1"></a><span class="co">#' Statistical Society. Series B: Statistical Methodology}, 72(4), 417–473.</span></span>
-<span id="cb10-71"><a href="css.html#cb10-71" tabindex="-1"></a><span class="co">#' \url{https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00740.x}.</span></span>
-<span id="cb10-72"><a href="css.html#cb10-72" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb10-73"><a href="css.html#cb10-73" tabindex="-1"></a><span class="co">#' Beinrucker, A., Dogan, Ü., &amp;</span></span>
-<span id="cb10-74"><a href="css.html#cb10-74" tabindex="-1"></a><span class="co">#' Blanchard, G. (2016). Extensions of stability selection using subsamples of</span></span>
-<span id="cb10-75"><a href="css.html#cb10-75" tabindex="-1"></a><span class="co">#' observations and covariates. \emph{Statistics and Computing}, 26(5), 1059-</span></span>
-<span id="cb10-76"><a href="css.html#cb10-76" tabindex="-1"></a><span class="co">#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}.</span></span>
-<span id="cb10-77"><a href="css.html#cb10-77" tabindex="-1"></a><span class="co">#' </span></span>
-<span id="cb10-78"><a href="css.html#cb10-78" tabindex="-1"></a><span class="co">#' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized</span></span>
-<span id="cb10-79"><a href="css.html#cb10-79" tabindex="-1"></a><span class="co">#' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},</span></span>
-<span id="cb10-80"><a href="css.html#cb10-80" tabindex="-1"></a><span class="co">#' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
-<span id="cb10-81"><a href="css.html#cb10-81" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb10-82"><a href="css.html#cb10-82" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb10-83"><a href="css.html#cb10-83" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb10-84"><a href="css.html#cb10-84" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb10-85"><a href="css.html#cb10-85" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb10-86"><a href="css.html#cb10-86" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb10-87"><a href="css.html#cb10-87" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
-<span id="cb10-88"><a href="css.html#cb10-88" tabindex="-1"></a><span class="co">#' print(res)</span></span>
-<span id="cb10-89"><a href="css.html#cb10-89" tabindex="-1"></a><span class="co">#' # On a multi-core Unix/macOS machine, set num_cores for a substantial</span></span>
-<span id="cb10-90"><a href="css.html#cb10-90" tabindex="-1"></a><span class="co">#' # speedup (identical results; mclapply runs serially on Windows):</span></span>
-<span id="cb10-91"><a href="css.html#cb10-91" tabindex="-1"></a><span class="co">#' \donttest{</span></span>
-<span id="cb10-92"><a href="css.html#cb10-92" tabindex="-1"></a><span class="co">#' res_par &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
-<span id="cb10-93"><a href="css.html#cb10-93" tabindex="-1"></a><span class="co">#'   B = 10, num_cores = min(2L, parallel::detectCores()))</span></span>
-<span id="cb10-94"><a href="css.html#cb10-94" tabindex="-1"></a><span class="co">#' }</span></span>
-<span id="cb10-95"><a href="css.html#cb10-95" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb10-96"><a href="css.html#cb10-96" tabindex="-1"></a><span id="css">css</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda, <span class="at">clusters =</span> <span class="fu">list</span>(), <span class="at">fitfun =</span> cssLasso,</span>
-<span id="cb10-97"><a href="css.html#cb10-97" tabindex="-1"></a>    <span class="at">sampling_type =</span> <span class="st">"SS"</span>, <span class="at">B =</span> <span class="dv">50</span><span class="dt">L</span>,</span>
-<span id="cb10-98"><a href="css.html#cb10-98" tabindex="-1"></a>    <span class="at">prop_feats_remove =</span> <span class="dv">0</span>, <span class="at">train_inds =</span> <span class="fu">integer</span>(), <span class="at">num_cores =</span> <span class="dv">1</span><span class="dt">L</span></span>
-<span id="cb10-99"><a href="css.html#cb10-99" tabindex="-1"></a>    ){</span>
-<span id="cb10-100"><a href="css.html#cb10-100" tabindex="-1"></a></span>
-<span id="cb10-101"><a href="css.html#cb10-101" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
-<span id="cb10-102"><a href="css.html#cb10-102" tabindex="-1"></a></span>
-<span id="cb10-103"><a href="css.html#cb10-103" tabindex="-1"></a>    check_list <span class="ot">&lt;-</span> <a href="css.html#checkCssInputs">checkCssInputs</a>(X, y, lambda, clusters, fitfun, sampling_type,</span>
-<span id="cb10-104"><a href="css.html#cb10-104" tabindex="-1"></a>        B, prop_feats_remove, train_inds, num_cores)</span>
-<span id="cb10-105"><a href="css.html#cb10-105" tabindex="-1"></a></span>
-<span id="cb10-106"><a href="css.html#cb10-106" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> check_list<span class="sc">$</span>feat_names</span>
-<span id="cb10-107"><a href="css.html#cb10-107" tabindex="-1"></a>    X <span class="ot">&lt;-</span> check_list<span class="sc">$</span>X</span>
-<span id="cb10-108"><a href="css.html#cb10-108" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> check_list<span class="sc">$</span>clusters</span>
-<span id="cb10-109"><a href="css.html#cb10-109" tabindex="-1"></a></span>
-<span id="cb10-110"><a href="css.html#cb10-110" tabindex="-1"></a>    <span class="fu">rm</span>(check_list)</span>
-<span id="cb10-111"><a href="css.html#cb10-111" tabindex="-1"></a></span>
-<span id="cb10-112"><a href="css.html#cb10-112" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb10-113"><a href="css.html#cb10-113" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb10-114"><a href="css.html#cb10-114" tabindex="-1"></a></span>
-<span id="cb10-115"><a href="css.html#cb10-115" tabindex="-1"></a>    train_inds <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(train_inds)</span>
-<span id="cb10-116"><a href="css.html#cb10-116" tabindex="-1"></a></span>
-<span id="cb10-117"><a href="css.html#cb10-117" tabindex="-1"></a>    <span class="do">### Create subsamples</span></span>
-<span id="cb10-118"><a href="css.html#cb10-118" tabindex="-1"></a></span>
-<span id="cb10-119"><a href="css.html#cb10-119" tabindex="-1"></a>    sel_inds <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)</span>
-<span id="cb10-120"><a href="css.html#cb10-120" tabindex="-1"></a>    n_sel <span class="ot">&lt;-</span> <span class="fu">length</span>(sel_inds)</span>
-<span id="cb10-121"><a href="css.html#cb10-121" tabindex="-1"></a>    <span class="cf">if</span>(n_sel <span class="sc">&lt;</span> <span class="dv">4</span>){</span>
-<span id="cb10-122"><a href="css.html#cb10-122" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb10-123"><a href="css.html#cb10-123" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"Sample size n = "</span>, n, <span class="st">" is too small; css needs at least 4 observations for feature selection."</span>))</span>
-<span id="cb10-124"><a href="css.html#cb10-124" tabindex="-1"></a>        } <span class="cf">else</span> {</span>
-<span id="cb10-125"><a href="css.html#cb10-125" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)"</span>)</span>
-<span id="cb10-126"><a href="css.html#cb10-126" tabindex="-1"></a>        }</span>
-<span id="cb10-127"><a href="css.html#cb10-127" tabindex="-1"></a>    }</span>
-<span id="cb10-128"><a href="css.html#cb10-128" tabindex="-1"></a></span>
-<span id="cb10-129"><a href="css.html#cb10-129" tabindex="-1"></a>    subsamps_object <span class="ot">&lt;-</span> <a href="css.html#createSubsamples">createSubsamples</a>(n_sel, p, B, sampling_type,</span>
-<span id="cb10-130"><a href="css.html#cb10-130" tabindex="-1"></a>        prop_feats_remove)</span>
-<span id="cb10-131"><a href="css.html#cb10-131" tabindex="-1"></a></span>
-<span id="cb10-132"><a href="css.html#cb10-132" tabindex="-1"></a>    <span class="do">### Get matrix of selected feature sets from subsamples</span></span>
-<span id="cb10-133"><a href="css.html#cb10-133" tabindex="-1"></a></span>
-<span id="cb10-134"><a href="css.html#cb10-134" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.matrix</span>(y))</span>
-<span id="cb10-135"><a href="css.html#cb10-135" tabindex="-1"></a></span>
-<span id="cb10-136"><a href="css.html#cb10-136" tabindex="-1"></a>    <span class="co"># When train_inds is empty (the default), sel_inds is 1:n, so X[sel_inds, ]</span></span>
-<span id="cb10-137"><a href="css.html#cb10-137" tabindex="-1"></a>    <span class="co"># / y[sel_inds] would just materialize a full-size copy of X / y for nothing</span></span>
-<span id="cb10-138"><a href="css.html#cb10-138" tabindex="-1"></a>    <span class="co"># (getSelMatrix re-indexes rows per subsample anyway). Pass X / y directly in</span></span>
-<span id="cb10-139"><a href="css.html#cb10-139" tabindex="-1"></a>    <span class="co"># that case; the result is byte-identical, since X[1:n, ] equals X (same</span></span>
-<span id="cb10-140"><a href="css.html#cb10-140" tabindex="-1"></a>    <span class="co"># values and dimnames) and y[1:n] equals y. (#129)</span></span>
-<span id="cb10-141"><a href="css.html#cb10-141" tabindex="-1"></a>    sel_X <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) X <span class="cf">else</span> X[sel_inds, ]</span>
-<span id="cb10-142"><a href="css.html#cb10-142" tabindex="-1"></a>    sel_y <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) y <span class="cf">else</span> y[sel_inds]</span>
-<span id="cb10-143"><a href="css.html#cb10-143" tabindex="-1"></a></span>
-<span id="cb10-144"><a href="css.html#cb10-144" tabindex="-1"></a>    <span class="co"># Up-front diagnostic (#131): for the default cssLasso a highly discrete y can</span></span>
-<span id="cb10-145"><a href="css.html#cb10-145" tabindex="-1"></a>    <span class="co"># leave some random size-floor(n/2) subsample with only one unique value, which</span></span>
-<span id="cb10-146"><a href="css.html#cb10-146" tabindex="-1"></a>    <span class="co"># aborts the run non-deterministically (checkCssLassoInputs). Warn when that</span></span>
-<span id="cb10-147"><a href="css.html#cb10-147" tabindex="-1"></a>    <span class="co"># estimated probability is non-negligible. Gated to the default cssLasso (custom</span></span>
-<span id="cb10-148"><a href="css.html#cb10-148" tabindex="-1"></a>    <span class="co"># fitfuns may tolerate a constant-y subsample) and to finite numeric/integer y:</span></span>
-<span id="cb10-149"><a href="css.html#cb10-149" tabindex="-1"></a>    <span class="co"># a non-numeric or non-finite y fails cssLasso for a different, more basic</span></span>
-<span id="cb10-150"><a href="css.html#cb10-150" tabindex="-1"></a>    <span class="co"># reason (checkCssLassoInputs), and a non-finite value (Inf/NA) would otherwise</span></span>
-<span id="cb10-151"><a href="css.html#cb10-151" tabindex="-1"></a>    <span class="co"># be miscounted by table() as a dominating value, so a discreteness warning</span></span>
-<span id="cb10-152"><a href="css.html#cb10-152" tabindex="-1"></a>    <span class="co"># there would be misleading. Consumes no RNG (table/lchoose only), so the</span></span>
-<span id="cb10-153"><a href="css.html#cb10-153" tabindex="-1"></a>    <span class="co"># selection below is byte-identical.</span></span>
-<span id="cb10-154"><a href="css.html#cb10-154" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">identical</span>(fitfun, cssLasso) <span class="sc">&amp;&amp;</span> (<span class="fu">is.numeric</span>(sel_y) <span class="sc">||</span> <span class="fu">is.integer</span>(sel_y)) <span class="sc">&amp;&amp;</span></span>
-<span id="cb10-155"><a href="css.html#cb10-155" tabindex="-1"></a>            <span class="fu">all</span>(<span class="fu">is.finite</span>(sel_y))){</span>
-<span id="cb10-156"><a href="css.html#cb10-156" tabindex="-1"></a>        abort_prob <span class="ot">&lt;-</span> <a href="css.html#discreteYAbortProb">discreteYAbortProb</a>(sel_y, B, sampling_type)</span>
-<span id="cb10-157"><a href="css.html#cb10-157" tabindex="-1"></a>        <span class="co"># Warn only above a 5% estimated abort probability: high enough to stay</span></span>
-<span id="cb10-158"><a href="css.html#cb10-158" tabindex="-1"></a>        <span class="co"># silent on common discrete data (balanced/moderate y compute to ~0) while</span></span>
-<span id="cb10-159"><a href="css.html#cb10-159" tabindex="-1"></a>        <span class="co"># still catching genuinely majority-dominated y. Tunable constant. (#131)</span></span>
-<span id="cb10-160"><a href="css.html#cb10-160" tabindex="-1"></a>        <span class="cf">if</span>(abort_prob <span class="sc">&gt;</span> <span class="fl">0.05</span>){</span>
-<span id="cb10-161"><a href="css.html#cb10-161" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="fu">paste0</span>(<span class="st">"The response y appears highly discrete: there is an "</span>,</span>
-<span id="cb10-162"><a href="css.html#cb10-162" tabindex="-1"></a>                <span class="st">"estimated "</span>, <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> abort_prob), <span class="st">"% chance that at least one "</span>,</span>
-<span id="cb10-163"><a href="css.html#cb10-163" tabindex="-1"></a>                <span class="st">"random subsample of y (of size floor(n/2)) will contain only one "</span>,</span>
-<span id="cb10-164"><a href="css.html#cb10-164" tabindex="-1"></a>                <span class="st">"unique value, which aborts the default cssLasso (see its error). "</span>,</span>
-<span id="cb10-165"><a href="css.html#cb10-165" tabindex="-1"></a>                <span class="st">"Consider a less discrete (more continuous) response, a smaller B, "</span>,</span>
-<span id="cb10-166"><a href="css.html#cb10-166" tabindex="-1"></a>                <span class="st">"or a custom fitfun that tolerates a constant-y subsample."</span>))</span>
-<span id="cb10-167"><a href="css.html#cb10-167" tabindex="-1"></a>        }</span>
-<span id="cb10-168"><a href="css.html#cb10-168" tabindex="-1"></a>    }</span>
-<span id="cb10-169"><a href="css.html#cb10-169" tabindex="-1"></a></span>
-<span id="cb10-170"><a href="css.html#cb10-170" tabindex="-1"></a>    feat_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getSelMatrix">getSelMatrix</a>(sel_X, sel_y, lambda, B,</span>
-<span id="cb10-171"><a href="css.html#cb10-171" tabindex="-1"></a>        sampling_type, subsamps_object, num_cores, fitfun)</span>
-<span id="cb10-172"><a href="css.html#cb10-172" tabindex="-1"></a></span>
-<span id="cb10-173"><a href="css.html#cb10-173" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
-<span id="cb10-174"><a href="css.html#cb10-174" tabindex="-1"></a>        <span class="fu">colnames</span>(feat_sel_mat) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb10-175"><a href="css.html#cb10-175" tabindex="-1"></a>        <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> feat_names</span>
-<span id="cb10-176"><a href="css.html#cb10-176" tabindex="-1"></a>    }</span>
-<span id="cb10-177"><a href="css.html#cb10-177" tabindex="-1"></a></span>
-<span id="cb10-178"><a href="css.html#cb10-178" tabindex="-1"></a>    <span class="do">### Get selection proportions for clusters corresponding to each feature</span></span>
-<span id="cb10-179"><a href="css.html#cb10-179" tabindex="-1"></a></span>
-<span id="cb10-180"><a href="css.html#cb10-180" tabindex="-1"></a>    clus_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>(clusters, feat_sel_mat)</span>
+<span id="cb10-50"><a href="css.html#cb10-50" tabindex="-1"></a><span class="co">#' On Windows, forking is unavailable, so `num_cores &gt; 1` is not supported;</span></span>
+<span id="cb10-51"><a href="css.html#cb10-51" tabindex="-1"></a><span class="co">#' `<a href="css.html#css">css</a>()` warns and runs serially (`num_cores = 1`) there. Default is</span></span>
+<span id="cb10-52"><a href="css.html#cb10-52" tabindex="-1"></a><span class="co">#' 1 (serial).</span></span>
+<span id="cb10-53"><a href="css.html#cb10-53" tabindex="-1"></a><span class="co">#' @return A list containing the following items:</span></span>
+<span id="cb10-54"><a href="css.html#cb10-54" tabindex="-1"></a><span class="co">#' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}</span></span>
+<span id="cb10-55"><a href="css.html#cb10-55" tabindex="-1"></a><span class="co">#' \item{`clus_sel_mat`}{A `B` (or `2*B` for SS sampling) x `length(clusters)` numeric (binary) matrix. `clus_sel_mat[i, j] = 1` if at least one feature from cluster j was selected by the base feature selection method on subsample `i`, and 0 otherwise.}</span></span>
+<span id="cb10-56"><a href="css.html#cb10-56" tabindex="-1"></a><span class="co">#' \item{`X`}{The `X` matrix provided to `<a href="css.html#css">css</a>()`, coerced from a data.frame to a </span></span>
+<span id="cb10-57"><a href="css.html#cb10-57" tabindex="-1"></a><span class="co">#' matrix if needed.}</span></span>
+<span id="cb10-58"><a href="css.html#cb10-58" tabindex="-1"></a><span class="co">#' \item{`y`}{The `y` vector provided to `<a href="css.html#css">css</a>()`.}</span></span>
+<span id="cb10-59"><a href="css.html#cb10-59" tabindex="-1"></a><span class="co">#' \item{`clusters`}{A named list of integer vectors containing all of the clusters provided to `<a href="css.html#css">css</a>()`, as well as size 1 clusters of any features not listed in any</span></span>
+<span id="cb10-60"><a href="css.html#cb10-60" tabindex="-1"></a><span class="co">#' of the clusters provided to `<a href="css.html#css">css</a>()`. All clusters will have names; any </span></span>
+<span id="cb10-61"><a href="css.html#cb10-61" tabindex="-1"></a><span class="co">#' clusters not provided with a name in the input to `<a href="css.html#css">css</a>()` will be given names</span></span>
+<span id="cb10-62"><a href="css.html#cb10-62" tabindex="-1"></a><span class="co">#' automatically by `<a href="css.html#css">css</a>()` (of the form c1, etc.).}</span></span>
+<span id="cb10-63"><a href="css.html#cb10-63" tabindex="-1"></a><span class="co">#' \item{`train_inds`}{Identical to the `train_inds` provided to `<a href="css.html#css">css</a>()`.}</span></span>
+<span id="cb10-64"><a href="css.html#cb10-64" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb10-65"><a href="css.html#cb10-65" tabindex="-1"></a><span class="co">#' @references</span></span>
+<span id="cb10-66"><a href="css.html#cb10-66" tabindex="-1"></a><a href="index.html#faletto2022">&lt;&lt;faletto2022&gt;&gt;</a></span>
+<span id="cb10-67"><a href="css.html#cb10-67" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb10-68"><a href="css.html#cb10-68" tabindex="-1"></a><a href="overview.html#shah2013">&lt;&lt;shah2013&gt;&gt;</a></span>
+<span id="cb10-69"><a href="css.html#cb10-69" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb10-70"><a href="css.html#cb10-70" tabindex="-1"></a><span class="co">#' Meinshausen, N., &amp; Bühlmann, P. (2010). Stability Selection. \emph{Journal of the Royal</span></span>
+<span id="cb10-71"><a href="css.html#cb10-71" tabindex="-1"></a><span class="co">#' Statistical Society. Series B: Statistical Methodology}, 72(4), 417–473.</span></span>
+<span id="cb10-72"><a href="css.html#cb10-72" tabindex="-1"></a><span class="co">#' \url{https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00740.x}.</span></span>
+<span id="cb10-73"><a href="css.html#cb10-73" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb10-74"><a href="css.html#cb10-74" tabindex="-1"></a><span class="co">#' Beinrucker, A., Dogan, Ü., &amp;</span></span>
+<span id="cb10-75"><a href="css.html#cb10-75" tabindex="-1"></a><span class="co">#' Blanchard, G. (2016). Extensions of stability selection using subsamples of</span></span>
+<span id="cb10-76"><a href="css.html#cb10-76" tabindex="-1"></a><span class="co">#' observations and covariates. \emph{Statistics and Computing}, 26(5), 1059-</span></span>
+<span id="cb10-77"><a href="css.html#cb10-77" tabindex="-1"></a><span class="co">#' 1077. \url{https://doi.org/10.1007/s11222-015-9589-y}.</span></span>
+<span id="cb10-78"><a href="css.html#cb10-78" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb10-79"><a href="css.html#cb10-79" tabindex="-1"></a><span class="co">#' Jerome Friedman, Trevor Hastie, Robert Tibshirani (2010). Regularization Paths for Generalized</span></span>
+<span id="cb10-80"><a href="css.html#cb10-80" tabindex="-1"></a><span class="co">#' Linear Models via Coordinate Descent. \emph{Journal of Statistical Software},</span></span>
+<span id="cb10-81"><a href="css.html#cb10-81" tabindex="-1"></a><span class="co">#' 33(1), 1-22. URL \url{https://www.jstatsoft.org/v33/i01/}.</span></span>
+<span id="cb10-82"><a href="css.html#cb10-82" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb10-83"><a href="css.html#cb10-83" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb10-84"><a href="css.html#cb10-84" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb10-85"><a href="css.html#cb10-85" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb10-86"><a href="css.html#cb10-86" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb10-87"><a href="css.html#cb10-87" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb10-88"><a href="css.html#cb10-88" tabindex="-1"></a><span class="co">#'   B = 10)</span></span>
+<span id="cb10-89"><a href="css.html#cb10-89" tabindex="-1"></a><span class="co">#' print(res)</span></span>
+<span id="cb10-90"><a href="css.html#cb10-90" tabindex="-1"></a><span class="co">#' # On a multi-core Unix/macOS machine, set num_cores for a substantial</span></span>
+<span id="cb10-91"><a href="css.html#cb10-91" tabindex="-1"></a><span class="co">#' # speedup (identical results; num_cores &gt; 1 falls back to serial on Windows):</span></span>
+<span id="cb10-92"><a href="css.html#cb10-92" tabindex="-1"></a><span class="co">#' \donttest{</span></span>
+<span id="cb10-93"><a href="css.html#cb10-93" tabindex="-1"></a><span class="co">#' res_par &lt;- <a href="css.html#css">css</a>(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,</span></span>
+<span id="cb10-94"><a href="css.html#cb10-94" tabindex="-1"></a><span class="co">#'   B = 10, num_cores = min(2L, parallel::detectCores()))</span></span>
+<span id="cb10-95"><a href="css.html#cb10-95" tabindex="-1"></a><span class="co">#' }</span></span>
+<span id="cb10-96"><a href="css.html#cb10-96" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb10-97"><a href="css.html#cb10-97" tabindex="-1"></a><span id="css">css</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda, <span class="at">clusters =</span> <span class="fu">list</span>(), <span class="at">fitfun =</span> cssLasso,</span>
+<span id="cb10-98"><a href="css.html#cb10-98" tabindex="-1"></a>    <span class="at">sampling_type =</span> <span class="st">"SS"</span>, <span class="at">B =</span> <span class="dv">50</span><span class="dt">L</span>,</span>
+<span id="cb10-99"><a href="css.html#cb10-99" tabindex="-1"></a>    <span class="at">prop_feats_remove =</span> <span class="dv">0</span>, <span class="at">train_inds =</span> <span class="fu">integer</span>(), <span class="at">num_cores =</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb10-100"><a href="css.html#cb10-100" tabindex="-1"></a>    ){</span>
+<span id="cb10-101"><a href="css.html#cb10-101" tabindex="-1"></a></span>
+<span id="cb10-102"><a href="css.html#cb10-102" tabindex="-1"></a>    <span class="co"># Check inputs</span></span>
+<span id="cb10-103"><a href="css.html#cb10-103" tabindex="-1"></a></span>
+<span id="cb10-104"><a href="css.html#cb10-104" tabindex="-1"></a>    check_list <span class="ot">&lt;-</span> <a href="css.html#checkCssInputs">checkCssInputs</a>(X, y, lambda, clusters, fitfun, sampling_type,</span>
+<span id="cb10-105"><a href="css.html#cb10-105" tabindex="-1"></a>        B, prop_feats_remove, train_inds, num_cores)</span>
+<span id="cb10-106"><a href="css.html#cb10-106" tabindex="-1"></a></span>
+<span id="cb10-107"><a href="css.html#cb10-107" tabindex="-1"></a>    feat_names <span class="ot">&lt;-</span> check_list<span class="sc">$</span>feat_names</span>
+<span id="cb10-108"><a href="css.html#cb10-108" tabindex="-1"></a>    X <span class="ot">&lt;-</span> check_list<span class="sc">$</span>X</span>
+<span id="cb10-109"><a href="css.html#cb10-109" tabindex="-1"></a>    clusters <span class="ot">&lt;-</span> check_list<span class="sc">$</span>clusters</span>
+<span id="cb10-110"><a href="css.html#cb10-110" tabindex="-1"></a></span>
+<span id="cb10-111"><a href="css.html#cb10-111" tabindex="-1"></a>    <span class="fu">rm</span>(check_list)</span>
+<span id="cb10-112"><a href="css.html#cb10-112" tabindex="-1"></a></span>
+<span id="cb10-113"><a href="css.html#cb10-113" tabindex="-1"></a>    <span class="co"># num_cores &gt; 1 needs forking (parallel::mclapply), which is unavailable on</span></span>
+<span id="cb10-114"><a href="css.html#cb10-114" tabindex="-1"></a>    <span class="co"># Windows -- there mclapply hard-errors for mc.cores &gt; 1 rather than running</span></span>
+<span id="cb10-115"><a href="css.html#cb10-115" tabindex="-1"></a>    <span class="co"># serially. Downgrade to serial with a warning so <a href="css.html#css">css</a>() still runs (#155d).</span></span>
+<span id="cb10-116"><a href="css.html#cb10-116" tabindex="-1"></a>    <span class="cf">if</span>(num_cores <span class="sc">&gt;</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span> <a href="css.html#runningOnWindows">runningOnWindows</a>()){</span>
+<span id="cb10-117"><a href="css.html#cb10-117" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="st">"num_cores &gt; 1 is not supported on Windows (parallel::mclapply requires forking); running serially with num_cores = 1."</span>)</span>
+<span id="cb10-118"><a href="css.html#cb10-118" tabindex="-1"></a>        num_cores <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb10-119"><a href="css.html#cb10-119" tabindex="-1"></a>    }</span>
+<span id="cb10-120"><a href="css.html#cb10-120" tabindex="-1"></a></span>
+<span id="cb10-121"><a href="css.html#cb10-121" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb10-122"><a href="css.html#cb10-122" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb10-123"><a href="css.html#cb10-123" tabindex="-1"></a></span>
+<span id="cb10-124"><a href="css.html#cb10-124" tabindex="-1"></a>    train_inds <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(train_inds)</span>
+<span id="cb10-125"><a href="css.html#cb10-125" tabindex="-1"></a></span>
+<span id="cb10-126"><a href="css.html#cb10-126" tabindex="-1"></a>    <span class="do">### Create subsamples</span></span>
+<span id="cb10-127"><a href="css.html#cb10-127" tabindex="-1"></a></span>
+<span id="cb10-128"><a href="css.html#cb10-128" tabindex="-1"></a>    sel_inds <span class="ot">&lt;-</span> <span class="fu">setdiff</span>(<span class="dv">1</span><span class="sc">:</span>n, train_inds)</span>
+<span id="cb10-129"><a href="css.html#cb10-129" tabindex="-1"></a>    n_sel <span class="ot">&lt;-</span> <span class="fu">length</span>(sel_inds)</span>
+<span id="cb10-130"><a href="css.html#cb10-130" tabindex="-1"></a>    <span class="cf">if</span>(n_sel <span class="sc">&lt;</span> <span class="dv">4</span>){</span>
+<span id="cb10-131"><a href="css.html#cb10-131" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb10-132"><a href="css.html#cb10-132" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="fu">paste0</span>(<span class="st">"Sample size n = "</span>, n, <span class="st">" is too small; css needs at least 4 observations for feature selection."</span>))</span>
+<span id="cb10-133"><a href="css.html#cb10-133" tabindex="-1"></a>        } <span class="cf">else</span> {</span>
+<span id="cb10-134"><a href="css.html#cb10-134" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Too many training indices provided (must be at least 4 observations left for feature selection, and ideally many more)"</span>)</span>
+<span id="cb10-135"><a href="css.html#cb10-135" tabindex="-1"></a>        }</span>
+<span id="cb10-136"><a href="css.html#cb10-136" tabindex="-1"></a>    }</span>
+<span id="cb10-137"><a href="css.html#cb10-137" tabindex="-1"></a></span>
+<span id="cb10-138"><a href="css.html#cb10-138" tabindex="-1"></a>    subsamps_object <span class="ot">&lt;-</span> <a href="css.html#createSubsamples">createSubsamples</a>(n_sel, p, B, sampling_type,</span>
+<span id="cb10-139"><a href="css.html#cb10-139" tabindex="-1"></a>        prop_feats_remove)</span>
+<span id="cb10-140"><a href="css.html#cb10-140" tabindex="-1"></a></span>
+<span id="cb10-141"><a href="css.html#cb10-141" tabindex="-1"></a>    <span class="do">### Get matrix of selected feature sets from subsamples</span></span>
+<span id="cb10-142"><a href="css.html#cb10-142" tabindex="-1"></a></span>
+<span id="cb10-143"><a href="css.html#cb10-143" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.matrix</span>(y))</span>
+<span id="cb10-144"><a href="css.html#cb10-144" tabindex="-1"></a></span>
+<span id="cb10-145"><a href="css.html#cb10-145" tabindex="-1"></a>    <span class="co"># When train_inds is empty (the default), sel_inds is 1:n, so X[sel_inds, ]</span></span>
+<span id="cb10-146"><a href="css.html#cb10-146" tabindex="-1"></a>    <span class="co"># / y[sel_inds] would just materialize a full-size copy of X / y for nothing</span></span>
+<span id="cb10-147"><a href="css.html#cb10-147" tabindex="-1"></a>    <span class="co"># (getSelMatrix re-indexes rows per subsample anyway). Pass X / y directly in</span></span>
+<span id="cb10-148"><a href="css.html#cb10-148" tabindex="-1"></a>    <span class="co"># that case; the result is byte-identical, since X[1:n, ] equals X (same</span></span>
+<span id="cb10-149"><a href="css.html#cb10-149" tabindex="-1"></a>    <span class="co"># values and dimnames) and y[1:n] equals y. (#129)</span></span>
+<span id="cb10-150"><a href="css.html#cb10-150" tabindex="-1"></a>    sel_X <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) X <span class="cf">else</span> X[sel_inds, ]</span>
+<span id="cb10-151"><a href="css.html#cb10-151" tabindex="-1"></a>    sel_y <span class="ot">&lt;-</span> <span class="cf">if</span>(<span class="fu">length</span>(train_inds) <span class="sc">==</span> <span class="dv">0</span>) y <span class="cf">else</span> y[sel_inds]</span>
+<span id="cb10-152"><a href="css.html#cb10-152" tabindex="-1"></a></span>
+<span id="cb10-153"><a href="css.html#cb10-153" tabindex="-1"></a>    <span class="co"># Up-front diagnostic (#131): for the default cssLasso a highly discrete y can</span></span>
+<span id="cb10-154"><a href="css.html#cb10-154" tabindex="-1"></a>    <span class="co"># leave some random size-floor(n/2) subsample with only one unique value, which</span></span>
+<span id="cb10-155"><a href="css.html#cb10-155" tabindex="-1"></a>    <span class="co"># aborts the run non-deterministically (checkCssLassoInputs). Warn when that</span></span>
+<span id="cb10-156"><a href="css.html#cb10-156" tabindex="-1"></a>    <span class="co"># estimated probability is non-negligible. Gated to the default cssLasso (custom</span></span>
+<span id="cb10-157"><a href="css.html#cb10-157" tabindex="-1"></a>    <span class="co"># fitfuns may tolerate a constant-y subsample) and to finite numeric/integer y:</span></span>
+<span id="cb10-158"><a href="css.html#cb10-158" tabindex="-1"></a>    <span class="co"># a non-numeric or non-finite y fails cssLasso for a different, more basic</span></span>
+<span id="cb10-159"><a href="css.html#cb10-159" tabindex="-1"></a>    <span class="co"># reason (checkCssLassoInputs), and a non-finite value (Inf/NA) would otherwise</span></span>
+<span id="cb10-160"><a href="css.html#cb10-160" tabindex="-1"></a>    <span class="co"># be miscounted by table() as a dominating value, so a discreteness warning</span></span>
+<span id="cb10-161"><a href="css.html#cb10-161" tabindex="-1"></a>    <span class="co"># there would be misleading. Consumes no RNG (table/lchoose only), so the</span></span>
+<span id="cb10-162"><a href="css.html#cb10-162" tabindex="-1"></a>    <span class="co"># selection below is byte-identical.</span></span>
+<span id="cb10-163"><a href="css.html#cb10-163" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">identical</span>(fitfun, cssLasso) <span class="sc">&amp;&amp;</span> (<span class="fu">is.numeric</span>(sel_y) <span class="sc">||</span> <span class="fu">is.integer</span>(sel_y)) <span class="sc">&amp;&amp;</span></span>
+<span id="cb10-164"><a href="css.html#cb10-164" tabindex="-1"></a>            <span class="fu">all</span>(<span class="fu">is.finite</span>(sel_y))){</span>
+<span id="cb10-165"><a href="css.html#cb10-165" tabindex="-1"></a>        abort_prob <span class="ot">&lt;-</span> <a href="css.html#discreteYAbortProb">discreteYAbortProb</a>(sel_y, B, sampling_type)</span>
+<span id="cb10-166"><a href="css.html#cb10-166" tabindex="-1"></a>        <span class="co"># Warn only above a 5% estimated abort probability: high enough to stay</span></span>
+<span id="cb10-167"><a href="css.html#cb10-167" tabindex="-1"></a>        <span class="co"># silent on common discrete data (balanced/moderate y compute to ~0) while</span></span>
+<span id="cb10-168"><a href="css.html#cb10-168" tabindex="-1"></a>        <span class="co"># still catching genuinely majority-dominated y. Tunable constant. (#131)</span></span>
+<span id="cb10-169"><a href="css.html#cb10-169" tabindex="-1"></a>        <span class="cf">if</span>(abort_prob <span class="sc">&gt;</span> <span class="fl">0.05</span>){</span>
+<span id="cb10-170"><a href="css.html#cb10-170" tabindex="-1"></a>            <span class="fu">warning</span>(<span class="fu">paste0</span>(<span class="st">"The response y appears highly discrete: there is an "</span>,</span>
+<span id="cb10-171"><a href="css.html#cb10-171" tabindex="-1"></a>                <span class="st">"estimated "</span>, <span class="fu">round</span>(<span class="dv">100</span> <span class="sc">*</span> abort_prob), <span class="st">"% chance that at least one "</span>,</span>
+<span id="cb10-172"><a href="css.html#cb10-172" tabindex="-1"></a>                <span class="st">"random subsample of y (of size floor(n/2)) will contain only one "</span>,</span>
+<span id="cb10-173"><a href="css.html#cb10-173" tabindex="-1"></a>                <span class="st">"unique value, which aborts the default cssLasso (see its error). "</span>,</span>
+<span id="cb10-174"><a href="css.html#cb10-174" tabindex="-1"></a>                <span class="st">"Consider a less discrete (more continuous) response, a smaller B, "</span>,</span>
+<span id="cb10-175"><a href="css.html#cb10-175" tabindex="-1"></a>                <span class="st">"or a custom fitfun that tolerates a constant-y subsample."</span>))</span>
+<span id="cb10-176"><a href="css.html#cb10-176" tabindex="-1"></a>        }</span>
+<span id="cb10-177"><a href="css.html#cb10-177" tabindex="-1"></a>    }</span>
+<span id="cb10-178"><a href="css.html#cb10-178" tabindex="-1"></a></span>
+<span id="cb10-179"><a href="css.html#cb10-179" tabindex="-1"></a>    feat_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getSelMatrix">getSelMatrix</a>(sel_X, sel_y, lambda, B,</span>
+<span id="cb10-180"><a href="css.html#cb10-180" tabindex="-1"></a>        sampling_type, subsamps_object, num_cores, fitfun)</span>
 <span id="cb10-181"><a href="css.html#cb10-181" tabindex="-1"></a></span>
-<span id="cb10-182"><a href="css.html#cb10-182" tabindex="-1"></a>    <span class="co"># Check outputs</span></span>
-<span id="cb10-183"><a href="css.html#cb10-183" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(clus_sel_mat)))</span>
-<span id="cb10-184"><a href="css.html#cb10-184" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(clus_sel_mat) <span class="sc">==</span> <span class="fu">names</span>(clusters)))</span>
-<span id="cb10-185"><a href="css.html#cb10-185" tabindex="-1"></a></span>
-<span id="cb10-186"><a href="css.html#cb10-186" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">feat_sel_mat =</span> feat_sel_mat,</span>
-<span id="cb10-187"><a href="css.html#cb10-187" tabindex="-1"></a>        <span class="at">clus_sel_mat =</span> clus_sel_mat,</span>
-<span id="cb10-188"><a href="css.html#cb10-188" tabindex="-1"></a>        <span class="at">X =</span> X,</span>
-<span id="cb10-189"><a href="css.html#cb10-189" tabindex="-1"></a>        <span class="at">y =</span> y,</span>
-<span id="cb10-190"><a href="css.html#cb10-190" tabindex="-1"></a>        <span class="at">clusters =</span> clusters,</span>
-<span id="cb10-191"><a href="css.html#cb10-191" tabindex="-1"></a>        <span class="at">train_inds =</span> train_inds</span>
-<span id="cb10-192"><a href="css.html#cb10-192" tabindex="-1"></a>        )</span>
-<span id="cb10-193"><a href="css.html#cb10-193" tabindex="-1"></a></span>
-<span id="cb10-194"><a href="css.html#cb10-194" tabindex="-1"></a>    <span class="fu">class</span>(ret) <span class="ot">&lt;-</span> <span class="st">"cssr"</span></span>
-<span id="cb10-195"><a href="css.html#cb10-195" tabindex="-1"></a></span>
-<span id="cb10-196"><a href="css.html#cb10-196" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
-<span id="cb10-197"><a href="css.html#cb10-197" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb10-182"><a href="css.html#cb10-182" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.na</span>(feat_names))){</span>
+<span id="cb10-183"><a href="css.html#cb10-183" tabindex="-1"></a>        <span class="fu">colnames</span>(feat_sel_mat) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb10-184"><a href="css.html#cb10-184" tabindex="-1"></a>        <span class="fu">colnames</span>(X) <span class="ot">&lt;-</span> feat_names</span>
+<span id="cb10-185"><a href="css.html#cb10-185" tabindex="-1"></a>    }</span>
+<span id="cb10-186"><a href="css.html#cb10-186" tabindex="-1"></a></span>
+<span id="cb10-187"><a href="css.html#cb10-187" tabindex="-1"></a>    <span class="do">### Get selection proportions for clusters corresponding to each feature</span></span>
+<span id="cb10-188"><a href="css.html#cb10-188" tabindex="-1"></a></span>
+<span id="cb10-189"><a href="css.html#cb10-189" tabindex="-1"></a>    clus_sel_mat <span class="ot">&lt;-</span> <a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>(clusters, feat_sel_mat)</span>
+<span id="cb10-190"><a href="css.html#cb10-190" tabindex="-1"></a></span>
+<span id="cb10-191"><a href="css.html#cb10-191" tabindex="-1"></a>    <span class="co"># Check outputs</span></span>
+<span id="cb10-192"><a href="css.html#cb10-192" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">colnames</span>(clus_sel_mat)))</span>
+<span id="cb10-193"><a href="css.html#cb10-193" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">colnames</span>(clus_sel_mat) <span class="sc">==</span> <span class="fu">names</span>(clusters)))</span>
+<span id="cb10-194"><a href="css.html#cb10-194" tabindex="-1"></a></span>
+<span id="cb10-195"><a href="css.html#cb10-195" tabindex="-1"></a>    ret <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">feat_sel_mat =</span> feat_sel_mat,</span>
+<span id="cb10-196"><a href="css.html#cb10-196" tabindex="-1"></a>        <span class="at">clus_sel_mat =</span> clus_sel_mat,</span>
+<span id="cb10-197"><a href="css.html#cb10-197" tabindex="-1"></a>        <span class="at">X =</span> X,</span>
+<span id="cb10-198"><a href="css.html#cb10-198" tabindex="-1"></a>        <span class="at">y =</span> y,</span>
+<span id="cb10-199"><a href="css.html#cb10-199" tabindex="-1"></a>        <span class="at">clusters =</span> clusters,</span>
+<span id="cb10-200"><a href="css.html#cb10-200" tabindex="-1"></a>        <span class="at">train_inds =</span> train_inds</span>
+<span id="cb10-201"><a href="css.html#cb10-201" tabindex="-1"></a>        )</span>
+<span id="cb10-202"><a href="css.html#cb10-202" tabindex="-1"></a></span>
+<span id="cb10-203"><a href="css.html#cb10-203" tabindex="-1"></a>    <span class="fu">class</span>(ret) <span class="ot">&lt;-</span> <span class="st">"cssr"</span></span>
+<span id="cb10-204"><a href="css.html#cb10-204" tabindex="-1"></a></span>
+<span id="cb10-205"><a href="css.html#cb10-205" tabindex="-1"></a>    <span class="fu">return</span>(ret)</span>
+<span id="cb10-206"><a href="css.html#cb10-206" tabindex="-1"></a>}</span></code></pre></div>
 <p>Tests for <code><a href="css.html#css">css</a>()</code> and the other functions in this section are collected in the Tests chapters at the end of this document (the <strong>Tests</strong> part). Next, we’ll build the individual functions one at a time. (The one function above that I didn’t mention at all is <code><a href="css.html#checkCssInputs">checkCssInputs</a>()</code>, which confirms that the inputs to <code><a href="css.html#css">css</a>()</code> are as expected and does some basic formatting on the inputs. To streamline presentation, this and other helper functions are specified later.)</p>
 <div id="main-components-of-css" class="section level2 hasAnchor" number="3.1">
 <h2>
@@ -672,69 +681,95 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb13-65"><a href="css.html#cb13-65" tabindex="-1"></a>    seeds <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(.Machine<span class="sc">$</span>integer.max, <span class="fu">length</span>(subsamps_object))</span>
 <span id="cb13-66"><a href="css.html#cb13-66" tabindex="-1"></a></span>
 <span id="cb13-67"><a href="css.html#cb13-67" tabindex="-1"></a>    res_list <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">mclapply</span>(<span class="at">X=</span><span class="fu">seq_along</span>(subsamps_object),</span>
-<span id="cb13-68"><a href="css.html#cb13-68" tabindex="-1"></a>        <span class="at">FUN=</span><span class="cf">function</span>(i) <a href="css.html#cssLoop">cssLoop</a>(subsamps_object[[i]], <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>lambda,</span>
-<span id="cb13-69"><a href="css.html#cb13-69" tabindex="-1"></a>            <span class="at">fitfun=</span>fitfun, <span class="at">seed=</span>seeds[i]),</span>
-<span id="cb13-70"><a href="css.html#cb13-70" tabindex="-1"></a>        <span class="at">mc.cores=</span>num_cores)</span>
-<span id="cb13-71"><a href="css.html#cb13-71" tabindex="-1"></a></span>
-<span id="cb13-72"><a href="css.html#cb13-72" tabindex="-1"></a>    <span class="co"># mclapply returns NULL for any subsample whose worker was killed (e.g. the</span></span>
-<span id="cb13-73"><a href="css.html#cb13-73" tabindex="-1"></a>    <span class="co"># OS out-of-memory killer). That NULL is distinct from a legitimate</span></span>
-<span id="cb13-74"><a href="css.html#cb13-74" tabindex="-1"></a>    <span class="co"># integer(0) "selected nothing" result, so catch it here rather than letting</span></span>
-<span id="cb13-75"><a href="css.html#cb13-75" tabindex="-1"></a>    <span class="co"># the assembly loop's length(res_list[[i]]) == 0 branch silently record it as</span></span>
-<span id="cb13-76"><a href="css.html#cb13-76" tabindex="-1"></a>    <span class="co"># a zero row (which would bias the selection proportions).</span></span>
-<span id="cb13-77"><a href="css.html#cb13-77" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">vapply</span>(res_list, is.null, <span class="fu">logical</span>(<span class="dv">1</span>)))){</span>
-<span id="cb13-78"><a href="css.html#cb13-78" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error."</span>)</span>
-<span id="cb13-79"><a href="css.html#cb13-79" tabindex="-1"></a>    }</span>
-<span id="cb13-80"><a href="css.html#cb13-80" tabindex="-1"></a></span>
-<span id="cb13-81"><a href="css.html#cb13-81" tabindex="-1"></a>    <span class="co"># Store selected sets in B x p (or `2*B` x p for "SS") binary matrix</span></span>
-<span id="cb13-82"><a href="css.html#cb13-82" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
-<span id="cb13-83"><a href="css.html#cb13-83" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">2</span><span class="sc">*</span>B, p)</span>
-<span id="cb13-84"><a href="css.html#cb13-84" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"MB"</span>){</span>
-<span id="cb13-85"><a href="css.html#cb13-85" tabindex="-1"></a>        <span class="co"># Not yet reachable: MB is withheld by checkSamplingType (kept for future support).</span></span>
-<span id="cb13-86"><a href="css.html#cb13-86" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, B, p)</span>
-<span id="cb13-87"><a href="css.html#cb13-87" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb13-88"><a href="css.html#cb13-88" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res"</span>)</span>
-<span id="cb13-89"><a href="css.html#cb13-89" tabindex="-1"></a>    }</span>
+<span id="cb13-68"><a href="css.html#cb13-68" tabindex="-1"></a>        <span class="at">FUN=</span><span class="cf">function</span>(i){</span>
+<span id="cb13-69"><a href="css.html#cb13-69" tabindex="-1"></a>            warns <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb13-70"><a href="css.html#cb13-70" tabindex="-1"></a>            value <span class="ot">&lt;-</span> <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb13-71"><a href="css.html#cb13-71" tabindex="-1"></a>                <span class="fu">tryCatch</span>(</span>
+<span id="cb13-72"><a href="css.html#cb13-72" tabindex="-1"></a>                    <a href="css.html#cssLoop">cssLoop</a>(subsamps_object[[i]], <span class="at">x=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span>lambda,</span>
+<span id="cb13-73"><a href="css.html#cb13-73" tabindex="-1"></a>                        <span class="at">fitfun=</span>fitfun, <span class="at">seed=</span>seeds[i]),</span>
+<span id="cb13-74"><a href="css.html#cb13-74" tabindex="-1"></a>                    <span class="co"># (#155a) tag the TRUE subsample index at the point of failure</span></span>
+<span id="cb13-75"><a href="css.html#cb13-75" tabindex="-1"></a>                    <span class="co"># so prescheduling can't misattribute it in the assembly loop.</span></span>
+<span id="cb13-76"><a href="css.html#cb13-76" tabindex="-1"></a>                    <span class="at">error=</span><span class="cf">function</span>(e) <span class="fu">structure</span>(<span class="fu">list</span>(<span class="at">i=</span>i,</span>
+<span id="cb13-77"><a href="css.html#cb13-77" tabindex="-1"></a>                        <span class="at">msg=</span><span class="fu">conditionMessage</span>(e)), <span class="at">class=</span><span class="st">"cssr_loop_error"</span>)</span>
+<span id="cb13-78"><a href="css.html#cb13-78" tabindex="-1"></a>                ),</span>
+<span id="cb13-79"><a href="css.html#cb13-79" tabindex="-1"></a>                <span class="co"># (#155b) collect fitfun warning CONDITIONS from the (possibly</span></span>
+<span id="cb13-80"><a href="css.html#cb13-80" tabindex="-1"></a>                <span class="co"># forked) worker; re-emitted in the parent below so they surface</span></span>
+<span id="cb13-81"><a href="css.html#cb13-81" tabindex="-1"></a>                <span class="co"># the same regardless of num_cores. Collect the condition object</span></span>
+<span id="cb13-82"><a href="css.html#cb13-82" tabindex="-1"></a>                <span class="co"># (not just conditionMessage) so a custom warning's subclass/call</span></span>
+<span id="cb13-83"><a href="css.html#cb13-83" tabindex="-1"></a>                <span class="co"># survives (conditions serialize across the fork).</span></span>
+<span id="cb13-84"><a href="css.html#cb13-84" tabindex="-1"></a>                <span class="at">warning=</span><span class="cf">function</span>(w){ warns[[<span class="fu">length</span>(warns) <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span>]] <span class="ot">&lt;&lt;-</span> w;</span>
+<span id="cb13-85"><a href="css.html#cb13-85" tabindex="-1"></a>                    <span class="fu">invokeRestart</span>(<span class="st">"muffleWarning"</span>) }</span>
+<span id="cb13-86"><a href="css.html#cb13-86" tabindex="-1"></a>            )</span>
+<span id="cb13-87"><a href="css.html#cb13-87" tabindex="-1"></a>            <span class="fu">list</span>(<span class="at">value=</span>value, <span class="at">warnings=</span>warns)</span>
+<span id="cb13-88"><a href="css.html#cb13-88" tabindex="-1"></a>        },</span>
+<span id="cb13-89"><a href="css.html#cb13-89" tabindex="-1"></a>        <span class="at">mc.cores=</span>num_cores)</span>
 <span id="cb13-90"><a href="css.html#cb13-90" tabindex="-1"></a></span>
-<span id="cb13-91"><a href="css.html#cb13-91" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list) <span class="sc">==</span> <span class="fu">nrow</span>(res))</span>
-<span id="cb13-92"><a href="css.html#cb13-92" tabindex="-1"></a></span>
-<span id="cb13-93"><a href="css.html#cb13-93" tabindex="-1"></a>    <span class="co"># Get selected sets into matrix res</span></span>
-<span id="cb13-94"><a href="css.html#cb13-94" tabindex="-1"></a></span>
-<span id="cb13-95"><a href="css.html#cb13-95" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(res)){</span>
-<span id="cb13-96"><a href="css.html#cb13-96" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb13-97"><a href="css.html#cb13-97" tabindex="-1"></a>            <span class="co"># If no features are selected, don't fill in anything in this row</span></span>
-<span id="cb13-98"><a href="css.html#cb13-98" tabindex="-1"></a>            <span class="cf">next</span></span>
-<span id="cb13-99"><a href="css.html#cb13-99" tabindex="-1"></a>        }</span>
-<span id="cb13-100"><a href="css.html#cb13-100" tabindex="-1"></a></span>
-<span id="cb13-101"><a href="css.html#cb13-101" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(res_list[[i]])){</span>
-<span id="cb13-102"><a href="css.html#cb13-102" tabindex="-1"></a>            <span class="fu">stop</span>(<a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>(res_list[[i]], i))</span>
-<span id="cb13-103"><a href="css.html#cb13-103" tabindex="-1"></a>        }</span>
-<span id="cb13-104"><a href="css.html#cb13-104" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">&lt;=</span> p <span class="sc">&amp;</span> <span class="fu">length</span>(res_list[[i]]) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb13-105"><a href="css.html#cb13-105" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_list[[i]])))</span>
-<span id="cb13-106"><a href="css.html#cb13-106" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">max</span>(res_list[[i]]) <span class="sc">&lt;=</span> p)</span>
-<span id="cb13-107"><a href="css.html#cb13-107" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">min</span>(res_list[[i]]) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb13-108"><a href="css.html#cb13-108" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(res_list[[i]])))</span>
-<span id="cb13-109"><a href="css.html#cb13-109" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-110"><a href="css.html#cb13-110" tabindex="-1"></a>            <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-111"><a href="css.html#cb13-111" tabindex="-1"></a>            <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
-<span id="cb13-112"><a href="css.html#cb13-112" tabindex="-1"></a>            <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]])))</span>
-<span id="cb13-113"><a href="css.html#cb13-113" tabindex="-1"></a></span>
-<span id="cb13-114"><a href="css.html#cb13-114" tabindex="-1"></a>        <span class="co"># Store selected variables in the ith row of res</span></span>
-<span id="cb13-115"><a href="css.html#cb13-115" tabindex="-1"></a>        res[i, res_list[[i]]] <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
-<span id="cb13-116"><a href="css.html#cb13-116" tabindex="-1"></a>    }</span>
-<span id="cb13-117"><a href="css.html#cb13-117" tabindex="-1"></a></span>
-<span id="cb13-118"><a href="css.html#cb13-118" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb13-119"><a href="css.html#cb13-119" tabindex="-1"></a></span>
-<span id="cb13-120"><a href="css.html#cb13-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
-<span id="cb13-121"><a href="css.html#cb13-121" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
-<span id="cb13-122"><a href="css.html#cb13-122" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
-<span id="cb13-123"><a href="css.html#cb13-123" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb13-124"><a href="css.html#cb13-124" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> B)</span>
-<span id="cb13-125"><a href="css.html#cb13-125" tabindex="-1"></a>    }</span>
-<span id="cb13-126"><a href="css.html#cb13-126" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res) <span class="sc">==</span> p)</span>
-<span id="cb13-127"><a href="css.html#cb13-127" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
-<span id="cb13-128"><a href="css.html#cb13-128" tabindex="-1"></a></span>
-<span id="cb13-129"><a href="css.html#cb13-129" tabindex="-1"></a>    <span class="fu">return</span>(res)</span>
-<span id="cb13-130"><a href="css.html#cb13-130" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb13-91"><a href="css.html#cb13-91" tabindex="-1"></a>    <span class="co"># mclapply returns NULL for any subsample whose worker was killed (e.g. the</span></span>
+<span id="cb13-92"><a href="css.html#cb13-92" tabindex="-1"></a>    <span class="co"># OS out-of-memory killer). That NULL is distinct from a legitimate</span></span>
+<span id="cb13-93"><a href="css.html#cb13-93" tabindex="-1"></a>    <span class="co"># integer(0) "selected nothing" result, so catch it here rather than letting</span></span>
+<span id="cb13-94"><a href="css.html#cb13-94" tabindex="-1"></a>    <span class="co"># the assembly loop's length(res_list[[i]]) == 0 branch silently record it as</span></span>
+<span id="cb13-95"><a href="css.html#cb13-95" tabindex="-1"></a>    <span class="co"># a zero row (which would bias the selection proportions).</span></span>
+<span id="cb13-96"><a href="css.html#cb13-96" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">vapply</span>(res_list, is.null, <span class="fu">logical</span>(<span class="dv">1</span>)))){</span>
+<span id="cb13-97"><a href="css.html#cb13-97" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error."</span>)</span>
+<span id="cb13-98"><a href="css.html#cb13-98" tabindex="-1"></a>    }</span>
+<span id="cb13-99"><a href="css.html#cb13-99" tabindex="-1"></a></span>
+<span id="cb13-100"><a href="css.html#cb13-100" tabindex="-1"></a>    <span class="co"># (#155b) Re-emit fitfun warning conditions in subsample order, then unwrap</span></span>
+<span id="cb13-101"><a href="css.html#cb13-101" tabindex="-1"></a>    <span class="co"># so the assembly loop below sees the plain results.</span></span>
+<span id="cb13-102"><a href="css.html#cb13-102" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_along</span>(res_list)){</span>
+<span id="cb13-103"><a href="css.html#cb13-103" tabindex="-1"></a>        <span class="cf">for</span>(w <span class="cf">in</span> res_list[[i]]<span class="sc">$</span>warnings){ <span class="fu">warning</span>(w) }</span>
+<span id="cb13-104"><a href="css.html#cb13-104" tabindex="-1"></a>        res_list[[i]] <span class="ot">&lt;-</span> res_list[[i]]<span class="sc">$</span>value</span>
+<span id="cb13-105"><a href="css.html#cb13-105" tabindex="-1"></a>    }</span>
+<span id="cb13-106"><a href="css.html#cb13-106" tabindex="-1"></a></span>
+<span id="cb13-107"><a href="css.html#cb13-107" tabindex="-1"></a>    <span class="co"># Store selected sets in B x p (or `2*B` x p for "SS") binary matrix</span></span>
+<span id="cb13-108"><a href="css.html#cb13-108" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
+<span id="cb13-109"><a href="css.html#cb13-109" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, <span class="dv">2</span><span class="sc">*</span>B, p)</span>
+<span id="cb13-110"><a href="css.html#cb13-110" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"MB"</span>){</span>
+<span id="cb13-111"><a href="css.html#cb13-111" tabindex="-1"></a>        <span class="co"># Not yet reachable: MB is withheld by checkSamplingType (kept for future support).</span></span>
+<span id="cb13-112"><a href="css.html#cb13-112" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span><span class="dt">L</span>, B, p)</span>
+<span id="cb13-113"><a href="css.html#cb13-113" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb13-114"><a href="css.html#cb13-114" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"!(sampling_type %in% c(SS, MB)) (don't know how to set dimensions of res"</span>)</span>
+<span id="cb13-115"><a href="css.html#cb13-115" tabindex="-1"></a>    }</span>
+<span id="cb13-116"><a href="css.html#cb13-116" tabindex="-1"></a></span>
+<span id="cb13-117"><a href="css.html#cb13-117" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list) <span class="sc">==</span> <span class="fu">nrow</span>(res))</span>
+<span id="cb13-118"><a href="css.html#cb13-118" tabindex="-1"></a></span>
+<span id="cb13-119"><a href="css.html#cb13-119" tabindex="-1"></a>    <span class="co"># Get selected sets into matrix res</span></span>
+<span id="cb13-120"><a href="css.html#cb13-120" tabindex="-1"></a></span>
+<span id="cb13-121"><a href="css.html#cb13-121" tabindex="-1"></a>    <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(res)){</span>
+<span id="cb13-122"><a href="css.html#cb13-122" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb13-123"><a href="css.html#cb13-123" tabindex="-1"></a>            <span class="co"># If no features are selected, don't fill in anything in this row</span></span>
+<span id="cb13-124"><a href="css.html#cb13-124" tabindex="-1"></a>            <span class="cf">next</span></span>
+<span id="cb13-125"><a href="css.html#cb13-125" tabindex="-1"></a>        }</span>
+<span id="cb13-126"><a href="css.html#cb13-126" tabindex="-1"></a></span>
+<span id="cb13-127"><a href="css.html#cb13-127" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.integer</span>(res_list[[i]])){</span>
+<span id="cb13-128"><a href="css.html#cb13-128" tabindex="-1"></a>            <span class="fu">stop</span>(<a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>(res_list[[i]], i))</span>
+<span id="cb13-129"><a href="css.html#cb13-129" tabindex="-1"></a>        }</span>
+<span id="cb13-130"><a href="css.html#cb13-130" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">&lt;=</span> p <span class="sc">&amp;</span> <span class="fu">length</span>(res_list[[i]]) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb13-131"><a href="css.html#cb13-131" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="sc">!</span><span class="fu">is.na</span>(res_list[[i]])))</span>
+<span id="cb13-132"><a href="css.html#cb13-132" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">max</span>(res_list[[i]]) <span class="sc">&lt;=</span> p)</span>
+<span id="cb13-133"><a href="css.html#cb13-133" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">min</span>(res_list[[i]]) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb13-134"><a href="css.html#cb13-134" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">length</span>(res_list[[i]]) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(res_list[[i]])))</span>
+<span id="cb13-135"><a href="css.html#cb13-135" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-136"><a href="css.html#cb13-136" tabindex="-1"></a>            <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-137"><a href="css.html#cb13-137" tabindex="-1"></a>            <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]]) <span class="sc">|</span></span>
+<span id="cb13-138"><a href="css.html#cb13-138" tabindex="-1"></a>            <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(res_list[[i]])))</span>
+<span id="cb13-139"><a href="css.html#cb13-139" tabindex="-1"></a></span>
+<span id="cb13-140"><a href="css.html#cb13-140" tabindex="-1"></a>        <span class="co"># Store selected variables in the ith row of res</span></span>
+<span id="cb13-141"><a href="css.html#cb13-141" tabindex="-1"></a>        res[i, res_list[[i]]] <span class="ot">&lt;-</span> <span class="dv">1</span><span class="dt">L</span></span>
+<span id="cb13-142"><a href="css.html#cb13-142" tabindex="-1"></a>    }</span>
+<span id="cb13-143"><a href="css.html#cb13-143" tabindex="-1"></a></span>
+<span id="cb13-144"><a href="css.html#cb13-144" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb13-145"><a href="css.html#cb13-145" tabindex="-1"></a></span>
+<span id="cb13-146"><a href="css.html#cb13-146" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb13-147"><a href="css.html#cb13-147" tabindex="-1"></a>    <span class="cf">if</span>(sampling_type<span class="sc">==</span><span class="st">"SS"</span>){</span>
+<span id="cb13-148"><a href="css.html#cb13-148" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> <span class="dv">2</span><span class="sc">*</span>B)</span>
+<span id="cb13-149"><a href="css.html#cb13-149" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb13-150"><a href="css.html#cb13-150" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">==</span> B)</span>
+<span id="cb13-151"><a href="css.html#cb13-151" tabindex="-1"></a>    }</span>
+<span id="cb13-152"><a href="css.html#cb13-152" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">ncol</span>(res) <span class="sc">==</span> p)</span>
+<span id="cb13-153"><a href="css.html#cb13-153" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb13-154"><a href="css.html#cb13-154" tabindex="-1"></a></span>
+<span id="cb13-155"><a href="css.html#cb13-155" tabindex="-1"></a>    <span class="fu">return</span>(res)</span>
+<span id="cb13-156"><a href="css.html#cb13-156" tabindex="-1"></a>}</span></code></pre></div>
 <p>Again, <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> uses some helper functions to check the inputs for safety. <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> leverages the function <code>parallel::mclapply()</code> package, in order to allow for parallel processing if the user has set this up. This requires a helper function <code><a href="css.html#cssLoop">cssLoop</a>()</code>, which is also specified in the later section for helper functions.
 We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="css.html#cb14-1" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"parallel"</span>)</span></code></pre></div>
@@ -1201,10 +1236,15 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb25-139"><a href="css.html#cb25-139" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(num_cores))</span>
 <span id="cb25-140"><a href="css.html#cb25-140" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">==</span> <span class="fu">round</span>(num_cores))</span>
 <span id="cb25-141"><a href="css.html#cb25-141" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb25-142"><a href="css.html#cb25-142" tabindex="-1"></a>    <span class="fu">stopifnot</span>(num_cores <span class="sc">&lt;=</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span>
-<span id="cb25-143"><a href="css.html#cb25-143" tabindex="-1"></a></span>
-<span id="cb25-144"><a href="css.html#cb25-144" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">feat_names=</span>feat_names, <span class="at">X=</span>X, <span class="at">clusters=</span>clusters))</span>
-<span id="cb25-145"><a href="css.html#cb25-145" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb25-142"><a href="css.html#cb25-142" tabindex="-1"></a>    n_cores_avail <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>()</span>
+<span id="cb25-143"><a href="css.html#cb25-143" tabindex="-1"></a>    <span class="co"># detectCores() returns NA when the count is indeterminable; only enforce the</span></span>
+<span id="cb25-144"><a href="css.html#cb25-144" tabindex="-1"></a>    <span class="co"># upper bound when it is known, so an NA does not brick every <a href="css.html#css">css</a>() call (#155c).</span></span>
+<span id="cb25-145"><a href="css.html#cb25-145" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.na</span>(n_cores_avail)){</span>
+<span id="cb25-146"><a href="css.html#cb25-146" tabindex="-1"></a>        <span class="fu">stopifnot</span>(num_cores <span class="sc">&lt;=</span> n_cores_avail)</span>
+<span id="cb25-147"><a href="css.html#cb25-147" tabindex="-1"></a>    }</span>
+<span id="cb25-148"><a href="css.html#cb25-148" tabindex="-1"></a></span>
+<span id="cb25-149"><a href="css.html#cb25-149" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">feat_names=</span>feat_names, <span class="at">X=</span>X, <span class="at">clusters=</span>clusters))</span>
+<span id="cb25-150"><a href="css.html#cb25-150" tabindex="-1"></a>}</span></code></pre></div>
 <p>checkCssClustersInput:</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="css.html#cb26-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that clusters input to css is as expected</span></span>
 <span id="cb26-2"><a href="css.html#cb26-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -1975,154 +2015,176 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb38-50"><a href="css.html#cb38-50" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"The provided feature selection method somehow selected features that were not provided for it to consider."</span>)</span>
 <span id="cb38-51"><a href="css.html#cb38-51" tabindex="-1"></a>    }</span>
 <span id="cb38-52"><a href="css.html#cb38-52" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>()</code> builds the informative error that <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> raises when a subsample’s <code>fitfun</code> result is not a valid integer vector (reached only under parallel forking, where the failure arrives as a captured <code>try-error</code>):</p>
+<p><code><a href="css.html#fitfunFailureMessage">fitfunFailureMessage</a>()</code> builds the informative error that <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> raises when a subsample’s <code>fitfun</code> result is not a valid integer vector. <code><a href="css.html#getSelMatrix">getSelMatrix</a>()</code> wraps each subsample’s <code><a href="css.html#cssLoop">cssLoop</a>()</code> call in a <code>tryCatch()</code> that tags a failure with its true subsample index as a <code>cssr_loop_error</code>, so a <code>fitfun</code> error is reported the same way whether the run is serial or parallel (and prescheduling can no longer misattribute it to the wrong subsample); the <code>try-error</code> branch is a defensive fallback:</p>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="css.html#cb39-1" tabindex="-1"></a><span class="co">#' Build an informative error for a subsample whose fitfun result is invalid</span></span>
 <span id="cb39-2"><a href="css.html#cb39-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb39-3"><a href="css.html#cb39-3" tabindex="-1"></a><span class="co">#' Reached only when cssLoop failed on a subsample and parallel::mclapply</span></span>
-<span id="cb39-4"><a href="css.html#cb39-4" tabindex="-1"></a><span class="co">#' (forking; the serial path propagates the error directly) captured the failure</span></span>
-<span id="cb39-5"><a href="css.html#cb39-5" tabindex="-1"></a><span class="co">#' as a try-error. Surfaces the underlying cause in the error condition rather</span></span>
-<span id="cb39-6"><a href="css.html#cb39-6" tabindex="-1"></a><span class="co">#' than printing it to stdout.</span></span>
-<span id="cb39-7"><a href="css.html#cb39-7" tabindex="-1"></a><span class="co">#' @param result The offending element of getSelMatrix's res_list (a try-error</span></span>
-<span id="cb39-8"><a href="css.html#cb39-8" tabindex="-1"></a><span class="co">#' under forking; the class branch is a defensive fallback).</span></span>
-<span id="cb39-9"><a href="css.html#cb39-9" tabindex="-1"></a><span class="co">#' @param i Integer; the index of the subsample that failed.</span></span>
-<span id="cb39-10"><a href="css.html#cb39-10" tabindex="-1"></a><span class="co">#' @return A length-one character string suitable for stop().</span></span>
-<span id="cb39-11"><a href="css.html#cb39-11" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb39-12"><a href="css.html#cb39-12" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb39-13"><a href="css.html#cb39-13" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb39-14"><a href="css.html#cb39-14" tabindex="-1"></a><span id="fitfunFailureMessage">fitfunFailureMessage</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(result, i){</span>
-<span id="cb39-15"><a href="css.html#cb39-15" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">inherits</span>(result, <span class="st">"try-error"</span>)){</span>
-<span id="cb39-16"><a href="css.html#cb39-16" tabindex="-1"></a>        <span class="fu">paste0</span>(<span class="st">"The feature selection method (fitfun) failed on subsample "</span>, i,</span>
-<span id="cb39-17"><a href="css.html#cb39-17" tabindex="-1"></a>            <span class="st">": "</span>, <span class="fu">conditionMessage</span>(<span class="fu">attr</span>(result, <span class="st">"condition"</span>)))</span>
-<span id="cb39-18"><a href="css.html#cb39-18" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb39-19"><a href="css.html#cb39-19" tabindex="-1"></a>        <span class="fu">paste0</span>(<span class="st">"The feature selection method (fitfun) returned an object of "</span>,</span>
-<span id="cb39-20"><a href="css.html#cb39-20" tabindex="-1"></a>            <span class="st">"class "</span>, <span class="fu">paste</span>(<span class="fu">class</span>(result), <span class="at">collapse =</span> <span class="st">"/"</span>), <span class="st">" on subsample "</span>, i,</span>
-<span id="cb39-21"><a href="css.html#cb39-21" tabindex="-1"></a>            <span class="st">"; it must return an integer vector of selected feature indices."</span>)</span>
+<span id="cb39-3"><a href="css.html#cb39-3" tabindex="-1"></a><span class="co">#' Reached when cssLoop failed on a subsample. getSelMatrix wraps each</span></span>
+<span id="cb39-4"><a href="css.html#cb39-4" tabindex="-1"></a><span class="co">#' subsample's cssLoop call in a tryCatch that tags the failure with its true</span></span>
+<span id="cb39-5"><a href="css.html#cb39-5" tabindex="-1"></a><span class="co">#' subsample index as a cssr_loop_error (on both the serial and parallel paths),</span></span>
+<span id="cb39-6"><a href="css.html#cb39-6" tabindex="-1"></a><span class="co">#' so the message names the correct subsample rather than a</span></span>
+<span id="cb39-7"><a href="css.html#cb39-7" tabindex="-1"></a><span class="co">#' prescheduling-misattributed one. Surfaces the underlying cause in the error</span></span>
+<span id="cb39-8"><a href="css.html#cb39-8" tabindex="-1"></a><span class="co">#' condition rather than printing it to stdout.</span></span>
+<span id="cb39-9"><a href="css.html#cb39-9" tabindex="-1"></a><span class="co">#' @param result The offending element of getSelMatrix's res_list (normally a</span></span>
+<span id="cb39-10"><a href="css.html#cb39-10" tabindex="-1"></a><span class="co">#' cssr_loop_error carrying the tagged subsample index and message; the</span></span>
+<span id="cb39-11"><a href="css.html#cb39-11" tabindex="-1"></a><span class="co">#' try-error and class branches are defensive fallbacks).</span></span>
+<span id="cb39-12"><a href="css.html#cb39-12" tabindex="-1"></a><span class="co">#' @param i Integer; the loop index of the subsample that failed (used only by</span></span>
+<span id="cb39-13"><a href="css.html#cb39-13" tabindex="-1"></a><span class="co">#' the fallback branches -- a cssr_loop_error carries its own tagged index).</span></span>
+<span id="cb39-14"><a href="css.html#cb39-14" tabindex="-1"></a><span class="co">#' @return A length-one character string suitable for stop().</span></span>
+<span id="cb39-15"><a href="css.html#cb39-15" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb39-16"><a href="css.html#cb39-16" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb39-17"><a href="css.html#cb39-17" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb39-18"><a href="css.html#cb39-18" tabindex="-1"></a><span id="fitfunFailureMessage">fitfunFailureMessage</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(result, i){</span>
+<span id="cb39-19"><a href="css.html#cb39-19" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">inherits</span>(result, <span class="st">"cssr_loop_error"</span>)){</span>
+<span id="cb39-20"><a href="css.html#cb39-20" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">paste0</span>(<span class="st">"The feature selection method (fitfun) failed on subsample "</span>,</span>
+<span id="cb39-21"><a href="css.html#cb39-21" tabindex="-1"></a>            result<span class="sc">$</span>i, <span class="st">": "</span>, result<span class="sc">$</span>msg))</span>
 <span id="cb39-22"><a href="css.html#cb39-22" tabindex="-1"></a>    }</span>
-<span id="cb39-23"><a href="css.html#cb39-23" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="css.html#cb40-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the inputs to `<a href="css.html#cssLasso">cssLasso</a>()` are as expected. </span></span>
+<span id="cb39-23"><a href="css.html#cb39-23" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">inherits</span>(result, <span class="st">"try-error"</span>)){</span>
+<span id="cb39-24"><a href="css.html#cb39-24" tabindex="-1"></a>        <span class="fu">paste0</span>(<span class="st">"The feature selection method (fitfun) failed on subsample "</span>, i,</span>
+<span id="cb39-25"><a href="css.html#cb39-25" tabindex="-1"></a>            <span class="st">": "</span>, <span class="fu">conditionMessage</span>(<span class="fu">attr</span>(result, <span class="st">"condition"</span>)))</span>
+<span id="cb39-26"><a href="css.html#cb39-26" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb39-27"><a href="css.html#cb39-27" tabindex="-1"></a>        <span class="fu">paste0</span>(<span class="st">"The feature selection method (fitfun) returned an object of "</span>,</span>
+<span id="cb39-28"><a href="css.html#cb39-28" tabindex="-1"></a>            <span class="st">"class "</span>, <span class="fu">paste</span>(<span class="fu">class</span>(result), <span class="at">collapse =</span> <span class="st">"/"</span>), <span class="st">" on subsample "</span>, i,</span>
+<span id="cb39-29"><a href="css.html#cb39-29" tabindex="-1"></a>            <span class="st">"; it must return an integer vector of selected feature indices."</span>)</span>
+<span id="cb39-30"><a href="css.html#cb39-30" tabindex="-1"></a>    }</span>
+<span id="cb39-31"><a href="css.html#cb39-31" tabindex="-1"></a>}</span></code></pre></div>
+<p>A small platform helper lets <code><a href="css.html#css">css</a>()</code> decide whether parallel forking is available. It is factored out (rather than inlined) so the Windows fallback can be exercised on non-Windows machines in the tests:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="css.html#cb40-1" tabindex="-1"></a><span class="co">#' Is the current session running on Windows?</span></span>
 <span id="cb40-2"><a href="css.html#cb40-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb40-3"><a href="css.html#cb40-3" tabindex="-1"></a><span class="co">#' @param X A design matrix containing the predictors. (Note that we don't need</span></span>
-<span id="cb40-4"><a href="css.html#cb40-4" tabindex="-1"></a><span class="co">#' to check X very much, because X will have already been checked by the</span></span>
-<span id="cb40-5"><a href="css.html#cb40-5" tabindex="-1"></a><span class="co">#' function `<a href="css.html#checkCssInputs">checkCssInputs</a>()` when it was provided to `<a href="css.html#css">css</a>()`.)</span></span>
-<span id="cb40-6"><a href="css.html#cb40-6" tabindex="-1"></a><span class="co">#' @param y A numeric vector containing the response.</span></span>
-<span id="cb40-7"><a href="css.html#cb40-7" tabindex="-1"></a><span class="co">#' @param lambda Either a single nonnegative number for the lasso penalty to</span></span>
-<span id="cb40-8"><a href="css.html#cb40-8" tabindex="-1"></a><span class="co">#' use on each subsample, or a named length-2 numeric vector</span></span>
-<span id="cb40-9"><a href="css.html#cb40-9" tabindex="-1"></a><span class="co">#' `c(lambda = &lt;value&gt;, alpha = &lt;value&gt;)` bundling the penalty together with the</span></span>
-<span id="cb40-10"><a href="css.html#cb40-10" tabindex="-1"></a><span class="co">#' elastic net mixing parameter alpha (which must be in `(0, 1]`). (For now,</span></span>
-<span id="cb40-11"><a href="css.html#cb40-11" tabindex="-1"></a><span class="co">#' only one lambda value can be provided to `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan</span></span>
-<span id="cb40-12"><a href="css.html#cb40-12" tabindex="-1"></a><span class="co">#' to allow for multiple lambda values to be provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as</span></span>
-<span id="cb40-13"><a href="css.html#cb40-13" tabindex="-1"></a><span class="co">#' described in Faletto and Bien 2022.)</span></span>
-<span id="cb40-14"><a href="css.html#cb40-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb40-15"><a href="css.html#cb40-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb40-16"><a href="css.html#cb40-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb40-17"><a href="css.html#cb40-17" tabindex="-1"></a><span id="checkCssLassoInputs">checkCssLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
-<span id="cb40-18"><a href="css.html#cb40-18" tabindex="-1"></a></span>
-<span id="cb40-19"><a href="css.html#cb40-19" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb40-20"><a href="css.html#cb40-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb40-21"><a href="css.html#cb40-21" tabindex="-1"></a></span>
-<span id="cb40-22"><a href="css.html#cb40-22" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
-<span id="cb40-23"><a href="css.html#cb40-23" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric or integer vector."</span>)</span>
-<span id="cb40-24"><a href="css.html#cb40-24" tabindex="-1"></a>    }</span>
-<span id="cb40-25"><a href="css.html#cb40-25" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.finite</span>(y))){</span>
-<span id="cb40-26"><a href="css.html#cb40-26" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must not contain missing (NA) or non-finite (Inf) values."</span>)</span>
-<span id="cb40-27"><a href="css.html#cb40-27" tabindex="-1"></a>    }</span>
-<span id="cb40-28"><a href="css.html#cb40-28" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.matrix</span>(y)){</span>
-<span id="cb40-29"><a href="css.html#cb40-29" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector (inputted y was a matrix)."</span>)</span>
-<span id="cb40-30"><a href="css.html#cb40-30" tabindex="-1"></a>    }</span>
-<span id="cb40-31"><a href="css.html#cb40-31" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">!=</span> <span class="fu">length</span>(y)){</span>
-<span id="cb40-32"><a href="css.html#cb40-32" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>)</span>
-<span id="cb40-33"><a href="css.html#cb40-33" tabindex="-1"></a>    }</span>
-<span id="cb40-34"><a href="css.html#cb40-34" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">unique</span>(y)) <span class="sc">&lt;=</span> <span class="dv">1</span>){</span>
-<span id="cb40-35"><a href="css.html#cb40-35" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Subsample with only one unique value of y detected: for the default cssLasso, every subsample of y (of size floor(n/2)) must have more than one unique value. css draws random subsamples, so this abort is seed-dependent and becomes more likely as B grows. It indicates that y is too discrete for the default cssLasso--supply a less discrete (more continuous) response, or pass a custom fitfun that tolerates a constant-y subsample."</span>)</span>
-<span id="cb40-36"><a href="css.html#cb40-36" tabindex="-1"></a>    }</span>
-<span id="cb40-37"><a href="css.html#cb40-37" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(lambda) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(lambda)){</span>
-<span id="cb40-38"><a href="css.html#cb40-38" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be a numeric."</span>)</span>
-<span id="cb40-39"><a href="css.html#cb40-39" tabindex="-1"></a>    }</span>
-<span id="cb40-40"><a href="css.html#cb40-40" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(lambda))){</span>
-<span id="cb40-41"><a href="css.html#cb40-41" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"NA detected in provided lambda input to cssLasso"</span>)</span>
-<span id="cb40-42"><a href="css.html#cb40-42" tabindex="-1"></a>    }</span>
-<span id="cb40-43"><a href="css.html#cb40-43" tabindex="-1"></a>    <span class="co"># lambda may be either a single nonnegative number (pure lasso) or a named</span></span>
-<span id="cb40-44"><a href="css.html#cb40-44" tabindex="-1"></a>    <span class="co"># length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;) bundling the</span></span>
-<span id="cb40-45"><a href="css.html#cb40-45" tabindex="-1"></a>    <span class="co"># elastic net mixing parameter alpha (in (0, 1]) alongside the penalty.</span></span>
-<span id="cb40-46"><a href="css.html#cb40-46" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb40-47"><a href="css.html#cb40-47" tabindex="-1"></a>        <span class="cf">if</span>(lambda <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
-<span id="cb40-48"><a href="css.html#cb40-48" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be nonnegative."</span>)</span>
-<span id="cb40-49"><a href="css.html#cb40-49" tabindex="-1"></a>        }</span>
-<span id="cb40-50"><a href="css.html#cb40-50" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">2</span>){</span>
-<span id="cb40-51"><a href="css.html#cb40-51" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">setequal</span>(<span class="fu">names</span>(lambda), <span class="fu">c</span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))){</span>
-<span id="cb40-52"><a href="css.html#cb40-52" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
-<span id="cb40-53"><a href="css.html#cb40-53" tabindex="-1"></a>        }</span>
-<span id="cb40-54"><a href="css.html#cb40-54" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"lambda"</span>] <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
-<span id="cb40-55"><a href="css.html#cb40-55" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the lambda component of lambda must be nonnegative."</span>)</span>
-<span id="cb40-56"><a href="css.html#cb40-56" tabindex="-1"></a>        }</span>
-<span id="cb40-57"><a href="css.html#cb40-57" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"alpha"</span>] <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> lambda[<span class="st">"alpha"</span>] <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
-<span id="cb40-58"><a href="css.html#cb40-58" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>)</span>
-<span id="cb40-59"><a href="css.html#cb40-59" tabindex="-1"></a>        }</span>
-<span id="cb40-60"><a href="css.html#cb40-60" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
-<span id="cb40-61"><a href="css.html#cb40-61" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
-<span id="cb40-62"><a href="css.html#cb40-62" tabindex="-1"></a>    }</span>
-<span id="cb40-63"><a href="css.html#cb40-63" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="css.html#cb41-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
+<span id="cb40-3"><a href="css.html#cb40-3" tabindex="-1"></a><span class="co">#' parallel::mclapply relies on forking, which is unavailable on Windows; <a href="css.html#css">css</a>()</span></span>
+<span id="cb40-4"><a href="css.html#cb40-4" tabindex="-1"></a><span class="co">#' uses this to downgrade num_cores &gt; 1 to serial there rather than let mclapply</span></span>
+<span id="cb40-5"><a href="css.html#cb40-5" tabindex="-1"></a><span class="co">#' hard-error (#155d). Factored into a helper so the Windows branch is</span></span>
+<span id="cb40-6"><a href="css.html#cb40-6" tabindex="-1"></a><span class="co">#' unit-testable off-Windows via local_mocked_bindings.</span></span>
+<span id="cb40-7"><a href="css.html#cb40-7" tabindex="-1"></a><span class="co">#' @return TRUE if running on Windows, FALSE otherwise.</span></span>
+<span id="cb40-8"><a href="css.html#cb40-8" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb40-9"><a href="css.html#cb40-9" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb40-10"><a href="css.html#cb40-10" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb40-11"><a href="css.html#cb40-11" tabindex="-1"></a><span id="runningOnWindows">runningOnWindows</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
+<span id="cb40-12"><a href="css.html#cb40-12" tabindex="-1"></a>    <span class="fu">identical</span>(.Platform<span class="sc">$</span>OS.type, <span class="st">"windows"</span>)</span>
+<span id="cb40-13"><a href="css.html#cb40-13" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="css.html#cb41-1" tabindex="-1"></a><span class="co">#' Helper function to confirm that the inputs to `<a href="css.html#cssLasso">cssLasso</a>()` are as expected. </span></span>
 <span id="cb41-2"><a href="css.html#cb41-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb41-3"><a href="css.html#cb41-3" tabindex="-1"></a><span class="co">#' For the default `cssLasso`, `<a href="css.html#css">css</a>()` draws `n_sub` random subsamples of the</span></span>
-<span id="cb41-4"><a href="css.html#cb41-4" tabindex="-1"></a><span class="co">#' selection set, each a size-`floor(n/2)` draw without replacement from the</span></span>
-<span id="cb41-5"><a href="css.html#cb41-5" tabindex="-1"></a><span class="co">#' `n = length(y)` responses; `cssLasso` aborts on any subsample whose `y` has a</span></span>
-<span id="cb41-6"><a href="css.html#cb41-6" tabindex="-1"></a><span class="co">#' single unique value (see `<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()`). This returns the estimated</span></span>
-<span id="cb41-7"><a href="css.html#cb41-7" tabindex="-1"></a><span class="co">#' probability that at least one of those subsamples is all-constant. Per</span></span>
-<span id="cb41-8"><a href="css.html#cb41-8" tabindex="-1"></a><span class="co">#' subsample, P(all one value) is hypergeometric, `sum_v C(count_v, m) / C(n, m)`</span></span>
-<span id="cb41-9"><a href="css.html#cb41-9" tabindex="-1"></a><span class="co">#' with `m = floor(n/2)` (a term is 0 unless some value's count is at least `m`,</span></span>
-<span id="cb41-10"><a href="css.html#cb41-10" tabindex="-1"></a><span class="co">#' i.e. that value is a near-majority), computed in log space (`lchoose`) to</span></span>
-<span id="cb41-11"><a href="css.html#cb41-11" tabindex="-1"></a><span class="co">#' avoid overflow for large `n`. That per-subsample probability is aggregated</span></span>
-<span id="cb41-12"><a href="css.html#cb41-12" tabindex="-1"></a><span class="co">#' over the `n_sub` subsamples treating them as independent (a close</span></span>
-<span id="cb41-13"><a href="css.html#cb41-13" tabindex="-1"></a><span class="co">#' approximation; the small SS within-pair dependence is negligible near the</span></span>
-<span id="cb41-14"><a href="css.html#cb41-14" tabindex="-1"></a><span class="co">#' threshold).</span></span>
-<span id="cb41-15"><a href="css.html#cb41-15" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb41-16"><a href="css.html#cb41-16" tabindex="-1"></a><span class="co">#' @param y A numeric or integer response vector (the selection-set response).</span></span>
-<span id="cb41-17"><a href="css.html#cb41-17" tabindex="-1"></a><span class="co">#' @param B Integer; the number of subsamples (`2*B` are drawn when</span></span>
-<span id="cb41-18"><a href="css.html#cb41-18" tabindex="-1"></a><span class="co">#' `sampling_type = "SS"`).</span></span>
-<span id="cb41-19"><a href="css.html#cb41-19" tabindex="-1"></a><span class="co">#' @param sampling_type A character string; "SS" (the reachable default) draws</span></span>
-<span id="cb41-20"><a href="css.html#cb41-20" tabindex="-1"></a><span class="co">#' `2*B` subsamples, anything else draws `B`.</span></span>
-<span id="cb41-21"><a href="css.html#cb41-21" tabindex="-1"></a><span class="co">#' @return A single number in `[0, 1]`: the estimated probability that at least</span></span>
-<span id="cb41-22"><a href="css.html#cb41-22" tabindex="-1"></a><span class="co">#' one size-`floor(n/2)` subsample of `y` is all-constant (and so aborts the</span></span>
-<span id="cb41-23"><a href="css.html#cb41-23" tabindex="-1"></a><span class="co">#' default `cssLasso`).</span></span>
-<span id="cb41-24"><a href="css.html#cb41-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb41-25"><a href="css.html#cb41-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb41-26"><a href="css.html#cb41-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb41-27"><a href="css.html#cb41-27" tabindex="-1"></a><span id="discreteYAbortProb">discreteYAbortProb</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(y, B, sampling_type){</span>
-<span id="cb41-28"><a href="css.html#cb41-28" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
-<span id="cb41-29"><a href="css.html#cb41-29" tabindex="-1"></a>    m <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">2</span>)</span>
-<span id="cb41-30"><a href="css.html#cb41-30" tabindex="-1"></a>    n_sub <span class="ot">&lt;-</span> <span class="cf">if</span>(sampling_type <span class="sc">==</span> <span class="st">"SS"</span>) <span class="dv">2</span><span class="dt">L</span> <span class="sc">*</span> B <span class="cf">else</span> <span class="fu">as.integer</span>(B)</span>
-<span id="cb41-31"><a href="css.html#cb41-31" tabindex="-1"></a>    counts <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">table</span>(y))</span>
-<span id="cb41-32"><a href="css.html#cb41-32" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">exp</span>(<span class="fu">lchoose</span>(counts, m) <span class="sc">-</span> <span class="fu">lchoose</span>(n, m)))  <span class="co"># sum_v C(count_v,m)/C(n,m)</span></span>
-<span id="cb41-33"><a href="css.html#cb41-33" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">max</span>(p_const, <span class="dv">0</span>), <span class="dv">1</span>)                       <span class="co"># guard fp drift to [0,1]</span></span>
-<span id="cb41-34"><a href="css.html#cb41-34" tabindex="-1"></a>    <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> p_const)<span class="sc">^</span>n_sub</span>
-<span id="cb41-35"><a href="css.html#cb41-35" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="css.html#cb42-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
+<span id="cb41-3"><a href="css.html#cb41-3" tabindex="-1"></a><span class="co">#' @param X A design matrix containing the predictors. (Note that we don't need</span></span>
+<span id="cb41-4"><a href="css.html#cb41-4" tabindex="-1"></a><span class="co">#' to check X very much, because X will have already been checked by the</span></span>
+<span id="cb41-5"><a href="css.html#cb41-5" tabindex="-1"></a><span class="co">#' function `<a href="css.html#checkCssInputs">checkCssInputs</a>()` when it was provided to `<a href="css.html#css">css</a>()`.)</span></span>
+<span id="cb41-6"><a href="css.html#cb41-6" tabindex="-1"></a><span class="co">#' @param y A numeric vector containing the response.</span></span>
+<span id="cb41-7"><a href="css.html#cb41-7" tabindex="-1"></a><span class="co">#' @param lambda Either a single nonnegative number for the lasso penalty to</span></span>
+<span id="cb41-8"><a href="css.html#cb41-8" tabindex="-1"></a><span class="co">#' use on each subsample, or a named length-2 numeric vector</span></span>
+<span id="cb41-9"><a href="css.html#cb41-9" tabindex="-1"></a><span class="co">#' `c(lambda = &lt;value&gt;, alpha = &lt;value&gt;)` bundling the penalty together with the</span></span>
+<span id="cb41-10"><a href="css.html#cb41-10" tabindex="-1"></a><span class="co">#' elastic net mixing parameter alpha (which must be in `(0, 1]`). (For now,</span></span>
+<span id="cb41-11"><a href="css.html#cb41-11" tabindex="-1"></a><span class="co">#' only one lambda value can be provided to `<a href="css.html#cssLasso">cssLasso</a>()`; in the future, we plan</span></span>
+<span id="cb41-12"><a href="css.html#cb41-12" tabindex="-1"></a><span class="co">#' to allow for multiple lambda values to be provided to `<a href="css.html#cssLasso">cssLasso</a>()`, as</span></span>
+<span id="cb41-13"><a href="css.html#cb41-13" tabindex="-1"></a><span class="co">#' described in Faletto and Bien 2022.)</span></span>
+<span id="cb41-14"><a href="css.html#cb41-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb41-15"><a href="css.html#cb41-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb41-16"><a href="css.html#cb41-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb41-17"><a href="css.html#cb41-17" tabindex="-1"></a><span id="checkCssLassoInputs">checkCssLassoInputs</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(X, y, lambda){</span>
+<span id="cb41-18"><a href="css.html#cb41-18" tabindex="-1"></a></span>
+<span id="cb41-19"><a href="css.html#cb41-19" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb41-20"><a href="css.html#cb41-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb41-21"><a href="css.html#cb41-21" tabindex="-1"></a></span>
+<span id="cb41-22"><a href="css.html#cb41-22" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(y) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(y)){</span>
+<span id="cb41-23"><a href="css.html#cb41-23" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric or integer vector."</span>)</span>
+<span id="cb41-24"><a href="css.html#cb41-24" tabindex="-1"></a>    }</span>
+<span id="cb41-25"><a href="css.html#cb41-25" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="sc">!</span><span class="fu">is.finite</span>(y))){</span>
+<span id="cb41-26"><a href="css.html#cb41-26" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must not contain missing (NA) or non-finite (Inf) values."</span>)</span>
+<span id="cb41-27"><a href="css.html#cb41-27" tabindex="-1"></a>    }</span>
+<span id="cb41-28"><a href="css.html#cb41-28" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.matrix</span>(y)){</span>
+<span id="cb41-29"><a href="css.html#cb41-29" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a numeric vector (inputted y was a matrix)."</span>)</span>
+<span id="cb41-30"><a href="css.html#cb41-30" tabindex="-1"></a>    }</span>
+<span id="cb41-31"><a href="css.html#cb41-31" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">!=</span> <span class="fu">length</span>(y)){</span>
+<span id="cb41-32"><a href="css.html#cb41-32" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, y must be a vector of length equal to nrow(X)."</span>)</span>
+<span id="cb41-33"><a href="css.html#cb41-33" tabindex="-1"></a>    }</span>
+<span id="cb41-34"><a href="css.html#cb41-34" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(<span class="fu">unique</span>(y)) <span class="sc">&lt;=</span> <span class="dv">1</span>){</span>
+<span id="cb41-35"><a href="css.html#cb41-35" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Subsample with only one unique value of y detected: for the default cssLasso, every subsample of y (of size floor(n/2)) must have more than one unique value. css draws random subsamples, so this abort is seed-dependent and becomes more likely as B grows. It indicates that y is too discrete for the default cssLasso--supply a less discrete (more continuous) response, or pass a custom fitfun that tolerates a constant-y subsample."</span>)</span>
+<span id="cb41-36"><a href="css.html#cb41-36" tabindex="-1"></a>    }</span>
+<span id="cb41-37"><a href="css.html#cb41-37" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span><span class="fu">is.numeric</span>(lambda) <span class="sc">&amp;</span> <span class="sc">!</span><span class="fu">is.integer</span>(lambda)){</span>
+<span id="cb41-38"><a href="css.html#cb41-38" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be a numeric."</span>)</span>
+<span id="cb41-39"><a href="css.html#cb41-39" tabindex="-1"></a>    }</span>
+<span id="cb41-40"><a href="css.html#cb41-40" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">any</span>(<span class="fu">is.na</span>(lambda))){</span>
+<span id="cb41-41"><a href="css.html#cb41-41" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"NA detected in provided lambda input to cssLasso"</span>)</span>
+<span id="cb41-42"><a href="css.html#cb41-42" tabindex="-1"></a>    }</span>
+<span id="cb41-43"><a href="css.html#cb41-43" tabindex="-1"></a>    <span class="co"># lambda may be either a single nonnegative number (pure lasso) or a named</span></span>
+<span id="cb41-44"><a href="css.html#cb41-44" tabindex="-1"></a>    <span class="co"># length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;) bundling the</span></span>
+<span id="cb41-45"><a href="css.html#cb41-45" tabindex="-1"></a>    <span class="co"># elastic net mixing parameter alpha (in (0, 1]) alongside the penalty.</span></span>
+<span id="cb41-46"><a href="css.html#cb41-46" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb41-47"><a href="css.html#cb41-47" tabindex="-1"></a>        <span class="cf">if</span>(lambda <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
+<span id="cb41-48"><a href="css.html#cb41-48" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be nonnegative."</span>)</span>
+<span id="cb41-49"><a href="css.html#cb41-49" tabindex="-1"></a>        }</span>
+<span id="cb41-50"><a href="css.html#cb41-50" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(<span class="fu">length</span>(lambda) <span class="sc">==</span> <span class="dv">2</span>){</span>
+<span id="cb41-51"><a href="css.html#cb41-51" tabindex="-1"></a>        <span class="cf">if</span>(<span class="sc">!</span><span class="fu">setequal</span>(<span class="fu">names</span>(lambda), <span class="fu">c</span>(<span class="st">"lambda"</span>, <span class="st">"alpha"</span>))){</span>
+<span id="cb41-52"><a href="css.html#cb41-52" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
+<span id="cb41-53"><a href="css.html#cb41-53" tabindex="-1"></a>        }</span>
+<span id="cb41-54"><a href="css.html#cb41-54" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"lambda"</span>] <span class="sc">&lt;</span> <span class="dv">0</span>){</span>
+<span id="cb41-55"><a href="css.html#cb41-55" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the lambda component of lambda must be nonnegative."</span>)</span>
+<span id="cb41-56"><a href="css.html#cb41-56" tabindex="-1"></a>        }</span>
+<span id="cb41-57"><a href="css.html#cb41-57" tabindex="-1"></a>        <span class="cf">if</span>(lambda[<span class="st">"alpha"</span>] <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> lambda[<span class="st">"alpha"</span>] <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb41-58"><a href="css.html#cb41-58" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"For method cssLasso, the alpha component of lambda must be in (0, 1]."</span>)</span>
+<span id="cb41-59"><a href="css.html#cb41-59" tabindex="-1"></a>        }</span>
+<span id="cb41-60"><a href="css.html#cb41-60" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb41-61"><a href="css.html#cb41-61" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
+<span id="cb41-62"><a href="css.html#cb41-62" tabindex="-1"></a>    }</span>
+<span id="cb41-63"><a href="css.html#cb41-63" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="css.html#cb42-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
 <span id="cb42-2"><a href="css.html#cb42-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb42-3"><a href="css.html#cb42-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb42-4"><a href="css.html#cb42-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
-<span id="cb42-5"><a href="css.html#cb42-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
-<span id="cb42-6"><a href="css.html#cb42-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
-<span id="cb42-7"><a href="css.html#cb42-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
-<span id="cb42-8"><a href="css.html#cb42-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
-<span id="cb42-9"><a href="css.html#cb42-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
-<span id="cb42-10"><a href="css.html#cb42-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
-<span id="cb42-11"><a href="css.html#cb42-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
-<span id="cb42-12"><a href="css.html#cb42-12" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring if the inputs</span></span>
-<span id="cb42-13"><a href="css.html#cb42-13" tabindex="-1"></a><span class="co">#' to getClusterSelMatrix are invalid.</span></span>
-<span id="cb42-14"><a href="css.html#cb42-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb42-15"><a href="css.html#cb42-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb42-16"><a href="css.html#cb42-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb42-17"><a href="css.html#cb42-17" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
-<span id="cb42-18"><a href="css.html#cb42-18" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
-<span id="cb42-19"><a href="css.html#cb42-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
-<span id="cb42-20"><a href="css.html#cb42-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
-<span id="cb42-21"><a href="css.html#cb42-21" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb42-22"><a href="css.html#cb42-22" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
-<span id="cb42-23"><a href="css.html#cb42-23" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb42-3"><a href="css.html#cb42-3" tabindex="-1"></a><span class="co">#' For the default `cssLasso`, `<a href="css.html#css">css</a>()` draws `n_sub` random subsamples of the</span></span>
+<span id="cb42-4"><a href="css.html#cb42-4" tabindex="-1"></a><span class="co">#' selection set, each a size-`floor(n/2)` draw without replacement from the</span></span>
+<span id="cb42-5"><a href="css.html#cb42-5" tabindex="-1"></a><span class="co">#' `n = length(y)` responses; `cssLasso` aborts on any subsample whose `y` has a</span></span>
+<span id="cb42-6"><a href="css.html#cb42-6" tabindex="-1"></a><span class="co">#' single unique value (see `<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()`). This returns the estimated</span></span>
+<span id="cb42-7"><a href="css.html#cb42-7" tabindex="-1"></a><span class="co">#' probability that at least one of those subsamples is all-constant. Per</span></span>
+<span id="cb42-8"><a href="css.html#cb42-8" tabindex="-1"></a><span class="co">#' subsample, P(all one value) is hypergeometric, `sum_v C(count_v, m) / C(n, m)`</span></span>
+<span id="cb42-9"><a href="css.html#cb42-9" tabindex="-1"></a><span class="co">#' with `m = floor(n/2)` (a term is 0 unless some value's count is at least `m`,</span></span>
+<span id="cb42-10"><a href="css.html#cb42-10" tabindex="-1"></a><span class="co">#' i.e. that value is a near-majority), computed in log space (`lchoose`) to</span></span>
+<span id="cb42-11"><a href="css.html#cb42-11" tabindex="-1"></a><span class="co">#' avoid overflow for large `n`. That per-subsample probability is aggregated</span></span>
+<span id="cb42-12"><a href="css.html#cb42-12" tabindex="-1"></a><span class="co">#' over the `n_sub` subsamples treating them as independent (a close</span></span>
+<span id="cb42-13"><a href="css.html#cb42-13" tabindex="-1"></a><span class="co">#' approximation; the small SS within-pair dependence is negligible near the</span></span>
+<span id="cb42-14"><a href="css.html#cb42-14" tabindex="-1"></a><span class="co">#' threshold).</span></span>
+<span id="cb42-15"><a href="css.html#cb42-15" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb42-16"><a href="css.html#cb42-16" tabindex="-1"></a><span class="co">#' @param y A numeric or integer response vector (the selection-set response).</span></span>
+<span id="cb42-17"><a href="css.html#cb42-17" tabindex="-1"></a><span class="co">#' @param B Integer; the number of subsamples (`2*B` are drawn when</span></span>
+<span id="cb42-18"><a href="css.html#cb42-18" tabindex="-1"></a><span class="co">#' `sampling_type = "SS"`).</span></span>
+<span id="cb42-19"><a href="css.html#cb42-19" tabindex="-1"></a><span class="co">#' @param sampling_type A character string; "SS" (the reachable default) draws</span></span>
+<span id="cb42-20"><a href="css.html#cb42-20" tabindex="-1"></a><span class="co">#' `2*B` subsamples, anything else draws `B`.</span></span>
+<span id="cb42-21"><a href="css.html#cb42-21" tabindex="-1"></a><span class="co">#' @return A single number in `[0, 1]`: the estimated probability that at least</span></span>
+<span id="cb42-22"><a href="css.html#cb42-22" tabindex="-1"></a><span class="co">#' one size-`floor(n/2)` subsample of `y` is all-constant (and so aborts the</span></span>
+<span id="cb42-23"><a href="css.html#cb42-23" tabindex="-1"></a><span class="co">#' default `cssLasso`).</span></span>
+<span id="cb42-24"><a href="css.html#cb42-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb42-25"><a href="css.html#cb42-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb42-26"><a href="css.html#cb42-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb42-27"><a href="css.html#cb42-27" tabindex="-1"></a><span id="discreteYAbortProb">discreteYAbortProb</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(y, B, sampling_type){</span>
+<span id="cb42-28"><a href="css.html#cb42-28" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
+<span id="cb42-29"><a href="css.html#cb42-29" tabindex="-1"></a>    m <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb42-30"><a href="css.html#cb42-30" tabindex="-1"></a>    n_sub <span class="ot">&lt;-</span> <span class="cf">if</span>(sampling_type <span class="sc">==</span> <span class="st">"SS"</span>) <span class="dv">2</span><span class="dt">L</span> <span class="sc">*</span> B <span class="cf">else</span> <span class="fu">as.integer</span>(B)</span>
+<span id="cb42-31"><a href="css.html#cb42-31" tabindex="-1"></a>    counts <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">table</span>(y))</span>
+<span id="cb42-32"><a href="css.html#cb42-32" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">exp</span>(<span class="fu">lchoose</span>(counts, m) <span class="sc">-</span> <span class="fu">lchoose</span>(n, m)))  <span class="co"># sum_v C(count_v,m)/C(n,m)</span></span>
+<span id="cb42-33"><a href="css.html#cb42-33" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">max</span>(p_const, <span class="dv">0</span>), <span class="dv">1</span>)                       <span class="co"># guard fp drift to [0,1]</span></span>
+<span id="cb42-34"><a href="css.html#cb42-34" tabindex="-1"></a>    <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> p_const)<span class="sc">^</span>n_sub</span>
+<span id="cb42-35"><a href="css.html#cb42-35" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="css.html#cb43-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
+<span id="cb43-2"><a href="css.html#cb43-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb43-3"><a href="css.html#cb43-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb43-4"><a href="css.html#cb43-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
+<span id="cb43-5"><a href="css.html#cb43-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
+<span id="cb43-6"><a href="css.html#cb43-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
+<span id="cb43-7"><a href="css.html#cb43-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
+<span id="cb43-8"><a href="css.html#cb43-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
+<span id="cb43-9"><a href="css.html#cb43-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
+<span id="cb43-10"><a href="css.html#cb43-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
+<span id="cb43-11"><a href="css.html#cb43-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
+<span id="cb43-12"><a href="css.html#cb43-12" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring if the inputs</span></span>
+<span id="cb43-13"><a href="css.html#cb43-13" tabindex="-1"></a><span class="co">#' to getClusterSelMatrix are invalid.</span></span>
+<span id="cb43-14"><a href="css.html#cb43-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb43-15"><a href="css.html#cb43-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb43-16"><a href="css.html#cb43-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb43-17"><a href="css.html#cb43-17" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
+<span id="cb43-18"><a href="css.html#cb43-18" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb43-19"><a href="css.html#cb43-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb43-20"><a href="css.html#cb43-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
+<span id="cb43-21"><a href="css.html#cb43-21" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb43-22"><a href="css.html#cb43-22" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
+<span id="cb43-23"><a href="css.html#cb43-23" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </div>
             </section>

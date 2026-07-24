@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.6",
+    Version = "0.4.7",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -283,7 +283,8 @@ The function `css()` is specified below. (There are some extra details that I om
 #' dominant cost and is embarrassingly parallel, so on a multi-core Unix or
 #' macOS machine setting `num_cores > 1` gives a substantial speedup; the result
 #' is identical regardless of `num_cores` (per-subsample seeds are fixed).
-#' Forking is unavailable on Windows, where `mclapply` runs serially. Default is
+#' On Windows, forking is unavailable, so `num_cores > 1` is not supported;
+#' `css()` warns and runs serially (`num_cores = 1`) there. Default is
 #' 1 (serial).
 #' @return A list containing the following items:
 #' \item{`feat_sel_mat`}{A `B` (or `2*B` for `sampling_type="SS"`) x `p` numeric (binary) matrix. `feat_sel_mat[i, j] = 1` if feature `j` was selected by the base feature selection method on subsample `i`, and 0 otherwise.}
@@ -323,7 +324,7 @@ The function `css()` is specified below. (There are some extra details that I om
 #'   B = 10)
 #' print(res)
 #' # On a multi-core Unix/macOS machine, set num_cores for a substantial
-#' # speedup (identical results; mclapply runs serially on Windows):
+#' # speedup (identical results; num_cores > 1 falls back to serial on Windows):
 #' \donttest{
 #' res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
 #'   B = 10, num_cores = min(2L, parallel::detectCores()))
@@ -344,6 +345,14 @@ css <- function(X, y, lambda, clusters = list(), fitfun = cssLasso,
     clusters <- check_list$clusters
 
     rm(check_list)
+
+    # num_cores > 1 needs forking (parallel::mclapply), which is unavailable on
+    # Windows -- there mclapply hard-errors for mc.cores > 1 rather than running
+    # serially. Downgrade to serial with a warning so css() still runs (#155d).
+    if(num_cores > 1L && runningOnWindows()){
+        warning("num_cores > 1 is not supported on Windows (parallel::mclapply requires forking); running serially with num_cores = 1.")
+        num_cores <- 1L
+    }
 
     n <- nrow(X)
     p <- ncol(X)
@@ -667,8 +676,27 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     seeds <- sample.int(.Machine$integer.max, length(subsamps_object))
 
     res_list <- parallel::mclapply(X=seq_along(subsamps_object),
-        FUN=function(i) cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
-            fitfun=fitfun, seed=seeds[i]),
+        FUN=function(i){
+            warns <- list()
+            value <- withCallingHandlers(
+                tryCatch(
+                    cssLoop(subsamps_object[[i]], x=x, y=y, lambda=lambda,
+                        fitfun=fitfun, seed=seeds[i]),
+                    # (#155a) tag the TRUE subsample index at the point of failure
+                    # so prescheduling can't misattribute it in the assembly loop.
+                    error=function(e) structure(list(i=i,
+                        msg=conditionMessage(e)), class="cssr_loop_error")
+                ),
+                # (#155b) collect fitfun warning CONDITIONS from the (possibly
+                # forked) worker; re-emitted in the parent below so they surface
+                # the same regardless of num_cores. Collect the condition object
+                # (not just conditionMessage) so a custom warning's subclass/call
+                # survives (conditions serialize across the fork).
+                warning=function(w){ warns[[length(warns) + 1L]] <<- w;
+                    invokeRestart("muffleWarning") }
+            )
+            list(value=value, warnings=warns)
+        },
         mc.cores=num_cores)
 
     # mclapply returns NULL for any subsample whose worker was killed (e.g. the
@@ -678,6 +706,13 @@ getSelMatrix <- function(x, y, lambda, B, sampling_type, subsamps_object,
     # a zero row (which would bias the selection proportions).
     if(any(vapply(res_list, is.null, logical(1)))){
         stop("A parallel worker failed (returned NULL) on at least one subsample; re-run with num_cores = 1 to see the underlying error.")
+    }
+
+    # (#155b) Re-emit fitfun warning conditions in subsample order, then unwrap
+    # so the assembly loop below sees the plain results.
+    for(i in seq_along(res_list)){
+        for(w in res_list[[i]]$warnings){ warning(w) }
+        res_list[[i]] <- res_list[[i]]$value
     }
 
     # Store selected sets in B x p (or `2*B` x p for "SS") binary matrix
@@ -1199,7 +1234,12 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     stopifnot(!is.na(num_cores))
     stopifnot(num_cores == round(num_cores))
     stopifnot(num_cores >= 1)
-    stopifnot(num_cores <= parallel::detectCores())
+    n_cores_avail <- parallel::detectCores()
+    # detectCores() returns NA when the count is indeterminable; only enforce the
+    # upper bound when it is known, so an NA does not brick every css() call (#155c).
+    if(!is.na(n_cores_avail)){
+        stopifnot(num_cores <= n_cores_avail)
+    }
 
     return(list(feat_names=feat_names, X=X, clusters=clusters))
 }
@@ -2027,23 +2067,31 @@ checkCssLoopOutput <- function(selected, p, feats_on_subsamp){
 }
 ```
 
-`fitfunFailureMessage()` builds the informative error that `getSelMatrix()` raises when a subsample's `fitfun` result is not a valid integer vector (reached only under parallel forking, where the failure arrives as a captured `try-error`):
+`fitfunFailureMessage()` builds the informative error that `getSelMatrix()` raises when a subsample's `fitfun` result is not a valid integer vector. `getSelMatrix()` wraps each subsample's `cssLoop()` call in a `tryCatch()` that tags a failure with its true subsample index as a `cssr_loop_error`, so a `fitfun` error is reported the same way whether the run is serial or parallel (and prescheduling can no longer misattribute it to the wrong subsample); the `try-error` branch is a defensive fallback:
 
 ```{r}
 #' Build an informative error for a subsample whose fitfun result is invalid
 #'
-#' Reached only when cssLoop failed on a subsample and parallel::mclapply
-#' (forking; the serial path propagates the error directly) captured the failure
-#' as a try-error. Surfaces the underlying cause in the error condition rather
-#' than printing it to stdout.
-#' @param result The offending element of getSelMatrix's res_list (a try-error
-#' under forking; the class branch is a defensive fallback).
-#' @param i Integer; the index of the subsample that failed.
+#' Reached when cssLoop failed on a subsample. getSelMatrix wraps each
+#' subsample's cssLoop call in a tryCatch that tags the failure with its true
+#' subsample index as a cssr_loop_error (on both the serial and parallel paths),
+#' so the message names the correct subsample rather than a
+#' prescheduling-misattributed one. Surfaces the underlying cause in the error
+#' condition rather than printing it to stdout.
+#' @param result The offending element of getSelMatrix's res_list (normally a
+#' cssr_loop_error carrying the tagged subsample index and message; the
+#' try-error and class branches are defensive fallbacks).
+#' @param i Integer; the loop index of the subsample that failed (used only by
+#' the fallback branches -- a cssr_loop_error carries its own tagged index).
 #' @return A length-one character string suitable for stop().
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
 fitfunFailureMessage <- function(result, i){
+    if(inherits(result, "cssr_loop_error")){
+        return(paste0("The feature selection method (fitfun) failed on subsample ",
+            result$i, ": ", result$msg))
+    }
     if(inherits(result, "try-error")){
         paste0("The feature selection method (fitfun) failed on subsample ", i,
             ": ", conditionMessage(attr(result, "condition")))
@@ -2052,6 +2100,24 @@ fitfunFailureMessage <- function(result, i){
             "class ", paste(class(result), collapse = "/"), " on subsample ", i,
             "; it must return an integer vector of selected feature indices.")
     }
+}
+```
+
+A small platform helper lets `css()` decide whether parallel forking is available. It is factored out (rather than inlined) so the Windows fallback can be exercised on non-Windows machines in the tests:
+
+```{r}
+#' Is the current session running on Windows?
+#'
+#' parallel::mclapply relies on forking, which is unavailable on Windows; css()
+#' uses this to downgrade num_cores > 1 to serial there rather than let mclapply
+#' hard-error (#155d). Factored into a helper so the Windows branch is
+#' unit-testable off-Windows via local_mocked_bindings.
+#' @return TRUE if running on Windows, FALSE otherwise.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+runningOnWindows <- function(){
+    identical(.Platform$OS.type, "windows")
 }
 ```
 
@@ -7792,10 +7858,13 @@ testthat::test_that("getSelMatrix works", {
   testthat::expect_true(all(res2 %in% c(0, 1)))
   testthat::expect_true(all(is.integer(res2)))
   
+  # With the per-subsample tryCatch (#155a), cssLoop's is.integer(subsample)
+  # failure is caught and tagged, so the length(res_list) == nrow(res) check
+  # (res_list length 1 vs 24 rows) now trips first.
   testthat::expect_error(getSelMatrix(x=x, y=y, lambda="0.02", B=12, sampling_type="SS",
                       subsamps_object="subsamps_object", num_cores=1,
                       fitfun=testFitfun),
-                      "is.integer(subsample) is not TRUE",
+                      "length(res_list) == nrow(res) is not TRUE",
                       fixed=TRUE)
   testthat::expect_error(getSelMatrix(x=x[1:8, ], y=y, lambda="foo", B=12, sampling_type="SS",
                       subsamps_object=subsamps_object, num_cores=1,
@@ -7839,6 +7908,110 @@ testthat::test_that("getSelMatrix detects a killed parallel worker (#104)", {
                  subsamps_object=subsamps_object, num_cores=1,
                  fitfun=cssLasso),
     "parallel worker failed")
+})
+```
+
+We test the `num_cores > 1` robustness fixes (issue #155). First (#155a), a `fitfun`
+failure is reported against its true subsample index rather than a
+prescheduling-misattributed one. `fitfunFailureMessage()` reads the tagged index
+carried by the `cssr_loop_error`, ignoring the (fallback) loop index it is passed:
+
+```{r}
+testthat::test_that("fitfunFailureMessage reads the tagged subsample index (#155a)", {
+  msg <- fitfunFailureMessage(
+    structure(list(i=7L, msg="boom"), class="cssr_loop_error"), 999L)
+  testthat::expect_true(grepl("subsample 7", msg, fixed=TRUE))
+  testthat::expect_true(grepl("boom", msg, fixed=TRUE))
+  testthat::expect_false(grepl("subsample 999", msg, fixed=TRUE))
+})
+```
+
+End-to-end (#155a), when a `fitfun` fails on exactly one subsample under
+`num_cores = 2`, `getSelMatrix()` must name that subsample -- not the successful
+subsample 1 it shares a preschedule chunk with. (Needs real forking, so the
+parallel call is probed and the test is skipped where forking is unavailable.)
+
+```{r}
+testthat::test_that("a parallel fitfun failure reports the true subsample (#155a)", {
+  B <- 7L
+  K <- 5L      # in 2..B: shares preschedule chunk 1 with the SUCCESSFUL subsample 1
+  n <- 25L
+  p <- 6L
+  set.seed(408)
+  x <- matrix(stats::rnorm(n * p), nrow=n, ncol=p)
+  x[1, 1] <- -999    # sentinel "poison" marker in row 1
+  y <- stats::rnorm(n)
+
+  # floor(n/2) = 12 distinct row indices per subsample; ONLY subsample K holds row 1.
+  half <- floor(n / 2)
+  subsamps_object <- lapply(seq_len(2L * B),
+                            function(j) if(j == K) 1:half else 2:(half + 1L))
+
+  # fitfun stops iff its subsample contains the poison row (row 1), else selects.
+  poison_fitfun <- function(X, y, lambda){
+    if(any(X[, 1] == -999)) stop("poison") else c(1L, 2L)
+  }
+
+  # Probe real forking; skip (rather than fail) where unavailable.
+  forked <- tryCatch({
+    parallel::mclapply(1:2, function(i) i, mc.cores=2L)
+    TRUE
+  }, error=function(e) FALSE)
+  if(!forked){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+
+  err <- tryCatch(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=2L,
+                 fitfun=poison_fitfun),
+    error=function(e) conditionMessage(e))
+  testthat::expect_true(grepl("subsample 5", err, fixed=TRUE))
+  testthat::expect_false(grepl("subsample 1", err, fixed=TRUE))
+})
+```
+
+And (#155b), `fitfun` warnings emitted inside forked workers must surface in the
+parent -- the same count and messages as a serial run, rather than being silently
+swallowed:
+
+```{r}
+testthat::test_that("fitfun warnings surface under num_cores > 1 (#155b)", {
+  B <- 6L
+  n <- 25L
+  p <- 6L
+  set.seed(511)
+  x <- matrix(stats::rnorm(n * p), nrow=n, ncol=p)
+  y <- stats::rnorm(n)
+  subsamps_object <- createSubsamples(n=n, p=p, B=B, sampling_type="SS",
+                                      prop_feats_remove=0)
+
+  # One warning per fitfun call; returns a valid selection.
+  warn_fitfun <- function(X, y, lambda){ warning("wfit"); c(1L, 2L) }
+
+  serial_warns <- testthat::capture_warnings(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=1L,
+                 fitfun=warn_fitfun))
+  # one warning per subsample = 2*B
+  testthat::expect_equal(sum(serial_warns == "wfit"), 2L * B)
+
+  # Probe real forking; skip where unavailable.
+  forked <- tryCatch({
+    parallel::mclapply(1:2, function(i) i, mc.cores=2L)
+    TRUE
+  }, error=function(e) FALSE)
+  if(!forked){
+    testthat::skip("parallel forking unavailable in this environment")
+  }
+
+  par_warns <- testthat::capture_warnings(
+    getSelMatrix(x=x, y=y, lambda=0.01, B=B, sampling_type="SS",
+                 subsamps_object=subsamps_object, num_cores=2L,
+                 fitfun=warn_fitfun))
+  # parallel no longer swallows them: same count AND same messages as serial.
+  testthat::expect_equal(sum(par_warns == "wfit"), 2L * B)
+  testthat::expect_identical(sort(par_warns), sort(serial_warns))
 })
 ```
 
@@ -8204,6 +8377,64 @@ testthat::test_that("cssLoop seeds fitfun reproducibly; css parallel RNG is isol
   }
   testthat::expect_identical(par_runs$a, par_runs$b)   # parallel reproducible
   testthat::expect_identical(par_runs$a, d1)           # serial == parallel
+})
+```
+
+We test the remaining `num_cores` robustness fixes (issue #155). `parallel::detectCores()`
+returns `NA` when the core count is indeterminable; that must not brick `css()`
+(#155c). We mock it and confirm the default `num_cores = 1` still runs:
+
+```{r}
+testthat::test_that("detectCores() = NA does not brick css (#155c)", {
+  set.seed(72)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(
+    detectCores = function(...) NA_integer_, .package = "parallel")
+  res <- css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 1L)
+  testthat::expect_s3_class(res, "cssr")
+})
+```
+
+...but when the core count IS known, the upper-bound guard must still fire, so an
+over-large `num_cores` is still rejected (#155c):
+
+```{r}
+testthat::test_that("num_cores beyond a known core count still errors (#155c)", {
+  set.seed(72)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(
+    detectCores = function(...) 2L, .package = "parallel")
+  testthat::expect_error(
+    css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 5L),
+    "num_cores <= n_cores_avail is not TRUE", fixed = TRUE)
+})
+```
+
+Finally (#155d), on Windows -- where `parallel::mclapply` cannot fork -- `num_cores > 1`
+must downgrade to serial with a warning rather than hard-error. We mock the
+platform check so the branch is exercised off-Windows (it runs serially, so no
+real forking is needed):
+
+```{r}
+testthat::test_that("num_cores > 1 on Windows warns and runs serially (#155d)", {
+  # Mocking a package-internal function needs a package context: local_mocked_bindings
+  # resolves the package via testthat::testing_package(), which is set under
+  # devtools::test and R CMD check but is empty during the bare litr weave (the cssr
+  # functions live in the knit global env with no namespace to mock). Skip there; the
+  # Windows branch is still exercised under devtools::test / R CMD check.
+  if(testthat::testing_package() == ""){
+    testthat::skip("runningOnWindows mock needs a package context (unavailable during the litr weave)")
+  }
+  set.seed(84)
+  data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
+                           cluster_size = 4, n_clusters = 1, snr = 3)
+  testthat::local_mocked_bindings(runningOnWindows = function() TRUE)
+  testthat::expect_warning(
+    res <- css(X = data$X, y = data$y, lambda = 0.01, B = 10, num_cores = 2L),
+    "not supported on Windows", fixed = TRUE)
+  testthat::expect_s3_class(res, "cssr")
 })
 ```
 
