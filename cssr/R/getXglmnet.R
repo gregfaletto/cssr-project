@@ -67,7 +67,12 @@ getXglmnet <- function(x, clusters, type, prototypes=NA){
 
     stopifnot(ncol(X_glmnet) == length(clusters))
     stopifnot(ncol(X_glmnet) == length(clusters))
-    colnames(X_glmnet) <- character()
+    # (#158b) name each column with its cluster's name (from the reordered,
+    # formatted clusters list) so glmnet's beta inherits meaningful rownames
+    # matching selected_clusts_list. Column i corresponds to clusters[[i]].
+    if(!is.null(names(clusters))){
+        colnames(X_glmnet) <- names(clusters)
+    }
 
     # Check output
     stopifnot(is.matrix(X_glmnet))

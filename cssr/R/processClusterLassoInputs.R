@@ -50,7 +50,7 @@ processClusterLassoInputs <- function(X, y, clusters, nlambda){
     if(!is.null(colnames(X))){
         feat_names <- colnames(X)
         if(any(is.na(feat_names))){
-            stop("Some features in provided X matrix had valid names and some had NA names; please neither name all features in X or remove the names altogether.")
+            stop("Some features in provided X matrix had valid names and some had NA names; please either name all features in X or remove the names altogether.")
         }
     }
 

@@ -38,7 +38,7 @@ getLassoLambda(X, y, lambda_choice = "1se", nfolds = 10, alpha = 1)
 - nfolds:
 
   Numeric or integer; the number of folds for cross-validation. Must be
-  at least 4 (as specified by cv.glmnet). Default is 10.
+  at least 3 (the minimum for cv.glmnet). Default is 10.
 
 - alpha:
 

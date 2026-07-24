@@ -36,11 +36,18 @@ getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
 
     selected_set <- integer()
     selected_clusts_list <- list()
+    # (#158a) preserve each selected cluster's name so selected_clusts_list is
+    # the named list the docs promise (its names match beta's rownames, #158b).
+    clust_names_out <- character(model_size)
     # Recover features from original feature space
     for(k in 1:model_size){
         selected_cluster_k <- clusters[[lasso_set[k]]]
         stopifnot(is.integer(selected_cluster_k))
         selected_clusts_list[[k]] <- selected_cluster_k
+
+        if(!is.null(names(clusters))){
+            clust_names_out[k] <- names(clusters)[lasso_set[k]]
+        }
 
         if(length(selected_cluster_k) == 1){
             stopifnot(!(selected_cluster_k %in% selected_set))
@@ -51,6 +58,12 @@ getSelectedSets <- function(lasso_set, clusters, prototypes, feat_names){
             stopifnot(!(prototypes[sel_prototype] %in% selected_set))
             selected_set <- c(selected_set, prototypes[sel_prototype])
         }
+    }
+
+    # (#158a) name the returned list with the selected clusters' names so it is
+    # the named list documented for protolasso()/clusterRepLasso().
+    if(!is.null(names(clusters))){
+        names(selected_clusts_list) <- clust_names_out
     }
 
     stopifnot(length(selected_set) == model_size)

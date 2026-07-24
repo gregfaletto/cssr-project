@@ -35,7 +35,14 @@
 #' the cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The
 #' beta output from glmnet when the lasso was estimated on a matrix of
 #' prototypes. (See documentation for the function glmnet from the glmnet
-#' package for details.)}
+#' package for details.) The rows of beta correspond, in order, to the clusters
+#' in the internally reordered clusters list (the provided clusters in the
+#' supplied order, followed by a singleton cluster for each unclustered feature
+#' in ascending feature-index order). Each row name is the cluster's name--the
+#' provided name for a supplied cluster, or an automatically assigned
+#' `c<position>` name (position in the reordered list, not the feature index)
+#' for a singleton; a selected cluster's row name coincides with its entry name
+#' in `selected_clusts_list[[k]]`.}
 #' @author Gregory Faletto, Jacob Bien
 #' @references Reid, S., & Tibshirani, R. (2016). Sparse regression and marginal
 #' testing using cluster prototypes. \emph{Biostatistics}, 17(2), 364–376.
