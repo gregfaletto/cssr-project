@@ -170,7 +170,12 @@ checkCssInputs <- function(X, y, lambda, clusters, fitfun, sampling_type, B,
     stopifnot(!is.na(num_cores))
     stopifnot(num_cores == round(num_cores))
     stopifnot(num_cores >= 1)
-    stopifnot(num_cores <= parallel::detectCores())
+    n_cores_avail <- parallel::detectCores()
+    # detectCores() returns NA when the count is indeterminable; only enforce the
+    # upper bound when it is known, so an NA does not brick every css() call (#155c).
+    if(!is.na(n_cores_avail)){
+        stopifnot(num_cores <= n_cores_avail)
+    }
 
     return(list(feat_names=feat_names, X=X, clusters=clusters))
 }

@@ -110,7 +110,8 @@ parallel processing (supplied internally as the \code{mc.cores} argument of
 dominant cost and is embarrassingly parallel, so on a multi-core Unix or
 macOS machine setting \code{num_cores > 1} gives a substantial speedup; the result
 is identical regardless of \code{num_cores} (per-subsample seeds are fixed).
-Forking is unavailable on Windows, where \code{mclapply} runs serially. Default is
+On Windows, forking is unavailable, so \code{num_cores > 1} is not supported;
+\code{css()} warns and runs serially (\code{num_cores = 1}) there. Default is
 1 (serial).}
 }
 \value{
@@ -140,7 +141,7 @@ res <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
   B = 10)
 print(res)
 # On a multi-core Unix/macOS machine, set num_cores for a substantial
-# speedup (identical results; mclapply runs serially on Windows):
+# speedup (identical results; num_cores > 1 falls back to serial on Windows):
 \donttest{
 res_par <- css(X = data$X, y = data$y, lambda = 0.01, clusters = clusters,
   B = 10, num_cores = min(2L, parallel::detectCores()))
