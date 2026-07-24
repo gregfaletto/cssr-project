@@ -30,7 +30,6 @@ checkXInputResults <- function(newx, css_X){
     feat_names <- as.character(NA)
     if(!is.null(colnames(newx))){
         feat_names <- colnames(newx)
-        stopifnot(identical(feat_names, colnames(css_X)))
     } else{
         # In this case, newx has no column names, so same better be true of
         # css_X

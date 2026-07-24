@@ -33,7 +33,9 @@
 #' vectors; each vector should contain the indices of a cluster of features (a
 #' subset of 1:p). (If there is only one cluster, clusters can either be a list
 #' of length 1 or an integer vector.) All of the provided clusters must be
-#' non-overlapping. Every feature not appearing in any cluster will be assumed
+#' non-overlapping. Any identical (duplicated) clusters will be removed, keeping
+#' the first occurrence and its name. Every feature not appearing in any cluster
+#' will be assumed
 #' to be unclustered (that is, they  will be treated as if they are in a
 #' "cluster" containing only themselves). If clusters is a list of length 0 (or
 #' a list only containing clusters of length 1), then css() returns the same
@@ -152,7 +154,7 @@ cssPredict <- function(X_train_selec, y_train_selec, X_test, clusters=list(),
     # size by cross-validation
     if(is.na(cutoff) & is.na(max_num_clusts)){
         if(auto_select_size){
-            max_num_clusts <- getModelSize(X_train_selec[train_inds, ],
+            max_num_clusts <- getModelSize(X_train_selec[train_inds, , drop = FALSE],
                 y_train_selec[train_inds], css_results$clusters, alpha=alpha)
         }
     }

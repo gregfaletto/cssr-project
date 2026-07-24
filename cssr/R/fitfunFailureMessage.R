@@ -2,18 +2,26 @@
 
 #' Build an informative error for a subsample whose fitfun result is invalid
 #'
-#' Reached only when cssLoop failed on a subsample and parallel::mclapply
-#' (forking; the serial path propagates the error directly) captured the failure
-#' as a try-error. Surfaces the underlying cause in the error condition rather
-#' than printing it to stdout.
-#' @param result The offending element of getSelMatrix's res_list (a try-error
-#' under forking; the class branch is a defensive fallback).
-#' @param i Integer; the index of the subsample that failed.
+#' Reached when cssLoop failed on a subsample. getSelMatrix wraps each
+#' subsample's cssLoop call in a tryCatch that tags the failure with its true
+#' subsample index as a cssr_loop_error (on both the serial and parallel paths),
+#' so the message names the correct subsample rather than a
+#' prescheduling-misattributed one. Surfaces the underlying cause in the error
+#' condition rather than printing it to stdout.
+#' @param result The offending element of getSelMatrix's res_list (normally a
+#' cssr_loop_error carrying the tagged subsample index and message; the
+#' try-error and class branches are defensive fallbacks).
+#' @param i Integer; the loop index of the subsample that failed (used only by
+#' the fallback branches -- a cssr_loop_error carries its own tagged index).
 #' @return A length-one character string suitable for stop().
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal
 #' @noRd
 fitfunFailureMessage <- function(result, i){
+    if(inherits(result, "cssr_loop_error")){
+        return(paste0("The feature selection method (fitfun) failed on subsample ",
+            result$i, ": ", result$msg))
+    }
     if(inherits(result, "try-error")){
         paste0("The feature selection method (fitfun) failed on subsample ", i,
             ": ", conditionMessage(attr(result, "condition")))
