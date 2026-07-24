@@ -113,7 +113,7 @@ usethis::create_package(
   path = ".",
   fields = list(
     Package = params$package_name,
-    Version = "0.4.6",
+    Version = "0.4.7",
     Title = "Cluster Stability Selection",
     Description = "Implementation of Cluster Stability Selection (Faletto and Bien 2022).",
     URL = "https://gregfaletto.github.io/cssr-project/, https://github.com/gregfaletto/cssr-project",
@@ -2236,11 +2236,13 @@ As in the previous section, we first define each function and then define the he
 #' selected individual cluster member (or divided equally among all the clusters
 #' that are tied for the top selection proportion if there is a tie). For
 #' "weighted_avg", only the features within a selected cluster that were
-#' themselves selected on at least one subsample will have nonzero weight. For
-#' "simple_avg", each cluster member gets equal weight regardless of the
-#' individual feature selection proportions (that is, all cluster members within
-#' each selected cluster will be returned.). See Faletto and Bien (2022) for
-#' details. Default is "sparse".
+#' themselves selected on at least one subsample will have nonzero weight.
+#' (Exception: if no member of a selected cluster was selected on any subsample,
+#' the weights fall back to a simple average, so all of that cluster's members
+#' are returned.) For "simple_avg", each cluster
+#' member gets equal weight regardless of the individual feature selection
+#' proportions (that is, all cluster members within each selected cluster will
+#' be returned.). See Faletto and Bien (2022) for details. Default is "sparse".
 #' @param cutoff Numeric; getCssSelections will select and return only of those
 #' clusters with selection proportions equal to at least cutoff. Must be between
 #' 0 and 1. Default is 0 (in which case either all clusters are selected, or
@@ -2255,7 +2257,10 @@ As in the previous section, we first define each function and then define the he
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @return A named list with three items. \item{selected_clusts}{A named list of
 #' integer vectors; each vector contains the indices of the features in one of
 #' the selected clusters.} \item{selected_feats}{A named integer vector; the
@@ -2496,16 +2501,14 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
     clus_sel_props <- colMeans(css_results$clus_sel_mat)
     B <- nrow(css_results$feat_sel_mat)
 
-    # Selection proportions are multiples of 1/B, but `cutoff` is adjusted by
-    # repeated +/- 1/B in the loops below, which accumulates floating-point
-    # error. Compare against `cutoff` minus half a step so a cluster sitting
-    # exactly at the threshold is included robustly (snaps to the nearest
-    # count); otherwise a tie could be dropped and, e.g., the max_num_clusts
-    # loop could break early and return more clusters than max_num_clusts.
-    tol <- 1 / (2 * B)
+    # Selection proportions are exact multiples of 1/B; work in integer count
+    # space so the documented ">= cutoff" holds exactly (no float snapping) and
+    # the loop thresholds step by whole counts (retires the #42 class). (#159a)
+    counts <- round(clus_sel_props * B)
+    thresh <- ceiling(cutoff * B - 1e-9)
 
     # Get selected clusters
-    selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+    selected_clusts <- clus_sel_props[counts >= thresh]
 
     # Check that selected_clusts has length at least min_num_clusts
     while(length(selected_clusts) < min_num_clusts){
@@ -2517,25 +2520,22 @@ getSelectedClusters <- function(css_results, weighting, cutoff, min_num_clusts,
         if(length(selected_clusts) == length(clus_sel_props)){
             break
         }
-        cutoff <- cutoff - 1/B
-        selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+        thresh <- thresh - 1L
+        selected_clusts <- clus_sel_props[counts >= thresh]
     }
 
     # Check that selected_clusts has length at most max_num_clusts
     if(!is.na(max_num_clusts)){
-        n_clusters <- ncol(css_results$clus_sel_mat)
         while(length(selected_clusts) > max_num_clusts){
-            cutoff <- cutoff + 1/B
-            # Apply the same tol to the upper bound: cutoff accumulates +1/B and
-            # B*(1/B) can float just above 1, which would break before the
-            # cutoff == 1 filter runs and leave a cluster below proportion 1 in
-            # the selection (#42).
-            if(cutoff > 1 + tol){
+            thresh <- thresh + 1L
+            # Once the threshold exceeds B no count can meet it, so stop before
+            # emptying the selection (retires the #42 float-accumulation break).
+            if(thresh > B){
                 break
             }
             # Make sure we don't reduce to a selected set of size 0
-            if(any(clus_sel_props >= cutoff - tol)){
-                selected_clusts <- clus_sel_props[clus_sel_props >= cutoff - tol]
+            if(any(counts >= thresh)){
+                selected_clusts <- clus_sel_props[counts >= thresh]
             } else{
                 break
             }
@@ -2893,7 +2893,10 @@ checkGetSelectedClustersOutput <- function(selected_clusts, selected_feats,
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @return A design matrix with either nrow(newX) (or length(train_inds), if
 #' train_inds was provided to css and newX was not provided to getCssDesign)
 #' observations and number of columns equal to the number of selected clusters,
@@ -3364,7 +3367,10 @@ checkFormCssDesignInputs <- function(css_results, weighting, cutoff,
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param trainX A numeric matrix (preferably) or a data.frame (which will
 #' be coerced internally to a matrix by the function model.matrix) containing
 #' the data that will be used to estimate the linear model from the selected
@@ -4949,7 +4955,10 @@ buildCssDf <- function(css_results, sel_clusts){
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @return A data.frame; each row contains a cluster, arranged in decreasing
 #' order of cluster selection proportion from top to bottom. The columns are
 #' ClustName (the name of the cluster that was either provided to css or made by
@@ -5093,7 +5102,10 @@ getSelectionPrototypes <- function(css_results, selected_clusts){
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param ... Additional arguments to generic print.data.frame function
 #' @return Invisibly, the unchanged `cssr` object `x` (following the standard
 #' convention for `print` methods). Called for its side effect: printing a
@@ -5164,7 +5176,10 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 #' treat as selected regardless of cutoff. (If the chosen cutoff would select
 #' more than max_num_clusts clusters, the cutoff is effectively raised until at
 #' most max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts bars
+#' (or fewer than min_num_clusts) to be highlighted; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param type Character; either "clusters" (the default) to plot one bar per
 #' cluster, or "features" to plot one bar per feature. May be abbreviated.
 #' @param weighting Character; passed to [getCssSelections()] to determine which
@@ -5212,9 +5227,9 @@ plot.cssr <- function(x, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA,
     type = c("clusters", "features"), weighting = "sparse", ylim = c(0, 1),
     sel_col = "steelblue", unsel_col = "grey70", ...){
     type <- match.arg(type)
-    sel <- suppressWarnings(getCssSelections(x, weighting = weighting,
+    sel <- getCssSelections(x, weighting = weighting,
         cutoff = cutoff, min_num_clusts = min_num_clusts,
-        max_num_clusts = max_num_clusts))
+        max_num_clusts = max_num_clusts)
     if(type == "clusters"){
         props  <- colMeans(x$clus_sel_mat)                              # named by cluster (guaranteed)
         is_sel <- names(props) %in% names(sel$selected_clusts)
@@ -5309,7 +5324,10 @@ selected <- function(object, ...){
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param weighting Character; passed to [getCssSelections()] to determine the
 #' weights of individual features within the selected clusters. This affects
 #' ONLY `type = "features"` (it determines which cluster members have nonzero
@@ -5373,7 +5391,10 @@ selected.cssr <- function(object, type=c("clusters", "features"), cutoff=0,
 #' cutoff-based (threshold) selection that can be empty.
 #' @param max_num_clusts Integer or numeric; the maximum number of clusters to
 #' use regardless of cutoff. Default is NA (in which case max_num_clusts is
-#' ignored).
+#' ignored). Because clusters can have tied selection proportions, ties at the
+#' threshold can cause more than max_num_clusts (or fewer than min_num_clusts)
+#' clusters to be returned; when the two constraints conflict, max_num_clusts
+#' takes precedence.
 #' @param weighting Character; passed to [getCssSelections()] to determine the
 #' selected features and hence the selected-feature count in the header. As in
 #' [selected()], it does NOT affect which clusters are selected or the
@@ -5529,7 +5550,10 @@ The two main disadvantages of these functions are flexibility and computational 
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
 #' either cutoff is used to choose the number of clusters, or if cutoff was also
-#' unspecified, cssSelect chooses max_num_clusts by cross-validation).
+#' unspecified, cssSelect chooses max_num_clusts by cross-validation). Because
+#' clusters can have tied selection proportions, ties at the threshold can cause
+#' more than max_num_clusts (or fewer than min_num_clusts) clusters to be
+#' returned; when the two constraints conflict, max_num_clusts takes precedence.
 #' @param auto_select_size Logical; if TRUE, then max_num_clusts will be
 #' automatically estimated using the lasso with cross-validation. Default is
 #' TRUE, though this argument is ignored if either cutoff or max_num_clusts is
@@ -5688,7 +5712,10 @@ cssSelect <- function(X, y, clusters = list(), lambda=NA, cutoff=NA,
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param train_inds Optional; an integer or numeric vector containing the
 #' indices of observations in X_train_selec and y_train_selec to set aside for
 #' model training after
@@ -8844,13 +8871,14 @@ testthat::test_that("getSelectedClusters works", {
                              min_num_clusts=2, max_num_clusts=NA)
   testthat::expect_true(length(res3$selected_clusts) >= 2)
 
-  # Regression test (#10): the cutoff is adjusted by repeated +/- 1/B in the
-  # min/max loops, accumulating floating-point error, so a cluster sitting
-  # exactly at the threshold could be dropped -- breaking the max_num_clusts
-  # loop early and returning MORE clusters than max_num_clusts. With B=10 and
-  # cluster proportions (0, 0.3, 0.2), cutoff=0.1 / min=1 / max=1 must return a
-  # single cluster (the 0.3 one); pre-fix it returned two (0.3 was excluded by
-  # the float-accumulated cutoff 0.30000000000000004).
+  # Regression test (#10): getSelectedClusters works in integer count space
+  # (counts = round(prop * B); thresh = ceiling(cutoff * B)), so a cluster
+  # sitting exactly at the threshold is kept by an exact integer comparison --
+  # no float accumulation can drop it and break the max_num_clusts loop into
+  # returning MORE clusters than max_num_clusts. With B=10 and cluster
+  # proportions (0, 0.3, 0.2), cutoff=0.1 / min=1 / max=1 must return a single
+  # cluster: thresh=1 selects counts 3 and 2, then the max loop raises thresh to
+  # 3, leaving only c2 (the 0.3 cluster).
   csm <- cbind(as.integer(rep(0, 10)),
                as.integer(c(rep(1, 3), rep(0, 7))),
                as.integer(c(rep(1, 2), rep(0, 8))))
@@ -8940,14 +8968,14 @@ testthat::test_that("getSelectedClusters does not hang when min_num_clusts > n_c
 })
 
 testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)", {
-  # Minimal cssr object: cluster c1 at selection proportion 1.0, cluster c2 at
-  # (B - 1)/B (just below 1.0). With max_num_clusts = 1 the cutoff loop must
-  # raise the threshold to 1.0 to drop c2 and keep only the proportion-1.0
-  # cluster. The cutoff accumulates +1/B, and for these B the cumulative sum
-  # floats just above 1 (e.g. B = 9: 1.0000000000000002), so the old
-  # `if(cutoff > 1) break` fired before the cutoff == 1 filter ran and wrongly
-  # kept c2 (returning 2 clusters for max_num_clusts = 1). The `+ tol` guard
-  # fixes this.
+  # Minimal cssr object: cluster c1 at selection proportion 1.0 (count B),
+  # cluster c2 at (B - 1)/B (count B - 1, just below 1.0). With max_num_clusts =
+  # 1 the max loop raises the integer threshold until only the proportion-1.0
+  # cluster survives: thresh climbs to B, where count B >= B keeps c1 but count
+  # B - 1 < B drops c2. In integer count space this is exact and platform-
+  # independent for every B -- no float accumulation and no `cutoff > 1` break
+  # edge case (the loop simply stops once thresh > B) -- so the result is
+  # deterministically c1 for all of B in {9, 11, 20}.
   make_obj <- function(B){
     clusters <- list(c1 = 1:2, c2 = 3:4)
     clus_sel_mat <- cbind(c1 = rep(1, B), c2 = c(rep(1, B - 1), 0))
@@ -8965,6 +8993,36 @@ testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 t
     testthat::expect_identical(names(res$selected_clusts), "c1")
     testthat::expect_equal(unname(res$selected_clusts), 1)
   }
+})
+
+testthat::test_that("getSelectedClusters applies cutoff as an exact >= threshold (#159a)", {
+  # Count-space selection makes ">= cutoff" hold EXACTLY: a cluster is selected
+  # at a given cutoff iff its selection proportion is at least that cutoff, with
+  # no float snapping to the nearest 1/B grid point. Mock with proportions
+  # {1.0, 0.7, 0.5} at B = 10; the 1.0 and 0.7 clusters GUARD the min-loop (the
+  # selection is never empty, so min_num_clusts = 1 cannot lower the threshold
+  # and re-include an excluded cluster). Pre-#159a the old `cutoff - 1/(2B)`
+  # snap selected 0.5 at cutoff 0.52 and 0.7 at cutoff 0.71, so this test FAILS
+  # on the old code; post-fix each is excluded once the cutoff exceeds it.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
+  props <- c(1.0, 0.7, 0.5)
+  clus_sel_mat <- do.call(cbind, lapply(props, function(p)
+    as.integer(c(rep(1, round(p * B)), rep(0, B - round(p * B))))))
+  colnames(clus_sel_mat) <- c("c1", "c2", "c3")
+  feat_sel_mat <- clus_sel_mat
+  colnames(feat_sel_mat) <- c("f1", "f2", "f3")
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+  sel <- function(cut) names(getSelectedClusters(obj, weighting = "simple_avg",
+    cutoff = cut, min_num_clusts = 1, max_num_clusts = NA)$selected_clusts)
+
+  # 0.5 cluster (c3): selected AT cutoff 0.5 (thresh 5), NOT at 0.52 (thresh 6).
+  testthat::expect_true("c3" %in% sel(0.5))
+  testthat::expect_false("c3" %in% sel(0.52))
+  # 0.7 cluster (c2): selected AT cutoff 0.7 (thresh 7), NOT at 0.71 (thresh 8).
+  testthat::expect_true("c2" %in% sel(0.7))
+  testthat::expect_false("c2" %in% sel(0.71))
 })
 ```
 
@@ -13408,6 +13466,25 @@ testthat::test_that("plot.cssr handles an empty selection and a single cluster",
   ret1 <- plot(css_1)
   testthat::expect_length(ret1, 1)
   grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr surfaces the tie-breach warning (#159c)", {
+  # plot.cssr no longer wraps getCssSelections in suppressWarnings, so a
+  # max_num_clusts breach reaches the user. Two clusters tied at proportion 1.0
+  # with max_num_clusts = 1 cannot be reduced below 2 without emptying the
+  # selection, so checkSelectedClusters warns. Pre-#159c the blanket
+  # suppressWarnings swallowed it, so this test FAILS on the old code.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L)
+  clus_sel_mat <- cbind(c1 = rep(1L, B), c2 = rep(1L, B))
+  feat_sel_mat <- cbind(f1 = rep(1L, B), f2 = rep(1L, B))
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+
+  grDevices::pdf(NULL)  # draw to a null device (no file, no window)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  testthat::expect_warning(plot(obj, max_num_clusts = 1),
+    "Returning more than max_num_clusts", fixed = TRUE)
 })
 ```
 

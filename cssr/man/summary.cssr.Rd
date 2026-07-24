@@ -34,7 +34,10 @@ cutoff-based (threshold) selection that can be empty.}
 
 \item{max_num_clusts}{Integer or numeric; the maximum number of clusters to
 use regardless of cutoff. Default is NA (in which case max_num_clusts is
-ignored).}
+ignored). Because clusters can have tied selection proportions, ties at the
+threshold can cause more than max_num_clusts (or fewer than min_num_clusts)
+clusters to be returned; when the two constraints conflict, max_num_clusts
+takes precedence.}
 
 \item{weighting}{Character; passed to \code{\link[=getCssSelections]{getCssSelections()}} to determine the
 selected features and hence the selected-feature count in the header. As in

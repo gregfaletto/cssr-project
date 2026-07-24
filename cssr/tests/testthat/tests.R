@@ -2287,13 +2287,14 @@ testthat::test_that("getSelectedClusters works", {
                              min_num_clusts=2, max_num_clusts=NA)
   testthat::expect_true(length(res3$selected_clusts) >= 2)
 
-  # Regression test (#10): the cutoff is adjusted by repeated +/- 1/B in the
-  # min/max loops, accumulating floating-point error, so a cluster sitting
-  # exactly at the threshold could be dropped -- breaking the max_num_clusts
-  # loop early and returning MORE clusters than max_num_clusts. With B=10 and
-  # cluster proportions (0, 0.3, 0.2), cutoff=0.1 / min=1 / max=1 must return a
-  # single cluster (the 0.3 one); pre-fix it returned two (0.3 was excluded by
-  # the float-accumulated cutoff 0.30000000000000004).
+  # Regression test (#10): getSelectedClusters works in integer count space
+  # (counts = round(prop * B); thresh = ceiling(cutoff * B)), so a cluster
+  # sitting exactly at the threshold is kept by an exact integer comparison --
+  # no float accumulation can drop it and break the max_num_clusts loop into
+  # returning MORE clusters than max_num_clusts. With B=10 and cluster
+  # proportions (0, 0.3, 0.2), cutoff=0.1 / min=1 / max=1 must return a single
+  # cluster: thresh=1 selects counts 3 and 2, then the max loop raises thresh to
+  # 3, leaving only c2 (the 0.3 cluster).
   csm <- cbind(as.integer(rep(0, 10)),
                as.integer(c(rep(1, 3), rep(0, 7))),
                as.integer(c(rep(1, 2), rep(0, 8))))
@@ -2383,14 +2384,14 @@ testthat::test_that("getSelectedClusters does not hang when min_num_clusts > n_c
 })
 
 testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)", {
-  # Minimal cssr object: cluster c1 at selection proportion 1.0, cluster c2 at
-  # (B - 1)/B (just below 1.0). With max_num_clusts = 1 the cutoff loop must
-  # raise the threshold to 1.0 to drop c2 and keep only the proportion-1.0
-  # cluster. The cutoff accumulates +1/B, and for these B the cumulative sum
-  # floats just above 1 (e.g. B = 9: 1.0000000000000002), so the old
-  # `if(cutoff > 1) break` fired before the cutoff == 1 filter ran and wrongly
-  # kept c2 (returning 2 clusters for max_num_clusts = 1). The `+ tol` guard
-  # fixes this.
+  # Minimal cssr object: cluster c1 at selection proportion 1.0 (count B),
+  # cluster c2 at (B - 1)/B (count B - 1, just below 1.0). With max_num_clusts =
+  # 1 the max loop raises the integer threshold until only the proportion-1.0
+  # cluster survives: thresh climbs to B, where count B >= B keeps c1 but count
+  # B - 1 < B drops c2. In integer count space this is exact and platform-
+  # independent for every B -- no float accumulation and no `cutoff > 1` break
+  # edge case (the loop simply stops once thresh > B) -- so the result is
+  # deterministically c1 for all of B in {9, 11, 20}.
   make_obj <- function(B){
     clusters <- list(c1 = 1:2, c2 = 3:4)
     clus_sel_mat <- cbind(c1 = rep(1, B), c2 = c(rep(1, B - 1), 0))
@@ -2408,6 +2409,36 @@ testthat::test_that("getSelectedClusters max_num_clusts handles proportion-1.0 t
     testthat::expect_identical(names(res$selected_clusts), "c1")
     testthat::expect_equal(unname(res$selected_clusts), 1)
   }
+})
+
+testthat::test_that("getSelectedClusters applies cutoff as an exact >= threshold (#159a)", {
+  # Count-space selection makes ">= cutoff" hold EXACTLY: a cluster is selected
+  # at a given cutoff iff its selection proportion is at least that cutoff, with
+  # no float snapping to the nearest 1/B grid point. Mock with proportions
+  # {1.0, 0.7, 0.5} at B = 10; the 1.0 and 0.7 clusters GUARD the min-loop (the
+  # selection is never empty, so min_num_clusts = 1 cannot lower the threshold
+  # and re-include an excluded cluster). Pre-#159a the old `cutoff - 1/(2B)`
+  # snap selected 0.5 at cutoff 0.52 and 0.7 at cutoff 0.71, so this test FAILS
+  # on the old code; post-fix each is excluded once the cutoff exceeds it.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
+  props <- c(1.0, 0.7, 0.5)
+  clus_sel_mat <- do.call(cbind, lapply(props, function(p)
+    as.integer(c(rep(1, round(p * B)), rep(0, B - round(p * B))))))
+  colnames(clus_sel_mat) <- c("c1", "c2", "c3")
+  feat_sel_mat <- clus_sel_mat
+  colnames(feat_sel_mat) <- c("f1", "f2", "f3")
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+  sel <- function(cut) names(getSelectedClusters(obj, weighting = "simple_avg",
+    cutoff = cut, min_num_clusts = 1, max_num_clusts = NA)$selected_clusts)
+
+  # 0.5 cluster (c3): selected AT cutoff 0.5 (thresh 5), NOT at 0.52 (thresh 6).
+  testthat::expect_true("c3" %in% sel(0.5))
+  testthat::expect_false("c3" %in% sel(0.52))
+  # 0.7 cluster (c2): selected AT cutoff 0.7 (thresh 7), NOT at 0.71 (thresh 8).
+  testthat::expect_true("c2" %in% sel(0.7))
+  testthat::expect_false("c2" %in% sel(0.71))
 })
 
 testthat::test_that("getCssSelections works", {
@@ -6648,6 +6679,25 @@ testthat::test_that("plot.cssr handles an empty selection and a single cluster",
   ret1 <- plot(css_1)
   testthat::expect_length(ret1, 1)
   grDevices::dev.off()
+})
+
+testthat::test_that("plot.cssr surfaces the tie-breach warning (#159c)", {
+  # plot.cssr no longer wraps getCssSelections in suppressWarnings, so a
+  # max_num_clusts breach reaches the user. Two clusters tied at proportion 1.0
+  # with max_num_clusts = 1 cannot be reduced below 2 without emptying the
+  # selection, so checkSelectedClusters warns. Pre-#159c the blanket
+  # suppressWarnings swallowed it, so this test FAILS on the old code.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L)
+  clus_sel_mat <- cbind(c1 = rep(1L, B), c2 = rep(1L, B))
+  feat_sel_mat <- cbind(f1 = rep(1L, B), f2 = rep(1L, B))
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+
+  grDevices::pdf(NULL)  # draw to a null device (no file, no window)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  testthat::expect_warning(plot(obj, max_num_clusts = 1),
+    "Returning more than max_num_clusts", fixed = TRUE)
 })
 
 testthat::test_that("Opt 2 (#129): formCssDesign weights= equals internal recompute; getCssPreds finite", {

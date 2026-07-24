@@ -55,6 +55,10 @@ summary(
 
   Integer or numeric; the maximum number of clusters to use regardless
   of cutoff. Default is NA (in which case max_num_clusts is ignored).
+  Because clusters can have tied selection proportions, ties at the
+  threshold can cause more than max_num_clusts (or fewer than
+  min_num_clusts) clusters to be returned; when the two constraints
+  conflict, max_num_clusts takes precedence.
 
 - weighting:
 

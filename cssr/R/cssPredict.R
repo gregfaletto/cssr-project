@@ -63,7 +63,10 @@
 #' use regardless of cutoff. (That is, if the chosen cutoff returns more than
 #' max_num_clusts clusters, the cutoff will be raised until at most
 #' max_num_clusts clusters are selected.) Default is NA (in which case
-#' max_num_clusts is ignored).
+#' max_num_clusts is ignored). Because clusters can have tied selection
+#' proportions, ties at the threshold can cause more than max_num_clusts (or
+#' fewer than min_num_clusts) clusters to be returned; when the two constraints
+#' conflict, max_num_clusts takes precedence.
 #' @param train_inds Optional; an integer or numeric vector containing the
 #' indices of observations in X_train_selec and y_train_selec to set aside for
 #' model training after
