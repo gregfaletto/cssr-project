@@ -6001,8 +6001,12 @@ testthat::test_that("getLassoLambda works", {
   testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=3.2),
                          "nfolds == round(nfolds) is not TRUE", fixed=TRUE)
   
-  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=3),
-                         "nfolds > 3 is not TRUE", fixed=TRUE)
+  # (#158e) nfolds=3 is cv.glmnet's minimum and is now accepted.
+  ret <- getLassoLambda(X=x, y=y, nfolds=3)
+  testthat::expect_true(is.numeric(ret) && length(ret) == 1 && ret >= 0)
+  # nfolds=2 (below the minimum) is rejected at the new boundary.
+  testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=2),
+                         "nfolds >= 3 is not TRUE", fixed=TRUE)
   
   testthat::expect_error(getLassoLambda(X=x, y=y, nfolds=4, alpha=1.2),
                          "alpha <= 1 is not TRUE", fixed=TRUE)
@@ -8013,7 +8017,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(res))
   testthat::expect_true(is.numeric(res))
-  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_identical(colnames(res), names(process$clusters))
   testthat::expect_true(nrow(res) == 15)
   # Each column of res should be one of the prototypes. Features 9 - 11 are
   # in clusters by themselves and are therefore their own prototypes.
@@ -8036,7 +8040,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(res))
   testthat::expect_true(is.numeric(res))
-  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_identical(colnames(res), names(process$clusters))
   testthat::expect_true(nrow(res) == 15)
   # Each column of res should be one of the cluster representatives. Features 9
   # - 11 are in clusters by themselves and are therefore their own cluster
@@ -8065,7 +8069,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(ret_df))
   testthat::expect_true(is.numeric(ret_df))
-  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_identical(colnames(ret_df), names(res$clusters))
   testthat::expect_true(nrow(ret_df) == nrow(X_df))
   # Each column of ret_df should be one of the prototypes.
   testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
@@ -8085,7 +8089,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(ret_df))
   testthat::expect_true(is.numeric(ret_df))
-  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_identical(colnames(ret_df), names(res$clusters))
   testthat::expect_true(nrow(ret_df) == nrow(X_df))
   # Each column of ret_df should be one of the prototypes.
   testthat::expect_true(ncol(ret_df) == ncol(X_df_model) - 3 + 1)
@@ -8119,7 +8123,7 @@ testthat::test_that("getXglmnet works", {
 
   testthat::expect_true(is.matrix(ret_df))
   testthat::expect_true(is.numeric(ret_df))
-  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_identical(colnames(ret_df), names(res$clusters))
   testthat::expect_true(nrow(ret_df) == nrow(X_df))
   # Each column of ret_df should be one of the prototypes.
   testthat::expect_true(ncol(ret_df) == ncol(X_df_model))
@@ -8133,7 +8137,7 @@ testthat::test_that("getXglmnet works", {
 
   testthat::expect_true(is.matrix(ret_df))
   testthat::expect_true(is.numeric(ret_df))
-  testthat::expect_true(is.null(colnames(ret_df)))
+  testthat::expect_identical(colnames(ret_df), names(res$clusters))
   testthat::expect_true(nrow(ret_df) == nrow(X_df))
   # Each column of ret_df should be one of the prototypes.
   testthat::expect_true(ncol(ret_df) == ncol(X_df_model))
@@ -8154,7 +8158,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(res))
   testthat::expect_true(is.numeric(res))
-  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_identical(colnames(res), names(process$clusters))
   testthat::expect_true(nrow(res) == 15)
   # Each column of res should be one of the prototypes. Features 9 - 11 are
   # in clusters by themselves and are therefore their own prototypes.
@@ -8177,7 +8181,7 @@ testthat::test_that("getXglmnet works", {
   
   testthat::expect_true(is.matrix(res))
   testthat::expect_true(is.numeric(res))
-  testthat::expect_true(is.null(colnames(res)))
+  testthat::expect_identical(colnames(res), names(process$clusters))
   testthat::expect_true(nrow(res) == 15)
   # Each column of res should be one of the cluster representatives. Features 9
   # - 11 are in clusters by themselves and are therefore their own cluster
@@ -9702,5 +9706,69 @@ testthat::test_that("protolasso/clusterRepLasso return an empty selection when t
     Xs <- matrix(stats::rnorm(24 * 4), 24, 4)
     ys <- Xs[, 1] * 2 + stats::rnorm(24, sd = 0.1)
     testthat::expect_gt(length(protolasso(Xs, ys)$selected_sets), 0)
+})
+
+testthat::test_that("protolasso and clusterRepLasso name selected_clusts_list with the selected clusters' names (#158a)", {
+  set.seed(158)
+  n <- 40L
+  p <- 6L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  y <- as.numeric(X %*% c(1, 0, 1, 0, 1, 0) + stats::rnorm(n))
+  clusters <- list(clustA = c(2L, 5L), clustB = c(4L, 6L))
+  # formatClusters reorders to clustA, clustB, then one singleton per unclustered
+  # feature in ascending order (c3 = feature 1, c4 = feature 3).
+  expected_names <- c("clustA", "clustB", "c3", "c4")
+
+  for (fun in list(protolasso, clusterRepLasso)) {
+    res <- fun(X, y, clusters)
+    testthat::expect_true(any(lengths(res$selected_clusts_list) > 0))
+    for (k in seq_along(res$selected_clusts_list)) {
+      sk <- res$selected_clusts_list[[k]]
+      if (length(sk) > 0) {
+        testthat::expect_false(is.null(names(sk)))
+        testthat::expect_equal(length(names(sk)), k)
+        testthat::expect_true(all(names(sk) %in% expected_names))
+        # Name-based indexing returns the same cluster as position-based.
+        testthat::expect_identical(sk[[names(sk)[1]]], sk[[1]])
+      }
+    }
+  }
+})
+
+testthat::test_that("protolasso and clusterRepLasso beta carries cluster names as rownames (#158b)", {
+  set.seed(158)
+  n <- 40L
+  p <- 6L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  y <- as.numeric(X %*% c(1, 0, 1, 0, 1, 0) + stats::rnorm(n))
+  clusters <- list(clustA = c(2L, 5L), clustB = c(4L, 6L))
+  expected_names <- c("clustA", "clustB", "c3", "c4")
+
+  for (fun in list(protolasso, clusterRepLasso)) {
+    res <- fun(X, y, clusters)
+    # GUARANTEED equality: one beta row per reordered cluster, in order.
+    testthat::expect_identical(rownames(res$beta), expected_names)
+    # SUBSET cross-check: each selected cluster's name is among beta's rownames
+    # (a never-selected cluster is still a beta row, so this is not equality).
+    for (k in seq_along(res$selected_clusts_list)) {
+      sk <- res$selected_clusts_list[[k]]
+      if (length(sk) > 0) {
+        testthat::expect_true(all(names(sk) %in% rownames(res$beta)))
+      }
+    }
+  }
+})
+
+testthat::test_that("processClusterLassoInputs rejects X with mixed named and NA-named columns (#158d)", {
+  set.seed(158)
+  n <- 20L
+  p <- 4L
+  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
+  colnames(X) <- c("g1", NA, "g3", NA)
+  y <- stats::rnorm(n)
+  testthat::expect_error(
+    processClusterLassoInputs(X = X, y = y, clusters = list(), nlambda = 10),
+    "please either name all features in X or remove the names altogether",
+    fixed = TRUE)
 })
 

@@ -39,9 +39,16 @@
 #' list of length k, where each member of the list is an integer vector
 #' of cluster members. Note that `selected_clusts_lists[[k]][[j]]` will be the
 #' cluster that contains feature `selected_sets[[k]][j]`.)} \item{beta}{The beta
-#' output from glmnet when the lasso was estimated on a matrix of prototypes.
-#' (See documentation for the function glmnet from the glmnet package for
-#' details.)}
+#' output from glmnet when the lasso was estimated on a matrix of cluster
+#' representatives (simple averages of the cluster members). (See documentation
+#' for the function glmnet from the glmnet package for details.) The rows of
+#' beta correspond, in order, to the clusters in the internally reordered
+#' clusters list (the provided clusters in the supplied order, followed by a
+#' singleton cluster for each unclustered feature in ascending feature-index
+#' order). Each row name is the cluster's name--the provided name for a supplied
+#' cluster, or an automatically assigned `c<position>` name (position in the
+#' reordered list, not the feature index) for a singleton; a selected cluster's
+#' row name coincides with its entry name in `selected_clusts_list[[k]]`.}
 #' @author Gregory Faletto, Jacob Bien
 #' @references Bühlmann, P., Rütimann, P., van de Geer, S., & Zhang, C. H.
 #' (2013). Correlated variables in regression: Clustering and sparse estimation.
