@@ -1552,121 +1552,128 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb77-46"><a href="other-useful.html#cb77-46" tabindex="-1"></a>    }</span>
 <span id="cb77-47"><a href="other-useful.html#cb77-47" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
 <span id="cb77-48"><a href="other-useful.html#cb77-48" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="other-useful.html#plot.cssr">plot.cssr</a>()</code> gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the <code>cutoff</code> drawn as a dashed reference line and the selected clusters (or features) highlighted:</p>
+<p><code><a href="other-useful.html#plot.cssr">plot.cssr</a>()</code> gives a base-graphics bar plot of the cluster (or feature) selection proportions, sorted in decreasing order, with the <code>cutoff</code> drawn as a dashed reference line (for <code>type = "clusters"</code>) and the selected clusters (or features) highlighted:</p>
 <div class="sourceCode" id="cb78"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb78-1"><a href="other-useful.html#cb78-1" tabindex="-1"></a><span class="co">#' Plot cluster (or feature) selection proportions from cluster stability</span></span>
 <span id="cb78-2"><a href="other-useful.html#cb78-2" tabindex="-1"></a><span class="co">#' selection</span></span>
 <span id="cb78-3"><a href="other-useful.html#cb78-3" tabindex="-1"></a><span class="co">#'</span></span>
 <span id="cb78-4"><a href="other-useful.html#cb78-4" tabindex="-1"></a><span class="co">#' Produce a base-graphics bar plot of the selection proportions of a fitted</span></span>
 <span id="cb78-5"><a href="other-useful.html#cb78-5" tabindex="-1"></a><span class="co">#' `cssr` object: one bar per cluster (the default) or per feature, sorted in</span></span>
 <span id="cb78-6"><a href="other-useful.html#cb78-6" tabindex="-1"></a><span class="co">#' decreasing order of selection proportion. When `cutoff &gt; 0` a dashed</span></span>
-<span id="cb78-7"><a href="other-useful.html#cb78-7" tabindex="-1"></a><span class="co">#' reference line is drawn at the cutoff, and the bars whose cluster (or</span></span>
-<span id="cb78-8"><a href="other-useful.html#cb78-8" tabindex="-1"></a><span class="co">#' feature) is selected -- at the given `cutoff` and cluster-count constraints</span></span>
-<span id="cb78-9"><a href="other-useful.html#cb78-9" tabindex="-1"></a><span class="co">#' -- are highlighted in `sel_col`, the rest in `unsel_col`.</span></span>
-<span id="cb78-10"><a href="other-useful.html#cb78-10" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb78-11"><a href="other-useful.html#cb78-11" tabindex="-1"></a><span class="co">#' The selection that determines the highlight is obtained from</span></span>
-<span id="cb78-12"><a href="other-useful.html#cb78-12" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] with the same `cutoff`, `min_num_clusts`,</span></span>
-<span id="cb78-13"><a href="other-useful.html#cb78-13" tabindex="-1"></a><span class="co">#' `max_num_clusts`, and `weighting`. Which clusters are selected does not</span></span>
-<span id="cb78-14"><a href="other-useful.html#cb78-14" tabindex="-1"></a><span class="co">#' depend on `weighting`; which features are selected does (the weighting</span></span>
-<span id="cb78-15"><a href="other-useful.html#cb78-15" tabindex="-1"></a><span class="co">#' determines which members of the selected clusters have nonzero weight and are</span></span>
-<span id="cb78-16"><a href="other-useful.html#cb78-16" tabindex="-1"></a><span class="co">#' therefore highlighted when `type = "features"`).</span></span>
-<span id="cb78-17"><a href="other-useful.html#cb78-17" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb78-18"><a href="other-useful.html#cb78-18" tabindex="-1"></a><span class="co">#' Note that, to match the positional argument order of [<a href="other-useful.html#print.cssr">print.cssr</a>()], the</span></span>
-<span id="cb78-19"><a href="other-useful.html#cb78-19" tabindex="-1"></a><span class="co">#' second positional argument is `cutoff`; `type`, `weighting`, and the</span></span>
-<span id="cb78-20"><a href="other-useful.html#cb78-20" tabindex="-1"></a><span class="co">#' graphical parameters must be supplied by name (for example</span></span>
-<span id="cb78-21"><a href="other-useful.html#cb78-21" tabindex="-1"></a><span class="co">#' `plot(x, type = "features")`).</span></span>
-<span id="cb78-22"><a href="other-useful.html#cb78-22" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb78-23"><a href="other-useful.html#cb78-23" tabindex="-1"></a><span class="co">#' @param x An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
-<span id="cb78-24"><a href="other-useful.html#cb78-24" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; the selection-proportion threshold used both to draw</span></span>
-<span id="cb78-25"><a href="other-useful.html#cb78-25" tabindex="-1"></a><span class="co">#' the dashed reference line (when greater than 0) and to determine which bars</span></span>
-<span id="cb78-26"><a href="other-useful.html#cb78-26" tabindex="-1"></a><span class="co">#' are highlighted as selected. Must be between 0 and 1. Default is 0 (in which</span></span>
-<span id="cb78-27"><a href="other-useful.html#cb78-27" tabindex="-1"></a><span class="co">#' case no reference line is drawn and, unless `max_num_clusts` restricts it,</span></span>
-<span id="cb78-28"><a href="other-useful.html#cb78-28" tabindex="-1"></a><span class="co">#' every cluster is treated as selected).</span></span>
-<span id="cb78-29"><a href="other-useful.html#cb78-29" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
-<span id="cb78-30"><a href="other-useful.html#cb78-30" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
-<span id="cb78-31"><a href="other-useful.html#cb78-31" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts clusters, the cutoff is effectively lowered until</span></span>
-<span id="cb78-32"><a href="other-useful.html#cb78-32" tabindex="-1"></a><span class="co">#' at least min_num_clusts clusters are selected.) Default is 1. May be set to 0</span></span>
-<span id="cb78-33"><a href="other-useful.html#cb78-33" tabindex="-1"></a><span class="co">#' to allow a pure cutoff-based highlight that can be empty (no bar highlighted)</span></span>
-<span id="cb78-34"><a href="other-useful.html#cb78-34" tabindex="-1"></a><span class="co">#' when no cluster's selection proportion meets the cutoff.</span></span>
-<span id="cb78-35"><a href="other-useful.html#cb78-35" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
-<span id="cb78-36"><a href="other-useful.html#cb78-36" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
-<span id="cb78-37"><a href="other-useful.html#cb78-37" tabindex="-1"></a><span class="co">#' more than max_num_clusts clusters, the cutoff is effectively raised until at</span></span>
-<span id="cb78-38"><a href="other-useful.html#cb78-38" tabindex="-1"></a><span class="co">#' most max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
-<span id="cb78-39"><a href="other-useful.html#cb78-39" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored). Because clusters can have tied selection</span></span>
-<span id="cb78-40"><a href="other-useful.html#cb78-40" tabindex="-1"></a><span class="co">#' proportions, ties at the threshold can cause more than max_num_clusts bars</span></span>
-<span id="cb78-41"><a href="other-useful.html#cb78-41" tabindex="-1"></a><span class="co">#' (or fewer than min_num_clusts) to be highlighted; when the two constraints</span></span>
-<span id="cb78-42"><a href="other-useful.html#cb78-42" tabindex="-1"></a><span class="co">#' conflict, max_num_clusts takes precedence.</span></span>
-<span id="cb78-43"><a href="other-useful.html#cb78-43" tabindex="-1"></a><span class="co">#' @param type Character; either "clusters" (the default) to plot one bar per</span></span>
-<span id="cb78-44"><a href="other-useful.html#cb78-44" tabindex="-1"></a><span class="co">#' cluster, or "features" to plot one bar per feature. May be abbreviated.</span></span>
-<span id="cb78-45"><a href="other-useful.html#cb78-45" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine which</span></span>
-<span id="cb78-46"><a href="other-useful.html#cb78-46" tabindex="-1"></a><span class="co">#' individual features are selected (and therefore highlighted) when</span></span>
-<span id="cb78-47"><a href="other-useful.html#cb78-47" tabindex="-1"></a><span class="co">#' `type = "features"`. It has no effect on the cluster bars or on which</span></span>
-<span id="cb78-48"><a href="other-useful.html#cb78-48" tabindex="-1"></a><span class="co">#' clusters are highlighted. Must be one of "sparse", "weighted_avg", or</span></span>
-<span id="cb78-49"><a href="other-useful.html#cb78-49" tabindex="-1"></a><span class="co">#' "simple_avg". Default is "sparse" (matching [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] and</span></span>
-<span id="cb78-50"><a href="other-useful.html#cb78-50" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#selected">selected</a>()]).</span></span>
-<span id="cb78-51"><a href="other-useful.html#cb78-51" tabindex="-1"></a><span class="co">#' @param ylim Numeric vector of length 2; the y-axis limits for the bar plot.</span></span>
-<span id="cb78-52"><a href="other-useful.html#cb78-52" tabindex="-1"></a><span class="co">#' Default is `c(0, 1)`, the natural range of a selection proportion.</span></span>
-<span id="cb78-53"><a href="other-useful.html#cb78-53" tabindex="-1"></a><span class="co">#' @param sel_col The colour used to fill the bars of selected clusters (or</span></span>
-<span id="cb78-54"><a href="other-useful.html#cb78-54" tabindex="-1"></a><span class="co">#' features). Default is "steelblue".</span></span>
-<span id="cb78-55"><a href="other-useful.html#cb78-55" tabindex="-1"></a><span class="co">#' @param unsel_col The colour used to fill the bars of unselected clusters (or</span></span>
-<span id="cb78-56"><a href="other-useful.html#cb78-56" tabindex="-1"></a><span class="co">#' features). Default is "grey70".</span></span>
-<span id="cb78-57"><a href="other-useful.html#cb78-57" tabindex="-1"></a><span class="co">#' @param ... Additional graphical parameters passed on to</span></span>
-<span id="cb78-58"><a href="other-useful.html#cb78-58" tabindex="-1"></a><span class="co">#' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,</span></span>
-<span id="cb78-59"><a href="other-useful.html#cb78-59" tabindex="-1"></a><span class="co">#' fill colours, and `ylim` are controlled by this method; supplying `col` or</span></span>
-<span id="cb78-60"><a href="other-useful.html#cb78-60" tabindex="-1"></a><span class="co">#' `ylim` here overrides the highlight colours or the default y-axis limits.</span></span>
-<span id="cb78-61"><a href="other-useful.html#cb78-61" tabindex="-1"></a><span class="co">#' @return Invisibly, the numeric vector of selection proportions that were</span></span>
-<span id="cb78-62"><a href="other-useful.html#cb78-62" tabindex="-1"></a><span class="co">#' plotted: the `colMeans()` of the cluster (or feature) selection matrix,</span></span>
-<span id="cb78-63"><a href="other-useful.html#cb78-63" tabindex="-1"></a><span class="co">#' sorted in decreasing order, named by cluster (always) or by feature (when the</span></span>
-<span id="cb78-64"><a href="other-useful.html#cb78-64" tabindex="-1"></a><span class="co">#' features of `X` were named; unnamed otherwise). Called primarily for its side</span></span>
-<span id="cb78-65"><a href="other-useful.html#cb78-65" tabindex="-1"></a><span class="co">#' effect: drawing the bar plot.</span></span>
-<span id="cb78-66"><a href="other-useful.html#cb78-66" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb78-67"><a href="other-useful.html#cb78-67" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#print.cssr">print.cssr</a>()] and [<a href="other-useful.html#summary.cssr">summary.cssr</a>()] for printed / tabular overviews</span></span>
-<span id="cb78-68"><a href="other-useful.html#cb78-68" tabindex="-1"></a><span class="co">#' of the same selection proportions; [<a href="other-useful.html#selected">selected</a>()] to extract the selected</span></span>
-<span id="cb78-69"><a href="other-useful.html#cb78-69" tabindex="-1"></a><span class="co">#' clusters or features; [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection used</span></span>
-<span id="cb78-70"><a href="other-useful.html#cb78-70" tabindex="-1"></a><span class="co">#' to highlight the bars.</span></span>
-<span id="cb78-71"><a href="other-useful.html#cb78-71" tabindex="-1"></a><span class="co">#' @examples</span></span>
-<span id="cb78-72"><a href="other-useful.html#cb78-72" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
-<span id="cb78-73"><a href="other-useful.html#cb78-73" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
-<span id="cb78-74"><a href="other-useful.html#cb78-74" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
-<span id="cb78-75"><a href="other-useful.html#cb78-75" tabindex="-1"></a><span class="co">#' # Name the features so the feature plot shows labelled, highlighted bars</span></span>
-<span id="cb78-76"><a href="other-useful.html#cb78-76" tabindex="-1"></a><span class="co">#' # (genClusteredData returns X with no column names).</span></span>
-<span id="cb78-77"><a href="other-useful.html#cb78-77" tabindex="-1"></a><span class="co">#' X &lt;- data$X</span></span>
-<span id="cb78-78"><a href="other-useful.html#cb78-78" tabindex="-1"></a><span class="co">#' colnames(X) &lt;- paste0("V", seq_len(ncol(X)))</span></span>
-<span id="cb78-79"><a href="other-useful.html#cb78-79" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
-<span id="cb78-80"><a href="other-useful.html#cb78-80" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = X, y = data$y, lambda = 0.01, clusters = clusters, B = 10)</span></span>
-<span id="cb78-81"><a href="other-useful.html#cb78-81" tabindex="-1"></a><span class="co">#' # Cluster selection proportions (the default):</span></span>
-<span id="cb78-82"><a href="other-useful.html#cb78-82" tabindex="-1"></a><span class="co">#' plot(res)</span></span>
-<span id="cb78-83"><a href="other-useful.html#cb78-83" tabindex="-1"></a><span class="co">#' # Feature selection proportions, highlighting the selected features:</span></span>
-<span id="cb78-84"><a href="other-useful.html#cb78-84" tabindex="-1"></a><span class="co">#' plot(res, type = "features")</span></span>
-<span id="cb78-85"><a href="other-useful.html#cb78-85" tabindex="-1"></a><span class="co">#' @export</span></span>
-<span id="cb78-86"><a href="other-useful.html#cb78-86" tabindex="-1"></a><span id="plot.cssr">plot.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff =</span> <span class="dv">0</span>, <span class="at">min_num_clusts =</span> <span class="dv">1</span>, <span class="at">max_num_clusts =</span> <span class="cn">NA</span>,</span>
-<span id="cb78-87"><a href="other-useful.html#cb78-87" tabindex="-1"></a>    <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"clusters"</span>, <span class="st">"features"</span>), <span class="at">weighting =</span> <span class="st">"sparse"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
-<span id="cb78-88"><a href="other-useful.html#cb78-88" tabindex="-1"></a>    <span class="at">sel_col =</span> <span class="st">"steelblue"</span>, <span class="at">unsel_col =</span> <span class="st">"grey70"</span>, ...){</span>
-<span id="cb78-89"><a href="other-useful.html#cb78-89" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
-<span id="cb78-90"><a href="other-useful.html#cb78-90" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(x, <span class="at">weighting =</span> weighting,</span>
-<span id="cb78-91"><a href="other-useful.html#cb78-91" tabindex="-1"></a>        <span class="at">cutoff =</span> cutoff, <span class="at">min_num_clusts =</span> min_num_clusts,</span>
-<span id="cb78-92"><a href="other-useful.html#cb78-92" tabindex="-1"></a>        <span class="at">max_num_clusts =</span> max_num_clusts)</span>
-<span id="cb78-93"><a href="other-useful.html#cb78-93" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"clusters"</span>){</span>
-<span id="cb78-94"><a href="other-useful.html#cb78-94" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>clus_sel_mat)                              <span class="co"># named by cluster (guaranteed)</span></span>
-<span id="cb78-95"><a href="other-useful.html#cb78-95" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">names</span>(props) <span class="sc">%in%</span> <span class="fu">names</span>(sel<span class="sc">$</span>selected_clusts)</span>
-<span id="cb78-96"><a href="other-useful.html#cb78-96" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Cluster selection proportion"</span></span>
-<span id="cb78-97"><a href="other-useful.html#cb78-97" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb78-98"><a href="other-useful.html#cb78-98" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>feat_sel_mat)                             <span class="co"># named iff X was named</span></span>
-<span id="cb78-99"><a href="other-useful.html#cb78-99" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">seq_along</span>(props) <span class="sc">%in%</span> <span class="fu">as.integer</span>(sel<span class="sc">$</span>selected_feats) <span class="co"># INDEX-based -&gt; robust to unnamed X</span></span>
-<span id="cb78-100"><a href="other-useful.html#cb78-100" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Feature selection proportion"</span></span>
-<span id="cb78-101"><a href="other-useful.html#cb78-101" tabindex="-1"></a>    }</span>
-<span id="cb78-102"><a href="other-useful.html#cb78-102" tabindex="-1"></a>    ord    <span class="ot">&lt;-</span> <span class="fu">order</span>(props, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb78-103"><a href="other-useful.html#cb78-103" tabindex="-1"></a>    props  <span class="ot">&lt;-</span> props[ord]; is_sel <span class="ot">&lt;-</span> is_sel[ord]</span>
-<span id="cb78-104"><a href="other-useful.html#cb78-104" tabindex="-1"></a>    labels <span class="ot">&lt;-</span> <span class="fu">names</span>(props); <span class="cf">if</span>(<span class="fu">is.null</span>(labels)) labels <span class="ot">&lt;-</span> <span class="fu">as.character</span>(ord)  <span class="co"># index labels if X unnamed</span></span>
-<span id="cb78-105"><a href="other-useful.html#cb78-105" tabindex="-1"></a>    <span class="co"># method controls height/col/ylim on a SINGLE merged arg list; ... forwards</span></span>
-<span id="cb78-106"><a href="other-useful.html#cb78-106" tabindex="-1"></a>    <span class="co"># main/cex.names/etc. -&gt; no barplot duplicate-argument crash.</span></span>
-<span id="cb78-107"><a href="other-useful.html#cb78-107" tabindex="-1"></a>    args <span class="ot">&lt;-</span> utils<span class="sc">::</span><span class="fu">modifyList</span>(<span class="fu">list</span>(<span class="at">names.arg =</span> labels, <span class="at">las =</span> <span class="dv">2</span>, <span class="at">ylab =</span> ylab), <span class="fu">list</span>(...))</span>
-<span id="cb78-108"><a href="other-useful.html#cb78-108" tabindex="-1"></a>    args<span class="sc">$</span>height <span class="ot">&lt;-</span> props</span>
-<span id="cb78-109"><a href="other-useful.html#cb78-109" tabindex="-1"></a>    args<span class="sc">$</span>col    <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(is_sel, sel_col, unsel_col)</span>
-<span id="cb78-110"><a href="other-useful.html#cb78-110" tabindex="-1"></a>    args<span class="sc">$</span>ylim   <span class="ot">&lt;-</span> ylim</span>
-<span id="cb78-111"><a href="other-useful.html#cb78-111" tabindex="-1"></a>    <span class="fu">do.call</span>(graphics<span class="sc">::</span>barplot, args)</span>
-<span id="cb78-112"><a href="other-useful.html#cb78-112" tabindex="-1"></a>    <span class="cf">if</span>(cutoff <span class="sc">&gt;</span> <span class="dv">0</span>) graphics<span class="sc">::</span><span class="fu">abline</span>(<span class="at">h =</span> cutoff, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span>
-<span id="cb78-113"><a href="other-useful.html#cb78-113" tabindex="-1"></a>    <span class="fu">invisible</span>(props)   <span class="co"># sorted; names as-is (so it equals sort(colMeans(...)) for the test)</span></span>
-<span id="cb78-114"><a href="other-useful.html#cb78-114" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb78-7"><a href="other-useful.html#cb78-7" tabindex="-1"></a><span class="co">#' reference line is drawn at the cutoff (for `type = "clusters"`), and the bars</span></span>
+<span id="cb78-8"><a href="other-useful.html#cb78-8" tabindex="-1"></a><span class="co">#' whose cluster (or feature) is selected -- at the given `cutoff` and</span></span>
+<span id="cb78-9"><a href="other-useful.html#cb78-9" tabindex="-1"></a><span class="co">#' cluster-count constraints -- are highlighted in `sel_col`, the rest in</span></span>
+<span id="cb78-10"><a href="other-useful.html#cb78-10" tabindex="-1"></a><span class="co">#' `unsel_col`.</span></span>
+<span id="cb78-11"><a href="other-useful.html#cb78-11" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-12"><a href="other-useful.html#cb78-12" tabindex="-1"></a><span class="co">#' The selection that determines the highlight is obtained from</span></span>
+<span id="cb78-13"><a href="other-useful.html#cb78-13" tabindex="-1"></a><span class="co">#' [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] with the same `cutoff`, `min_num_clusts`,</span></span>
+<span id="cb78-14"><a href="other-useful.html#cb78-14" tabindex="-1"></a><span class="co">#' `max_num_clusts`, and `weighting`. Which clusters are selected does not</span></span>
+<span id="cb78-15"><a href="other-useful.html#cb78-15" tabindex="-1"></a><span class="co">#' depend on `weighting`; which features are selected does (the weighting</span></span>
+<span id="cb78-16"><a href="other-useful.html#cb78-16" tabindex="-1"></a><span class="co">#' determines which members of the selected clusters have nonzero weight and are</span></span>
+<span id="cb78-17"><a href="other-useful.html#cb78-17" tabindex="-1"></a><span class="co">#' therefore highlighted when `type = "features"`).</span></span>
+<span id="cb78-18"><a href="other-useful.html#cb78-18" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-19"><a href="other-useful.html#cb78-19" tabindex="-1"></a><span class="co">#' Note that, to match the positional argument order of [<a href="other-useful.html#print.cssr">print.cssr</a>()], the</span></span>
+<span id="cb78-20"><a href="other-useful.html#cb78-20" tabindex="-1"></a><span class="co">#' second positional argument is `cutoff`; `type`, `weighting`, and the</span></span>
+<span id="cb78-21"><a href="other-useful.html#cb78-21" tabindex="-1"></a><span class="co">#' graphical parameters must be supplied by name (for example</span></span>
+<span id="cb78-22"><a href="other-useful.html#cb78-22" tabindex="-1"></a><span class="co">#' `plot(x, type = "features")`).</span></span>
+<span id="cb78-23"><a href="other-useful.html#cb78-23" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb78-24"><a href="other-useful.html#cb78-24" tabindex="-1"></a><span class="co">#' @param x An object of class "cssr" (the output of the function [<a href="css.html#css">css</a>()]).</span></span>
+<span id="cb78-25"><a href="other-useful.html#cb78-25" tabindex="-1"></a><span class="co">#' @param cutoff Numeric; the selection-proportion threshold used both to draw</span></span>
+<span id="cb78-26"><a href="other-useful.html#cb78-26" tabindex="-1"></a><span class="co">#' the dashed reference line (when greater than 0) and to determine which bars</span></span>
+<span id="cb78-27"><a href="other-useful.html#cb78-27" tabindex="-1"></a><span class="co">#' are highlighted as selected. The dashed reference line is drawn only for</span></span>
+<span id="cb78-28"><a href="other-useful.html#cb78-28" tabindex="-1"></a><span class="co">#' `type = "clusters"`; for `type = "features"` no line is drawn, because the</span></span>
+<span id="cb78-29"><a href="other-useful.html#cb78-29" tabindex="-1"></a><span class="co">#' bars show feature proportions while highlighting follows the cluster-level</span></span>
+<span id="cb78-30"><a href="other-useful.html#cb78-30" tabindex="-1"></a><span class="co">#' selection. Must be between 0 and 1. Default is 0 (in which case no reference</span></span>
+<span id="cb78-31"><a href="other-useful.html#cb78-31" tabindex="-1"></a><span class="co">#' line is drawn and, unless `max_num_clusts` restricts it, every cluster is</span></span>
+<span id="cb78-32"><a href="other-useful.html#cb78-32" tabindex="-1"></a><span class="co">#' treated as selected).</span></span>
+<span id="cb78-33"><a href="other-useful.html#cb78-33" tabindex="-1"></a><span class="co">#' @param min_num_clusts Integer or numeric; the minimum number of clusters to</span></span>
+<span id="cb78-34"><a href="other-useful.html#cb78-34" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
+<span id="cb78-35"><a href="other-useful.html#cb78-35" tabindex="-1"></a><span class="co">#' fewer than min_num_clusts clusters, the cutoff is effectively lowered until</span></span>
+<span id="cb78-36"><a href="other-useful.html#cb78-36" tabindex="-1"></a><span class="co">#' at least min_num_clusts clusters are selected.) Default is 1. May be set to 0</span></span>
+<span id="cb78-37"><a href="other-useful.html#cb78-37" tabindex="-1"></a><span class="co">#' to allow a pure cutoff-based highlight that can be empty (no bar highlighted)</span></span>
+<span id="cb78-38"><a href="other-useful.html#cb78-38" tabindex="-1"></a><span class="co">#' when no cluster's selection proportion meets the cutoff.</span></span>
+<span id="cb78-39"><a href="other-useful.html#cb78-39" tabindex="-1"></a><span class="co">#' @param max_num_clusts Integer or numeric; the maximum number of clusters to</span></span>
+<span id="cb78-40"><a href="other-useful.html#cb78-40" tabindex="-1"></a><span class="co">#' treat as selected regardless of cutoff. (If the chosen cutoff would select</span></span>
+<span id="cb78-41"><a href="other-useful.html#cb78-41" tabindex="-1"></a><span class="co">#' more than max_num_clusts clusters, the cutoff is effectively raised until at</span></span>
+<span id="cb78-42"><a href="other-useful.html#cb78-42" tabindex="-1"></a><span class="co">#' most max_num_clusts clusters are selected.) Default is NA (in which case</span></span>
+<span id="cb78-43"><a href="other-useful.html#cb78-43" tabindex="-1"></a><span class="co">#' max_num_clusts is ignored). Because clusters can have tied selection</span></span>
+<span id="cb78-44"><a href="other-useful.html#cb78-44" tabindex="-1"></a><span class="co">#' proportions, ties at the threshold can cause more than max_num_clusts bars</span></span>
+<span id="cb78-45"><a href="other-useful.html#cb78-45" tabindex="-1"></a><span class="co">#' (or fewer than min_num_clusts) to be highlighted; when the two constraints</span></span>
+<span id="cb78-46"><a href="other-useful.html#cb78-46" tabindex="-1"></a><span class="co">#' conflict, max_num_clusts takes precedence.</span></span>
+<span id="cb78-47"><a href="other-useful.html#cb78-47" tabindex="-1"></a><span class="co">#' @param type Character; either "clusters" (the default) to plot one bar per</span></span>
+<span id="cb78-48"><a href="other-useful.html#cb78-48" tabindex="-1"></a><span class="co">#' cluster, or "features" to plot one bar per feature. May be abbreviated.</span></span>
+<span id="cb78-49"><a href="other-useful.html#cb78-49" tabindex="-1"></a><span class="co">#' @param weighting Character; passed to [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] to determine which</span></span>
+<span id="cb78-50"><a href="other-useful.html#cb78-50" tabindex="-1"></a><span class="co">#' individual features are selected (and therefore highlighted) when</span></span>
+<span id="cb78-51"><a href="other-useful.html#cb78-51" tabindex="-1"></a><span class="co">#' `type = "features"`. It has no effect on the cluster bars or on which</span></span>
+<span id="cb78-52"><a href="other-useful.html#cb78-52" tabindex="-1"></a><span class="co">#' clusters are highlighted. Must be one of "sparse", "weighted_avg", or</span></span>
+<span id="cb78-53"><a href="other-useful.html#cb78-53" tabindex="-1"></a><span class="co">#' "simple_avg". Default is "sparse" (matching [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] and</span></span>
+<span id="cb78-54"><a href="other-useful.html#cb78-54" tabindex="-1"></a><span class="co">#' [<a href="other-useful.html#selected">selected</a>()]).</span></span>
+<span id="cb78-55"><a href="other-useful.html#cb78-55" tabindex="-1"></a><span class="co">#' @param ylim Numeric vector of length 2; the y-axis limits for the bar plot.</span></span>
+<span id="cb78-56"><a href="other-useful.html#cb78-56" tabindex="-1"></a><span class="co">#' Default is `c(0, 1)`, the natural range of a selection proportion.</span></span>
+<span id="cb78-57"><a href="other-useful.html#cb78-57" tabindex="-1"></a><span class="co">#' @param sel_col The colour used to fill the bars of selected clusters (or</span></span>
+<span id="cb78-58"><a href="other-useful.html#cb78-58" tabindex="-1"></a><span class="co">#' features). Default is "steelblue".</span></span>
+<span id="cb78-59"><a href="other-useful.html#cb78-59" tabindex="-1"></a><span class="co">#' @param unsel_col The colour used to fill the bars of unselected clusters (or</span></span>
+<span id="cb78-60"><a href="other-useful.html#cb78-60" tabindex="-1"></a><span class="co">#' features). Default is "grey70".</span></span>
+<span id="cb78-61"><a href="other-useful.html#cb78-61" tabindex="-1"></a><span class="co">#' @param ... Additional graphical parameters passed on to</span></span>
+<span id="cb78-62"><a href="other-useful.html#cb78-62" tabindex="-1"></a><span class="co">#' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,</span></span>
+<span id="cb78-63"><a href="other-useful.html#cb78-63" tabindex="-1"></a><span class="co">#' fill colours, and `ylim` are controlled by this method; supplying `col` here,</span></span>
+<span id="cb78-64"><a href="other-useful.html#cb78-64" tabindex="-1"></a><span class="co">#' or the `ylim` argument, overrides the highlight colours or the default y-axis</span></span>
+<span id="cb78-65"><a href="other-useful.html#cb78-65" tabindex="-1"></a><span class="co">#' limits.</span></span>
+<span id="cb78-66"><a href="other-useful.html#cb78-66" tabindex="-1"></a><span class="co">#' @return Invisibly, the numeric vector of selection proportions that were</span></span>
+<span id="cb78-67"><a href="other-useful.html#cb78-67" tabindex="-1"></a><span class="co">#' plotted: the `colMeans()` of the cluster (or feature) selection matrix,</span></span>
+<span id="cb78-68"><a href="other-useful.html#cb78-68" tabindex="-1"></a><span class="co">#' sorted in decreasing order, named by cluster (always) or by feature (when the</span></span>
+<span id="cb78-69"><a href="other-useful.html#cb78-69" tabindex="-1"></a><span class="co">#' features of `X` were named; unnamed otherwise). Called primarily for its side</span></span>
+<span id="cb78-70"><a href="other-useful.html#cb78-70" tabindex="-1"></a><span class="co">#' effect: drawing the bar plot.</span></span>
+<span id="cb78-71"><a href="other-useful.html#cb78-71" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb78-72"><a href="other-useful.html#cb78-72" tabindex="-1"></a><span class="co">#' @seealso [<a href="other-useful.html#print.cssr">print.cssr</a>()] and [<a href="other-useful.html#summary.cssr">summary.cssr</a>()] for printed / tabular overviews</span></span>
+<span id="cb78-73"><a href="other-useful.html#cb78-73" tabindex="-1"></a><span class="co">#' of the same selection proportions; [<a href="other-useful.html#selected">selected</a>()] to extract the selected</span></span>
+<span id="cb78-74"><a href="other-useful.html#cb78-74" tabindex="-1"></a><span class="co">#' clusters or features; [<a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()] for the underlying selection used</span></span>
+<span id="cb78-75"><a href="other-useful.html#cb78-75" tabindex="-1"></a><span class="co">#' to highlight the bars.</span></span>
+<span id="cb78-76"><a href="other-useful.html#cb78-76" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb78-77"><a href="other-useful.html#cb78-77" tabindex="-1"></a><span class="co">#' set.seed(1)</span></span>
+<span id="cb78-78"><a href="other-useful.html#cb78-78" tabindex="-1"></a><span class="co">#' data &lt;- <a href="other-useful.html#genClusteredData">genClusteredData</a>(n = 50, p = 11, k_unclustered = 2,</span></span>
+<span id="cb78-79"><a href="other-useful.html#cb78-79" tabindex="-1"></a><span class="co">#'   cluster_size = 4, n_clusters = 1, snr = 3)</span></span>
+<span id="cb78-80"><a href="other-useful.html#cb78-80" tabindex="-1"></a><span class="co">#' # Name the features so the feature plot shows labelled, highlighted bars</span></span>
+<span id="cb78-81"><a href="other-useful.html#cb78-81" tabindex="-1"></a><span class="co">#' # (genClusteredData returns X with no column names).</span></span>
+<span id="cb78-82"><a href="other-useful.html#cb78-82" tabindex="-1"></a><span class="co">#' X &lt;- data$X</span></span>
+<span id="cb78-83"><a href="other-useful.html#cb78-83" tabindex="-1"></a><span class="co">#' colnames(X) &lt;- paste0("V", seq_len(ncol(X)))</span></span>
+<span id="cb78-84"><a href="other-useful.html#cb78-84" tabindex="-1"></a><span class="co">#' clusters &lt;- list(cluster1 = 1:4)</span></span>
+<span id="cb78-85"><a href="other-useful.html#cb78-85" tabindex="-1"></a><span class="co">#' res &lt;- <a href="css.html#css">css</a>(X = X, y = data$y, lambda = 0.01, clusters = clusters, B = 10)</span></span>
+<span id="cb78-86"><a href="other-useful.html#cb78-86" tabindex="-1"></a><span class="co">#' # Cluster selection proportions (the default):</span></span>
+<span id="cb78-87"><a href="other-useful.html#cb78-87" tabindex="-1"></a><span class="co">#' plot(res)</span></span>
+<span id="cb78-88"><a href="other-useful.html#cb78-88" tabindex="-1"></a><span class="co">#' # Feature selection proportions, highlighting the selected features:</span></span>
+<span id="cb78-89"><a href="other-useful.html#cb78-89" tabindex="-1"></a><span class="co">#' plot(res, type = "features")</span></span>
+<span id="cb78-90"><a href="other-useful.html#cb78-90" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb78-91"><a href="other-useful.html#cb78-91" tabindex="-1"></a><span id="plot.cssr">plot.cssr</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(x, <span class="at">cutoff =</span> <span class="dv">0</span>, <span class="at">min_num_clusts =</span> <span class="dv">1</span>, <span class="at">max_num_clusts =</span> <span class="cn">NA</span>,</span>
+<span id="cb78-92"><a href="other-useful.html#cb78-92" tabindex="-1"></a>    <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"clusters"</span>, <span class="st">"features"</span>), <span class="at">weighting =</span> <span class="st">"sparse"</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb78-93"><a href="other-useful.html#cb78-93" tabindex="-1"></a>    <span class="at">sel_col =</span> <span class="st">"steelblue"</span>, <span class="at">unsel_col =</span> <span class="st">"grey70"</span>, ...){</span>
+<span id="cb78-94"><a href="other-useful.html#cb78-94" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb78-95"><a href="other-useful.html#cb78-95" tabindex="-1"></a>    sel <span class="ot">&lt;-</span> <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(x, <span class="at">weighting =</span> weighting,</span>
+<span id="cb78-96"><a href="other-useful.html#cb78-96" tabindex="-1"></a>        <span class="at">cutoff =</span> cutoff, <span class="at">min_num_clusts =</span> min_num_clusts,</span>
+<span id="cb78-97"><a href="other-useful.html#cb78-97" tabindex="-1"></a>        <span class="at">max_num_clusts =</span> max_num_clusts)</span>
+<span id="cb78-98"><a href="other-useful.html#cb78-98" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"clusters"</span>){</span>
+<span id="cb78-99"><a href="other-useful.html#cb78-99" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>clus_sel_mat)                              <span class="co"># named by cluster (guaranteed)</span></span>
+<span id="cb78-100"><a href="other-useful.html#cb78-100" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">names</span>(props) <span class="sc">%in%</span> <span class="fu">names</span>(sel<span class="sc">$</span>selected_clusts)</span>
+<span id="cb78-101"><a href="other-useful.html#cb78-101" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Cluster selection proportion"</span></span>
+<span id="cb78-102"><a href="other-useful.html#cb78-102" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb78-103"><a href="other-useful.html#cb78-103" tabindex="-1"></a>        props  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(x<span class="sc">$</span>feat_sel_mat)                             <span class="co"># named iff X was named</span></span>
+<span id="cb78-104"><a href="other-useful.html#cb78-104" tabindex="-1"></a>        is_sel <span class="ot">&lt;-</span> <span class="fu">seq_along</span>(props) <span class="sc">%in%</span> <span class="fu">as.integer</span>(sel<span class="sc">$</span>selected_feats) <span class="co"># INDEX-based -&gt; robust to unnamed X</span></span>
+<span id="cb78-105"><a href="other-useful.html#cb78-105" tabindex="-1"></a>        ylab   <span class="ot">&lt;-</span> <span class="st">"Feature selection proportion"</span></span>
+<span id="cb78-106"><a href="other-useful.html#cb78-106" tabindex="-1"></a>    }</span>
+<span id="cb78-107"><a href="other-useful.html#cb78-107" tabindex="-1"></a>    ord    <span class="ot">&lt;-</span> <span class="fu">order</span>(props, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb78-108"><a href="other-useful.html#cb78-108" tabindex="-1"></a>    props  <span class="ot">&lt;-</span> props[ord]; is_sel <span class="ot">&lt;-</span> is_sel[ord]</span>
+<span id="cb78-109"><a href="other-useful.html#cb78-109" tabindex="-1"></a>    labels <span class="ot">&lt;-</span> <span class="fu">names</span>(props); <span class="cf">if</span>(<span class="fu">is.null</span>(labels)) labels <span class="ot">&lt;-</span> <span class="fu">as.character</span>(ord)  <span class="co"># index labels if X unnamed</span></span>
+<span id="cb78-110"><a href="other-useful.html#cb78-110" tabindex="-1"></a>    <span class="co"># Method defaults go on the DEFAULTS side of the merge so a user-supplied col</span></span>
+<span id="cb78-111"><a href="other-useful.html#cb78-111" tabindex="-1"></a>    <span class="co"># or ylim in `...` wins (matching the @param ... doc); height is forced AFTER</span></span>
+<span id="cb78-112"><a href="other-useful.html#cb78-112" tabindex="-1"></a>    <span class="co"># the merge because the bar heights ARE the selection proportions (#160a).</span></span>
+<span id="cb78-113"><a href="other-useful.html#cb78-113" tabindex="-1"></a>    args <span class="ot">&lt;-</span> utils<span class="sc">::</span><span class="fu">modifyList</span>(</span>
+<span id="cb78-114"><a href="other-useful.html#cb78-114" tabindex="-1"></a>        <span class="fu">list</span>(<span class="at">names.arg =</span> labels, <span class="at">las =</span> <span class="dv">2</span>, <span class="at">ylab =</span> ylab,</span>
+<span id="cb78-115"><a href="other-useful.html#cb78-115" tabindex="-1"></a>            <span class="at">col =</span> <span class="fu">ifelse</span>(is_sel, sel_col, unsel_col), <span class="at">ylim =</span> ylim),</span>
+<span id="cb78-116"><a href="other-useful.html#cb78-116" tabindex="-1"></a>        <span class="fu">list</span>(...))</span>
+<span id="cb78-117"><a href="other-useful.html#cb78-117" tabindex="-1"></a>    args<span class="sc">$</span>height <span class="ot">&lt;-</span> props</span>
+<span id="cb78-118"><a href="other-useful.html#cb78-118" tabindex="-1"></a>    <span class="fu">do.call</span>(graphics<span class="sc">::</span>barplot, args)</span>
+<span id="cb78-119"><a href="other-useful.html#cb78-119" tabindex="-1"></a>    <span class="cf">if</span>(cutoff <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> type <span class="sc">==</span> <span class="st">"clusters"</span>) graphics<span class="sc">::</span><span class="fu">abline</span>(<span class="at">h =</span> cutoff, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span>
+<span id="cb78-120"><a href="other-useful.html#cb78-120" tabindex="-1"></a>    <span class="fu">invisible</span>(props)   <span class="co"># sorted; names as-is (so it equals sort(colMeans(...)) for the test)</span></span>
+<span id="cb78-121"><a href="other-useful.html#cb78-121" tabindex="-1"></a>}</span></code></pre></div>
 <div id="ergonomic-s3-accessors-selected-and-summary.cssr" class="section level2 hasAnchor" number="5.1">
 <h2>
 <span class="header-section-number">5.1</span> Ergonomic S3 accessors: <code><a href="other-useful.html#selected">selected</a>()</code> and <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code><a href="other-useful.html#ergonomic-s3-accessors-selected-and-summary.cssr" class="anchor-section" aria-label="Anchor link to header"></a>

@@ -23,9 +23,12 @@ selection}
 
 \item{cutoff}{Numeric; the selection-proportion threshold used both to draw
 the dashed reference line (when greater than 0) and to determine which bars
-are highlighted as selected. Must be between 0 and 1. Default is 0 (in which
-case no reference line is drawn and, unless \code{max_num_clusts} restricts it,
-every cluster is treated as selected).}
+are highlighted as selected. The dashed reference line is drawn only for
+\code{type = "clusters"}; for \code{type = "features"} no line is drawn, because the
+bars show feature proportions while highlighting follows the cluster-level
+selection. Must be between 0 and 1. Default is 0 (in which case no reference
+line is drawn and, unless \code{max_num_clusts} restricts it, every cluster is
+treated as selected).}
 
 \item{min_num_clusts}{Integer or numeric; the minimum number of clusters to
 treat as selected regardless of cutoff. (If the chosen cutoff would select
@@ -64,8 +67,9 @@ features). Default is "grey70".}
 
 \item{...}{Additional graphical parameters passed on to
 \code{\link[graphics:barplot]{graphics::barplot()}} (for example \code{main} or \code{cex.names}). The bar heights,
-fill colours, and \code{ylim} are controlled by this method; supplying \code{col} or
-\code{ylim} here overrides the highlight colours or the default y-axis limits.}
+fill colours, and \code{ylim} are controlled by this method; supplying \code{col} here,
+or the \code{ylim} argument, overrides the highlight colours or the default y-axis
+limits.}
 }
 \value{
 Invisibly, the numeric vector of selection proportions that were
@@ -78,9 +82,10 @@ effect: drawing the bar plot.
 Produce a base-graphics bar plot of the selection proportions of a fitted
 \code{cssr} object: one bar per cluster (the default) or per feature, sorted in
 decreasing order of selection proportion. When \code{cutoff > 0} a dashed
-reference line is drawn at the cutoff, and the bars whose cluster (or
-feature) is selected -- at the given \code{cutoff} and cluster-count constraints
--- are highlighted in \code{sel_col}, the rest in \code{unsel_col}.
+reference line is drawn at the cutoff (for \code{type = "clusters"}), and the bars
+whose cluster (or feature) is selected -- at the given \code{cutoff} and
+cluster-count constraints -- are highlighted in \code{sel_col}, the rest in
+\code{unsel_col}.
 }
 \details{
 The selection that determines the highlight is obtained from
