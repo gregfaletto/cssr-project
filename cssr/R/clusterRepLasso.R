@@ -9,7 +9,9 @@
 #' @param clusters A list of integer vectors; each vector should contain the 
 #' indices of a cluster of features (a subset of 1:p). (If there is only one
 #' cluster, clusters can either be a list of length 1 or an integer vector.)
-#' All of the provided clusters must be non-overlapping. Every feature not
+#' All of the provided clusters must be non-overlapping. Any identical
+#' (duplicated) clusters will be removed, keeping the first occurrence and its
+#' name. Every feature not
 #' appearing in any cluster will be assumed to be unclustered (that is, they
 #' will be treated as if they are in a "cluster" containing only themselves).
 #' CAUTION: if the provided X is a data.frame that contains a categorical
