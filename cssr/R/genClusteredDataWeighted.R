@@ -11,7 +11,7 @@
 #' from Section 5.3 of Faletto and Bien (2022).
 #' @param n Integer or numeric; the number of observations to generate. (The
 #' generated X and Z will have n rows, and the generated y and mu will have
-#' length n.)
+#' length n.) Must be at least 2.
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
@@ -26,7 +26,8 @@
 #' proxies in each cluster, the first n_strong_cluster_vars will have a high
 #' correlation (rho_high) with the latent variable and the next cluster_size -
 #' n_strong_cluster_vars will have a low correlation (rho_low) with the latent
-#' variable.
+#' variable. Must satisfy `1 <= n_strong_cluster_vars < cluster_size` (each
+#' cluster must contain at least one strong proxy and at least one weak proxy).
 #' @param n_clusters Integer or numeric; the number of latent variables to
 #' generate, each of which will be associated with an observed cluster in X.
 #' Must be at least 1. Default is 1.

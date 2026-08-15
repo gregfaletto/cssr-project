@@ -15,7 +15,9 @@
 #' @param n_strong_cluster_vars Integer or numeric; among the cluster_size
 #' proxies in each cluster, n_strong_cluster_vars will have a high correlation
 #' (rho_high) with the latent variable and cluster_size - n_strong_cluster_vars
-#' will have a low correlation (rho_low) with the latent variable.
+#' will have a low correlation (rho_low) with the latent variable. Must satisfy
+#' `1 <= n_strong_cluster_vars < cluster_size` (each cluster must contain at
+#' least one strong proxy and at least one weak proxy).
 #' @param n_clusters Integer or numeric; the number of latent variables to
 #' generate, each of which will be associated with an observed cluster in X.
 #' Must be at least 1. Default is 1.

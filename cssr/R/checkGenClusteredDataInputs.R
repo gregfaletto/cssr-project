@@ -56,7 +56,18 @@ checkGenClusteredDataInputs <- function(p, k_unclustered, cluster_size,
 
     checkGenClusteredDataInputsPre(sig_clusters, n_clusters, cluster_size)
 
+    # rho is a (0, 1] scalar, so it gets checkAlpha()'s block verbatim (#162):
+    # the type/length/NA checks it previously lacked entirely, plus the upper
+    # bound the help page has always documented. Type/length/NA must precede the
+    # range checks -- "0.8" > 0 is TRUE (R compares character to numeric as
+    # strings) and NA > 0 is NA, so a range check alone sees neither. Without
+    # the length check a vector rho silently recycled its noise variance across
+    # the proxy columns.
+    stopifnot(is.numeric(rho) | is.integer(rho))
+    stopifnot(length(rho) == 1)
+    stopifnot(!is.na(rho))
     stopifnot(rho > 0)
+    stopifnot(rho <= 1)
 
     checkGenClusteredDataInputsPost(p, k_unclustered, cluster_size, n_clusters,
         beta_latent, beta_unclustered, snr, sigma_eps_sq)

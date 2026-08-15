@@ -31,7 +31,7 @@ genClusteredData(
 
   Integer or numeric; the number of observations to generate. (The
   generated X and Z will have n rows, and the generated y and mu will
-  have length n.)
+  have length n.) Must be at least 2.
 
 - p:
 
