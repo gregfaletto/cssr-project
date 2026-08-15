@@ -5883,9 +5883,12 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
 testthat::test_that("genClusteredData rejects rho > 1 up front (#162)", {
   # The documented upper bound is now enforced by the up-front checker, so the
   # message names the user's argument rho rather than getNoiseVar()'s internal
-  # `cor`. Split one case per block: expect_error() re-raises on a message
-  # mismatch and aborts the rest of a block, so bundling would hide the red
-  # side of every case after the first.
+  # `cor`. Split one case per block: under testthat edition 3, which this
+  # package declares, expect_error() re-raises on a message mismatch and aborts
+  # the rest of its block, so bundling would hide the red side of every case
+  # after the first. The edition is load-bearing -- at edition 2 the block
+  # continues instead, so measuring this outside a package context (where
+  # edition 2 is the default) measures the wrong semantics.
   testthat::expect_error(
     genClusteredData(n = 50, p = 13, k_unclustered = 2, cluster_size = 4,
                      n_clusters = 2, rho = 1.2, sigma_eps_sq = 1),
@@ -5924,6 +5927,9 @@ testthat::test_that("genClusteredData rejects rho before drawing any random numb
   # "Up front" is the point of the issue, so assert it directly: a rejected
   # rho must not have advanced the RNG. Before the fix, rho = 1.2 died inside
   # getNoiseVar() only after genZmuY() had already drawn from the stream.
+  # The expect_error() below deliberately asserts no message: this block's
+  # subject is the RNG state, and the message for this exact input is already
+  # pinned by the "rejects rho > 1 up front" block above.
   set.seed(20260815)
   seed_before <- .Random.seed
   testthat::expect_error(
@@ -5974,9 +5980,13 @@ testthat::test_that("genClusteredDataWeighted enforces the documented n_strong_c
   # Interior values are accepted AND split the columns as documented. With
   # rho_high = 1 the strong proxies are noiseless copies of their latent
   # column and the weak ones are not, which locks the split itself rather
-  # than just the shape of X.
+  # than just the shape of X. n = 500 rather than 50 so that the weak-proxy
+  # correlation check below discriminates: measured at n = 50, a rho_low = 0.5
+  # proxy's sample correlation was 0.33 while pure independent noise reached
+  # 0.48 over 200 draws, so any threshold there would be vacuous. At n = 500
+  # the weak proxies measure ~0.53 and pure noise tops out at 0.16.
   set.seed(20260815)
-  res <- genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+  res <- genClusteredDataWeighted(n = 500, p = 13, k_unclustered = 2,
     cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
     rho_high = 1, rho_low = 0.5, sigma_eps_sq = 1)
   Z_expanded <- as.matrix(res$Z)[, rep(1:2, each = 4), drop = FALSE]
@@ -5984,6 +5994,12 @@ testthat::test_that("genClusteredDataWeighted enforces the documented n_strong_c
   weak <- c(4L, 8L)
   testthat::expect_equal(res$X[, strong], Z_expanded[, strong])
   testthat::expect_false(any(res$X[, weak] == Z_expanded[, weak]))
+  # The weak proxies must still carry the latent signal at roughly rho_low --
+  # otherwise a bug replacing them with pure noise would pass the two
+  # assertions above, both of which only require them to differ from Z.
+  weak_cor <- vapply(weak,
+    function(j) stats::cor(res$X[, j], Z_expanded[, j]), numeric(1))
+  testthat::expect_true(all(weak_cor > 0.3))
   testthat::expect_false(anyNA(res$X))
 })
 
