@@ -5906,9 +5906,12 @@ testthat::test_that("genClusteredData rejects a non-numeric rho (#162)", {
 })
 
 testthat::test_that("genClusteredData rejects a length > 1 rho (#162)", {
-  # Previously NO error at all -- a length-2 rho produced a length-2 noise
-  # variance that R recycled across the proxy columns, silently giving half
-  # the proxies a correlation the caller never asked for.
+  # Previously NO error at all. A length-2 rho produced a length-2 noise
+  # variance, which rnorm() recycles elementwise over its flat draw, so the
+  # noise sd alternated row by row WITHIN every proxy column. Measured on the
+  # pre-fix code with rho = c(0.9, 0.5) and seed 1, the eight proxy
+  # correlations were 0.58 0.25 0.55 0.52 0.47 0.60 0.58 0.47 -- every one
+  # corrupted, none at either requested value.
   testthat::expect_error(
     genClusteredData(n = 50, p = 13, k_unclustered = 2, cluster_size = 4,
                      n_clusters = 2, rho = c(0.9, 0.5), sigma_eps_sq = 1),
@@ -5970,7 +5973,10 @@ testthat::test_that("genClusteredDataWeighted enforces the documented n_strong_c
 
   # An all-strong cluster is a natural request and is rejected: the second
   # proxy loop would run (cluster_size + 1):cluster_size, which descends
-  # rather than being empty, and would overwrite the previous cluster.
+  # rather than being empty, so it writes the NEXT cluster's first proxy
+  # column -- and on the final cluster that index is past ncol(proxy_mat), so
+  # the unguarded loop dies with "subscript out of bounds". The guard trades
+  # that obscure indexing error for one naming the argument.
   testthat::expect_error(
     genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
       cluster_size = 4, n_strong_cluster_vars = 4, n_clusters = 2,
