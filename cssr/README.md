@@ -66,7 +66,7 @@ way we intended when we wrote the paper.
 
 Cluster stability selection is an extension of [stability selection
 (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932).
-Stability selection is a procedure deisgned to make any feature
+Stability selection is a procedure designed to make any feature
 selection procedure more *stable*. Given a data set
 $(\boldsymbol{X}, \boldsymbol{y})$ with $n$ observations, stability
 selection works as follows:

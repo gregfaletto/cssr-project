@@ -6,8 +6,9 @@ size, and the data generators used in the simulation studies. For the
 core workflow, see the [getting-started
 guide](https://gregfaletto.github.io/cssr-project/) (which also covers
 custom base selectors via `fitfun` and choosing `lambda` with
-[`getLassoLambda()`](../reference/getLassoLambda.md)) and
-[`vignette("prediction", "cssr")`](../articles/prediction.md).
+[`getLassoLambda()`](https://gregfaletto.github.io/cssr-project/reference/getLassoLambda.md))
+and
+[`vignette("prediction", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/prediction.md).
 
 ``` r
 library(cssr)
@@ -26,13 +27,14 @@ The package ships the two competitor methods that [Faletto and Bien
 (2022)](https://arxiv.org/abs/2201.00494) compare against. Both handle
 clusters of correlated features, but differently:
 
-- [`protolasso()`](../reference/protolasso.md) ([Reid and Tibshirani,
+- [`protolasso()`](https://gregfaletto.github.io/cssr-project/reference/protolasso.md)
+  ([Reid and Tibshirani,
   2016](https://doi.org/10.1093/biostatistics/kxv049)) picks a single
   *prototype* from each cluster and then runs the lasso.
-- [`clusterRepLasso()`](../reference/clusterRepLasso.md) ([Bühlmann et
-  al., 2013](https://doi.org/10.1016/j.jspi.2013.05.019)) replaces each
-  cluster with its *average* (a cluster representative) and then runs
-  the lasso.
+- [`clusterRepLasso()`](https://gregfaletto.github.io/cssr-project/reference/clusterRepLasso.md)
+  ([Bühlmann et al., 2013](https://doi.org/10.1016/j.jspi.2013.05.019))
+  replaces each cluster with its *average* (a cluster representative)
+  and then runs the lasso.
 
 ``` r
 proto <- protolasso(X, y, clusters)
@@ -53,16 +55,17 @@ str(crl, max.level = 1)
 Both return selected sets along a lasso path. In the paper’s simulations
 and data application, cluster stability selection is generally more
 stable and predictive than either; see
-[`vignette("prediction", "cssr")`](../articles/prediction.md) and the
-paper for the comparison.
+[`vignette("prediction", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/prediction.md)
+and the paper for the comparison.
 
 ## Choosing a model size: `getModelSize()`
 
-[`getModelSize()`](../reference/getModelSize.md) suggests a data-driven
-model size by fitting the lasso on the full data set. It is a convenient
-default for the `max_num_clusts` argument of
-[`cssSelect()`](../reference/cssSelect.md) /
-[`getCssSelections()`](../reference/getCssSelections.md).
+[`getModelSize()`](https://gregfaletto.github.io/cssr-project/reference/getModelSize.md)
+suggests a data-driven model size by fitting the lasso on the full data
+set. It is a convenient default for the `max_num_clusts` argument of
+[`cssSelect()`](https://gregfaletto.github.io/cssr-project/reference/cssSelect.md)
+/
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md).
 
 ``` r
 getModelSize(X, y, clusters)
@@ -71,15 +74,15 @@ getModelSize(X, y, clusters)
 
 ## Data generators for simulations
 
-[`genClusteredData()`](../reference/genClusteredData.md) (used above and
-in the getting-started guide) is the basic generator. Two richer
-variants reproduce the settings in the paper’s simulation studies, where
-cluster members are proxies of *differing* quality:
+[`genClusteredData()`](https://gregfaletto.github.io/cssr-project/reference/genClusteredData.md)
+(used above and in the getting-started guide) is the basic generator.
+Two richer variants reproduce the settings in the paper’s simulation
+studies, where cluster members are proxies of *differing* quality:
 
-- [`genClusteredDataWeighted()`](../reference/genClusteredDataWeighted.md)
+- [`genClusteredDataWeighted()`](https://gregfaletto.github.io/cssr-project/reference/genClusteredDataWeighted.md)
   — cluster members have different (fixed) noise levels;
   `n_strong_cluster_vars` of them are low-noise “strong” proxies.
-- [`genClusteredDataWeightedRandom()`](../reference/genClusteredDataWeightedRandom.md)
+- [`genClusteredDataWeightedRandom()`](https://gregfaletto.github.io/cssr-project/reference/genClusteredDataWeightedRandom.md)
   — like the above, but the members’ noise levels are drawn at random.
 
 ``` r
@@ -106,9 +109,9 @@ str(dwr, max.level = 1)
 
 The errors-in-variables model behind these generators treats each
 observed proxy as a latent signal plus noise.
-[`getNoiseVar()`](../reference/getNoiseVar.md) returns the noise
-variance that produces a target correlation between a proxy and the
-latent signal:
+[`getNoiseVar()`](https://gregfaletto.github.io/cssr-project/reference/getNoiseVar.md)
+returns the noise variance that produces a target correlation between a
+proxy and the latent signal:
 
 ``` r
 # Noise variance giving a proxy-to-latent correlation of 0.9
@@ -121,8 +124,8 @@ getNoiseVar(0.9)
 - The [getting-started
   guide](https://gregfaletto.github.io/cssr-project/): selecting
   features, custom `fitfun`,
-  [`getLassoLambda()`](../reference/getLassoLambda.md).
-- [`vignette("prediction", "cssr")`](../articles/prediction.md):
+  [`getLassoLambda()`](https://gregfaletto.github.io/cssr-project/reference/getLassoLambda.md).
+- [`vignette("prediction", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/prediction.md):
   prediction with cluster representatives.
 - The [annotated source
   bookdown](https://gregfaletto.github.io/cssr-project/create/) for the

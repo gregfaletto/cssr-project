@@ -156,11 +156,11 @@ Shah, R. D., & Samworth, R. J.
 (2013). Variable selection with error control: Another look at stability
 selection. \emph{Journal of the Royal Statistical Society. Series B:
 Statistical Methodology}, 75(1), 55–80.
-\url{https://doi.org/10.1109/RITA.2014.2302071}.
+\url{https://doi.org/10.1111/j.1467-9868.2011.01034.x}.
 
 Meinshausen, N., & Bühlmann, P. (2010). Stability Selection. \emph{Journal of the Royal
 Statistical Society. Series B: Statistical Methodology}, 72(4), 417–473.
-\url{https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00740.x}.
+\url{https://doi.org/10.1111/j.1467-9868.2010.00740.x}.
 
 Beinrucker, A., Dogan, Ü., &
 Blanchard, G. (2016). Extensions of stability selection using subsamples of

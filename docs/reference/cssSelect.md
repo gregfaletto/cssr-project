@@ -4,7 +4,7 @@ Takes in data X and y and returns a set of clusters (and a set of
 features) that are useful for predicting y from the data in X. This is a
 wrapper function for css and getCssSelections. Using cssSelect is
 simpler, but it has fewer options, and it executes the full
-(computationally expensive) subsampling procedured every time it is
+(computationally expensive) subsampling procedure every time it is
 called. In contrast, css can be called just once, and then
 getCssSelections can quickly return results using different values of
 cutoff, max_num_clusts, etc. from the calculations done in one call to

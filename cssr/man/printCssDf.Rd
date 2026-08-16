@@ -2,7 +2,7 @@
 % Please edit documentation in _main.Rmd.
 \name{printCssDf}
 \alias{printCssDf}
-\title{Prepares a data.frame summarazing cluster stability selection output to print}
+\title{Prepares a data.frame summarizing cluster stability selection output to print}
 \usage{
 printCssDf(css_results, cutoff = 0, min_num_clusts = 1, max_num_clusts = NA)
 }

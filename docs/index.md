@@ -59,7 +59,7 @@ way we intended when we wrote the paper.
 
 Cluster stability selection is an extension of [stability selection
 (Meinshausen and Bühlmann, 2010)](https://arxiv.org/abs/0809.2932).
-Stability selection is a procedure deisgned to make any feature
+Stability selection is a procedure designed to make any feature
 selection procedure more *stable*. Given a data set
 $`(\boldsymbol{X}, \boldsymbol{y})`$ with $`n`$ observations, stability
 selection works as follows:
@@ -327,19 +327,21 @@ getCssSelections(css_output, cutoff=0.5, min_num_clusts=3, max_num_clusts=7)
 Thank you for reading this far! To go further:
 
 - **Prediction** —
-  [`vignette("prediction", "cssr")`](articles/prediction.md) walks
-  through predicting `y` for new observations using cluster
-  representatives ([`cssPredict()`](reference/cssPredict.md),
-  [`css()`](reference/css.md) +
-  [`getCssPreds()`](reference/getCssPreds.md),
-  [`getCssDesign()`](reference/getCssDesign.md), and the weighting
-  schemes).
+  [`vignette("prediction", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/prediction.md)
+  walks through predicting `y` for new observations using cluster
+  representatives
+  ([`cssPredict()`](https://gregfaletto.github.io/cssr-project/reference/cssPredict.md),
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md) +
+  [`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md),
+  [`getCssDesign()`](https://gregfaletto.github.io/cssr-project/reference/getCssDesign.md),
+  and the weighting schemes).
 - **Advanced usage** —
-  [`vignette("advanced-usage", "cssr")`](articles/advanced-usage.md)
+  [`vignette("advanced-usage", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/advanced-usage.md)
   covers the competitor methods
-  ([`protolasso()`](reference/protolasso.md),
-  [`clusterRepLasso()`](reference/clusterRepLasso.md)), the data
-  generators used in the paper’s simulations, and other helpers.
+  ([`protolasso()`](https://gregfaletto.github.io/cssr-project/reference/protolasso.md),
+  [`clusterRepLasso()`](https://gregfaletto.github.io/cssr-project/reference/clusterRepLasso.md)),
+  the data generators used in the paper’s simulations, and other
+  helpers.
 - The [bookdown that defines the
   package](https://gregfaletto.github.io/cssr-project/create/) contains
   the fully annotated source.

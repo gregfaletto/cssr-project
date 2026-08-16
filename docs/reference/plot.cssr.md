@@ -31,7 +31,7 @@ plot(
 - x:
 
   An object of class "cssr" (the output of the function
-  [`css()`](css.md)).
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)).
 
 - cutoff:
 
@@ -73,13 +73,15 @@ plot(
 
 - weighting:
 
-  Character; passed to [`getCssSelections()`](getCssSelections.md) to
-  determine which individual features are selected (and therefore
+  Character; passed to
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  to determine which individual features are selected (and therefore
   highlighted) when `type = "features"`. It has no effect on the cluster
   bars or on which clusters are highlighted. Must be one of "sparse",
   "weighted_avg", or "simple_avg". Default is "sparse" (matching
-  [`getCssSelections()`](getCssSelections.md) and
-  [`selected()`](selected.md)).
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  and
+  [`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md)).
 
 - ylim:
 
@@ -117,25 +119,29 @@ bar plot.
 ## Details
 
 The selection that determines the highlight is obtained from
-[`getCssSelections()`](getCssSelections.md) with the same `cutoff`,
-`min_num_clusts`, `max_num_clusts`, and `weighting`. Which clusters are
-selected does not depend on `weighting`; which features are selected
-does (the weighting determines which members of the selected clusters
-have nonzero weight and are therefore highlighted when
-`type = "features"`).
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+with the same `cutoff`, `min_num_clusts`, `max_num_clusts`, and
+`weighting`. Which clusters are selected does not depend on `weighting`;
+which features are selected does (the weighting determines which members
+of the selected clusters have nonzero weight and are therefore
+highlighted when `type = "features"`).
 
 Note that, to match the positional argument order of
-[`print.cssr()`](print.cssr.md), the second positional argument is
-`cutoff`; `type`, `weighting`, and the graphical parameters must be
-supplied by name (for example `plot(x, type = "features")`).
+[`print.cssr()`](https://gregfaletto.github.io/cssr-project/reference/print.cssr.md),
+the second positional argument is `cutoff`; `type`, `weighting`, and the
+graphical parameters must be supplied by name (for example
+`plot(x, type = "features")`).
 
 ## See also
 
-[`print.cssr()`](print.cssr.md) and [`summary.cssr()`](summary.cssr.md)
+[`print.cssr()`](https://gregfaletto.github.io/cssr-project/reference/print.cssr.md)
+and
+[`summary.cssr()`](https://gregfaletto.github.io/cssr-project/reference/summary.cssr.md)
 for printed / tabular overviews of the same selection proportions;
-[`selected()`](selected.md) to extract the selected clusters or
-features; [`getCssSelections()`](getCssSelections.md) for the underlying
-selection used to highlight the bars.
+[`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md)
+to extract the selected clusters or features;
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+for the underlying selection used to highlight the bars.
 
 ## Author
 

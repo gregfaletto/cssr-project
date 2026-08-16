@@ -2,16 +2,17 @@
 
 The getting-started guide (the package [home
 page](https://gregfaletto.github.io/cssr-project/)) shows how to *run*
-cluster stability selection with [`css()`](../reference/css.md). This
-vignette shows how to **explore and visualize** a fitted `cssr` object
-using its S3 methods:
+cluster stability selection with
+[`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md).
+This vignette shows how to **explore and visualize** a fitted `cssr`
+object using its S3 methods:
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html),
 [`print()`](https://rdrr.io/r/base/print.html),
 [`summary()`](https://rdrr.io/r/base/summary.html), and
-[`selected()`](../reference/selected.md). All of them read the
-already-computed selection proportions, so they are cheap to call and
-let you explore different `cutoff`s without re-running the (relatively
-expensive) subsampling.
+[`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md).
+All of them read the already-computed selection proportions, so they are
+cheap to call and let you explore different `cutoff`s without re-running
+the (relatively expensive) subsampling.
 
 ``` r
 library(cssr)
@@ -95,9 +96,10 @@ summary(css_output, cutoff = 0.9)
 
 ## Extracting the selection with `selected()`
 
-[`selected()`](../reference/selected.md) returns the selected clusters
-directly – a named list giving the feature indices in each. Pass
-`type = "features"` for the flat vector of all selected features:
+[`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md)
+returns the selected clusters directly – a named list giving the feature
+indices in each. Pass `type = "features"` for the flat vector of all
+selected features:
 
 ``` r
 selected(css_output, cutoff = 0.9)
@@ -126,20 +128,23 @@ selected(css_output, type = "features", cutoff = 0.9)
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html),
 [`print()`](https://rdrr.io/r/base/print.html),
 [`summary()`](https://rdrr.io/r/base/summary.html), and
-[`selected()`](../reference/selected.md) all share the same `cutoff` /
-`min_num_clusts` / `max_num_clusts` arguments, so you can dial the
-selection in without re-running [`css()`](../reference/css.md).
+[`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md)
+all share the same `cutoff` / `min_num_clusts` / `max_num_clusts`
+arguments, so you can dial the selection in without re-running
+[`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md).
 
 ## See also
 
 - The getting-started guide (package [home
   page](https://gregfaletto.github.io/cssr-project/)) for running
-  [`css()`](../reference/css.md) and
-  [`cssSelect()`](../reference/cssSelect.md).
-- [`vignette("prediction", "cssr")`](../articles/prediction.md) for
-  predicting `y` on new observations with cluster representatives.
-- [`?plot.cssr`](../reference/plot.cssr.md),
-  [`?summary.cssr`](../reference/summary.cssr.md),
-  [`?selected`](../reference/selected.md), and
-  [`?getCssSelections`](../reference/getCssSelections.md) for the full
-  argument reference.
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)
+  and
+  [`cssSelect()`](https://gregfaletto.github.io/cssr-project/reference/cssSelect.md).
+- [`vignette("prediction", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/prediction.md)
+  for predicting `y` on new observations with cluster representatives.
+- [`?plot.cssr`](https://gregfaletto.github.io/cssr-project/reference/plot.cssr.md),
+  [`?summary.cssr`](https://gregfaletto.github.io/cssr-project/reference/summary.cssr.md),
+  [`?selected`](https://gregfaletto.github.io/cssr-project/reference/selected.md),
+  and
+  [`?getCssSelections`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  for the full argument reference.
