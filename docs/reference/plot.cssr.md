@@ -90,21 +90,21 @@ plot(
 
 - sel_col:
 
-  The colour used to fill the bars of selected clusters (or features).
+  The color used to fill the bars of selected clusters (or features).
   Default is "steelblue".
 
 - unsel_col:
 
-  The colour used to fill the bars of unselected clusters (or features).
+  The color used to fill the bars of unselected clusters (or features).
   Default is "grey70".
 
 - ...:
 
   Additional graphical parameters passed on to
   [`graphics::barplot()`](https://rdrr.io/r/graphics/barplot.html) (for
-  example `main` or `cex.names`). The bar heights, fill colours, and
+  example `main` or `cex.names`). The bar heights, fill colors, and
   `ylim` are controlled by this method; supplying `col` here, or the
-  `ylim` argument, overrides the highlight colours or the default y-axis
+  `ylim` argument, overrides the highlight colors or the default y-axis
   limits.
 
 ## Value

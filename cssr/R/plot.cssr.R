@@ -56,14 +56,14 @@
 #' [selected()]).
 #' @param ylim Numeric vector of length 2; the y-axis limits for the bar plot.
 #' Default is `c(0, 1)`, the natural range of a selection proportion.
-#' @param sel_col The colour used to fill the bars of selected clusters (or
+#' @param sel_col The color used to fill the bars of selected clusters (or
 #' features). Default is "steelblue".
-#' @param unsel_col The colour used to fill the bars of unselected clusters (or
+#' @param unsel_col The color used to fill the bars of unselected clusters (or
 #' features). Default is "grey70".
 #' @param ... Additional graphical parameters passed on to
 #' [graphics::barplot()] (for example `main` or `cex.names`). The bar heights,
-#' fill colours, and `ylim` are controlled by this method; supplying `col` here,
-#' or the `ylim` argument, overrides the highlight colours or the default y-axis
+#' fill colors, and `ylim` are controlled by this method; supplying `col` here,
+#' or the `ylim` argument, overrides the highlight colors or the default y-axis
 #' limits.
 #' @return Invisibly, the numeric vector of selection proportions that were
 #' plotted: the `colMeans()` of the cluster (or feature) selection matrix,

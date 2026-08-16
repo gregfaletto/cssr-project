@@ -59,16 +59,16 @@ clusters are highlighted. Must be one of "sparse", "weighted_avg", or
 \item{ylim}{Numeric vector of length 2; the y-axis limits for the bar plot.
 Default is \code{c(0, 1)}, the natural range of a selection proportion.}
 
-\item{sel_col}{The colour used to fill the bars of selected clusters (or
+\item{sel_col}{The color used to fill the bars of selected clusters (or
 features). Default is "steelblue".}
 
-\item{unsel_col}{The colour used to fill the bars of unselected clusters (or
+\item{unsel_col}{The color used to fill the bars of unselected clusters (or
 features). Default is "grey70".}
 
 \item{...}{Additional graphical parameters passed on to
 \code{\link[graphics:barplot]{graphics::barplot()}} (for example \code{main} or \code{cex.names}). The bar heights,
-fill colours, and \code{ylim} are controlled by this method; supplying \code{col} here,
-or the \code{ylim} argument, overrides the highlight colours or the default y-axis
+fill colors, and \code{ylim} are controlled by this method; supplying \code{col} here,
+or the \code{ylim} argument, overrides the highlight colors or the default y-axis
 limits.}
 }
 \value{
