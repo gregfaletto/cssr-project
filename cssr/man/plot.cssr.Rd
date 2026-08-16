@@ -104,7 +104,7 @@ graphical parameters must be supplied by name (for example
 set.seed(1)
 data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
   cluster_size = 4, n_clusters = 1, snr = 3)
-# Name the features so the feature plot shows labelled, highlighted bars
+# Name the features so the feature plot shows labeled, highlighted bars
 # (genClusteredData returns X with no column names).
 X <- data$X
 colnames(X) <- paste0("V", seq_len(ncol(X)))

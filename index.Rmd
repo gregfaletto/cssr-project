@@ -5330,7 +5330,7 @@ print.cssr <- function(x, cutoff=0, min_num_clusts=1, max_num_clusts=NA, ...){
 #' set.seed(1)
 #' data <- genClusteredData(n = 50, p = 11, k_unclustered = 2,
 #'   cluster_size = 4, n_clusters = 1, snr = 3)
-#' # Name the features so the feature plot shows labelled, highlighted bars
+#' # Name the features so the feature plot shows labeled, highlighted bars
 #' # (genClusteredData returns X with no column names).
 #' X <- data$X
 #' colnames(X) <- paste0("V", seq_len(ncol(X)))
@@ -14204,12 +14204,12 @@ Two further tests pin down the issue #160 fixes. Both mock the `graphics`
 drawing primitives with `testthat::with_mocked_bindings()` so they can assert on
 the arguments the method actually passes to them. The first checks that a
 user-supplied `col` in `...` now reaches `barplot()` verbatim -- and that, with
-no `col`, the method's own highlight colours still apply. The second checks that
+no `col`, the method's own highlight colors still apply. The second checks that
 the dashed `cutoff` line is drawn only for `type = "clusters"` (whose axis
 matches the highlight) and never for `type = "features"`.
 
 ```{r}
-testthat::test_that("plot.cssr honours a user col in ... and otherwise applies the highlight (#160a)", {
+testthat::test_that("plot.cssr honors a user col in ... and otherwise applies the highlight (#160a)", {
   set.seed(26717)
   x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
   colnames(x) <- paste0("V", seq_len(ncol(x)))
@@ -14223,7 +14223,7 @@ testthat::test_that("plot.cssr honours a user col in ... and otherwise applies t
   on.exit(grDevices::dev.off(), add=TRUE)
 
   # (a1) A user col in ... must reach barplot() verbatim. Before #160a the method
-  # overwrote it with the highlight colours (this asserted "red" but got
+  # overwrote it with the highlight colors (this asserted "red" but got
   # steelblue/grey70).
   captured <- NULL
   testthat::with_mocked_bindings(
@@ -14286,7 +14286,7 @@ testthat::test_that("plot.cssr draws the cutoff line only for type='clusters' (#
   testthat::expect_true(called)
   testthat::expect_equal(ab_args$h, 0.6)
 
-  # (b3) cutoff=0: no line in either mode (unchanged behaviour).
+  # (b3) cutoff=0: no line in either mode (unchanged behavior).
   called <- FALSE
   testthat::with_mocked_bindings(
     abline = function(...) called <<- TRUE,
@@ -17142,7 +17142,7 @@ testthat::test_that("processClusterLassoInputs rejects X with mixed named and NA
 
 # Documenting the package and adding README and pkgdown website
 
-At build time we generate the package's reference documentation, README, and pkgdown website: `litr::document()` writes the `man/` pages and `NAMESPACE`; the README is rendered from `source-files/README.Rmd` (its two figures copied into `man/figures/`); the `CITATION` file is installed so `citation("cssr")` and the pkgdown "Citation" page cite the paper (arXiv:2201.00494), and the `WORDLIST` file is installed alongside it so that `devtools::spell_check()` accepts this package's domain vocabulary — author surnames, package and function names, data-frame column names, mathematical and typographic tokens, and fragments of underscore-separated identifiers, among others — and flags only genuine misspellings; the **Exploring results**, **Prediction**, and **Advanced usage** vignettes are added from `source-files/` via `litr::add_vignettes()`; and `litr::add_pkgdown()` builds the site (including the vignettes under Articles).
+At build time we generate the package's reference documentation, README, and pkgdown website: `litr::document()` writes the `man/` pages and `NAMESPACE`; the README is rendered from `source-files/README.Rmd` (its two figures copied into `man/figures/`); the `CITATION` file is installed so `citation("cssr")` and the pkgdown "Citation" page cite the paper (arXiv:2201.00494), and the `WORDLIST` file is installed alongside it so that `devtools::spell_check()` accepts this package's domain vocabulary and flags only genuine misspellings. Its entries fall into a few groups: author surnames and the journals that published them; package, function, and argument names; data-frame column names; fragments of underscore-separated identifiers, which appear because the spell checker splits tokens at underscores (so `X_train_selec` contributes `selec`, and `clus_sel_mat` contributes `clus` and `sel` — these are documented argument and slot names, not truncations); a few mathematical and typographic tokens from the README's LaTeX; the R color literals `grey` and `steelblue`, which are spellings fixed by R's own palette rather than by us and so are quoted verbatim from default argument values; and a handful of ordinary English words the `en_US` dictionary happens to lack. Everything else is treated as a typo and fixed at the source; the **Exploring results**, **Prediction**, and **Advanced usage** vignettes are added from `source-files/` via `litr::add_vignettes()`; and `litr::add_pkgdown()` builds the site (including the vignettes under Articles).
 
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 litr::document() # <-- use instead of devtools::document()
