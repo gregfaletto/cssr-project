@@ -6000,12 +6000,18 @@ testthat::test_that("genClusteredDataWeighted enforces the documented n_strong_c
   weak <- c(4L, 8L)
   testthat::expect_equal(res$X[, strong], Z_expanded[, strong])
   testthat::expect_false(any(res$X[, weak] == Z_expanded[, weak]))
-  # The weak proxies must still carry the latent signal at roughly rho_low --
-  # otherwise a bug replacing them with pure noise would pass the two
-  # assertions above, both of which only require them to differ from Z.
+  # The weak proxies must still carry the latent signal at roughly rho_low, and
+  # this is a two-sided band rather than a floor on purpose. A one-sided
+  # "> 0.3" passes a bug that hands the weak proxies rho_high instead
+  # (measured: weak_cor 0.951, 0.956) -- which is precisely the strong/weak
+  # split failure this block exists to catch, so a floor would be blind to it.
+  # At n = 500 the sampling sd of the correlation is ~0.034 and the seed is
+  # fixed, so a 0.1 band is ~3 sd wide: the correct values sit 0.028 and 0.040
+  # away from rho_low, while pure noise (~0) and a rho_high mix-up (~0.95) both
+  # fall well outside.
   weak_cor <- vapply(weak,
     function(j) stats::cor(res$X[, j], Z_expanded[, j]), numeric(1))
-  testthat::expect_true(all(weak_cor > 0.3))
+  testthat::expect_true(all(abs(weak_cor - 0.5) < 0.1))
   testthat::expect_false(anyNA(res$X))
 })
 
