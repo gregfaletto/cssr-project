@@ -11,7 +11,7 @@
 #' from Faletto and Bien (2022).
 #' @param n Integer or numeric; the number of observations to generate. (The
 #' generated X and Z will have n rows, and the generated y and mu will have
-#' length n.)
+#' length n.) Must be at least 2.
 #' @param p Integer or numeric; the number of features to generate. The
 #' generated X will have p columns.
 #' @param k_unclustered Integer or numeric; the number of features in X that
