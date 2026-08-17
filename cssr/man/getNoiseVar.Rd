@@ -5,10 +5,10 @@
 \title{Get variance of noise to add to Z in order to yield proxies X with desired
 correlations with Z}
 \usage{
-getNoiseVar(cor)
+getNoiseVar(rho)
 }
 \arguments{
-\item{cor}{A numeric vector of desired correlations for each proxy to have
+\item{rho}{A numeric vector of desired correlations for each proxy to have
 with Z. Note: correlations must be in (0, 1] (positive and at most 1).}
 }
 \value{
