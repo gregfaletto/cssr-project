@@ -431,41 +431,42 @@ check order.</p>
 <span id="cb63-102"><a href="other-useful.html#cb63-102" tabindex="-1"></a><span class="co">#' Two things here are contract, not style. The formals must stay named</span></span>
 <span id="cb63-103"><a href="other-useful.html#cb63-103" tabindex="-1"></a><span class="co">#' `rho_high` / `rho_low`, because `stopifnot()` deparses the expression as</span></span>
 <span id="cb63-104"><a href="other-useful.html#cb63-104" tabindex="-1"></a><span class="co">#' written here, so the FORMAL's name is what the user sees (#162). And the</span></span>
-<span id="cb63-105"><a href="other-useful.html#cb63-105" tabindex="-1"></a><span class="co">#' type/length/NA checks must precede every range check: `"0.9" &gt;= "0.5"` is</span></span>
-<span id="cb63-106"><a href="other-useful.html#cb63-106" tabindex="-1"></a><span class="co">#' TRUE, since R compares character to numeric as strings; `!is.na()` is</span></span>
-<span id="cb63-107"><a href="other-useful.html#cb63-107" tabindex="-1"></a><span class="co">#' vectorized, so a length-2 argument containing NA reports the plural "are</span></span>
-<span id="cb63-108"><a href="other-useful.html#cb63-108" tabindex="-1"></a><span class="co">#' not all TRUE" rather than the length violation; and</span></span>
-<span id="cb63-109"><a href="other-useful.html#cb63-109" tabindex="-1"></a><span class="co">#' `stopifnot(numeric(0) &lt;= 1)` does not error at all, since</span></span>
-<span id="cb63-110"><a href="other-useful.html#cb63-110" tabindex="-1"></a><span class="co">#' `all(logical(0))` is TRUE. The tests pin every message below, so changing</span></span>
-<span id="cb63-111"><a href="other-useful.html#cb63-111" tabindex="-1"></a><span class="co">#' either turns many expectations red at once -- the failure mode to guard</span></span>
-<span id="cb63-112"><a href="other-useful.html#cb63-112" tabindex="-1"></a><span class="co">#' against is "repairing" them to match the new messages, which ships #162's</span></span>
-<span id="cb63-113"><a href="other-useful.html#cb63-113" tabindex="-1"></a><span class="co">#' defect green.</span></span>
-<span id="cb63-114"><a href="other-useful.html#cb63-114" tabindex="-1"></a><span class="co">#' @param rho_high,rho_low As documented in</span></span>
-<span id="cb63-115"><a href="other-useful.html#cb63-115" tabindex="-1"></a><span class="co">#' `<a href="other-useful.html#checkGenClusteredDataWeightedInputs">checkGenClusteredDataWeightedInputs</a>()` and</span></span>
-<span id="cb63-116"><a href="other-useful.html#cb63-116" tabindex="-1"></a><span class="co">#' `<a href="other-useful.html#checkGenClusteredDataWeightedRandomInputs">checkGenClusteredDataWeightedRandomInputs</a>()`. Both callers are named</span></span>
-<span id="cb63-117"><a href="other-useful.html#cb63-117" tabindex="-1"></a><span class="co">#' because the two describe these arguments differently -- fixed correlations</span></span>
-<span id="cb63-118"><a href="other-useful.html#cb63-118" tabindex="-1"></a><span class="co">#' for the strong and weak proxies in one, the endpoints of the interval each</span></span>
-<span id="cb63-119"><a href="other-useful.html#cb63-119" tabindex="-1"></a><span class="co">#' proxy's correlation is drawn from in the other -- and their rho_high</span></span>
-<span id="cb63-120"><a href="other-useful.html#cb63-120" tabindex="-1"></a><span class="co">#' defaults differ (0.9 and 1). The constraint enforced here is the same for</span></span>
-<span id="cb63-121"><a href="other-useful.html#cb63-121" tabindex="-1"></a><span class="co">#' both.</span></span>
-<span id="cb63-122"><a href="other-useful.html#cb63-122" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring on bad input.</span></span>
-<span id="cb63-123"><a href="other-useful.html#cb63-123" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb63-124"><a href="other-useful.html#cb63-124" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb63-125"><a href="other-useful.html#cb63-125" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb63-126"><a href="other-useful.html#cb63-126" tabindex="-1"></a><span id="checkRhoHighLow">checkRhoHighLow</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(rho_high, rho_low){</span>
-<span id="cb63-127"><a href="other-useful.html#cb63-127" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(rho_high) <span class="sc">|</span> <span class="fu">is.integer</span>(rho_high))</span>
-<span id="cb63-128"><a href="other-useful.html#cb63-128" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(rho_high) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb63-129"><a href="other-useful.html#cb63-129" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(rho_high))</span>
-<span id="cb63-130"><a href="other-useful.html#cb63-130" tabindex="-1"></a></span>
-<span id="cb63-131"><a href="other-useful.html#cb63-131" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(rho_low) <span class="sc">|</span> <span class="fu">is.integer</span>(rho_low))</span>
-<span id="cb63-132"><a href="other-useful.html#cb63-132" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(rho_low) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb63-133"><a href="other-useful.html#cb63-133" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(rho_low))</span>
-<span id="cb63-134"><a href="other-useful.html#cb63-134" tabindex="-1"></a></span>
-<span id="cb63-135"><a href="other-useful.html#cb63-135" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&lt;=</span> <span class="dv">1</span>)</span>
-<span id="cb63-136"><a href="other-useful.html#cb63-136" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb63-137"><a href="other-useful.html#cb63-137" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_low <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb63-138"><a href="other-useful.html#cb63-138" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&gt;=</span> rho_low)</span>
-<span id="cb63-139"><a href="other-useful.html#cb63-139" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb63-105"><a href="other-useful.html#cb63-105" tabindex="-1"></a><span class="co">#' type/length/NA checks must precede every range check: `"0.9" &gt;= 0.5` is</span></span>
+<span id="cb63-106"><a href="other-useful.html#cb63-106" tabindex="-1"></a><span class="co">#' TRUE, since R coerces the number to a string and compares as strings</span></span>
+<span id="cb63-107"><a href="other-useful.html#cb63-107" tabindex="-1"></a><span class="co">#' (`"10" &gt;= 9` is FALSE, which is the giveaway); `!is.na()` is</span></span>
+<span id="cb63-108"><a href="other-useful.html#cb63-108" tabindex="-1"></a><span class="co">#' vectorized, so a length-2 argument containing NA reports the plural "are</span></span>
+<span id="cb63-109"><a href="other-useful.html#cb63-109" tabindex="-1"></a><span class="co">#' not all TRUE" rather than the length violation; and</span></span>
+<span id="cb63-110"><a href="other-useful.html#cb63-110" tabindex="-1"></a><span class="co">#' `stopifnot(numeric(0) &lt;= 1)` does not error at all, since</span></span>
+<span id="cb63-111"><a href="other-useful.html#cb63-111" tabindex="-1"></a><span class="co">#' `all(logical(0))` is TRUE. The tests pin every message below, so changing</span></span>
+<span id="cb63-112"><a href="other-useful.html#cb63-112" tabindex="-1"></a><span class="co">#' either turns many expectations red at once -- the failure mode to guard</span></span>
+<span id="cb63-113"><a href="other-useful.html#cb63-113" tabindex="-1"></a><span class="co">#' against is "repairing" them to match the new messages, which ships #162's</span></span>
+<span id="cb63-114"><a href="other-useful.html#cb63-114" tabindex="-1"></a><span class="co">#' defect green.</span></span>
+<span id="cb63-115"><a href="other-useful.html#cb63-115" tabindex="-1"></a><span class="co">#' @param rho_high,rho_low As documented in</span></span>
+<span id="cb63-116"><a href="other-useful.html#cb63-116" tabindex="-1"></a><span class="co">#' `<a href="other-useful.html#checkGenClusteredDataWeightedInputs">checkGenClusteredDataWeightedInputs</a>()` and</span></span>
+<span id="cb63-117"><a href="other-useful.html#cb63-117" tabindex="-1"></a><span class="co">#' `<a href="other-useful.html#checkGenClusteredDataWeightedRandomInputs">checkGenClusteredDataWeightedRandomInputs</a>()`. Both callers are named</span></span>
+<span id="cb63-118"><a href="other-useful.html#cb63-118" tabindex="-1"></a><span class="co">#' because the two describe these arguments differently -- fixed correlations</span></span>
+<span id="cb63-119"><a href="other-useful.html#cb63-119" tabindex="-1"></a><span class="co">#' for the strong and weak proxies in one, the endpoints of the interval each</span></span>
+<span id="cb63-120"><a href="other-useful.html#cb63-120" tabindex="-1"></a><span class="co">#' proxy's correlation is drawn from in the other -- and their rho_high</span></span>
+<span id="cb63-121"><a href="other-useful.html#cb63-121" tabindex="-1"></a><span class="co">#' defaults differ (0.9 and 1). The constraint enforced here is the same for</span></span>
+<span id="cb63-122"><a href="other-useful.html#cb63-122" tabindex="-1"></a><span class="co">#' both.</span></span>
+<span id="cb63-123"><a href="other-useful.html#cb63-123" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring on bad input.</span></span>
+<span id="cb63-124"><a href="other-useful.html#cb63-124" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb63-125"><a href="other-useful.html#cb63-125" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb63-126"><a href="other-useful.html#cb63-126" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb63-127"><a href="other-useful.html#cb63-127" tabindex="-1"></a><span id="checkRhoHighLow">checkRhoHighLow</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(rho_high, rho_low){</span>
+<span id="cb63-128"><a href="other-useful.html#cb63-128" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(rho_high) <span class="sc">|</span> <span class="fu">is.integer</span>(rho_high))</span>
+<span id="cb63-129"><a href="other-useful.html#cb63-129" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(rho_high) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb63-130"><a href="other-useful.html#cb63-130" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(rho_high))</span>
+<span id="cb63-131"><a href="other-useful.html#cb63-131" tabindex="-1"></a></span>
+<span id="cb63-132"><a href="other-useful.html#cb63-132" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(rho_low) <span class="sc">|</span> <span class="fu">is.integer</span>(rho_low))</span>
+<span id="cb63-133"><a href="other-useful.html#cb63-133" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(rho_low) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb63-134"><a href="other-useful.html#cb63-134" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(rho_low))</span>
+<span id="cb63-135"><a href="other-useful.html#cb63-135" tabindex="-1"></a></span>
+<span id="cb63-136"><a href="other-useful.html#cb63-136" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&lt;=</span> <span class="dv">1</span>)</span>
+<span id="cb63-137"><a href="other-useful.html#cb63-137" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb63-138"><a href="other-useful.html#cb63-138" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_low <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb63-139"><a href="other-useful.html#cb63-139" tabindex="-1"></a>    <span class="fu">stopifnot</span>(rho_high <span class="sc">&gt;=</span> rho_low)</span>
+<span id="cb63-140"><a href="other-useful.html#cb63-140" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#checkGenClusteredDataInputs">checkGenClusteredDataInputs</a>()</code></p>
 <div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="other-useful.html#cb64-1" tabindex="-1"></a><span class="co">#' Check inputs to genClusteredData</span></span>
 <span id="cb64-2"><a href="other-useful.html#cb64-2" tabindex="-1"></a><span class="co">#'</span></span>

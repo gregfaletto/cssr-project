@@ -104,8 +104,9 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
 #' Two things here are contract, not style. The formals must stay named
 #' `rho_high` / `rho_low`, because `stopifnot()` deparses the expression as
 #' written here, so the FORMAL's name is what the user sees (#162). And the
-#' type/length/NA checks must precede every range check: `"0.9" >= "0.5"` is
-#' TRUE, since R compares character to numeric as strings; `!is.na()` is
+#' type/length/NA checks must precede every range check: `"0.9" >= 0.5` is
+#' TRUE, since R coerces the number to a string and compares as strings
+#' (`"10" >= 9` is FALSE, which is the giveaway); `!is.na()` is
 #' vectorized, so a length-2 argument containing NA reports the plural "are
 #' not all TRUE" rather than the length violation; and
 #' `stopifnot(numeric(0) <= 1)` does not error at all, since

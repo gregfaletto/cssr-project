@@ -4047,8 +4047,9 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
 #' Two things here are contract, not style. The formals must stay named
 #' `rho_high` / `rho_low`, because `stopifnot()` deparses the expression as
 #' written here, so the FORMAL's name is what the user sees (#162). And the
-#' type/length/NA checks must precede every range check: `"0.9" >= "0.5"` is
-#' TRUE, since R compares character to numeric as strings; `!is.na()` is
+#' type/length/NA checks must precede every range check: `"0.9" >= 0.5` is
+#' TRUE, since R coerces the number to a string and compares as strings
+#' (`"10" >= 9` is FALSE, which is the giveaway); `!is.na()` is
 #' vectorized, so a length-2 argument containing NA reports the plural "are
 #' not all TRUE" rather than the length violation; and
 #' `stopifnot(numeric(0) <= 1)` does not error at all, since
@@ -12886,10 +12887,28 @@ testthat::test_that("genClusteredData rejects a non-numeric rho (#162)", {
   # Without the type check this slipped through: stopifnot("0.8" > 0) is TRUE,
   # because R compares character to numeric as strings. It then failed later,
   # inside getNoiseVar().
+  #
+  # The message alone stopped being a sufficient guard when #181 renamed
+  # getNoiseVar()'s formal cor -> rho: the validator's check and getNoiseVar()'s
+  # are now the SAME line, so both raise
+  #   is.numeric(rho) | is.integer(rho) is not TRUE
+  # and the string can no longer tell "rejected up front" from "died late
+  # inside getNoiseVar()". Measured: deleting the validator's type check leaves
+  # this block green if it pins only the message, because "0.8" > 0 and
+  # "0.8" <= 1 are both TRUE (string comparison), so a character rho reaches
+  # genZmuY(), draws from the stream, and dies in getNoiseVar() raising the
+  # identical condition.
+  #
+  # The RNG state distinguishes the two frames no matter what the message says,
+  # and early rejection is what #162 was actually about -- so assert it here
+  # rather than relying on a string that two independent guards now share.
+  set.seed(20260817)
+  seed_before <- .Random.seed
   testthat::expect_error(
     genClusteredData(n = 50, p = 13, k_unclustered = 2, cluster_size = 4,
                      n_clusters = 2, rho = "0.8", sigma_eps_sq = 1),
     "is.numeric(rho) | is.integer(rho) is not TRUE", fixed = TRUE)
+  testthat::expect_identical(.Random.seed, seed_before)
 })
 
 testthat::test_that("genClusteredData rejects a length > 1 rho (#162)", {
@@ -13006,8 +13025,10 @@ testthat::test_that("genClusteredDataWeighted rejects a non-numeric rho_high (#1
   # Previously slipped past all four range checks and died inside
   # getNoiseVar(), naming that helper's formal rather than the user's
   # argument, and only after the RNG had already advanced. The type check has
-  # to precede every range check: stopifnot("0.9" >= "0.5") is TRUE, because R
-  # compares character to numeric as strings rather than erroring.
+  # to precede every range check: stopifnot("0.9" >= 0.5) is TRUE, because R
+  # coerces the number to a string and compares as strings rather than
+  # erroring. ("10" >= 9 is FALSE, which is the giveaway that it is a string
+  # comparison and not a numeric one.)
   testthat::expect_error(
     genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
       cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
