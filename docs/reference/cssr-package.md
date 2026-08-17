@@ -8,7 +8,8 @@ please visit its website <https://gregfaletto.github.io/cssr-project/>.
 
 ## See also
 
-[`css`](css.md) [`cssSelect`](cssSelect.md)
+[`css`](https://gregfaletto.github.io/cssr-project/reference/css.md)
+[`cssSelect`](https://gregfaletto.github.io/cssr-project/reference/cssSelect.md)
 
 ## Author
 

@@ -14,7 +14,8 @@ cssLasso(X, y, lambda)
 - X:
 
   A design matrix containing the predictors. (In practice this will be a
-  subsample of the full design matrix provided to [`css()`](css.md).)
+  subsample of the full design matrix provided to
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md).)
 
 - y:
 

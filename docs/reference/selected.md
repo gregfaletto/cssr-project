@@ -3,7 +3,7 @@
 A convenient S3 accessor for the selected clusters (the default) or the
 selected features of a fitted `cssr` object, without re-running the
 (computationally expensive) subsampling. This is a thin wrapper around
-[`getCssSelections()`](getCssSelections.md).
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md).
 
 ## Usage
 
@@ -27,7 +27,7 @@ selected(
 - object:
 
   An object of class "cssr" (the output of the function
-  [`css()`](css.md)).
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)).
 
 - ...:
 
@@ -68,15 +68,16 @@ selected(
 
 - weighting:
 
-  Character; passed to [`getCssSelections()`](getCssSelections.md) to
-  determine the weights of individual features within the selected
+  Character; passed to
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  to determine the weights of individual features within the selected
   clusters. This affects ONLY `type = "features"` (it determines which
   cluster members have nonzero weight and are therefore returned); it is
   a no-op for `type = "clusters"`, whose selected clusters, selection
   proportions, and sizes do not depend on the weighting. Must be one of
   "sparse", "weighted_avg", or "simple_avg". See
-  [`getCssSelections()`](getCssSelections.md) for details. Default is
-  "sparse".
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  for details. Default is "sparse".
 
 ## Value
 
@@ -101,11 +102,14 @@ preprint arXiv:2201.00494*. <https://arxiv.org/abs/2201.00494>.
 
 ## See also
 
-[`summary.cssr()`](summary.cssr.md) for an overview (counts plus a
-per-cluster table); [`getCssSelections()`](getCssSelections.md) for the
-underlying selection (clusters, features, and weights together);
-[`printCssDf()`](printCssDf.md) and [`print.cssr()`](print.cssr.md) for
-the printed summary.
+[`summary.cssr()`](https://gregfaletto.github.io/cssr-project/reference/summary.cssr.md)
+for an overview (counts plus a per-cluster table);
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+for the underlying selection (clusters, features, and weights together);
+[`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md)
+and
+[`print.cssr()`](https://gregfaletto.github.io/cssr-project/reference/print.cssr.md)
+for the printed summary.
 
 ## Author
 

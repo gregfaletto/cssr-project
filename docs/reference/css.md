@@ -133,12 +133,14 @@ css(
 
   Optional; an integer or numeric vector containing the indices of
   observations in `X` and `y` to set aside for model training by the
-  function [`getCssPreds()`](getCssPreds.md) after feature selection.
-  (This will only work if `y` is real-valued, because
-  [`getCssPreds()`](getCssPreds.md) using ordinary least squares
-  regression to generate predictions.) If `train_inds` is not provided,
-  all of the observations in the provided data set will be used for
-  feature selection.
+  function
+  [`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md)
+  after feature selection. (This will only work if `y` is real-valued,
+  because
+  [`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md)
+  using ordinary least squares regression to generate predictions.) If
+  `train_inds` is not provided, all of the observations in the provided
+  data set will be used for feature selection.
 
 - num_cores:
 
@@ -200,12 +202,11 @@ preprint arXiv:2201.00494*. <https://arxiv.org/abs/2201.00494>.
 Shah, R. D., & Samworth, R. J. (2013). Variable selection with error
 control: Another look at stability selection. *Journal of the Royal
 Statistical Society. Series B: Statistical Methodology*, 75(1), 55–80.
-<https://doi.org/10.1109/RITA.2014.2302071>.
+<https://doi.org/10.1111/j.1467-9868.2011.01034.x>.
 
 Meinshausen, N., & Bühlmann, P. (2010). Stability Selection. *Journal of
 the Royal Statistical Society. Series B: Statistical Methodology*,
-72(4), 417–473.
-<https://rss.onlinelibrary.wiley.com/doi/full/10.1111/j.1467-9868.2010.00740.x>.
+72(4), 417–473. <https://doi.org/10.1111/j.1467-9868.2010.00740.x>.
 
 Beinrucker, A., Dogan, Ü., & Blanchard, G. (2016). Extensions of
 stability selection using subsamples of observations and covariates.

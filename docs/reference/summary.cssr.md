@@ -3,8 +3,9 @@
 Produce a concise, computable overview of a fitted `cssr` object: a
 header with the number of selected clusters and features (at the given
 cutoff), a per-cluster table built on top of
-[`printCssDf()`](printCssDf.md), and a placeholder for per-family error
-rate (PFER) error-control content.
+[`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md),
+and a placeholder for per-family error rate (PFER) error-control
+content.
 
 ## Usage
 
@@ -36,7 +37,7 @@ summary(
 - object:
 
   An object of class "cssr" (the output of the function
-  [`css()`](css.md)).
+  [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)).
 
 - cutoff:
 
@@ -62,11 +63,14 @@ summary(
 
 - weighting:
 
-  Character; passed to [`getCssSelections()`](getCssSelections.md) to
-  determine the selected features and hence the selected-feature count
-  in the header. As in [`selected()`](selected.md), it does NOT affect
-  which clusters are selected or the per-cluster table. Must be one of
-  "sparse", "weighted_avg", or "simple_avg". Default is "sparse".
+  Character; passed to
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  to determine the selected features and hence the selected-feature
+  count in the header. As in
+  [`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md),
+  it does NOT affect which clusters are selected or the per-cluster
+  table. Must be one of "sparse", "weighted_avg", or "simple_avg".
+  Default is "sparse".
 
 ## Value
 
@@ -87,7 +91,8 @@ An object of class "summary.cssr": a named list with elements
 - table:
 
   A data.frame with one row per selected cluster (the output of
-  [`printCssDf()`](printCssDf.md)), or NULL when the selection is empty.
+  [`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md)),
+  or NULL when the selection is empty.
 
 - pfer:
 
@@ -98,9 +103,10 @@ An object of class "summary.cssr": a named list with elements
 
 The returned object has class "summary.cssr" and an accompanying print
 method (`print.summary.cssr()`). Its `table` element is exactly the
-data.frame returned by [`printCssDf()`](printCssDf.md): one row per
-selected cluster, sorted by selection proportion, with columns
-ClustName, ClustProtoName (only if the features are named),
+data.frame returned by
+[`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md):
+one row per selected cluster, sorted by selection proportion, with
+columns ClustName, ClustProtoName (only if the features are named),
 ClustProtoNum, ClustSelProp (the cluster's selection proportion) and
 ClustSize.
 
@@ -108,19 +114,23 @@ If the selection is empty (for example `cutoff = 1` with
 `min_num_clusts = 0` when no cluster reaches the cutoff), `summary.cssr`
 returns a well-formed zero-row object without error: `table` is NULL and
 the header reports "0 clusters / 0 features selected". In this case
-[`printCssDf()`](printCssDf.md) and its helper are deliberately NOT
-called, as they require at least one selected cluster.
+[`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md)
+and its helper are deliberately NOT called, as they require at least one
+selected cluster.
 
 The `pfer` element is a documented placeholder (NA) reserved for
 error-control content to be filled in by a future release (issue \#87).
 
 ## See also
 
-[`selected()`](selected.md) to extract just the selected clusters or
-features; [`getCssSelections()`](getCssSelections.md) for the underlying
-selection; [`printCssDf()`](printCssDf.md) for the per-cluster
-data.frame; [`print.cssr()`](print.cssr.md) for the analogous printed
-summary.
+[`selected()`](https://gregfaletto.github.io/cssr-project/reference/selected.md)
+to extract just the selected clusters or features;
+[`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+for the underlying selection;
+[`printCssDf()`](https://gregfaletto.github.io/cssr-project/reference/printCssDf.md)
+for the per-cluster data.frame;
+[`print.cssr()`](https://gregfaletto.github.io/cssr-project/reference/print.cssr.md)
+for the analogous printed summary.
 
 ## Author
 

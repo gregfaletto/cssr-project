@@ -1,4 +1,4 @@
-# Prepares a data.frame summarazing cluster stability selection output to print
+# Prepares a data.frame summarizing cluster stability selection output to print
 
 Print a summary of the information from the css function.
 

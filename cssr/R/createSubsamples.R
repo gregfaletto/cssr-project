@@ -33,7 +33,7 @@
 #' (2013). Variable selection with error control: Another look at stability
 #' selection. \emph{Journal of the Royal Statistical Society. Series B:
 #' Statistical Methodology}, 75(1), 55–80.
-#' \url{https://doi.org/10.1109/RITA.2014.2302071}.
+#' \url{https://doi.org/10.1111/j.1467-9868.2011.01034.x}.
 #' @keywords internal
 #' @noRd
 createSubsamples <- function(n, p, B, sampling_type, prop_feats_remove=0){

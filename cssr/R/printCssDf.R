@@ -1,6 +1,6 @@
 # Generated from _main.Rmd: do not edit by hand
 
-#' Prepares a data.frame summarazing cluster stability selection output to print
+#' Prepares a data.frame summarizing cluster stability selection output to print
 #'
 #' Print a summary of the information from the css function.
 #' @param css_results An object of class "cssr" (the output of the function

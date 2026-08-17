@@ -7190,7 +7190,7 @@ testthat::test_that("plot.cssr surfaces the tie-breach warning (#159c)", {
     "Returning more than max_num_clusts", fixed = TRUE)
 })
 
-testthat::test_that("plot.cssr honours a user col in ... and otherwise applies the highlight (#160a)", {
+testthat::test_that("plot.cssr honors a user col in ... and otherwise applies the highlight (#160a)", {
   set.seed(26717)
   x <- matrix(stats::rnorm(10*7), nrow=10, ncol=7)
   colnames(x) <- paste0("V", seq_len(ncol(x)))
@@ -7204,7 +7204,7 @@ testthat::test_that("plot.cssr honours a user col in ... and otherwise applies t
   on.exit(grDevices::dev.off(), add=TRUE)
 
   # (a1) A user col in ... must reach barplot() verbatim. Before #160a the method
-  # overwrote it with the highlight colours (this asserted "red" but got
+  # overwrote it with the highlight colors (this asserted "red" but got
   # steelblue/grey70).
   captured <- NULL
   testthat::with_mocked_bindings(
@@ -7267,7 +7267,7 @@ testthat::test_that("plot.cssr draws the cutoff line only for type='clusters' (#
   testthat::expect_true(called)
   testthat::expect_equal(ab_args$h, 0.6)
 
-  # (b3) cutoff=0: no line in either mode (unchanged behaviour).
+  # (b3) cutoff=0: no line in either mode (unchanged behavior).
   called <- FALSE
   testthat::with_mocked_bindings(
     abline = function(...) called <<- TRUE,

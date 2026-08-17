@@ -33,10 +33,10 @@ clusters <- list("Z_cluster" = 1:10)
 
 ## The quick way: `cssPredict()`
 
-[`cssPredict()`](../reference/cssPredict.md) runs the whole pipeline —
-selection, cluster-representative formation, the downstream regression,
-and prediction — in a single call. It is the easiest way to get
-predictions.
+[`cssPredict()`](https://gregfaletto.github.io/cssr-project/reference/cssPredict.md)
+runs the whole pipeline — selection, cluster-representative formation,
+the downstream regression, and prediction — in a single call. It is the
+easiest way to get predictions.
 
 ``` r
 preds <- cssPredict(X_train, y_train, X_test, clusters)
@@ -52,17 +52,19 @@ sqrt(mean((preds - y_test)^2))
 
 ## More control: `css()` + `getCssPreds()`
 
-As in the getting-started guide, [`css()`](../reference/css.md) does the
-expensive stability-selection step once; you can then reuse its output.
-To predict, [`getCssPreds()`](../reference/getCssPreds.md) forms the
-cluster representatives and fits the downstream ordinary-least-squares
-model.
+As in the getting-started guide,
+[`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)
+does the expensive stability-selection step once; you can then reuse its
+output. To predict,
+[`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md)
+forms the cluster representatives and fits the downstream
+ordinary-least-squares model.
 
 That regression needs its own training data, kept separate from the data
 used for selection. The simplest way is to reserve some rows with
-[`css()`](../reference/css.md)’s `train_inds` argument — those rows are
-held out of the selection step and used only to fit the downstream
-model.
+[`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)’s
+`train_inds` argument — those rows are held out of the selection step
+and used only to fit the downstream model.
 
 ``` r
 lambda <- getLassoLambda(X_train, y_train)
@@ -77,11 +79,12 @@ head(preds_full)
 #> [1]  2.4153868 -0.1685438  2.9107732 -2.0774436  1.7627208 -1.6097944
 ```
 
-Alternatively, if you ran [`css()`](../reference/css.md) without
-`train_inds`, you can supply the downstream training data directly
-through `trainX`/`trainY`. As with `train_inds`, this should ideally be
-data not used in the selection step (here we reuse `X_train` just to
-keep the example short):
+Alternatively, if you ran
+[`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)
+without `train_inds`, you can supply the downstream training data
+directly through `trainX`/`trainY`. As with `train_inds`, this should
+ideally be data not used in the selection step (here we reuse `X_train`
+just to keep the example short):
 
 ``` r
 css_no_train <- css(X_train, y_train, lambda, clusters = clusters)
@@ -119,9 +122,10 @@ for (w in c("simple_avg", "weighted_avg", "sparse")) {
 ## Just the design matrix: `getCssDesign()`
 
 If you would rather build your own downstream model (anything other than
-OLS), [`getCssDesign()`](../reference/getCssDesign.md) returns the
-matrix of cluster representatives for new data, which you can pass to
-any modeling function.
+OLS),
+[`getCssDesign()`](https://gregfaletto.github.io/cssr-project/reference/getCssDesign.md)
+returns the matrix of cluster representatives for new data, which you
+can pass to any modeling function.
 
 ``` r
 X_test_reps <- getCssDesign(css_output, newX = X_test,
@@ -152,5 +156,5 @@ head(X_test_reps)
 - The [getting-started
   guide](https://gregfaletto.github.io/cssr-project/) for selecting
   features and clusters.
-- [`vignette("advanced-usage", "cssr")`](../articles/advanced-usage.md)
+- [`vignette("advanced-usage", "cssr")`](https://gregfaletto.github.io/cssr-project/articles/advanced-usage.md)
   for competitor methods, the data generators, and other helpers.
