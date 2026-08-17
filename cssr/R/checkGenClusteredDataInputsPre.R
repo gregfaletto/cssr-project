@@ -114,7 +114,13 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
 #' against is "repairing" them to match the new messages, which ships #162's
 #' defect green.
 #' @param rho_high,rho_low As documented in
-#' `checkGenClusteredDataWeightedInputs()`.
+#' `checkGenClusteredDataWeightedInputs()` and
+#' `checkGenClusteredDataWeightedRandomInputs()`. Both callers are named
+#' because the two describe these arguments differently -- fixed correlations
+#' for the strong and weak proxies in one, the endpoints of the interval each
+#' proxy's correlation is drawn from in the other -- and their rho_high
+#' defaults differ (0.9 and 1). The constraint enforced here is the same for
+#' both.
 #' @return No return value; called for the side effect of erroring on bad input.
 #' @author Gregory Faletto, Jacob Bien
 #' @keywords internal

@@ -6308,13 +6308,18 @@ testthat::test_that("genClusteredDataWeighted* still accept the boundary rho val
 
 testthat::test_that("genClusteredDataWeighted* keep their existing rho range messages (#181)", {
   # What this locks, precisely: the four range checks survive the move into
-  # checkRhoHighLow() with their exact messages and their exact order. It is
-  # GREEN on the pre-change tree by design -- it locks behavior that must not
-  # change, so its power comes from mutation rather than from a red side. It
-  # is the only block in this set that notices if one of the four checks is
-  # dropped. It provably cannot detect a reorder of > 0 against <= 1: once
-  # length-1 and non-NA are established, at most one of those two can fail on
-  # a scalar, so the two orders are observationally identical.
+  # checkRhoHighLow() with their exact messages. It is GREEN on the pre-change
+  # tree by design -- it locks behavior that must not change, so its power
+  # comes from mutation rather than from a red side. It is the only block in
+  # this set that notices if one of the four checks is dropped.
+  #
+  # It does NOT lock their order, and two reorderings are invisible to it.
+  # Swapping > 0 against <= 1 is invisible because once length-1 and non-NA
+  # are established at most one of those two can fail on a scalar, so the
+  # orders are observationally identical. Swapping rho_low > 0 against
+  # rho_high >= rho_low is invisible for a different reason: measured, all
+  # four inputs below report the same message either way, because whichever
+  # of the two is violated is still the first of them to fail.
   testthat::expect_error(
     genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
       cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
