@@ -1,0 +1,111 @@
+# Cross-platform `R CMD check` for the cssr package.
+#
+# WHAT THIS CHECKS, AND WHAT IT DOES NOT
+#
+# This repository is a litr literate program: `index.Rmd` is the only source of
+# truth, and `Rscript build.R` generates the R package into `cssr/` and the
+# documentation site into `docs/`. Both generated trees are committed.
+#
+# This workflow checks the COMMITTED `cssr/` tree exactly as it stands. It does
+# not run litr and does not rebuild anything -- so it answers "does the package
+# we ship work on every platform?" in a couple of minutes per job. (Pandoc is
+# still installed below, not for the litr render, but because `R CMD check`
+# builds and executes the three .Rmd vignettes.)
+#
+# It deliberately does NOT answer the different question "does the committed
+# tree still match what index.Rmd generates?" That needs a full render and is
+# tracked separately as the build-determinism job.
+#
+# WHY EVERY STEP CARRIES `working-directory: cssr`
+#
+# The usual r-lib recipe assumes DESCRIPTION sits beside .github/. Here it does
+# not -- the package root is the generated `cssr/` subdirectory -- so both
+# setup-r-dependencies and check-r-package must be pointed at it. Note that a
+# mistyped GitHub Actions input is IGNORED SILENTLY rather than erroring, so if
+# these ever stop working the symptom is a green run that checked nothing.
+#
+# DO NOT PORT `document = FALSE` HERE.
+#
+# The local gate runs `devtools::check("cssr", document = FALSE, ...)` because
+# devtools::check() runs roxygen by default and would rewrite ~62 man-page
+# headers. `R CMD check` (which is what rcmdcheck and therefore this workflow
+# runs) never documents, so the flag has no equivalent and no purpose here.
+
+name: R-CMD-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      # Never cancel the other four jobs when one fails -- a first cross-platform
+      # run is expected to surface findings, and we want all of them at once
+      # rather than one per push.
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
+          - {os: ubuntu-latest,  r: 'oldrel-1'}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # Quoted deliberately. Unquoted `yes` is a YAML 1.1 boolean, and R tests
+      # this variable against the literal string "yes" -- so a value that
+      # reaches R as "true" silently fails to retain source references. r-lib's
+      # own example workflow writes it unquoted; quoting costs nothing and
+      # removes the dependency on how one particular parser treats `yes`.
+      R_KEEP_PKG_SOURCE: 'yes'
+      # Suppress the "checking for future file timestamps ... unable to verify
+      # current time" NOTE. R only emits it under --as-cran, and it depends on
+      # reaching an external time server, so it fires nondeterministically --
+      # which would make `error-on: "note"` below a flaky gate for reasons that
+      # have nothing to do with this package.
+      #
+      # r-lib/actions/setup-r@v2 already exports this same variable, so this
+      # line is belt-and-braces rather than the sole mechanism. It is set
+      # explicitly anyway because `@v2` is a SLIDING tag: leaving the gate's
+      # non-flakiness resting on an upstream default that can change under us,
+      # and that is not part of any stability contract, is a dependency worth
+      # one line to remove.
+      _R_CHECK_SYSTEM_CLOCK_: 'FALSE'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The three vignettes under cssr/vignettes/ are .Rmd and are built and
+      # executed by R CMD check, which needs pandoc.
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: cssr
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: cssr
+          # Quoted twice on purpose: this input is evaluated as an R expression,
+          # so the YAML value must itself be the R string "note". The action's
+          # default is '"warning"', which would let a new NOTE pass CI and only
+          # surface at CRAN submission -- the local gate is
+          # error_on = "note", and CI should not be laxer than it.
+          error-on: '"note"'
