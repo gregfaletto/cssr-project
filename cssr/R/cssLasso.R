@@ -76,18 +76,21 @@ cssLasso <- function(X, y, lambda){
         s=lambda, exact=TRUE, newx=X, x=X, y=y)
 
     # predict.glmnet(type="nonzero") has never had a stable container. glmnet
-    # 4.x returned a data.frame on a non-empty selection but a list on an empty
-    # one; glmnet >= 5.0 always returns a list, one element per s value.
-    # unlist() flattens every one of those shapes to the same integer vector, so
-    # this is version-agnostic -- it is the idiom glmnet 5.0's own NEWS
-    # prescribes for cross-version callers (#188).
+    # 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever
+    # the per-s index counts were uniform -- and a list otherwise; glmnet >= 5.0
+    # always returns a list, one element per s value. For the scalar s used here
+    # that rule makes 4.x yield a data.frame on a non-empty selection and a list
+    # on an empty one, but the underlying rule is about simplification, not
+    # emptiness. unlist() flattens every one of those shapes to the same integer
+    # vector, so this is version-agnostic -- it is the idiom glmnet 5.0's own
+    # NEWS prescribes for cross-version callers (#188).
     #
     # SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:
-    # checkCssLassoInputs() rejects any lambda of length 3 or more, and the
-    # unpacking above reduces the length-2 c(lambda=, alpha=) form to a single
-    # penalty. (Both halves matter -- cssLasso() is exported, so it can be
-    # called directly.) So pred has exactly one slot and unlist() cannot union
-    # indices across s values.
+    # checkCssLassoInputs() rejects any lambda whose length is not 1 or 2, and
+    # the unpacking above reduces the length-2 c(lambda=, alpha=) form to a
+    # single penalty. (Both halves matter -- cssLasso() is exported, so it can
+    # be called directly.) So pred has exactly one slot and unlist() cannot
+    # union indices across s values.
     #
     # Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet
     # then returns one slot per penalty in the fitted path. clusterLassoCore()

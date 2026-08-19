@@ -1450,7 +1450,13 @@ testthat::test_that("cssLasso works", {
   testthat::expect_true(is.integer(res))
   testthat::expect_true(length(res) <= 4)
   testthat::expect_true(length(res) >= 0)
-  testthat::expect_true(length(res) == length(unique(res)))
+  # A no-duplicates assertion used to belong here, and #188 removed it rather
+  # than leaving it in place looking like coverage. cssLasso() now ends in
+  # sort(unique(unlist(pred))), so it de-duplicates its own return value and no
+  # such assertion made here can fail for any input -- it would be a guardrail
+  # blinded by the very change it appears to guard. The property still holds,
+  # for a structural reason upstream: nonzeroCoef() builds each slot as which[x],
+  # a logical subset of distinct column indices, so duplicates never arise.
   testthat::expect_true(all(res <= 4))
   testthat::expect_true(all(res >= 1))
   

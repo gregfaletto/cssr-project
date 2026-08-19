@@ -855,18 +855,21 @@ cssLasso <- function(X, y, lambda){
         s=lambda, exact=TRUE, newx=X, x=X, y=y)
 
     # predict.glmnet(type="nonzero") has never had a stable container. glmnet
-    # 4.x returned a data.frame on a non-empty selection but a list on an empty
-    # one; glmnet >= 5.0 always returns a list, one element per s value.
-    # unlist() flattens every one of those shapes to the same integer vector, so
-    # this is version-agnostic -- it is the idiom glmnet 5.0's own NEWS
-    # prescribes for cross-version callers (#188).
+    # 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever
+    # the per-s index counts were uniform -- and a list otherwise; glmnet >= 5.0
+    # always returns a list, one element per s value. For the scalar s used here
+    # that rule makes 4.x yield a data.frame on a non-empty selection and a list
+    # on an empty one, but the underlying rule is about simplification, not
+    # emptiness. unlist() flattens every one of those shapes to the same integer
+    # vector, so this is version-agnostic -- it is the idiom glmnet 5.0's own
+    # NEWS prescribes for cross-version callers (#188).
     #
     # SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:
-    # checkCssLassoInputs() rejects any lambda of length 3 or more, and the
-    # unpacking above reduces the length-2 c(lambda=, alpha=) form to a single
-    # penalty. (Both halves matter -- cssLasso() is exported, so it can be
-    # called directly.) So pred has exactly one slot and unlist() cannot union
-    # indices across s values.
+    # checkCssLassoInputs() rejects any lambda whose length is not 1 or 2, and
+    # the unpacking above reduces the length-2 c(lambda=, alpha=) form to a
+    # single penalty. (Both halves matter -- cssLasso() is exported, so it can
+    # be called directly.) So pred has exactly one slot and unlist() cannot
+    # union indices across s values.
     #
     # Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet
     # then returns one slot per penalty in the fitted path. clusterLassoCore()
@@ -8220,7 +8223,13 @@ testthat::test_that("cssLasso works", {
   testthat::expect_true(is.integer(res))
   testthat::expect_true(length(res) <= 4)
   testthat::expect_true(length(res) >= 0)
-  testthat::expect_true(length(res) == length(unique(res)))
+  # A no-duplicates assertion used to belong here, and #188 removed it rather
+  # than leaving it in place looking like coverage. cssLasso() now ends in
+  # sort(unique(unlist(pred))), so it de-duplicates its own return value and no
+  # such assertion made here can fail for any input -- it would be a guardrail
+  # blinded by the very change it appears to guard. The property still holds,
+  # for a structural reason upstream: nonzeroCoef() builds each slot as which[x],
+  # a logical subset of distinct column indices, so duplicates never arise.
   testthat::expect_true(all(res <= 4))
   testthat::expect_true(all(res >= 1))
   
