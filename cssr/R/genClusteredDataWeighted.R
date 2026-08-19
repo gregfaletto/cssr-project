@@ -36,11 +36,12 @@
 #' them will have coefficient beta_latent). Must be less than or equal to
 #' n_clusters. Default is 1.
 #' @param rho_high Integer or numeric; the correlation of the "strong proxies"
-#' in each cluster with the latent variable. rho_high cannot equal 0 and must be
-#' at least as large as rho_low. Default is 0.9.
+#' in each cluster with the latent variable. Must be a single number in (0, 1]
+#' (greater than 0 and at most 1), and at least as large as rho_low. Default is
+#' 0.9.
 #' @param rho_low Integer or numeric; the correlation of the "weak proxies" in
-#' each cluster with the latent variable. rho_low cannot equal 0 and must be no
-#' larger than rho_high. Default is 0.5.
+#' each cluster with the latent variable. Must be a single number in (0, 1]
+#' (greater than 0 and at most 1), and no larger than rho_high. Default is 0.5.
 #' @param beta_latent Integer or numeric; the coefficient used for all
 #' sig_clusters latent variables that have nonzero coefficients in the true
 #' model for y. Can't equal 0. Default is 1.5.

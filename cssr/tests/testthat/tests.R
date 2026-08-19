@@ -5159,28 +5159,28 @@ testthat::test_that("checkGenClusteredDataInputs works", {
 })
 
 testthat::test_that("getNoiseVar works", {
-  # getNoiseVar(cor) returns the noise variance v such that a proxy Z + N(0, v)
-  # has correlation cor with Z, i.e. v = 1/cor^2 - 1 (vectorized; cor in (0, 1]).
+  # getNoiseVar(rho) returns the noise variance v such that a proxy Z + N(0, v)
+  # has correlation rho with Z, i.e. v = 1/rho^2 - 1 (vectorized; rho in (0, 1]).
   testthat::expect_equal(getNoiseVar(1), 0)
   testthat::expect_equal(getNoiseVar(0.5), 3)
   testthat::expect_equal(getNoiseVar(0.9), 1/0.81 - 1)
   testthat::expect_equal(getNoiseVar(c(0.5, 1, 0.9)), c(3, 0, 1/0.81 - 1))
-  # The defining property: a proxy with this noise variance has correlation cor.
+  # The defining property: a proxy with this noise variance has correlation rho.
   testthat::expect_equal(1/sqrt(1 + getNoiseVar(0.8)), 0.8)
 
-  # cor must be numeric, non-NA, non-empty, and in (0, 1] (checks are vectorized).
-  testthat::expect_error(getNoiseVar(0), "all(cor > 0) is not TRUE", fixed=TRUE)
-  testthat::expect_error(getNoiseVar(-0.5), "all(cor > 0) is not TRUE",
+  # rho must be numeric, non-NA, non-empty, and in (0, 1] (checks are vectorized).
+  testthat::expect_error(getNoiseVar(0), "all(rho > 0) is not TRUE", fixed=TRUE)
+  testthat::expect_error(getNoiseVar(-0.5), "all(rho > 0) is not TRUE",
     fixed=TRUE)
-  testthat::expect_error(getNoiseVar(c(0.5, 0)), "all(cor > 0) is not TRUE",
+  testthat::expect_error(getNoiseVar(c(0.5, 0)), "all(rho > 0) is not TRUE",
     fixed=TRUE)
-  testthat::expect_error(getNoiseVar(1.5), "all(cor <= 1) is not TRUE",
+  testthat::expect_error(getNoiseVar(1.5), "all(rho <= 1) is not TRUE",
     fixed=TRUE)
-  testthat::expect_error(getNoiseVar(NA_real_), "all(!is.na(cor)) is not TRUE",
+  testthat::expect_error(getNoiseVar(NA_real_), "all(!is.na(rho)) is not TRUE",
     fixed=TRUE)
   testthat::expect_error(getNoiseVar("0.5"),
-    "is.numeric(cor) | is.integer(cor) is not TRUE", fixed=TRUE)
-  testthat::expect_error(getNoiseVar(numeric(0)), "length(cor) >= 1 is not TRUE",
+    "is.numeric(rho) | is.integer(rho) is not TRUE", fixed=TRUE)
+  testthat::expect_error(getNoiseVar(numeric(0)), "length(rho) >= 1 is not TRUE",
     fixed=TRUE)
 })
 
@@ -5882,12 +5882,12 @@ testthat::test_that("genClusteredDataWeighted/Random validate snr/sigma_eps_sq t
 
 testthat::test_that("genClusteredData rejects rho > 1 up front (#162)", {
   # The documented upper bound is now enforced by the up-front checker, so the
-  # message names the user's argument rho rather than getNoiseVar()'s internal
-  # `cor`. Split one case per block: under testthat edition 3, which this
-  # package declares, expect_error() re-raises on a message mismatch and aborts
-  # the rest of its block, so bundling would hide the red side of every case
-  # after the first. The edition is load-bearing -- at edition 2 the block
-  # continues instead, so measuring this outside a package context (where
+  # message names the user's argument rho instead of surfacing from deep
+  # inside getNoiseVar(). Split one case per block: under testthat edition 3,
+  # which this package declares, expect_error() re-raises on a message mismatch
+  # and aborts the rest of its block, so bundling would hide the red side of
+  # every case after the first. The edition is load-bearing -- at edition 2 the
+  # block continues instead, so measuring this outside a package context (where
   # edition 2 is the default) measures the wrong semantics.
   testthat::expect_error(
     genClusteredData(n = 50, p = 13, k_unclustered = 2, cluster_size = 4,
@@ -5899,10 +5899,28 @@ testthat::test_that("genClusteredData rejects a non-numeric rho (#162)", {
   # Without the type check this slipped through: stopifnot("0.8" > 0) is TRUE,
   # because R compares character to numeric as strings. It then failed later,
   # inside getNoiseVar().
+  #
+  # The message alone stopped being a sufficient guard when #181 renamed
+  # getNoiseVar()'s formal cor -> rho: the validator's check and getNoiseVar()'s
+  # are now the SAME line, so both raise
+  #   is.numeric(rho) | is.integer(rho) is not TRUE
+  # and the string can no longer tell "rejected up front" from "died late
+  # inside getNoiseVar()". Measured: deleting the validator's type check leaves
+  # this block green if it pins only the message, because "0.8" > 0 and
+  # "0.8" <= 1 are both TRUE (string comparison), so a character rho reaches
+  # genZmuY(), draws from the stream, and dies in getNoiseVar() raising the
+  # identical condition.
+  #
+  # The RNG state distinguishes the two frames no matter what the message says,
+  # and early rejection is what #162 was actually about -- so assert it here
+  # rather than relying on a string that two independent guards now share.
+  set.seed(20260817)
+  seed_before <- .Random.seed
   testthat::expect_error(
     genClusteredData(n = 50, p = 13, k_unclustered = 2, cluster_size = 4,
                      n_clusters = 2, rho = "0.8", sigma_eps_sq = 1),
     "is.numeric(rho) | is.integer(rho) is not TRUE", fixed = TRUE)
+  testthat::expect_identical(.Random.seed, seed_before)
 })
 
 testthat::test_that("genClusteredData rejects a length > 1 rho (#162)", {
@@ -6013,6 +6031,356 @@ testthat::test_that("genClusteredDataWeighted enforces the documented n_strong_c
     function(j) stats::cor(res$X[, j], Z_expanded[, j]), numeric(1))
   testthat::expect_true(all(abs(weak_cor - 0.5) < 0.1))
   testthat::expect_false(anyNA(res$X))
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a non-numeric rho_high (#181)", {
+  # Previously slipped past all four range checks and died inside
+  # getNoiseVar(), naming that helper's formal rather than the user's
+  # argument, and only after the RNG had already advanced. The type check has
+  # to precede every range check: stopifnot("0.9" >= 0.5) is TRUE, because R
+  # coerces the number to a string and compares as strings rather than
+  # erroring. ("10" >= 9 is FALSE, which is the giveaway that it is a string
+  # comparison and not a numeric one.)
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = "0.8", rho_low = 0.5, sigma_eps_sq = 1),
+    "is.numeric(rho_high) | is.integer(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a non-numeric rho_high (#181)", {
+  # The same hole with a different landing place: this generator reached
+  # runif(n = 1, min = rho_low, max = rho_high) and reported the opaque
+  # "invalid arguments", again only after advancing the RNG.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = "0.8", rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "is.numeric(rho_high) | is.integer(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a non-numeric rho_low (#181)", {
+  # As for rho_high: the string comparison rho_high >= rho_low is TRUE for
+  # "0.2", so the old range checks passed it straight through to getNoiseVar().
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.9, rho_low = "0.2", sigma_eps_sq = 1),
+    "is.numeric(rho_low) | is.integer(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a non-numeric rho_low (#181)", {
+  # Previously reported runif()'s "invalid arguments", after advancing the RNG.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1, rho_low = "0.2",
+      sigma_eps_sq = 1),
+    "is.numeric(rho_low) | is.integer(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a logical rho_high (#181)", {
+  # A logical argument is the same type hole, but the two generators failed
+  # very differently. genClusteredDataWeighted() errored naming getNoiseVar()'s
+  # formal, while genClusteredDataWeightedRandom() accepted TRUE outright (the
+  # block below) -- so the pair belongs to the silent-wrong-answer class, not
+  # merely the bad-message class.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = TRUE, rho_low = 0.5, sigma_eps_sq = 1),
+    "is.numeric(rho_high) | is.integer(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a logical rho_high (#181)", {
+  # Previously NO error at all: runif(1, 0.5, TRUE) coerces TRUE to 1, so the
+  # call returned a data set silently generated at rho_high = 1 instead of
+  # rejecting an argument that is not a correlation.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = TRUE, rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "is.numeric(rho_high) | is.integer(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a logical rho_low (#181)", {
+  # rho_high = 1 is deliberate. This input errors at either setting, but at
+  # rho_high = 1 the pre-change code advanced the RNG before dying inside
+  # getNoiseVar(), whereas at rho_high = 0.9 the ordering check caught it with
+  # the stream untouched -- blaming the ordering for what is a type error. The
+  # rho_high = 1 variant is the worse defect, so it is the one to lock.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 1, rho_low = TRUE, sigma_eps_sq = 1),
+    "is.numeric(rho_low) | is.integer(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a logical rho_low (#181)", {
+  # rho_high = 1 is load-bearing here for a different reason: it is this
+  # generator's DEFAULT, and the only setting under which rho_low = TRUE was
+  # accepted at all -- runif(1, TRUE, 1) coerces TRUE to 1, so the call
+  # silently returned data. A silent wrong answer on the default path.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1, rho_low = TRUE,
+      sigma_eps_sq = 1),
+    "is.numeric(rho_low) | is.integer(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a length > 1 rho_high (#181)", {
+  # Previously NO error at all -- the silent-wrong-answer case this issue was
+  # filed about. genClusteredDataWeighted() calls getNoiseVar() once per
+  # argument and then draws per column, rnorm(n, sd = sqrt(noise_var_high)),
+  # so a length-2 argument makes sd length 2 and rnorm() recycles it
+  # elementwise DOWN the column: the noise sd alternates row by row within
+  # every column that argument governs. The columns governed by the other,
+  # scalar argument keep exactly the correlation they asked for.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = c(0.9, 0.8), rho_low = 0.5, sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a length > 1 rho_high (#181)", {
+  # Previously NO error either, but by a different route: this generator does
+  # no recycling at all. The argument reaches
+  # runif(n = 1, min = rho_low, max = rho_high), which uses the FIRST element
+  # and discards the rest without a word. Truncation, not corruption -- the
+  # two generators are not failing the same way.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = c(0.9, 0.8), rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a length > 1 rho_low (#181)", {
+  # Previously NO error, and this is the case whose corrupted value has a
+  # closed form worth recording. Recycling sd = sqrt(c(3, 10.1111))
+  # elementwise down a column makes the noise VARIANCE alternate, so the
+  # column's marginal noise variance is the mean of the two and BOTH weak
+  # columns land on
+  # 1/sqrt(1 + mean(c(getNoiseVar(0.5), getNoiseVar(0.3)))) = 1/sqrt(1 +
+  # 6.5556) = 0.3638 -- neither requested value, and identical for the two of
+  # them. That is the population value, not a sample estimate: quoting a
+  # measured pair would imply a between-column difference that does not exist,
+  # and every seed produces a different pair.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.9, rho_low = c(0.5, 0.3), sigma_eps_sq = 1),
+    "length(rho_low) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a length > 1 rho_low (#181)", {
+  # Previously NO error: the same first-element truncation as for rho_high.
+  # Measured on the pre-change tree at a fixed seed, the returned X was
+  # identical() to the rho_low = 0.5 run and not to the rho_low = 0.3 run.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1, rho_low = c(0.5, 0.3),
+      sigma_eps_sq = 1),
+    "length(rho_low) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a zero-length rho_high (#181)", {
+  # All four range checks are STRUCTURALLY INERT against a zero-length
+  # argument: numeric(0) <= 1 is logical(0), and all(logical(0)) is TRUE, so
+  # stopifnot() does not error. The call therefore reached getNoiseVar() and
+  # reported that helper's formal. NULL is in the same family but is NOT
+  # interchangeable -- is.numeric(NULL) is FALSE, so NULL is caught by the
+  # TYPE check and never reaches the length check. numeric(0) is the input
+  # that exercises the length check at its zero end.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = numeric(0), rho_low = 0.5, sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a zero-length rho_high (#181)", {
+  # The same inert range checks. Here the call got as far as runif(), which
+  # returned NA with a "NAs produced" warning, and the failure then surfaced
+  # from inside getNoiseVar() rather than naming rho_high.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = numeric(0), rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a missing rho_high (#181)", {
+  # Previously reported the misleading "rho_high <= 1 is not TRUE" -- a range
+  # bound blamed for a missingness problem, which sends the user off checking
+  # a value that is not the issue.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = NA_real_, rho_low = 0.5, sigma_eps_sq = 1),
+    "!is.na(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a missing rho_high (#181)", {
+  # Same misleading "rho_high <= 1 is not TRUE" before the change.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = NA_real_, rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "!is.na(rho_high) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted rejects a missing rho_low (#181)", {
+  # Previously reported "rho_low > 0 is not TRUE" -- the lower bound this
+  # time rather than the upper one, but the identical class: a range bound
+  # blamed for missingness.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.9, rho_low = NA_real_, sigma_eps_sq = 1),
+    "!is.na(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom rejects a missing rho_low (#181)", {
+  # Same misleading "rho_low > 0 is not TRUE" before the change.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1, rho_low = NA_real_,
+      sigma_eps_sq = 1),
+    "!is.na(rho_low) is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted checks rho_high's length before its missingness (#181)", {
+  # This block exists for the FINE ordering -- length before NA -- which every
+  # other block here is blind to. Only an input that is simultaneously length
+  # > 1 AND contains NA can tell the two orderings apart: measured, the
+  # shipped order reports the length violation below, while checking !is.na()
+  # first reports the confusing plural "!is.na(rho_high) are not all TRUE",
+  # because !is.na() is vectorized. Before the change this input reported
+  # neither, dying in the range checks with "rho_high <= 1 are not all TRUE".
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = c(0.9, NA), rho_low = 0.5, sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeightedRandom checks rho_high's length before its missingness (#181)", {
+  # The fine-ordering lock for the second generator; see the block above for
+  # why an input that is both length > 1 and NA-containing is the only one
+  # that distinguishes the two orderings.
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = c(0.9, NA), rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "length(rho_high) == 1 is not TRUE", fixed = TRUE)
+})
+
+testthat::test_that("genClusteredDataWeighted* reject rho_high/rho_low before drawing any random numbers (#181)", {
+  # "Up front" is the point of the issue, so assert it directly. A length-2
+  # argument is the right probe: it advanced the RNG in both generators before
+  # the change, whereas an NA argument was already caught by a range check
+  # with the stream untouched and so would prove nothing.
+  # This block stays BUNDLED across both generators, unlike every block above.
+  # Its expect_error() calls carry no message argument, so they cannot
+  # mismatch, so they cannot re-raise and abort the block under testthat
+  # edition 3 -- all four assertions are reached even when all four fail.
+  set.seed(20260817)
+  seed_before <- .Random.seed
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.9, rho_low = c(0.5, 0.3), sigma_eps_sq = 1))
+  testthat::expect_identical(.Random.seed, seed_before)
+
+  set.seed(20260817)
+  seed_before <- .Random.seed
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1, rho_low = c(0.5, 0.3),
+      sigma_eps_sq = 1))
+  testthat::expect_identical(.Random.seed, seed_before)
+})
+
+testthat::test_that("genClusteredDataWeighted* still accept the boundary rho values (#181)", {
+  # rho = 1 must still WORK, so the bound is <= and not <. getNoiseVar(1) is
+  # exactly 0, so every proxy is a noiseless copy of its latent column -- a
+  # seed-independent identity, and a far stronger lock than dim(X), which
+  # would hold at any rho. Passing rho_high = rho_low = 1 hits the upper
+  # boundary and the rho_high == rho_low boundary at once.
+  set.seed(20260817)
+  res <- genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+    cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+    rho_high = 1, rho_low = 1, sigma_eps_sq = 1)
+  Z_expanded <- as.matrix(res$Z)[, rep(1:2, each = 4), drop = FALSE]
+  testthat::expect_equal(res$X[, 1:8], Z_expanded)
+
+  # rho_high is OMITTED here, so its default of 1 applies: one call covering
+  # the upper boundary, the rho_high == rho_low boundary, and the default path
+  # the issue's closing note asks about. runif(1, 1, 1) is exactly 1, so the
+  # same noiseless identity holds for this generator too.
+  set.seed(20260817)
+  res_rand <- genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+    cluster_size = 4, n_clusters = 2, rho_low = 1, sigma_eps_sq = 1)
+  Z_expanded_rand <- as.matrix(res_rand$Z)[, rep(1:2, each = 4), drop = FALSE]
+  testthat::expect_equal(res_rand$X[, 1:8], Z_expanded_rand)
+})
+
+testthat::test_that("genClusteredDataWeighted* keep their existing rho range messages (#181)", {
+  # What this locks, precisely: the four range checks survive the move into
+  # checkRhoHighLow() with their exact messages. It is GREEN on the pre-change
+  # tree by design -- it locks behavior that must not change, so its power
+  # comes from mutation rather than from a red side. It is the only block in
+  # this set that notices if one of the four checks is dropped.
+  #
+  # It does NOT lock their order, and two reorderings are invisible to it.
+  # Swapping > 0 against <= 1 is invisible because once length-1 and non-NA
+  # are established at most one of those two can fail on a scalar, so the
+  # orders are observationally identical. Swapping rho_low > 0 against
+  # rho_high >= rho_low is invisible for a different reason: measured, all
+  # four inputs below report the same message either way, because whichever
+  # of the two is violated is still the first of them to fail.
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 1.2, rho_low = 0.5, sigma_eps_sq = 1),
+    "rho_high <= 1 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0, rho_low = 0.5, sigma_eps_sq = 1),
+    "rho_high > 0 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.9, rho_low = 0, sigma_eps_sq = 1),
+    "rho_low > 0 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeighted(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_strong_cluster_vars = 3, n_clusters = 2,
+      rho_high = 0.3, rho_low = 0.5, sigma_eps_sq = 1),
+    "rho_high >= rho_low is not TRUE", fixed = TRUE)
+
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 1.2, rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "rho_high <= 1 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 0, rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "rho_high > 0 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 0.9, rho_low = 0,
+      sigma_eps_sq = 1),
+    "rho_low > 0 is not TRUE", fixed = TRUE)
+  testthat::expect_error(
+    genClusteredDataWeightedRandom(n = 50, p = 13, k_unclustered = 2,
+      cluster_size = 4, n_clusters = 2, rho_high = 0.3, rho_low = 0.5,
+      sigma_eps_sq = 1),
+    "rho_high >= rho_low is not TRUE", fixed = TRUE)
 })
 
 testthat::test_that("genZmuY one-weak-signal config no longer crashes, all 3 generators (#124 bug 1)", {

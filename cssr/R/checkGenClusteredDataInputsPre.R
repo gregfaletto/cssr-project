@@ -92,3 +92,51 @@ checkGenClusteredDataInputsSnrSigma <- function(snr, sigma_eps_sq){
         stopifnot(snr > 0)
     }
 }
+
+#' Shared correlation-argument checks for the weighted genClusteredData*
+#' generators
+#'
+#' Validates rho_high and rho_low for
+#' `checkGenClusteredDataWeightedInputs()` and
+#' `checkGenClusteredDataWeightedRandomInputs()`: each must be a single
+#' non-missing number, with 0 < rho_low <= rho_high <= 1.
+#'
+#' Two things here are contract, not style. The formals must stay named
+#' `rho_high` / `rho_low`, because `stopifnot()` deparses the expression as
+#' written here, so the FORMAL's name is what the user sees (#162). And the
+#' type/length/NA checks must precede every range check: `"0.9" >= 0.5` is
+#' TRUE, since R coerces the number to a string and compares as strings
+#' (`"10" >= 9` is FALSE, which is the giveaway); `!is.na()` is
+#' vectorized, so a length-2 argument containing NA reports the plural "are
+#' not all TRUE" rather than the length violation; and
+#' `stopifnot(numeric(0) <= 1)` does not error at all, since
+#' `all(logical(0))` is TRUE. The tests pin every message below, so changing
+#' either turns many expectations red at once -- the failure mode to guard
+#' against is "repairing" them to match the new messages, which ships #162's
+#' defect green.
+#' @param rho_high,rho_low As documented in
+#' `checkGenClusteredDataWeightedInputs()` and
+#' `checkGenClusteredDataWeightedRandomInputs()`. Both callers are named
+#' because the two describe these arguments differently -- fixed correlations
+#' for the strong and weak proxies in one, the endpoints of the interval each
+#' proxy's correlation is drawn from in the other -- and their rho_high
+#' defaults differ (0.9 and 1). The constraint enforced here is the same for
+#' both.
+#' @return No return value; called for the side effect of erroring on bad input.
+#' @author Gregory Faletto, Jacob Bien
+#' @keywords internal
+#' @noRd
+checkRhoHighLow <- function(rho_high, rho_low){
+    stopifnot(is.numeric(rho_high) | is.integer(rho_high))
+    stopifnot(length(rho_high) == 1)
+    stopifnot(!is.na(rho_high))
+
+    stopifnot(is.numeric(rho_low) | is.integer(rho_low))
+    stopifnot(length(rho_low) == 1)
+    stopifnot(!is.na(rho_low))
+
+    stopifnot(rho_high <= 1)
+    stopifnot(rho_high > 0)
+    stopifnot(rho_low > 0)
+    stopifnot(rho_high >= rho_low)
+}

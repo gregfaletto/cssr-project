@@ -6,12 +6,12 @@ desired correlations with Z
 ## Usage
 
 ``` r
-getNoiseVar(cor)
+getNoiseVar(rho)
 ```
 
 ## Arguments
 
-- cor:
+- rho:
 
   A numeric vector of desired correlations for each proxy to have
   with Z. Note: correlations must be in (0, 1\] (positive and at most
