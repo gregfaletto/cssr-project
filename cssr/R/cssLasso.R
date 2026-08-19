@@ -75,29 +75,44 @@ cssLasso <- function(X, y, lambda){
     pred <- glmnet::predict.glmnet(lasso_model, type="nonzero",
         s=lambda, exact=TRUE, newx=X, x=X, y=y)
 
-    if(is.null(pred[[1]])){return(integer())}
-
-    stopifnot(is.data.frame(pred))
+    # predict.glmnet(type="nonzero") has never had a stable container. glmnet
+    # 4.x returned a data.frame on a non-empty selection but a list on an empty
+    # one; glmnet >= 5.0 always returns a list, one element per s value.
+    # unlist() flattens every one of those shapes to the same integer vector, so
+    # this is version-agnostic -- it is the idiom glmnet 5.0's own NEWS
+    # prescribes for cross-version callers (#188).
+    #
+    # SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:
+    # checkCssLassoInputs() rejects any lambda of length 3 or more, and the
+    # unpacking above reduces the length-2 c(lambda=, alpha=) form to a single
+    # penalty. (Both halves matter -- cssLasso() is exported, so it can be
+    # called directly.) So pred has exactly one slot and unlist() cannot union
+    # indices across s values.
+    #
+    # Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet
+    # then returns one slot per penalty in the fitted path. clusterLassoCore()
+    # does exactly that, and flattening its result would silently merge the
+    # per-model-size sets that getClusterSelsFromGlmnet() consumes (#190).
     stopifnot(!("try-error" %in% class(pred) | "error" %in% class(pred) |
         "simpleError" %in% class(pred) | "condition" %in% class(pred)))
 
-    if(length(dim(pred)) == 2){
-        selected_glmnet <- pred[, 1]
-    } else if(length(dim(pred)) == 3){
-        selected_glmnet <- pred[, 1, 1]
-    } else if(length(dim(pred)) == 1){
-        selected_glmnet <- pred
-    } else{
-        stop("length(dim(pred)) not 1, 2, or 3")
+    selected_glmnet <- sort(unique(unlist(pred)))
+
+    # No feature selected at this penalty: unlist() of the all-NULL result is
+    # NULL, hence length 0. Replaces the previous is.null(pred[[1]]) test, which
+    # inspected the container rather than the contents.
+    if(length(selected_glmnet) == 0){
+        return(integer())
     }
 
-    stopifnot(length(selected_glmnet) >= 1)
     stopifnot(length(selected_glmnet) <= ncol(X))
     stopifnot(all(selected_glmnet == round(selected_glmnet)))
-    stopifnot(length(selected_glmnet) == length(unique(selected_glmnet)))
-    selected_glmnet <- as.integer(selected_glmnet)
+    # No duplicate check is needed: nonzeroCoef() builds each slot as which[x],
+    # a logical subset of distinct column indices, so duplicates cannot arise
+    # upstream. (Asserting it after unique() would be a guardrail blinded by its
+    # own input rather than a real check.)
 
-    selected <- sort(selected_glmnet)
+    selected <- as.integer(selected_glmnet)
 
     return(selected)
 }

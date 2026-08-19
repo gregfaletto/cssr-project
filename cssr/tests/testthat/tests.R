@@ -1463,6 +1463,57 @@ testthat::test_that("cssLasso works", {
 
 })
 
+testthat::test_that("cssLasso handles glmnet 5.0's list return shape (#188)", {
+  set.seed(3011)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet >= 5.0 always returns a list, one slot per s value. Deliberately
+  # UNSORTED so the assertion also pins the sort(); an already-ordered fixture
+  # would pass whether or not the sort survived.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(c(4L, 1L, 3L)), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso still handles glmnet 4.x's data.frame return shape (#188)", {
+  set.seed(3012)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet 4.x's shape for a scalar s on a non-empty selection. The fix must be
+  # bidirectional, not a swap of one hard-coded container for another.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) data.frame(X1 = c(4L, 1L, 3L)),
+    .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso returns an empty selection under either glmnet shape (#188)", {
+  set.seed(3013)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # Both 4.x and 5.0 signal "nothing selected" as a list holding NULL, so
+  # unlist() gives length 0. This is the contract the container-independent
+  # guard replaced an is.null(pred[[1]]) test to preserve.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(NULL), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=1e6)
+
+  testthat::expect_identical(res, integer(0))
+  testthat::expect_true(is.integer(res))
+})
+
 testthat::test_that("getClusterSelMatrix works", {
   good_clusters <- list(red_cluster=1L:5L,
                         green_cluster=6L:8L, blue_clust=9L)

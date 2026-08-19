@@ -854,29 +854,44 @@ cssLasso <- function(X, y, lambda){
     pred <- glmnet::predict.glmnet(lasso_model, type="nonzero",
         s=lambda, exact=TRUE, newx=X, x=X, y=y)
 
-    if(is.null(pred[[1]])){return(integer())}
-
-    stopifnot(is.data.frame(pred))
+    # predict.glmnet(type="nonzero") has never had a stable container. glmnet
+    # 4.x returned a data.frame on a non-empty selection but a list on an empty
+    # one; glmnet >= 5.0 always returns a list, one element per s value.
+    # unlist() flattens every one of those shapes to the same integer vector, so
+    # this is version-agnostic -- it is the idiom glmnet 5.0's own NEWS
+    # prescribes for cross-version callers (#188).
+    #
+    # SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:
+    # checkCssLassoInputs() rejects any lambda of length 3 or more, and the
+    # unpacking above reduces the length-2 c(lambda=, alpha=) form to a single
+    # penalty. (Both halves matter -- cssLasso() is exported, so it can be
+    # called directly.) So pred has exactly one slot and unlist() cannot union
+    # indices across s values.
+    #
+    # Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet
+    # then returns one slot per penalty in the fitted path. clusterLassoCore()
+    # does exactly that, and flattening its result would silently merge the
+    # per-model-size sets that getClusterSelsFromGlmnet() consumes (#190).
     stopifnot(!("try-error" %in% class(pred) | "error" %in% class(pred) |
         "simpleError" %in% class(pred) | "condition" %in% class(pred)))
 
-    if(length(dim(pred)) == 2){
-        selected_glmnet <- pred[, 1]
-    } else if(length(dim(pred)) == 3){
-        selected_glmnet <- pred[, 1, 1]
-    } else if(length(dim(pred)) == 1){
-        selected_glmnet <- pred
-    } else{
-        stop("length(dim(pred)) not 1, 2, or 3")
+    selected_glmnet <- sort(unique(unlist(pred)))
+
+    # No feature selected at this penalty: unlist() of the all-NULL result is
+    # NULL, hence length 0. Replaces the previous is.null(pred[[1]]) test, which
+    # inspected the container rather than the contents.
+    if(length(selected_glmnet) == 0){
+        return(integer())
     }
 
-    stopifnot(length(selected_glmnet) >= 1)
     stopifnot(length(selected_glmnet) <= ncol(X))
     stopifnot(all(selected_glmnet == round(selected_glmnet)))
-    stopifnot(length(selected_glmnet) == length(unique(selected_glmnet)))
-    selected_glmnet <- as.integer(selected_glmnet)
+    # No duplicate check is needed: nonzeroCoef() builds each slot as which[x],
+    # a logical subset of distinct column indices, so duplicates cannot arise
+    # upstream. (Asserting it after unique() would be a guardrail blinded by its
+    # own input rather than a real check.)
 
-    selected <- sort(selected_glmnet)
+    selected <- as.integer(selected_glmnet)
 
     return(selected)
 }
@@ -8216,6 +8231,72 @@ testthat::test_that("cssLasso works", {
                          "For method cssLasso, lambda must be nonnegative.",
                          fixed=TRUE)
 
+})
+```
+
+`predict.glmnet(type = "nonzero")` does not return a stable container across glmnet
+versions, so `cssLasso()` must not care which one it gets. glmnet 4.x returns a
+`data.frame` on a non-empty selection and a list on an empty one; glmnet 5.0 always
+returns a list. These blocks mock `glmnet::predict.glmnet` to hand `cssLasso()` each
+shape directly, which pins the contract on any machine regardless of which glmnet is
+installed -- the point being that a test exercising only the *installed* version pins
+nothing about the other one.
+
+The first block is the regression test for #188 proper: it fails on the pre-fix source at
+`stopifnot(is.data.frame(pred))`. The other two are pins rather than red-green tests --
+they pass on the pre-fix source too, and exist to hold the empty-selection and 4.x
+contracts against this refactor.
+
+```{r}
+testthat::test_that("cssLasso handles glmnet 5.0's list return shape (#188)", {
+  set.seed(3011)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet >= 5.0 always returns a list, one slot per s value. Deliberately
+  # UNSORTED so the assertion also pins the sort(); an already-ordered fixture
+  # would pass whether or not the sort survived.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(c(4L, 1L, 3L)), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso still handles glmnet 4.x's data.frame return shape (#188)", {
+  set.seed(3012)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet 4.x's shape for a scalar s on a non-empty selection. The fix must be
+  # bidirectional, not a swap of one hard-coded container for another.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) data.frame(X1 = c(4L, 1L, 3L)),
+    .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso returns an empty selection under either glmnet shape (#188)", {
+  set.seed(3013)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # Both 4.x and 5.0 signal "nothing selected" as a list holding NULL, so
+  # unlist() gives length 0. This is the contract the container-independent
+  # guard replaced an is.null(pred[[1]]) test to preserve.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(NULL), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=1e6)
+
+  testthat::expect_identical(res, integer(0))
+  testthat::expect_true(is.integer(res))
 })
 ```
 
