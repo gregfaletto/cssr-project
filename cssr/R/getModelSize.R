@@ -115,11 +115,12 @@ getModelSize <- function(X, y, clusters, alpha = 1){
     # grouped guard below from ever disagreeing about the fold count.
     nfolds_size <- 10L
     # As in getLassoLambda(): cv.glmnet overrides grouped to FALSE, and warns,
-    # when nrow(x)/nfolds < 3. Setting it explicitly is behavior-identical and
-    # keeps that nag out of small-n callers' consoles (#186). nrow(X_size), not
-    # the already-bound n, because it is glmnet's N = nrow(x) for the very
-    # matrix passed as x -- the two are equal here only because cluster
-    # reduction drops columns and never rows.
+    # when nrow(x)/nfolds < 3, for the gaussian family fixed just below (other
+    # families differ; cv.coxnet flips grouped the other way). Setting it
+    # explicitly is behavior-identical and keeps that nag out of small-n callers'
+    # consoles (#186). nrow(X_size), not the already-bound n, because it is
+    # glmnet's N = nrow(x) for the very matrix passed as x -- the two are equal
+    # here only because cluster reduction drops columns and never rows.
     size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian",
         alpha=alpha, nfolds=nfolds_size,
         grouped=nrow(X_size)/nfolds_size >= 3)

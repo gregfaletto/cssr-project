@@ -6866,6 +6866,33 @@ testthat::test_that("getModelSize works", {
 
 })
 
+testthat::test_that("small-n cv.glmnet calls do not leak glmnet's fold-size nag (#186)", {
+  set.seed(186)
+  X <- matrix(stats::rnorm(20 * 6), nrow = 20, ncol = 6)
+  y <- as.numeric(X %*% c(1, -1, 0, 0, 0, 0) + stats::rnorm(20))
+
+  # n = 20 puts both calls under glmnet's nrow(x)/nfolds < 3 rule -- getLassoLambda
+  # subsamples 11 rows over 10 folds, getModelSize passes all 20 over 10 -- so
+  # without the explicit grouped argument cv.glmnet warns here. capture_warnings()
+  # rather than expect_no_warning() because the woven chunks run at testthat
+  # edition 2, where this form behaves the same as it does under devtools::test().
+  lambda_warns <- testthat::capture_warnings(lambda <- getLassoLambda(X = X, y = y))
+  testthat::expect_length(lambda_warns, 0)
+  testthat::expect_true(is.numeric(lambda) & length(lambda) == 1)
+
+  size_warns <- testthat::capture_warnings(
+    size <- getModelSize(X = X, y = y, clusters = list(1:3)))
+  testthat::expect_length(size_warns, 0)
+  testthat::expect_true(is.integer(size) & size >= 1)
+
+  # The user-visible half of #186: under options(warn = 2) the unguarded calls
+  # became errors, so cssSelect()/cssPredict() were unusable at small n.
+  old_warn <- options(warn = 2)
+  on.exit(options(old_warn), add = TRUE)
+  testthat::expect_no_error(getLassoLambda(X = X, y = y))
+  testthat::expect_no_error(getModelSize(X = X, y = y, clusters = list(1:3)))
+})
+
 testthat::test_that("getSelectionPrototypes works", {
   set.seed(67234)
   
