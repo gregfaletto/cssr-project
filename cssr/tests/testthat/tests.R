@@ -1450,7 +1450,13 @@ testthat::test_that("cssLasso works", {
   testthat::expect_true(is.integer(res))
   testthat::expect_true(length(res) <= 4)
   testthat::expect_true(length(res) >= 0)
-  testthat::expect_true(length(res) == length(unique(res)))
+  # A no-duplicates assertion used to belong here, and #188 removed it rather
+  # than leaving it in place looking like coverage. cssLasso() now ends in
+  # sort(unique(unlist(pred))), so it de-duplicates its own return value and no
+  # such assertion made here can fail for any input -- it would be a guardrail
+  # blinded by the very change it appears to guard. The property still holds,
+  # for a structural reason upstream: nonzeroCoef() builds each slot as which[x],
+  # a logical subset of distinct column indices, so duplicates never arise.
   testthat::expect_true(all(res <= 4))
   testthat::expect_true(all(res >= 1))
   
@@ -1461,6 +1467,57 @@ testthat::test_that("cssLasso works", {
                          "For method cssLasso, lambda must be nonnegative.",
                          fixed=TRUE)
 
+})
+
+testthat::test_that("cssLasso handles glmnet 5.0's list return shape (#188)", {
+  set.seed(3011)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet >= 5.0 always returns a list, one slot per s value. Deliberately
+  # UNSORTED so the assertion also pins the sort(); an already-ordered fixture
+  # would pass whether or not the sort survived.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(c(4L, 1L, 3L)), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso still handles glmnet 4.x's data.frame return shape (#188)", {
+  set.seed(3012)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # glmnet 4.x's shape for a scalar s on a non-empty selection. The fix must be
+  # bidirectional, not a swap of one hard-coded container for another.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) data.frame(X1 = c(4L, 1L, 3L)),
+    .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=0.01)
+
+  testthat::expect_identical(res, c(1L, 3L, 4L))
+  testthat::expect_true(is.integer(res))
+})
+
+testthat::test_that("cssLasso returns an empty selection under either glmnet shape (#188)", {
+  set.seed(3013)
+  x <- matrix(stats::rnorm(20*5), nrow=20, ncol=5)
+  y <- stats::rnorm(20)
+
+  # Both 4.x and 5.0 signal "nothing selected" as a list holding NULL, so
+  # unlist() gives length 0. This is the contract the container-independent
+  # guard replaced an is.null(pred[[1]]) test to preserve.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) list(NULL), .package = "glmnet")
+
+  res <- cssLasso(X=x, y=y, lambda=1e6)
+
+  testthat::expect_identical(res, integer(0))
+  testthat::expect_true(is.integer(res))
 })
 
 testthat::test_that("getClusterSelMatrix works", {
