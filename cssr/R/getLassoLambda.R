@@ -94,8 +94,16 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     nfolds <- max(3L, min(nfolds, n_sample))
 
     inds_size <- sample(1:n, n_sample)
+    # cv.glmnet overrides grouped to FALSE, and warns that it did, whenever a
+    # fold would hold fewer than 3 observations -- its rule is nrow(x)/nfolds < 3.
+    # Setting grouped here to what cv.glmnet would set anyway leaves the fit
+    # identical and spares small-n callers a warning about their sample size that
+    # says nothing about cssr (#186). x has n_sample rows, and nfolds is the
+    # clamped value just above. getModelSize() carries the same guard; a change
+    # to either belongs in both.
     size_results <- glmnet::cv.glmnet(x=X[inds_size, ], y=y[inds_size],
-        family="gaussian", nfolds=nfolds, alpha=alpha)
+        family="gaussian", nfolds=nfolds, alpha=alpha,
+        grouped=n_sample/nfolds >= 3)
 
     lambda_ret <- size_results[[paste("lambda.", lambda_choice, sep="")]]
 

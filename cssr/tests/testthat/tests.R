@@ -42,7 +42,14 @@ testthat::test_that("non-numeric matrix X is rejected at every entry point (#152
     # numeric data, then pass a character testX of the SAME ncol so it
     # reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).
     nx <- matrix(stats::rnorm(60), 30, 2)
-    res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
+    # B = 5 is under checkB()'s B < 10 threshold, so css() deliberately warns
+    # here. Assert it rather than letting it leak into the reporter (#186).
+    # The assignment sits inside expect_warning() because at testthat edition
+    # 3 expect_warning() returns the condition, not the expression's value.
+    testthat::expect_warning(
+        res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01,
+            B = 5),
+        "Small values of B may lead to poor results.", fixed = TRUE)
     testthat::expect_error(
         getCssPreds(res, testX = matrix(sample(letters, 20, TRUE), 10, 2),
             trainX = nx[21:30, ], trainY = stats::rnorm(10)),
@@ -4174,11 +4181,22 @@ testthat::test_that("checkGetCssPredsInputs works", {
                        clusters=good_clusters, B = 10)
 
   # Named variables for css matrix but not new one--should get a warning
-  testthat::expect_warning(checkGetCssPredsInputs(css_res_named, testX=x_pred,
-                                weighting="simple_avg", cutoff=0,
-                                min_num_clusts=1, max_num_clusts=NA,
-                                trainX=x_train, trainY=y_train),
-                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+  # checkGetCssPredsInputs() validates testX and trainX separately, and both
+  # are unnamed here while the css X was named, so the warning fires once per
+  # matrix. Collect rather than nesting two expect_warning() calls: the woven
+  # chunks run at testthat edition 2 (no DESCRIPTION at the repo root), where
+  # expect_warning() consumes every warning and a nested pair fails. Asserting
+  # the length also turns an unexpected third warning into a failure (#186).
+  # Keep both assertions: all(grepl(...)) is vacuously TRUE on an empty
+  # vector, so expect_length() is what makes the pair non-blind.
+  name_warns <- testthat::capture_warnings(
+    checkGetCssPredsInputs(css_res_named, testX=x_pred,
+                           weighting="simple_avg", cutoff=0,
+                           min_num_clusts=1, max_num_clusts=NA,
+                           trainX=x_train, trainY=y_train))
+  testthat::expect_length(name_warns, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names (column names) even though the X provided to css did.",
+                                  name_warns, fixed=TRUE)))
 
   # Try mismatching variable names
   colnames(x_train) <- LETTERS[2:7]
@@ -4507,9 +4525,15 @@ testthat::test_that("getCssPreds works", {
                        clusters=good_clusters, B = 10)
 
   # Named variables for css matrix but not new one--should get a warning
-  testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
-                                       trainX=x_train, trainY=y_train),
-                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+  # As at the checkGetCssPredsInputs site: testX and trainX are both unnamed,
+  # so the warning fires once per matrix. Collected rather than nested for the
+  # same edition-2 reason, and both assertions kept for the same reason (#186).
+  name_warns <- testthat::capture_warnings(
+    getCssPreds(css_res_named, testX=x_pred, trainX=x_train,
+                trainY=y_train))
+  testthat::expect_length(name_warns, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names (column names) even though the X provided to css did.",
+                                  name_warns, fixed=TRUE)))
 
   # Try mismatching variable names
   colnames(x_train) <- LETTERS[2:7]
@@ -4720,7 +4744,19 @@ testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
   clusters <- list(cluster1 = 1:3)
 
   # No train_inds (train_inds empty).
-  css_no_train <- css(X = X, y = y, lambda = 0.01, clusters = clusters, B = 10)
+  # glmnet's own C++ convergence nag fires on this fixture. It is not
+  # asserted, because that would pin a foreign optimizer's behavior, which can
+  # differ across glmnet versions, platforms and BLAS. The predicate matches
+  # glmnet's shared C++-error prefix, so it muffles that whole class -- a
+  # tighter one would pin the very detail we are avoiding. Every non-glmnet
+  # warning from this call still reaches the reporter (#186).
+  css_no_train <- withCallingHandlers(
+    css(X = X, y = y, lambda = 0.01, clusters = clusters, B = 10),
+    warning = function(w) {
+      if (grepl("from glmnet C++ code", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   # train_inds length 6 > 4 clusters, so the fallback path clears the downstream
   # OLS-size guard (needs more training rows than clusters) and can predict
   # rather than error.
@@ -7874,7 +7910,19 @@ testthat::test_that("cssSelect works", {
   # X as a data.frame
   X_df <- datasets::mtcars
   
-  res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  # cssSelect() reports a max_num_clusts tie on this draw. It is not asserted,
+  # because whether the tie occurs depends on the estimated model size and so
+  # on glmnet's lasso path rather than on cssr; the warning has deterministic
+  # coverage in "checkSelectedClusters works" and in the #159c plot.cssr test.
+  # Muffling just that one message leaves every other warning visible (#186).
+  res <- withCallingHandlers(
+    cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3),
+    warning = function(w) {
+      if (grepl("Returning more than max_num_clusts", conditionMessage(w),
+                fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   
   testthat::expect_true(is.list(res))
   testthat::expect_equal(length(res), 3)

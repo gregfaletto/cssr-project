@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="11 Tests for wrapper functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-08-19">
+<meta name="date" content="2026-08-21">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -276,415 +276,267 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb334-104"><a href="tests-for-wrapper-functions.html#cb334-104" tabindex="-1"></a>  <span class="co"># X as a data.frame</span></span>
 <span id="cb334-105"><a href="tests-for-wrapper-functions.html#cb334-105" tabindex="-1"></a>  X_df <span class="ot">&lt;-</span> datasets<span class="sc">::</span>mtcars</span>
 <span id="cb334-106"><a href="tests-for-wrapper-functions.html#cb334-106" tabindex="-1"></a>  </span>
-<span id="cb334-107"><a href="tests-for-wrapper-functions.html#cb334-107" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>X_df, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)), <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)</span>
-<span id="cb334-108"><a href="tests-for-wrapper-functions.html#cb334-108" tabindex="-1"></a>  </span>
-<span id="cb334-109"><a href="tests-for-wrapper-functions.html#cb334-109" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-110"><a href="tests-for-wrapper-functions.html#cb334-110" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-111"><a href="tests-for-wrapper-functions.html#cb334-111" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-112"><a href="tests-for-wrapper-functions.html#cb334-112" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
-<span id="cb334-113"><a href="tests-for-wrapper-functions.html#cb334-113" tabindex="-1"></a>  </span>
-<span id="cb334-114"><a href="tests-for-wrapper-functions.html#cb334-114" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-115"><a href="tests-for-wrapper-functions.html#cb334-115" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-116"><a href="tests-for-wrapper-functions.html#cb334-116" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
-<span id="cb334-117"><a href="tests-for-wrapper-functions.html#cb334-117" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-118"><a href="tests-for-wrapper-functions.html#cb334-118" tabindex="-1"></a>  <span class="co"># Total of ncol(X_df) - (3 - 1) clusters</span></span>
-<span id="cb334-119"><a href="tests-for-wrapper-functions.html#cb334-119" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df) <span class="sc">-</span> <span class="dv">2</span>)</span>
-<span id="cb334-120"><a href="tests-for-wrapper-functions.html#cb334-120" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-121"><a href="tests-for-wrapper-functions.html#cb334-121" tabindex="-1"></a></span>
-<span id="cb334-122"><a href="tests-for-wrapper-functions.html#cb334-122" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
-<span id="cb334-123"><a href="tests-for-wrapper-functions.html#cb334-123" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
-<span id="cb334-124"><a href="tests-for-wrapper-functions.html#cb334-124" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
-<span id="cb334-125"><a href="tests-for-wrapper-functions.html#cb334-125" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb334-126"><a href="tests-for-wrapper-functions.html#cb334-126" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
-<span id="cb334-127"><a href="tests-for-wrapper-functions.html#cb334-127" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
-<span id="cb334-128"><a href="tests-for-wrapper-functions.html#cb334-128" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-129"><a href="tests-for-wrapper-functions.html#cb334-129" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
-<span id="cb334-130"><a href="tests-for-wrapper-functions.html#cb334-130" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df)))</span>
-<span id="cb334-131"><a href="tests-for-wrapper-functions.html#cb334-131" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
-<span id="cb334-132"><a href="tests-for-wrapper-functions.html#cb334-132" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
-<span id="cb334-133"><a href="tests-for-wrapper-functions.html#cb334-133" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
-<span id="cb334-134"><a href="tests-for-wrapper-functions.html#cb334-134" tabindex="-1"></a>  }</span>
-<span id="cb334-135"><a href="tests-for-wrapper-functions.html#cb334-135" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df))</span>
-<span id="cb334-136"><a href="tests-for-wrapper-functions.html#cb334-136" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
-<span id="cb334-137"><a href="tests-for-wrapper-functions.html#cb334-137" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
-<span id="cb334-138"><a href="tests-for-wrapper-functions.html#cb334-138" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df)))</span>
-<span id="cb334-139"><a href="tests-for-wrapper-functions.html#cb334-139" tabindex="-1"></a></span>
-<span id="cb334-140"><a href="tests-for-wrapper-functions.html#cb334-140" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df))</span>
-<span id="cb334-141"><a href="tests-for-wrapper-functions.html#cb334-141" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-142"><a href="tests-for-wrapper-functions.html#cb334-142" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-143"><a href="tests-for-wrapper-functions.html#cb334-143" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
-<span id="cb334-144"><a href="tests-for-wrapper-functions.html#cb334-144" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
-<span id="cb334-145"><a href="tests-for-wrapper-functions.html#cb334-145" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb334-146"><a href="tests-for-wrapper-functions.html#cb334-146" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df)))</span>
-<span id="cb334-147"><a href="tests-for-wrapper-functions.html#cb334-147" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
-<span id="cb334-148"><a href="tests-for-wrapper-functions.html#cb334-148" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
-<span id="cb334-149"><a href="tests-for-wrapper-functions.html#cb334-149" tabindex="-1"></a></span>
-<span id="cb334-150"><a href="tests-for-wrapper-functions.html#cb334-150" tabindex="-1"></a>  <span class="co"># X as a dataframe with factors (number of columns of final design matrix</span></span>
-<span id="cb334-151"><a href="tests-for-wrapper-functions.html#cb334-151" tabindex="-1"></a>  <span class="co"># after one-hot encoding factors won't match number of columns of df2)</span></span>
-<span id="cb334-152"><a href="tests-for-wrapper-functions.html#cb334-152" tabindex="-1"></a>  <span class="co"># cyl, gear, and carb are factors with more than 2 levels</span></span>
-<span id="cb334-153"><a href="tests-for-wrapper-functions.html#cb334-153" tabindex="-1"></a>  df2 <span class="ot">&lt;-</span> X_df</span>
-<span id="cb334-154"><a href="tests-for-wrapper-functions.html#cb334-154" tabindex="-1"></a>  df2<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>cyl)</span>
-<span id="cb334-155"><a href="tests-for-wrapper-functions.html#cb334-155" tabindex="-1"></a>  df2<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>vs)</span>
-<span id="cb334-156"><a href="tests-for-wrapper-functions.html#cb334-156" tabindex="-1"></a>  df2<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>am)</span>
-<span id="cb334-157"><a href="tests-for-wrapper-functions.html#cb334-157" tabindex="-1"></a>  df2<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>gear)</span>
-<span id="cb334-158"><a href="tests-for-wrapper-functions.html#cb334-158" tabindex="-1"></a>  df2<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>carb)</span>
-<span id="cb334-159"><a href="tests-for-wrapper-functions.html#cb334-159" tabindex="-1"></a>  </span>
-<span id="cb334-160"><a href="tests-for-wrapper-functions.html#cb334-160" tabindex="-1"></a>  <span class="co"># Should get error if I try to use data.frame with clusters, since data.frame</span></span>
-<span id="cb334-161"><a href="tests-for-wrapper-functions.html#cb334-161" tabindex="-1"></a>  <span class="co"># has factors with more than two levels</span></span>
-<span id="cb334-162"><a href="tests-for-wrapper-functions.html#cb334-162" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>df2, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)),</span>
-<span id="cb334-163"><a href="tests-for-wrapper-functions.html#cb334-163" tabindex="-1"></a>                                   <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>),</span>
-<span id="cb334-164"><a href="tests-for-wrapper-functions.html#cb334-164" tabindex="-1"></a>                         <span class="st">"When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert the data.frame X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-165"><a href="tests-for-wrapper-functions.html#cb334-165" tabindex="-1"></a>  </span>
-<span id="cb334-166"><a href="tests-for-wrapper-functions.html#cb334-166" tabindex="-1"></a>  <span class="co"># Should be fine if I don't use clusters</span></span>
-<span id="cb334-167"><a href="tests-for-wrapper-functions.html#cb334-167" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>df2, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)))</span>
-<span id="cb334-168"><a href="tests-for-wrapper-functions.html#cb334-168" tabindex="-1"></a>  </span>
-<span id="cb334-169"><a href="tests-for-wrapper-functions.html#cb334-169" tabindex="-1"></a>  X_df_mat <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., df2)</span>
-<span id="cb334-170"><a href="tests-for-wrapper-functions.html#cb334-170" tabindex="-1"></a>  X_df_mat <span class="ot">&lt;-</span> X_df_mat[, <span class="fu">colnames</span>(X_df_mat) <span class="sc">!=</span> <span class="st">"(Intercept)"</span>]</span>
-<span id="cb334-171"><a href="tests-for-wrapper-functions.html#cb334-171" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X_df_mat)</span>
-<span id="cb334-172"><a href="tests-for-wrapper-functions.html#cb334-172" tabindex="-1"></a>  </span>
-<span id="cb334-173"><a href="tests-for-wrapper-functions.html#cb334-173" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-174"><a href="tests-for-wrapper-functions.html#cb334-174" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-175"><a href="tests-for-wrapper-functions.html#cb334-175" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-176"><a href="tests-for-wrapper-functions.html#cb334-176" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-107"><a href="tests-for-wrapper-functions.html#cb334-107" tabindex="-1"></a>  <span class="co"># <a href="wrapper-functions.html#cssSelect">cssSelect</a>() reports a max_num_clusts tie on this draw. It is not asserted,</span></span>
+<span id="cb334-108"><a href="tests-for-wrapper-functions.html#cb334-108" tabindex="-1"></a>  <span class="co"># because whether the tie occurs depends on the estimated model size and so</span></span>
+<span id="cb334-109"><a href="tests-for-wrapper-functions.html#cb334-109" tabindex="-1"></a>  <span class="co"># on glmnet's lasso path rather than on cssr; the warning has deterministic</span></span>
+<span id="cb334-110"><a href="tests-for-wrapper-functions.html#cb334-110" tabindex="-1"></a>  <span class="co"># coverage in "checkSelectedClusters works" and in the #159c plot.cssr test.</span></span>
+<span id="cb334-111"><a href="tests-for-wrapper-functions.html#cb334-111" tabindex="-1"></a>  <span class="co"># Muffling just that one message leaves every other warning visible (#186).</span></span>
+<span id="cb334-112"><a href="tests-for-wrapper-functions.html#cb334-112" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb334-113"><a href="tests-for-wrapper-functions.html#cb334-113" tabindex="-1"></a>    <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>X_df, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)), <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>),</span>
+<span id="cb334-114"><a href="tests-for-wrapper-functions.html#cb334-114" tabindex="-1"></a>    <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb334-115"><a href="tests-for-wrapper-functions.html#cb334-115" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">grepl</span>(<span class="st">"Returning more than max_num_clusts"</span>, <span class="fu">conditionMessage</span>(w),</span>
+<span id="cb334-116"><a href="tests-for-wrapper-functions.html#cb334-116" tabindex="-1"></a>                <span class="at">fixed =</span> <span class="cn">TRUE</span>)) {</span>
+<span id="cb334-117"><a href="tests-for-wrapper-functions.html#cb334-117" tabindex="-1"></a>        <span class="fu">invokeRestart</span>(<span class="st">"muffleWarning"</span>)</span>
+<span id="cb334-118"><a href="tests-for-wrapper-functions.html#cb334-118" tabindex="-1"></a>      }</span>
+<span id="cb334-119"><a href="tests-for-wrapper-functions.html#cb334-119" tabindex="-1"></a>    })</span>
+<span id="cb334-120"><a href="tests-for-wrapper-functions.html#cb334-120" tabindex="-1"></a>  </span>
+<span id="cb334-121"><a href="tests-for-wrapper-functions.html#cb334-121" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-122"><a href="tests-for-wrapper-functions.html#cb334-122" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-123"><a href="tests-for-wrapper-functions.html#cb334-123" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-124"><a href="tests-for-wrapper-functions.html#cb334-124" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-125"><a href="tests-for-wrapper-functions.html#cb334-125" tabindex="-1"></a>  </span>
+<span id="cb334-126"><a href="tests-for-wrapper-functions.html#cb334-126" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-127"><a href="tests-for-wrapper-functions.html#cb334-127" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-128"><a href="tests-for-wrapper-functions.html#cb334-128" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
+<span id="cb334-129"><a href="tests-for-wrapper-functions.html#cb334-129" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-130"><a href="tests-for-wrapper-functions.html#cb334-130" tabindex="-1"></a>  <span class="co"># Total of ncol(X_df) - (3 - 1) clusters</span></span>
+<span id="cb334-131"><a href="tests-for-wrapper-functions.html#cb334-131" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df) <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb334-132"><a href="tests-for-wrapper-functions.html#cb334-132" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-133"><a href="tests-for-wrapper-functions.html#cb334-133" tabindex="-1"></a></span>
+<span id="cb334-134"><a href="tests-for-wrapper-functions.html#cb334-134" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
+<span id="cb334-135"><a href="tests-for-wrapper-functions.html#cb334-135" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
+<span id="cb334-136"><a href="tests-for-wrapper-functions.html#cb334-136" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
+<span id="cb334-137"><a href="tests-for-wrapper-functions.html#cb334-137" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb334-138"><a href="tests-for-wrapper-functions.html#cb334-138" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
+<span id="cb334-139"><a href="tests-for-wrapper-functions.html#cb334-139" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
+<span id="cb334-140"><a href="tests-for-wrapper-functions.html#cb334-140" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-141"><a href="tests-for-wrapper-functions.html#cb334-141" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
+<span id="cb334-142"><a href="tests-for-wrapper-functions.html#cb334-142" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df)))</span>
+<span id="cb334-143"><a href="tests-for-wrapper-functions.html#cb334-143" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
+<span id="cb334-144"><a href="tests-for-wrapper-functions.html#cb334-144" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
+<span id="cb334-145"><a href="tests-for-wrapper-functions.html#cb334-145" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
+<span id="cb334-146"><a href="tests-for-wrapper-functions.html#cb334-146" tabindex="-1"></a>  }</span>
+<span id="cb334-147"><a href="tests-for-wrapper-functions.html#cb334-147" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df))</span>
+<span id="cb334-148"><a href="tests-for-wrapper-functions.html#cb334-148" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
+<span id="cb334-149"><a href="tests-for-wrapper-functions.html#cb334-149" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
+<span id="cb334-150"><a href="tests-for-wrapper-functions.html#cb334-150" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(X_df)))</span>
+<span id="cb334-151"><a href="tests-for-wrapper-functions.html#cb334-151" tabindex="-1"></a></span>
+<span id="cb334-152"><a href="tests-for-wrapper-functions.html#cb334-152" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df))</span>
+<span id="cb334-153"><a href="tests-for-wrapper-functions.html#cb334-153" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-154"><a href="tests-for-wrapper-functions.html#cb334-154" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-155"><a href="tests-for-wrapper-functions.html#cb334-155" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
+<span id="cb334-156"><a href="tests-for-wrapper-functions.html#cb334-156" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
+<span id="cb334-157"><a href="tests-for-wrapper-functions.html#cb334-157" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb334-158"><a href="tests-for-wrapper-functions.html#cb334-158" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X_df)))</span>
+<span id="cb334-159"><a href="tests-for-wrapper-functions.html#cb334-159" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
+<span id="cb334-160"><a href="tests-for-wrapper-functions.html#cb334-160" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
+<span id="cb334-161"><a href="tests-for-wrapper-functions.html#cb334-161" tabindex="-1"></a></span>
+<span id="cb334-162"><a href="tests-for-wrapper-functions.html#cb334-162" tabindex="-1"></a>  <span class="co"># X as a dataframe with factors (number of columns of final design matrix</span></span>
+<span id="cb334-163"><a href="tests-for-wrapper-functions.html#cb334-163" tabindex="-1"></a>  <span class="co"># after one-hot encoding factors won't match number of columns of df2)</span></span>
+<span id="cb334-164"><a href="tests-for-wrapper-functions.html#cb334-164" tabindex="-1"></a>  <span class="co"># cyl, gear, and carb are factors with more than 2 levels</span></span>
+<span id="cb334-165"><a href="tests-for-wrapper-functions.html#cb334-165" tabindex="-1"></a>  df2 <span class="ot">&lt;-</span> X_df</span>
+<span id="cb334-166"><a href="tests-for-wrapper-functions.html#cb334-166" tabindex="-1"></a>  df2<span class="sc">$</span>cyl <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>cyl)</span>
+<span id="cb334-167"><a href="tests-for-wrapper-functions.html#cb334-167" tabindex="-1"></a>  df2<span class="sc">$</span>vs <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>vs)</span>
+<span id="cb334-168"><a href="tests-for-wrapper-functions.html#cb334-168" tabindex="-1"></a>  df2<span class="sc">$</span>am <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>am)</span>
+<span id="cb334-169"><a href="tests-for-wrapper-functions.html#cb334-169" tabindex="-1"></a>  df2<span class="sc">$</span>gear <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>gear)</span>
+<span id="cb334-170"><a href="tests-for-wrapper-functions.html#cb334-170" tabindex="-1"></a>  df2<span class="sc">$</span>carb <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>carb)</span>
+<span id="cb334-171"><a href="tests-for-wrapper-functions.html#cb334-171" tabindex="-1"></a>  </span>
+<span id="cb334-172"><a href="tests-for-wrapper-functions.html#cb334-172" tabindex="-1"></a>  <span class="co"># Should get error if I try to use data.frame with clusters, since data.frame</span></span>
+<span id="cb334-173"><a href="tests-for-wrapper-functions.html#cb334-173" tabindex="-1"></a>  <span class="co"># has factors with more than two levels</span></span>
+<span id="cb334-174"><a href="tests-for-wrapper-functions.html#cb334-174" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>df2, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)),</span>
+<span id="cb334-175"><a href="tests-for-wrapper-functions.html#cb334-175" tabindex="-1"></a>                                   <span class="at">clusters=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>),</span>
+<span id="cb334-176"><a href="tests-for-wrapper-functions.html#cb334-176" tabindex="-1"></a>                         <span class="st">"When stats::model.matrix converted the provided data.frame X to a matrix, the number of columns changed (probably because the provided data.frame contained a factor variable with at least three levels). Please convert the data.frame X to a matrix yourself using model.matrix and provide cluster assignments according to the columns of the new matrix."</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb334-177"><a href="tests-for-wrapper-functions.html#cb334-177" tabindex="-1"></a>  </span>
-<span id="cb334-178"><a href="tests-for-wrapper-functions.html#cb334-178" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-179"><a href="tests-for-wrapper-functions.html#cb334-179" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-180"><a href="tests-for-wrapper-functions.html#cb334-180" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
-<span id="cb334-181"><a href="tests-for-wrapper-functions.html#cb334-181" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-182"><a href="tests-for-wrapper-functions.html#cb334-182" tabindex="-1"></a>  <span class="co"># Total of p - (3 - 1) clusters</span></span>
-<span id="cb334-183"><a href="tests-for-wrapper-functions.html#cb334-183" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> p <span class="sc">-</span> <span class="dv">2</span>)</span>
-<span id="cb334-184"><a href="tests-for-wrapper-functions.html#cb334-184" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-185"><a href="tests-for-wrapper-functions.html#cb334-185" tabindex="-1"></a></span>
-<span id="cb334-186"><a href="tests-for-wrapper-functions.html#cb334-186" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
-<span id="cb334-187"><a href="tests-for-wrapper-functions.html#cb334-187" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
-<span id="cb334-188"><a href="tests-for-wrapper-functions.html#cb334-188" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
-<span id="cb334-189"><a href="tests-for-wrapper-functions.html#cb334-189" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb334-190"><a href="tests-for-wrapper-functions.html#cb334-190" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
-<span id="cb334-191"><a href="tests-for-wrapper-functions.html#cb334-191" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
-<span id="cb334-192"><a href="tests-for-wrapper-functions.html#cb334-192" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-193"><a href="tests-for-wrapper-functions.html#cb334-193" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
-<span id="cb334-194"><a href="tests-for-wrapper-functions.html#cb334-194" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>p))</span>
-<span id="cb334-195"><a href="tests-for-wrapper-functions.html#cb334-195" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
-<span id="cb334-196"><a href="tests-for-wrapper-functions.html#cb334-196" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
-<span id="cb334-197"><a href="tests-for-wrapper-functions.html#cb334-197" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
-<span id="cb334-198"><a href="tests-for-wrapper-functions.html#cb334-198" tabindex="-1"></a>  }</span>
-<span id="cb334-199"><a href="tests-for-wrapper-functions.html#cb334-199" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> p)</span>
-<span id="cb334-200"><a href="tests-for-wrapper-functions.html#cb334-200" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
-<span id="cb334-201"><a href="tests-for-wrapper-functions.html#cb334-201" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
-<span id="cb334-202"><a href="tests-for-wrapper-functions.html#cb334-202" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>p))</span>
-<span id="cb334-203"><a href="tests-for-wrapper-functions.html#cb334-203" tabindex="-1"></a></span>
-<span id="cb334-204"><a href="tests-for-wrapper-functions.html#cb334-204" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> p)</span>
-<span id="cb334-205"><a href="tests-for-wrapper-functions.html#cb334-205" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-206"><a href="tests-for-wrapper-functions.html#cb334-206" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-207"><a href="tests-for-wrapper-functions.html#cb334-207" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
-<span id="cb334-208"><a href="tests-for-wrapper-functions.html#cb334-208" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
-<span id="cb334-209"><a href="tests-for-wrapper-functions.html#cb334-209" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb334-210"><a href="tests-for-wrapper-functions.html#cb334-210" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> p))</span>
-<span id="cb334-211"><a href="tests-for-wrapper-functions.html#cb334-211" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
-<span id="cb334-212"><a href="tests-for-wrapper-functions.html#cb334-212" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
-<span id="cb334-213"><a href="tests-for-wrapper-functions.html#cb334-213" tabindex="-1"></a></span>
-<span id="cb334-214"><a href="tests-for-wrapper-functions.html#cb334-214" tabindex="-1"></a></span>
-<span id="cb334-215"><a href="tests-for-wrapper-functions.html#cb334-215" tabindex="-1"></a>  <span class="co"># X as a matrix with column names</span></span>
-<span id="cb334-216"><a href="tests-for-wrapper-functions.html#cb334-216" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> x</span>
-<span id="cb334-217"><a href="tests-for-wrapper-functions.html#cb334-217" tabindex="-1"></a>  <span class="fu">colnames</span>(x2) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>]</span>
-<span id="cb334-218"><a href="tests-for-wrapper-functions.html#cb334-218" tabindex="-1"></a>  </span>
-<span id="cb334-219"><a href="tests-for-wrapper-functions.html#cb334-219" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x2, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters)</span>
-<span id="cb334-220"><a href="tests-for-wrapper-functions.html#cb334-220" tabindex="-1"></a>  </span>
-<span id="cb334-221"><a href="tests-for-wrapper-functions.html#cb334-221" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-222"><a href="tests-for-wrapper-functions.html#cb334-222" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-223"><a href="tests-for-wrapper-functions.html#cb334-223" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-224"><a href="tests-for-wrapper-functions.html#cb334-224" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
-<span id="cb334-225"><a href="tests-for-wrapper-functions.html#cb334-225" tabindex="-1"></a>  </span>
-<span id="cb334-226"><a href="tests-for-wrapper-functions.html#cb334-226" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-227"><a href="tests-for-wrapper-functions.html#cb334-227" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
-<span id="cb334-228"><a href="tests-for-wrapper-functions.html#cb334-228" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
-<span id="cb334-229"><a href="tests-for-wrapper-functions.html#cb334-229" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-230"><a href="tests-for-wrapper-functions.html#cb334-230" tabindex="-1"></a>  <span class="co"># Total of 11 - 2*(3 - 1) = 7 clusters</span></span>
-<span id="cb334-231"><a href="tests-for-wrapper-functions.html#cb334-231" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="dv">7</span>)</span>
-<span id="cb334-232"><a href="tests-for-wrapper-functions.html#cb334-232" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-233"><a href="tests-for-wrapper-functions.html#cb334-233" tabindex="-1"></a></span>
-<span id="cb334-234"><a href="tests-for-wrapper-functions.html#cb334-234" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
-<span id="cb334-235"><a href="tests-for-wrapper-functions.html#cb334-235" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
-<span id="cb334-236"><a href="tests-for-wrapper-functions.html#cb334-236" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
-<span id="cb334-237"><a href="tests-for-wrapper-functions.html#cb334-237" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
-<span id="cb334-238"><a href="tests-for-wrapper-functions.html#cb334-238" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
-<span id="cb334-239"><a href="tests-for-wrapper-functions.html#cb334-239" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
-<span id="cb334-240"><a href="tests-for-wrapper-functions.html#cb334-240" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-241"><a href="tests-for-wrapper-functions.html#cb334-241" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
-<span id="cb334-242"><a href="tests-for-wrapper-functions.html#cb334-242" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
-<span id="cb334-243"><a href="tests-for-wrapper-functions.html#cb334-243" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
-<span id="cb334-244"><a href="tests-for-wrapper-functions.html#cb334-244" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
-<span id="cb334-245"><a href="tests-for-wrapper-functions.html#cb334-245" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
-<span id="cb334-246"><a href="tests-for-wrapper-functions.html#cb334-246" tabindex="-1"></a>  }</span>
-<span id="cb334-247"><a href="tests-for-wrapper-functions.html#cb334-247" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> <span class="dv">11</span>)</span>
-<span id="cb334-248"><a href="tests-for-wrapper-functions.html#cb334-248" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
-<span id="cb334-249"><a href="tests-for-wrapper-functions.html#cb334-249" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
-<span id="cb334-250"><a href="tests-for-wrapper-functions.html#cb334-250" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
-<span id="cb334-251"><a href="tests-for-wrapper-functions.html#cb334-251" tabindex="-1"></a>  </span>
-<span id="cb334-252"><a href="tests-for-wrapper-functions.html#cb334-252" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> <span class="dv">11</span>)</span>
-<span id="cb334-253"><a href="tests-for-wrapper-functions.html#cb334-253" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
-<span id="cb334-254"><a href="tests-for-wrapper-functions.html#cb334-254" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb334-255"><a href="tests-for-wrapper-functions.html#cb334-255" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
-<span id="cb334-256"><a href="tests-for-wrapper-functions.html#cb334-256" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
-<span id="cb334-257"><a href="tests-for-wrapper-functions.html#cb334-257" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
-<span id="cb334-258"><a href="tests-for-wrapper-functions.html#cb334-258" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> <span class="dv">11</span>))</span>
-<span id="cb334-259"><a href="tests-for-wrapper-functions.html#cb334-259" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
-<span id="cb334-260"><a href="tests-for-wrapper-functions.html#cb334-260" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
-<span id="cb334-261"><a href="tests-for-wrapper-functions.html#cb334-261" tabindex="-1"></a>  </span>
-<span id="cb334-262"><a href="tests-for-wrapper-functions.html#cb334-262" tabindex="-1"></a>  <span class="co"># Vary inputs</span></span>
-<span id="cb334-263"><a href="tests-for-wrapper-functions.html#cb334-263" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">lambda=</span><span class="fl">0.01</span>)</span>
-<span id="cb334-264"><a href="tests-for-wrapper-functions.html#cb334-264" tabindex="-1"></a>  </span>
-<span id="cb334-265"><a href="tests-for-wrapper-functions.html#cb334-265" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-266"><a href="tests-for-wrapper-functions.html#cb334-266" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-267"><a href="tests-for-wrapper-functions.html#cb334-267" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-268"><a href="tests-for-wrapper-functions.html#cb334-268" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
-<span id="cb334-269"><a href="tests-for-wrapper-functions.html#cb334-269" tabindex="-1"></a>  </span>
-<span id="cb334-270"><a href="tests-for-wrapper-functions.html#cb334-270" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">cutoff=</span><span class="fl">0.6</span>)</span>
-<span id="cb334-271"><a href="tests-for-wrapper-functions.html#cb334-271" tabindex="-1"></a>  </span>
-<span id="cb334-272"><a href="tests-for-wrapper-functions.html#cb334-272" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-273"><a href="tests-for-wrapper-functions.html#cb334-273" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-274"><a href="tests-for-wrapper-functions.html#cb334-274" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-275"><a href="tests-for-wrapper-functions.html#cb334-275" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-178"><a href="tests-for-wrapper-functions.html#cb334-178" tabindex="-1"></a>  <span class="co"># Should be fine if I don't use clusters</span></span>
+<span id="cb334-179"><a href="tests-for-wrapper-functions.html#cb334-179" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>df2, <span class="at">y=</span>stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="fu">nrow</span>(X_df)))</span>
+<span id="cb334-180"><a href="tests-for-wrapper-functions.html#cb334-180" tabindex="-1"></a>  </span>
+<span id="cb334-181"><a href="tests-for-wrapper-functions.html#cb334-181" tabindex="-1"></a>  X_df_mat <span class="ot">&lt;-</span> stats<span class="sc">::</span><span class="fu">model.matrix</span>(<span class="sc">~</span> ., df2)</span>
+<span id="cb334-182"><a href="tests-for-wrapper-functions.html#cb334-182" tabindex="-1"></a>  X_df_mat <span class="ot">&lt;-</span> X_df_mat[, <span class="fu">colnames</span>(X_df_mat) <span class="sc">!=</span> <span class="st">"(Intercept)"</span>]</span>
+<span id="cb334-183"><a href="tests-for-wrapper-functions.html#cb334-183" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X_df_mat)</span>
+<span id="cb334-184"><a href="tests-for-wrapper-functions.html#cb334-184" tabindex="-1"></a>  </span>
+<span id="cb334-185"><a href="tests-for-wrapper-functions.html#cb334-185" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-186"><a href="tests-for-wrapper-functions.html#cb334-186" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-187"><a href="tests-for-wrapper-functions.html#cb334-187" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-188"><a href="tests-for-wrapper-functions.html#cb334-188" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-189"><a href="tests-for-wrapper-functions.html#cb334-189" tabindex="-1"></a>  </span>
+<span id="cb334-190"><a href="tests-for-wrapper-functions.html#cb334-190" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-191"><a href="tests-for-wrapper-functions.html#cb334-191" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-192"><a href="tests-for-wrapper-functions.html#cb334-192" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
+<span id="cb334-193"><a href="tests-for-wrapper-functions.html#cb334-193" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-194"><a href="tests-for-wrapper-functions.html#cb334-194" tabindex="-1"></a>  <span class="co"># Total of p - (3 - 1) clusters</span></span>
+<span id="cb334-195"><a href="tests-for-wrapper-functions.html#cb334-195" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> p <span class="sc">-</span> <span class="dv">2</span>)</span>
+<span id="cb334-196"><a href="tests-for-wrapper-functions.html#cb334-196" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-197"><a href="tests-for-wrapper-functions.html#cb334-197" tabindex="-1"></a></span>
+<span id="cb334-198"><a href="tests-for-wrapper-functions.html#cb334-198" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
+<span id="cb334-199"><a href="tests-for-wrapper-functions.html#cb334-199" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
+<span id="cb334-200"><a href="tests-for-wrapper-functions.html#cb334-200" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
+<span id="cb334-201"><a href="tests-for-wrapper-functions.html#cb334-201" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb334-202"><a href="tests-for-wrapper-functions.html#cb334-202" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
+<span id="cb334-203"><a href="tests-for-wrapper-functions.html#cb334-203" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
+<span id="cb334-204"><a href="tests-for-wrapper-functions.html#cb334-204" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-205"><a href="tests-for-wrapper-functions.html#cb334-205" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
+<span id="cb334-206"><a href="tests-for-wrapper-functions.html#cb334-206" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>p))</span>
+<span id="cb334-207"><a href="tests-for-wrapper-functions.html#cb334-207" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
+<span id="cb334-208"><a href="tests-for-wrapper-functions.html#cb334-208" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
+<span id="cb334-209"><a href="tests-for-wrapper-functions.html#cb334-209" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
+<span id="cb334-210"><a href="tests-for-wrapper-functions.html#cb334-210" tabindex="-1"></a>  }</span>
+<span id="cb334-211"><a href="tests-for-wrapper-functions.html#cb334-211" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> p)</span>
+<span id="cb334-212"><a href="tests-for-wrapper-functions.html#cb334-212" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
+<span id="cb334-213"><a href="tests-for-wrapper-functions.html#cb334-213" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
+<span id="cb334-214"><a href="tests-for-wrapper-functions.html#cb334-214" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span>p))</span>
+<span id="cb334-215"><a href="tests-for-wrapper-functions.html#cb334-215" tabindex="-1"></a></span>
+<span id="cb334-216"><a href="tests-for-wrapper-functions.html#cb334-216" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> p)</span>
+<span id="cb334-217"><a href="tests-for-wrapper-functions.html#cb334-217" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-218"><a href="tests-for-wrapper-functions.html#cb334-218" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-219"><a href="tests-for-wrapper-functions.html#cb334-219" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
+<span id="cb334-220"><a href="tests-for-wrapper-functions.html#cb334-220" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
+<span id="cb334-221"><a href="tests-for-wrapper-functions.html#cb334-221" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb334-222"><a href="tests-for-wrapper-functions.html#cb334-222" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> p))</span>
+<span id="cb334-223"><a href="tests-for-wrapper-functions.html#cb334-223" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
+<span id="cb334-224"><a href="tests-for-wrapper-functions.html#cb334-224" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
+<span id="cb334-225"><a href="tests-for-wrapper-functions.html#cb334-225" tabindex="-1"></a></span>
+<span id="cb334-226"><a href="tests-for-wrapper-functions.html#cb334-226" tabindex="-1"></a></span>
+<span id="cb334-227"><a href="tests-for-wrapper-functions.html#cb334-227" tabindex="-1"></a>  <span class="co"># X as a matrix with column names</span></span>
+<span id="cb334-228"><a href="tests-for-wrapper-functions.html#cb334-228" tabindex="-1"></a>  x2 <span class="ot">&lt;-</span> x</span>
+<span id="cb334-229"><a href="tests-for-wrapper-functions.html#cb334-229" tabindex="-1"></a>  <span class="fu">colnames</span>(x2) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>]</span>
+<span id="cb334-230"><a href="tests-for-wrapper-functions.html#cb334-230" tabindex="-1"></a>  </span>
+<span id="cb334-231"><a href="tests-for-wrapper-functions.html#cb334-231" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x2, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters)</span>
+<span id="cb334-232"><a href="tests-for-wrapper-functions.html#cb334-232" tabindex="-1"></a>  </span>
+<span id="cb334-233"><a href="tests-for-wrapper-functions.html#cb334-233" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-234"><a href="tests-for-wrapper-functions.html#cb334-234" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-235"><a href="tests-for-wrapper-functions.html#cb334-235" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-236"><a href="tests-for-wrapper-functions.html#cb334-236" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-237"><a href="tests-for-wrapper-functions.html#cb334-237" tabindex="-1"></a>  </span>
+<span id="cb334-238"><a href="tests-for-wrapper-functions.html#cb334-238" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="sc">!</span><span class="fu">is.null</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-239"><a href="tests-for-wrapper-functions.html#cb334-239" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.character</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)))</span>
+<span id="cb334-240"><a href="tests-for-wrapper-functions.html#cb334-240" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span></span>
+<span id="cb334-241"><a href="tests-for-wrapper-functions.html#cb334-241" tabindex="-1"></a>                          <span class="fu">length</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-242"><a href="tests-for-wrapper-functions.html#cb334-242" tabindex="-1"></a>  <span class="co"># Total of 11 - 2*(3 - 1) = 7 clusters</span></span>
+<span id="cb334-243"><a href="tests-for-wrapper-functions.html#cb334-243" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="dv">7</span>)</span>
+<span id="cb334-244"><a href="tests-for-wrapper-functions.html#cb334-244" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-245"><a href="tests-for-wrapper-functions.html#cb334-245" tabindex="-1"></a></span>
+<span id="cb334-246"><a href="tests-for-wrapper-functions.html#cb334-246" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res<span class="sc">$</span>selected_clusts))</span>
+<span id="cb334-247"><a href="tests-for-wrapper-functions.html#cb334-247" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts)),</span>
+<span id="cb334-248"><a href="tests-for-wrapper-functions.html#cb334-248" tabindex="-1"></a>                           <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_clusts))))</span>
+<span id="cb334-249"><a href="tests-for-wrapper-functions.html#cb334-249" tabindex="-1"></a>  already_used_feats <span class="ot">&lt;-</span> <span class="fu">integer</span>()</span>
+<span id="cb334-250"><a href="tests-for-wrapper-functions.html#cb334-250" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(res<span class="sc">$</span>selected_clusts)){</span>
+<span id="cb334-251"><a href="tests-for-wrapper-functions.html#cb334-251" tabindex="-1"></a>    sels_i <span class="ot">&lt;-</span> res<span class="sc">$</span>selected_clusts[[i]]</span>
+<span id="cb334-252"><a href="tests-for-wrapper-functions.html#cb334-252" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(sels_i) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-253"><a href="tests-for-wrapper-functions.html#cb334-253" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(sels_i))</span>
+<span id="cb334-254"><a href="tests-for-wrapper-functions.html#cb334-254" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(sels_i <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
+<span id="cb334-255"><a href="tests-for-wrapper-functions.html#cb334-255" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(sels_i), <span class="fu">length</span>(<span class="fu">unique</span>(sels_i)))</span>
+<span id="cb334-256"><a href="tests-for-wrapper-functions.html#cb334-256" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">intersect</span>(already_used_feats, sels_i)), <span class="dv">0</span>)</span>
+<span id="cb334-257"><a href="tests-for-wrapper-functions.html#cb334-257" tabindex="-1"></a>    already_used_feats <span class="ot">&lt;-</span> <span class="fu">c</span>(already_used_feats, sels_i)</span>
+<span id="cb334-258"><a href="tests-for-wrapper-functions.html#cb334-258" tabindex="-1"></a>  }</span>
+<span id="cb334-259"><a href="tests-for-wrapper-functions.html#cb334-259" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(already_used_feats) <span class="sc">&lt;=</span> <span class="dv">11</span>)</span>
+<span id="cb334-260"><a href="tests-for-wrapper-functions.html#cb334-260" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(already_used_feats),</span>
+<span id="cb334-261"><a href="tests-for-wrapper-functions.html#cb334-261" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(already_used_feats)))</span>
+<span id="cb334-262"><a href="tests-for-wrapper-functions.html#cb334-262" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(already_used_feats <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>))</span>
+<span id="cb334-263"><a href="tests-for-wrapper-functions.html#cb334-263" tabindex="-1"></a>  </span>
+<span id="cb334-264"><a href="tests-for-wrapper-functions.html#cb334-264" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&lt;=</span> <span class="dv">11</span>)</span>
+<span id="cb334-265"><a href="tests-for-wrapper-functions.html#cb334-265" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.integer</span>(res<span class="sc">$</span>selected_feats))</span>
+<span id="cb334-266"><a href="tests-for-wrapper-functions.html#cb334-266" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
+<span id="cb334-267"><a href="tests-for-wrapper-functions.html#cb334-267" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats)),</span>
+<span id="cb334-268"><a href="tests-for-wrapper-functions.html#cb334-268" tabindex="-1"></a>                         <span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">names</span>(res<span class="sc">$</span>selected_feats))))</span>
+<span id="cb334-269"><a href="tests-for-wrapper-functions.html#cb334-269" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&gt;=</span> <span class="dv">1</span>))</span>
+<span id="cb334-270"><a href="tests-for-wrapper-functions.html#cb334-270" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(res<span class="sc">$</span>selected_feats <span class="sc">&lt;=</span> <span class="dv">11</span>))</span>
+<span id="cb334-271"><a href="tests-for-wrapper-functions.html#cb334-271" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_feats),</span>
+<span id="cb334-272"><a href="tests-for-wrapper-functions.html#cb334-272" tabindex="-1"></a>                             <span class="fu">length</span>(<span class="fu">unique</span>(res<span class="sc">$</span>selected_feats)))</span>
+<span id="cb334-273"><a href="tests-for-wrapper-functions.html#cb334-273" tabindex="-1"></a>  </span>
+<span id="cb334-274"><a href="tests-for-wrapper-functions.html#cb334-274" tabindex="-1"></a>  <span class="co"># Vary inputs</span></span>
+<span id="cb334-275"><a href="tests-for-wrapper-functions.html#cb334-275" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">lambda=</span><span class="fl">0.01</span>)</span>
 <span id="cb334-276"><a href="tests-for-wrapper-functions.html#cb334-276" tabindex="-1"></a>  </span>
-<span id="cb334-277"><a href="tests-for-wrapper-functions.html#cb334-277" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">max_num_clusts=</span><span class="dv">6</span>)</span>
-<span id="cb334-278"><a href="tests-for-wrapper-functions.html#cb334-278" tabindex="-1"></a>  </span>
-<span id="cb334-279"><a href="tests-for-wrapper-functions.html#cb334-279" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-280"><a href="tests-for-wrapper-functions.html#cb334-280" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-281"><a href="tests-for-wrapper-functions.html#cb334-281" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-282"><a href="tests-for-wrapper-functions.html#cb334-282" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
-<span id="cb334-283"><a href="tests-for-wrapper-functions.html#cb334-283" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="dv">6</span>)</span>
-<span id="cb334-284"><a href="tests-for-wrapper-functions.html#cb334-284" tabindex="-1"></a>  </span>
-<span id="cb334-285"><a href="tests-for-wrapper-functions.html#cb334-285" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">auto_select_size=</span><span class="cn">FALSE</span>)</span>
-<span id="cb334-286"><a href="tests-for-wrapper-functions.html#cb334-286" tabindex="-1"></a></span>
-<span id="cb334-287"><a href="tests-for-wrapper-functions.html#cb334-287" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
-<span id="cb334-288"><a href="tests-for-wrapper-functions.html#cb334-288" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
-<span id="cb334-289"><a href="tests-for-wrapper-functions.html#cb334-289" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
-<span id="cb334-290"><a href="tests-for-wrapper-functions.html#cb334-290" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
-<span id="cb334-291"><a href="tests-for-wrapper-functions.html#cb334-291" tabindex="-1"></a>  <span class="co"># Total of 11 - 2*(3 - 1) = 7 clusters</span></span>
-<span id="cb334-292"><a href="tests-for-wrapper-functions.html#cb334-292" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts), <span class="dv">7</span>)</span>
-<span id="cb334-293"><a href="tests-for-wrapper-functions.html#cb334-293" tabindex="-1"></a>  </span>
-<span id="cb334-294"><a href="tests-for-wrapper-functions.html#cb334-294" tabindex="-1"></a>  <span class="co"># Bad inputs</span></span>
-<span id="cb334-295"><a href="tests-for-wrapper-functions.html#cb334-295" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, ], <span class="at">y=</span>y),</span>
-<span id="cb334-296"><a href="tests-for-wrapper-functions.html#cb334-296" tabindex="-1"></a>                         <span class="st">"n == length(y) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-297"><a href="tests-for-wrapper-functions.html#cb334-297" tabindex="-1"></a>  </span>
-<span id="cb334-298"><a href="tests-for-wrapper-functions.html#cb334-298" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span><span class="fu">character</span>(<span class="dv">5</span>), <span class="at">y=</span>y),</span>
-<span id="cb334-299"><a href="tests-for-wrapper-functions.html#cb334-299" tabindex="-1"></a>                         <span class="st">"is.matrix(X) | is.data.frame(X) is not TRUE"</span>,</span>
-<span id="cb334-300"><a href="tests-for-wrapper-functions.html#cb334-300" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-301"><a href="tests-for-wrapper-functions.html#cb334-301" tabindex="-1"></a>  </span>
-<span id="cb334-302"><a href="tests-for-wrapper-functions.html#cb334-302" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>, <span class="dv">5</span>, <span class="dv">3</span>)),</span>
-<span id="cb334-303"><a href="tests-for-wrapper-functions.html#cb334-303" tabindex="-1"></a>                         <span class="st">"!is.matrix(y) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-304"><a href="tests-for-wrapper-functions.html#cb334-304" tabindex="-1"></a>  </span>
-<span id="cb334-305"><a href="tests-for-wrapper-functions.html#cb334-305" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">factor</span>(<span class="fu">rbinom</span>(<span class="dv">15</span>, <span class="at">size=</span><span class="dv">1</span>, <span class="at">prob=</span>.<span class="dv">5</span>))),</span>
-<span id="cb334-306"><a href="tests-for-wrapper-functions.html#cb334-306" tabindex="-1"></a>                         <span class="st">"The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)"</span>,</span>
-<span id="cb334-307"><a href="tests-for-wrapper-functions.html#cb334-307" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-308"><a href="tests-for-wrapper-functions.html#cb334-308" tabindex="-1"></a>  </span>
-<span id="cb334-309"><a href="tests-for-wrapper-functions.html#cb334-309" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="st">"clusters"</span>),</span>
-<span id="cb334-310"><a href="tests-for-wrapper-functions.html#cb334-310" tabindex="-1"></a>                         <span class="st">"is.numeric(clusters) | is.integer(clusters) is not TRUE"</span>,</span>
-<span id="cb334-311"><a href="tests-for-wrapper-functions.html#cb334-311" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-312"><a href="tests-for-wrapper-functions.html#cb334-312" tabindex="-1"></a>  </span>
-<span id="cb334-313"><a href="tests-for-wrapper-functions.html#cb334-313" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span>.<span class="dv">1</span>),</span>
-<span id="cb334-314"><a href="tests-for-wrapper-functions.html#cb334-314" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
-<span id="cb334-315"><a href="tests-for-wrapper-functions.html#cb334-315" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-277"><a href="tests-for-wrapper-functions.html#cb334-277" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-278"><a href="tests-for-wrapper-functions.html#cb334-278" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-279"><a href="tests-for-wrapper-functions.html#cb334-279" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-280"><a href="tests-for-wrapper-functions.html#cb334-280" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-281"><a href="tests-for-wrapper-functions.html#cb334-281" tabindex="-1"></a>  </span>
+<span id="cb334-282"><a href="tests-for-wrapper-functions.html#cb334-282" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">cutoff=</span><span class="fl">0.6</span>)</span>
+<span id="cb334-283"><a href="tests-for-wrapper-functions.html#cb334-283" tabindex="-1"></a>  </span>
+<span id="cb334-284"><a href="tests-for-wrapper-functions.html#cb334-284" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-285"><a href="tests-for-wrapper-functions.html#cb334-285" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-286"><a href="tests-for-wrapper-functions.html#cb334-286" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-287"><a href="tests-for-wrapper-functions.html#cb334-287" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-288"><a href="tests-for-wrapper-functions.html#cb334-288" tabindex="-1"></a>  </span>
+<span id="cb334-289"><a href="tests-for-wrapper-functions.html#cb334-289" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">max_num_clusts=</span><span class="dv">6</span>)</span>
+<span id="cb334-290"><a href="tests-for-wrapper-functions.html#cb334-290" tabindex="-1"></a>  </span>
+<span id="cb334-291"><a href="tests-for-wrapper-functions.html#cb334-291" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-292"><a href="tests-for-wrapper-functions.html#cb334-292" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-293"><a href="tests-for-wrapper-functions.html#cb334-293" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-294"><a href="tests-for-wrapper-functions.html#cb334-294" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-295"><a href="tests-for-wrapper-functions.html#cb334-295" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts) <span class="sc">&lt;=</span> <span class="dv">6</span>)</span>
+<span id="cb334-296"><a href="tests-for-wrapper-functions.html#cb334-296" tabindex="-1"></a>  </span>
+<span id="cb334-297"><a href="tests-for-wrapper-functions.html#cb334-297" tabindex="-1"></a>  res <span class="ot">&lt;-</span> <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span>good_clusters, <span class="at">auto_select_size=</span><span class="cn">FALSE</span>)</span>
+<span id="cb334-298"><a href="tests-for-wrapper-functions.html#cb334-298" tabindex="-1"></a></span>
+<span id="cb334-299"><a href="tests-for-wrapper-functions.html#cb334-299" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">is.list</span>(res))</span>
+<span id="cb334-300"><a href="tests-for-wrapper-functions.html#cb334-300" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res), <span class="dv">3</span>)</span>
+<span id="cb334-301"><a href="tests-for-wrapper-functions.html#cb334-301" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_identical</span>(<span class="fu">names</span>(res), <span class="fu">c</span>(<span class="st">"selected_clusts"</span>, <span class="st">"selected_feats"</span>,</span>
+<span id="cb334-302"><a href="tests-for-wrapper-functions.html#cb334-302" tabindex="-1"></a>                                           <span class="st">"weights"</span>))</span>
+<span id="cb334-303"><a href="tests-for-wrapper-functions.html#cb334-303" tabindex="-1"></a>  <span class="co"># Total of 11 - 2*(3 - 1) = 7 clusters</span></span>
+<span id="cb334-304"><a href="tests-for-wrapper-functions.html#cb334-304" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_equal</span>(<span class="fu">length</span>(res<span class="sc">$</span>selected_clusts), <span class="dv">7</span>)</span>
+<span id="cb334-305"><a href="tests-for-wrapper-functions.html#cb334-305" tabindex="-1"></a>  </span>
+<span id="cb334-306"><a href="tests-for-wrapper-functions.html#cb334-306" tabindex="-1"></a>  <span class="co"># Bad inputs</span></span>
+<span id="cb334-307"><a href="tests-for-wrapper-functions.html#cb334-307" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, ], <span class="at">y=</span>y),</span>
+<span id="cb334-308"><a href="tests-for-wrapper-functions.html#cb334-308" tabindex="-1"></a>                         <span class="st">"n == length(y) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-309"><a href="tests-for-wrapper-functions.html#cb334-309" tabindex="-1"></a>  </span>
+<span id="cb334-310"><a href="tests-for-wrapper-functions.html#cb334-310" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span><span class="fu">character</span>(<span class="dv">5</span>), <span class="at">y=</span>y),</span>
+<span id="cb334-311"><a href="tests-for-wrapper-functions.html#cb334-311" tabindex="-1"></a>                         <span class="st">"is.matrix(X) | is.data.frame(X) is not TRUE"</span>,</span>
+<span id="cb334-312"><a href="tests-for-wrapper-functions.html#cb334-312" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-313"><a href="tests-for-wrapper-functions.html#cb334-313" tabindex="-1"></a>  </span>
+<span id="cb334-314"><a href="tests-for-wrapper-functions.html#cb334-314" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>, <span class="dv">5</span>, <span class="dv">3</span>)),</span>
+<span id="cb334-315"><a href="tests-for-wrapper-functions.html#cb334-315" tabindex="-1"></a>                         <span class="st">"!is.matrix(y) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb334-316"><a href="tests-for-wrapper-functions.html#cb334-316" tabindex="-1"></a>  </span>
-<span id="cb334-317"><a href="tests-for-wrapper-functions.html#cb334-317" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">cutoff=</span><span class="fl">1.1</span>),</span>
-<span id="cb334-318"><a href="tests-for-wrapper-functions.html#cb334-318" tabindex="-1"></a>                         <span class="st">"cutoff &lt;= 1 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-319"><a href="tests-for-wrapper-functions.html#cb334-319" tabindex="-1"></a>  </span>
-<span id="cb334-320"><a href="tests-for-wrapper-functions.html#cb334-320" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">max_num_clusts=</span><span class="dv">1000</span>),</span>
-<span id="cb334-321"><a href="tests-for-wrapper-functions.html#cb334-321" tabindex="-1"></a>                         <span class="st">"max_num_clusts &lt;= p is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-322"><a href="tests-for-wrapper-functions.html#cb334-322" tabindex="-1"></a>  </span>
-<span id="cb334-323"><a href="tests-for-wrapper-functions.html#cb334-323" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">auto_select_size=</span><span class="dv">1</span>),</span>
-<span id="cb334-324"><a href="tests-for-wrapper-functions.html#cb334-324" tabindex="-1"></a>                         <span class="st">"is.logical(auto_select_size) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-325"><a href="tests-for-wrapper-functions.html#cb334-325" tabindex="-1"></a></span>
-<span id="cb334-326"><a href="tests-for-wrapper-functions.html#cb334-326" tabindex="-1"></a>  <span class="co"># alpha = 0 (degenerate ridge) is rejected</span></span>
-<span id="cb334-327"><a href="tests-for-wrapper-functions.html#cb334-327" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="dv">0</span>),</span>
-<span id="cb334-328"><a href="tests-for-wrapper-functions.html#cb334-328" tabindex="-1"></a>                         <span class="st">"alpha &gt; 0 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-329"><a href="tests-for-wrapper-functions.html#cb334-329" tabindex="-1"></a></span>
-<span id="cb334-330"><a href="tests-for-wrapper-functions.html#cb334-330" tabindex="-1"></a>  <span class="co"># alpha &gt; 1 is rejected</span></span>
-<span id="cb334-331"><a href="tests-for-wrapper-functions.html#cb334-331" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="fl">1.5</span>),</span>
-<span id="cb334-332"><a href="tests-for-wrapper-functions.html#cb334-332" tabindex="-1"></a>                         <span class="st">"alpha &lt;= 1 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-333"><a href="tests-for-wrapper-functions.html#cb334-333" tabindex="-1"></a></span>
-<span id="cb334-334"><a href="tests-for-wrapper-functions.html#cb334-334" tabindex="-1"></a>  <span class="co"># alpha = NA is rejected with a clear message (rather than a cryptic error</span></span>
-<span id="cb334-335"><a href="tests-for-wrapper-functions.html#cb334-335" tabindex="-1"></a>  <span class="co"># deep inside the bundling/subsampling logic). A bare (logical) NA trips the</span></span>
-<span id="cb334-336"><a href="tests-for-wrapper-functions.html#cb334-336" tabindex="-1"></a>  <span class="co"># type check first; a numeric NA reaches the dedicated !is.na guard.</span></span>
-<span id="cb334-337"><a href="tests-for-wrapper-functions.html#cb334-337" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="cn">NA</span>),</span>
-<span id="cb334-338"><a href="tests-for-wrapper-functions.html#cb334-338" tabindex="-1"></a>                         <span class="st">"is.numeric(alpha) | is.integer(alpha) is not TRUE"</span>,</span>
-<span id="cb334-339"><a href="tests-for-wrapper-functions.html#cb334-339" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-340"><a href="tests-for-wrapper-functions.html#cb334-340" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="cn">NA_real_</span>),</span>
-<span id="cb334-341"><a href="tests-for-wrapper-functions.html#cb334-341" tabindex="-1"></a>                         <span class="st">"!is.na(alpha) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-342"><a href="tests-for-wrapper-functions.html#cb334-342" tabindex="-1"></a></span>
-<span id="cb334-343"><a href="tests-for-wrapper-functions.html#cb334-343" tabindex="-1"></a>  <span class="co"># An NA in the design matrix yields the shared friendly message (#56).</span></span>
-<span id="cb334-344"><a href="tests-for-wrapper-functions.html#cb334-344" tabindex="-1"></a>  x_na <span class="ot">&lt;-</span> x; x_na[<span class="dv">2</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
-<span id="cb334-345"><a href="tests-for-wrapper-functions.html#cb334-345" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x_na, <span class="at">y=</span>y),</span>
-<span id="cb334-346"><a href="tests-for-wrapper-functions.html#cb334-346" tabindex="-1"></a>                         <span class="st">"must not contain missing"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-347"><a href="tests-for-wrapper-functions.html#cb334-347" tabindex="-1"></a></span>
-<span id="cb334-348"><a href="tests-for-wrapper-functions.html#cb334-348" tabindex="-1"></a>  <span class="co"># (#127) A single-column X reaches getLassoLambda as a matrix and now errors</span></span>
-<span id="cb334-349"><a href="tests-for-wrapper-functions.html#cb334-349" tabindex="-1"></a>  <span class="co"># with the clean "p &gt;= 2 is not TRUE" message rather than a cryptic downstream</span></span>
-<span id="cb334-350"><a href="tests-for-wrapper-functions.html#cb334-350" tabindex="-1"></a>  <span class="co"># failure ("invalid 'times' argument").</span></span>
-<span id="cb334-351"><a href="tests-for-wrapper-functions.html#cb334-351" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
-<span id="cb334-352"><a href="tests-for-wrapper-functions.html#cb334-352" tabindex="-1"></a>    <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">40</span>), <span class="at">nrow=</span><span class="dv">40</span>, <span class="at">ncol=</span><span class="dv">1</span>), stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">40</span>)),</span>
-<span id="cb334-353"><a href="tests-for-wrapper-functions.html#cb334-353" tabindex="-1"></a>    <span class="st">"p &gt;= 2 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
-<span id="cb334-354"><a href="tests-for-wrapper-functions.html#cb334-354" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results$clusters, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results$clusters, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = X_df, y = stats::rnorm(nrow(X_df)), clusters = 1:3)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Returning more than max_num_clusts = 1 clusters because increasing the cutoff any further would require returning 0 clusters
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = X_df, y = stats::rnorm(nrow(X_df)), clusters = 1:3)
-##  2.   \-litr (local) <a href="sel-and-pred.html#getCssSelections">getCssSelections</a>(...)
-##  3.     \-litr (local) <a href="sel-and-pred.html#getSelectedClusters">getSelectedClusters</a>(...)
-##  4.       \-litr (local) <a href="sel-and-pred.html#checkSelectedClusters">checkSelectedClusters</a>(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = df2, y = stats::rnorm(nrow(X_df)))
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x2, y = y, clusters = good_clusters)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x2, y = y, clusters = good_clusters)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results$clusters, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters, lambda = 0.01)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results$clusters, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters, cutoff = 0.6)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters, max_num_clusts = 6)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = good_clusters, auto_select_size = FALSE)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = matrix(1:15, 5, 3))
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = "clusters")
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, cutoff = 1.1)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssSelect works ----------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, max_num_clusts = 1000)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## Test passed with 220 successes.</code></pre>
+<span id="cb334-317"><a href="tests-for-wrapper-functions.html#cb334-317" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span><span class="fu">factor</span>(<span class="fu">rbinom</span>(<span class="dv">15</span>, <span class="at">size=</span><span class="dv">1</span>, <span class="at">prob=</span>.<span class="dv">5</span>))),</span>
+<span id="cb334-318"><a href="tests-for-wrapper-functions.html#cb334-318" tabindex="-1"></a>                         <span class="st">"The provided y must be real-valued, because cssSelect uses the lasso for feature selection. (In order to use a different form of response, use the css function and provide your own selection function accommodating your choice of y.)"</span>,</span>
+<span id="cb334-319"><a href="tests-for-wrapper-functions.html#cb334-319" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-320"><a href="tests-for-wrapper-functions.html#cb334-320" tabindex="-1"></a>  </span>
+<span id="cb334-321"><a href="tests-for-wrapper-functions.html#cb334-321" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">clusters=</span><span class="st">"clusters"</span>),</span>
+<span id="cb334-322"><a href="tests-for-wrapper-functions.html#cb334-322" tabindex="-1"></a>                         <span class="st">"is.numeric(clusters) | is.integer(clusters) is not TRUE"</span>,</span>
+<span id="cb334-323"><a href="tests-for-wrapper-functions.html#cb334-323" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-324"><a href="tests-for-wrapper-functions.html#cb334-324" tabindex="-1"></a>  </span>
+<span id="cb334-325"><a href="tests-for-wrapper-functions.html#cb334-325" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">lambda=</span><span class="sc">-</span>.<span class="dv">1</span>),</span>
+<span id="cb334-326"><a href="tests-for-wrapper-functions.html#cb334-326" tabindex="-1"></a>                         <span class="st">"For method cssLasso, lambda must be nonnegative."</span>,</span>
+<span id="cb334-327"><a href="tests-for-wrapper-functions.html#cb334-327" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-328"><a href="tests-for-wrapper-functions.html#cb334-328" tabindex="-1"></a>  </span>
+<span id="cb334-329"><a href="tests-for-wrapper-functions.html#cb334-329" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">cutoff=</span><span class="fl">1.1</span>),</span>
+<span id="cb334-330"><a href="tests-for-wrapper-functions.html#cb334-330" tabindex="-1"></a>                         <span class="st">"cutoff &lt;= 1 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-331"><a href="tests-for-wrapper-functions.html#cb334-331" tabindex="-1"></a>  </span>
+<span id="cb334-332"><a href="tests-for-wrapper-functions.html#cb334-332" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">max_num_clusts=</span><span class="dv">1000</span>),</span>
+<span id="cb334-333"><a href="tests-for-wrapper-functions.html#cb334-333" tabindex="-1"></a>                         <span class="st">"max_num_clusts &lt;= p is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-334"><a href="tests-for-wrapper-functions.html#cb334-334" tabindex="-1"></a>  </span>
+<span id="cb334-335"><a href="tests-for-wrapper-functions.html#cb334-335" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">auto_select_size=</span><span class="dv">1</span>),</span>
+<span id="cb334-336"><a href="tests-for-wrapper-functions.html#cb334-336" tabindex="-1"></a>                         <span class="st">"is.logical(auto_select_size) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-337"><a href="tests-for-wrapper-functions.html#cb334-337" tabindex="-1"></a></span>
+<span id="cb334-338"><a href="tests-for-wrapper-functions.html#cb334-338" tabindex="-1"></a>  <span class="co"># alpha = 0 (degenerate ridge) is rejected</span></span>
+<span id="cb334-339"><a href="tests-for-wrapper-functions.html#cb334-339" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="dv">0</span>),</span>
+<span id="cb334-340"><a href="tests-for-wrapper-functions.html#cb334-340" tabindex="-1"></a>                         <span class="st">"alpha &gt; 0 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-341"><a href="tests-for-wrapper-functions.html#cb334-341" tabindex="-1"></a></span>
+<span id="cb334-342"><a href="tests-for-wrapper-functions.html#cb334-342" tabindex="-1"></a>  <span class="co"># alpha &gt; 1 is rejected</span></span>
+<span id="cb334-343"><a href="tests-for-wrapper-functions.html#cb334-343" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="fl">1.5</span>),</span>
+<span id="cb334-344"><a href="tests-for-wrapper-functions.html#cb334-344" tabindex="-1"></a>                         <span class="st">"alpha &lt;= 1 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-345"><a href="tests-for-wrapper-functions.html#cb334-345" tabindex="-1"></a></span>
+<span id="cb334-346"><a href="tests-for-wrapper-functions.html#cb334-346" tabindex="-1"></a>  <span class="co"># alpha = NA is rejected with a clear message (rather than a cryptic error</span></span>
+<span id="cb334-347"><a href="tests-for-wrapper-functions.html#cb334-347" tabindex="-1"></a>  <span class="co"># deep inside the bundling/subsampling logic). A bare (logical) NA trips the</span></span>
+<span id="cb334-348"><a href="tests-for-wrapper-functions.html#cb334-348" tabindex="-1"></a>  <span class="co"># type check first; a numeric NA reaches the dedicated !is.na guard.</span></span>
+<span id="cb334-349"><a href="tests-for-wrapper-functions.html#cb334-349" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="cn">NA</span>),</span>
+<span id="cb334-350"><a href="tests-for-wrapper-functions.html#cb334-350" tabindex="-1"></a>                         <span class="st">"is.numeric(alpha) | is.integer(alpha) is not TRUE"</span>,</span>
+<span id="cb334-351"><a href="tests-for-wrapper-functions.html#cb334-351" tabindex="-1"></a>                         <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-352"><a href="tests-for-wrapper-functions.html#cb334-352" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x, <span class="at">y=</span>y, <span class="at">alpha=</span><span class="cn">NA_real_</span>),</span>
+<span id="cb334-353"><a href="tests-for-wrapper-functions.html#cb334-353" tabindex="-1"></a>                         <span class="st">"!is.na(alpha) is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-354"><a href="tests-for-wrapper-functions.html#cb334-354" tabindex="-1"></a></span>
+<span id="cb334-355"><a href="tests-for-wrapper-functions.html#cb334-355" tabindex="-1"></a>  <span class="co"># An NA in the design matrix yields the shared friendly message (#56).</span></span>
+<span id="cb334-356"><a href="tests-for-wrapper-functions.html#cb334-356" tabindex="-1"></a>  x_na <span class="ot">&lt;-</span> x; x_na[<span class="dv">2</span>, <span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb334-357"><a href="tests-for-wrapper-functions.html#cb334-357" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(<a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="at">X=</span>x_na, <span class="at">y=</span>y),</span>
+<span id="cb334-358"><a href="tests-for-wrapper-functions.html#cb334-358" tabindex="-1"></a>                         <span class="st">"must not contain missing"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-359"><a href="tests-for-wrapper-functions.html#cb334-359" tabindex="-1"></a></span>
+<span id="cb334-360"><a href="tests-for-wrapper-functions.html#cb334-360" tabindex="-1"></a>  <span class="co"># (#127) A single-column X reaches getLassoLambda as a matrix and now errors</span></span>
+<span id="cb334-361"><a href="tests-for-wrapper-functions.html#cb334-361" tabindex="-1"></a>  <span class="co"># with the clean "p &gt;= 2 is not TRUE" message rather than a cryptic downstream</span></span>
+<span id="cb334-362"><a href="tests-for-wrapper-functions.html#cb334-362" tabindex="-1"></a>  <span class="co"># failure ("invalid 'times' argument").</span></span>
+<span id="cb334-363"><a href="tests-for-wrapper-functions.html#cb334-363" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
+<span id="cb334-364"><a href="tests-for-wrapper-functions.html#cb334-364" tabindex="-1"></a>    <a href="wrapper-functions.html#cssSelect">cssSelect</a>(<span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">40</span>), <span class="at">nrow=</span><span class="dv">40</span>, <span class="at">ncol=</span><span class="dv">1</span>), stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">40</span>)),</span>
+<span id="cb334-365"><a href="tests-for-wrapper-functions.html#cb334-365" tabindex="-1"></a>    <span class="st">"p &gt;= 2 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb334-366"><a href="tests-for-wrapper-functions.html#cb334-366" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 220 successes.</code></pre>
 <p>Tests confirming that a non-default <code>alpha</code> is threaded through <code><a href="wrapper-functions.html#cssSelect">cssSelect</a>()</code>
 end-to-end and changes the selected set on a correlated-block design (this is
 the wrapper-level analogue of the <code>cssLasso</code> headline test; it is new behavior
@@ -931,221 +783,7 @@ absent on <code>main</code>, where <code>alpha</code> could not affect selection
 <span id="cb338-199"><a href="tests-for-wrapper-functions.html#cb338-199" tabindex="-1"></a>               <span class="at">X_test=</span><span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">10</span>), <span class="at">nrow=</span><span class="dv">10</span>, <span class="at">ncol=</span><span class="dv">1</span>)),</span>
 <span id="cb338-200"><a href="tests-for-wrapper-functions.html#cb338-200" tabindex="-1"></a>    <span class="st">"p &gt;= 2 is not TRUE"</span>, <span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
 <span id="cb338-201"><a href="tests-for-wrapper-functions.html#cb338-201" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(X_train_selec = x, y_train_selec = y, X_test = test_x)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(X_train_selec = x, y_train_selec = y, X_test = test_x)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(X_train_selec = x[1:10, ], y_train_selec = y, X_test = test_x)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: cssPredict works ---------------------------------------------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##      x
-##   1. +-testthat::expect_error(...)
-##   2. | \-testthat:::expect_condition_matching_(...)
-##   3. |   \-testthat:::quasi_capture(...)
-##   4. |     +-testthat (local) .capture(...)
-##   5. |     | \-base::withCallingHandlers(...)
-##   6. |     \-rlang::eval_bare(quo_get_expr(.quo), quo_get_env(.quo))
-##   7. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##   8.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##   9.     \-glmnet::cv.glmnet(...)
-##  10.       \-glmnet:::cv.glmnet.raw(...)
-## Test passed with 46 successes.</code></pre>
+<pre><code>## Test passed with 46 successes.</code></pre>
 <p>A length-1 <code>train_inds</code> used to collapse <code>X_train_selec[train_inds, ]</code> to a
 vector, tripping <code>getModelSize</code>’s cryptic <code>is.matrix(X) | is.data.frame(X)</code>
 assertion. With <code>drop = FALSE</code> it stays a one-row matrix and the error instead
