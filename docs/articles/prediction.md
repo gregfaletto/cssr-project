@@ -40,8 +40,6 @@ easiest way to get predictions.
 
 ``` r
 preds <- cssPredict(X_train, y_train, X_test, clusters)
-#> Warning: Option grouped=FALSE enforced in cv.glmnet, since < 3 observations per
-#> fold
 head(preds)
 #> [1]  2.7118284 -0.6048872  2.5147773 -1.0428944  1.2369631 -2.5685820
 

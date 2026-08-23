@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="5 Other useful functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-08-19">
+<meta name="date" content="2026-08-21">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1212,18 +1212,28 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb72-92"><a href="other-useful.html#cb72-92" tabindex="-1"></a>    nfolds <span class="ot">&lt;-</span> <span class="fu">max</span>(<span class="dv">3</span><span class="dt">L</span>, <span class="fu">min</span>(nfolds, n_sample))</span>
 <span id="cb72-93"><a href="other-useful.html#cb72-93" tabindex="-1"></a></span>
 <span id="cb72-94"><a href="other-useful.html#cb72-94" tabindex="-1"></a>    inds_size <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, n_sample)</span>
-<span id="cb72-95"><a href="other-useful.html#cb72-95" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
-<span id="cb72-96"><a href="other-useful.html#cb72-96" tabindex="-1"></a>        <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nfolds=</span>nfolds, <span class="at">alpha=</span>alpha)</span>
-<span id="cb72-97"><a href="other-useful.html#cb72-97" tabindex="-1"></a></span>
-<span id="cb72-98"><a href="other-useful.html#cb72-98" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">"lambda."</span>, lambda_choice, <span class="at">sep=</span><span class="st">""</span>)]]</span>
-<span id="cb72-99"><a href="other-useful.html#cb72-99" tabindex="-1"></a></span>
-<span id="cb72-100"><a href="other-useful.html#cb72-100" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb72-101"><a href="other-useful.html#cb72-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb72-102"><a href="other-useful.html#cb72-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
-<span id="cb72-103"><a href="other-useful.html#cb72-103" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
-<span id="cb72-104"><a href="other-useful.html#cb72-104" tabindex="-1"></a></span>
-<span id="cb72-105"><a href="other-useful.html#cb72-105" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
-<span id="cb72-106"><a href="other-useful.html#cb72-106" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb72-95"><a href="other-useful.html#cb72-95" tabindex="-1"></a>    <span class="co"># cv.glmnet overrides grouped to FALSE, and warns that it did, whenever a</span></span>
+<span id="cb72-96"><a href="other-useful.html#cb72-96" tabindex="-1"></a>    <span class="co"># fold would hold fewer than 3 observations -- its rule is nrow(x)/nfolds &lt; 3.</span></span>
+<span id="cb72-97"><a href="other-useful.html#cb72-97" tabindex="-1"></a>    <span class="co"># Setting grouped here to what cv.glmnet would set anyway leaves the fit</span></span>
+<span id="cb72-98"><a href="other-useful.html#cb72-98" tabindex="-1"></a>    <span class="co"># identical and spares small-n callers a warning about their sample size that</span></span>
+<span id="cb72-99"><a href="other-useful.html#cb72-99" tabindex="-1"></a>    <span class="co"># says nothing about cssr (#186). x has n_sample rows, and nfolds is the</span></span>
+<span id="cb72-100"><a href="other-useful.html#cb72-100" tabindex="-1"></a>    <span class="co"># clamped value just above. That rule is specific to the gaussian family</span></span>
+<span id="cb72-101"><a href="other-useful.html#cb72-101" tabindex="-1"></a>    <span class="co"># fixed just below -- cv.coxnet flips grouped the other way -- so a family</span></span>
+<span id="cb72-102"><a href="other-useful.html#cb72-102" tabindex="-1"></a>    <span class="co"># change would invalidate this guard. <a href="other-useful.html#getModelSize">getModelSize</a>() carries the same guard;</span></span>
+<span id="cb72-103"><a href="other-useful.html#cb72-103" tabindex="-1"></a>    <span class="co"># a change to either belongs in both.</span></span>
+<span id="cb72-104"><a href="other-useful.html#cb72-104" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X[inds_size, ], <span class="at">y=</span>y[inds_size],</span>
+<span id="cb72-105"><a href="other-useful.html#cb72-105" tabindex="-1"></a>        <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">nfolds=</span>nfolds, <span class="at">alpha=</span>alpha,</span>
+<span id="cb72-106"><a href="other-useful.html#cb72-106" tabindex="-1"></a>        <span class="at">grouped=</span>n_sample<span class="sc">/</span>nfolds <span class="sc">&gt;=</span> <span class="dv">3</span>)</span>
+<span id="cb72-107"><a href="other-useful.html#cb72-107" tabindex="-1"></a></span>
+<span id="cb72-108"><a href="other-useful.html#cb72-108" tabindex="-1"></a>    lambda_ret <span class="ot">&lt;-</span> size_results[[<span class="fu">paste</span>(<span class="st">"lambda."</span>, lambda_choice, <span class="at">sep=</span><span class="st">""</span>)]]</span>
+<span id="cb72-109"><a href="other-useful.html#cb72-109" tabindex="-1"></a></span>
+<span id="cb72-110"><a href="other-useful.html#cb72-110" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb72-111"><a href="other-useful.html#cb72-111" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(lambda_ret) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb72-112"><a href="other-useful.html#cb72-112" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(lambda_ret) <span class="sc">|</span> <span class="fu">is.integer</span>(lambda_ret))</span>
+<span id="cb72-113"><a href="other-useful.html#cb72-113" tabindex="-1"></a>    <span class="fu">stopifnot</span>(lambda_ret <span class="sc">&gt;=</span> <span class="dv">0</span>)</span>
+<span id="cb72-114"><a href="other-useful.html#cb72-114" tabindex="-1"></a></span>
+<span id="cb72-115"><a href="other-useful.html#cb72-115" tabindex="-1"></a>    <span class="fu">return</span>(lambda_ret)</span>
+<span id="cb72-116"><a href="other-useful.html#cb72-116" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#getModelSize">getModelSize</a>()</code>:</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="other-useful.html#cb73-1" tabindex="-1"></a><span class="co">#' Automated estimation of model size</span></span>
 <span id="cb73-2"><a href="other-useful.html#cb73-2" tabindex="-1"></a><span class="co">#'</span></span>
@@ -1336,21 +1346,32 @@ output dimension checks, and returns the standard <code>list(X, y, Z, mu)</code>
 <span id="cb73-109"><a href="other-useful.html#cb73-109" tabindex="-1"></a>        <span class="fu">return</span>(<span class="dv">1</span><span class="dt">L</span>)</span>
 <span id="cb73-110"><a href="other-useful.html#cb73-110" tabindex="-1"></a>    }</span>
 <span id="cb73-111"><a href="other-useful.html#cb73-111" tabindex="-1"></a></span>
-<span id="cb73-112"><a href="other-useful.html#cb73-112" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>,</span>
-<span id="cb73-113"><a href="other-useful.html#cb73-113" tabindex="-1"></a>        <span class="at">alpha=</span>alpha)</span>
-<span id="cb73-114"><a href="other-useful.html#cb73-114" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
-<span id="cb73-115"><a href="other-useful.html#cb73-115" tabindex="-1"></a></span>
-<span id="cb73-116"><a href="other-useful.html#cb73-116" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
-<span id="cb73-117"><a href="other-useful.html#cb73-117" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
-<span id="cb73-118"><a href="other-useful.html#cb73-118" tabindex="-1"></a></span>
-<span id="cb73-119"><a href="other-useful.html#cb73-119" tabindex="-1"></a>    <span class="co"># Check output</span></span>
-<span id="cb73-120"><a href="other-useful.html#cb73-120" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
-<span id="cb73-121"><a href="other-useful.html#cb73-121" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
-<span id="cb73-122"><a href="other-useful.html#cb73-122" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
-<span id="cb73-123"><a href="other-useful.html#cb73-123" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
-<span id="cb73-124"><a href="other-useful.html#cb73-124" tabindex="-1"></a></span>
-<span id="cb73-125"><a href="other-useful.html#cb73-125" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
-<span id="cb73-126"><a href="other-useful.html#cb73-126" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb73-112"><a href="other-useful.html#cb73-112" tabindex="-1"></a>    <span class="co"># 10 is cv.glmnet's own default for nfolds; naming it keeps the fit and the</span></span>
+<span id="cb73-113"><a href="other-useful.html#cb73-113" tabindex="-1"></a>    <span class="co"># grouped guard below from ever disagreeing about the fold count.</span></span>
+<span id="cb73-114"><a href="other-useful.html#cb73-114" tabindex="-1"></a>    nfolds_size <span class="ot">&lt;-</span> <span class="dv">10</span><span class="dt">L</span></span>
+<span id="cb73-115"><a href="other-useful.html#cb73-115" tabindex="-1"></a>    <span class="co"># As in <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(): cv.glmnet overrides grouped to FALSE, and warns,</span></span>
+<span id="cb73-116"><a href="other-useful.html#cb73-116" tabindex="-1"></a>    <span class="co"># when nrow(x)/nfolds &lt; 3, for the gaussian family fixed just below (other</span></span>
+<span id="cb73-117"><a href="other-useful.html#cb73-117" tabindex="-1"></a>    <span class="co"># families differ; cv.coxnet flips grouped the other way). Setting it</span></span>
+<span id="cb73-118"><a href="other-useful.html#cb73-118" tabindex="-1"></a>    <span class="co"># explicitly is behavior-identical and keeps that nag out of small-n callers'</span></span>
+<span id="cb73-119"><a href="other-useful.html#cb73-119" tabindex="-1"></a>    <span class="co"># consoles (#186). nrow(X_size), not the already-bound n, because it is</span></span>
+<span id="cb73-120"><a href="other-useful.html#cb73-120" tabindex="-1"></a>    <span class="co"># glmnet's N = nrow(x) for the very matrix passed as x -- the two are equal</span></span>
+<span id="cb73-121"><a href="other-useful.html#cb73-121" tabindex="-1"></a>    <span class="co"># here only because cluster reduction drops columns and never rows.</span></span>
+<span id="cb73-122"><a href="other-useful.html#cb73-122" tabindex="-1"></a>    size_results <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">cv.glmnet</span>(<span class="at">x=</span>X_size, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>,</span>
+<span id="cb73-123"><a href="other-useful.html#cb73-123" tabindex="-1"></a>        <span class="at">alpha=</span>alpha, <span class="at">nfolds=</span>nfolds_size,</span>
+<span id="cb73-124"><a href="other-useful.html#cb73-124" tabindex="-1"></a>        <span class="at">grouped=</span><span class="fu">nrow</span>(X_size)<span class="sc">/</span>nfolds_size <span class="sc">&gt;=</span> <span class="dv">3</span>)</span>
+<span id="cb73-125"><a href="other-useful.html#cb73-125" tabindex="-1"></a>    coefs <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(glmnet<span class="sc">::</span><span class="fu">coef.glmnet</span>(size_results, <span class="at">s=</span><span class="st">"lambda.1se"</span>))</span>
+<span id="cb73-126"><a href="other-useful.html#cb73-126" tabindex="-1"></a></span>
+<span id="cb73-127"><a href="other-useful.html#cb73-127" tabindex="-1"></a>    <span class="co"># Number of nonzero coefficients (subtract one in order to ignore intercept)</span></span>
+<span id="cb73-128"><a href="other-useful.html#cb73-128" tabindex="-1"></a>    size <span class="ot">&lt;-</span> <span class="fu">length</span>(coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>]) <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb73-129"><a href="other-useful.html#cb73-129" tabindex="-1"></a></span>
+<span id="cb73-130"><a href="other-useful.html#cb73-130" tabindex="-1"></a>    <span class="co"># Check output</span></span>
+<span id="cb73-131"><a href="other-useful.html#cb73-131" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.numeric</span>(size) <span class="sc">|</span> <span class="fu">is.integer</span>(size))</span>
+<span id="cb73-132"><a href="other-useful.html#cb73-132" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.na</span>(size))</span>
+<span id="cb73-133"><a href="other-useful.html#cb73-133" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(size) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb73-134"><a href="other-useful.html#cb73-134" tabindex="-1"></a>    <span class="fu">stopifnot</span>(size <span class="sc">==</span> <span class="fu">round</span>(size))</span>
+<span id="cb73-135"><a href="other-useful.html#cb73-135" tabindex="-1"></a></span>
+<span id="cb73-136"><a href="other-useful.html#cb73-136" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">as.integer</span>(<span class="fu">max</span>(size, <span class="dv">1</span>)))</span>
+<span id="cb73-137"><a href="other-useful.html#cb73-137" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="other-useful.html#buildCssDf">buildCssDf</a>()</code> builds the printable cluster-summary data.frame from a <code>css_results</code> object and an already-obtained named vector of selected clusters. It is factored out of <code><a href="other-useful.html#printCssDf">printCssDf</a>()</code> (issue #129) so that a caller which has <em>already</em> computed the selected clusters – notably <code><a href="other-useful.html#summary.cssr">summary.cssr</a>()</code>, which calls <code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code> itself – can reuse that result instead of triggering a second identical <code><a href="sel-and-pred.html#getCssSelections">getCssSelections</a>()</code> call. It is an internal (<code>@noRd</code>) helper, so the exported <code><a href="other-useful.html#printCssDf">printCssDf</a>()</code> keeps its exact signature and man page:</p>
 <div class="sourceCode" id="cb74"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb74-1"><a href="other-useful.html#cb74-1" tabindex="-1"></a><span class="co">#' Build the printable cluster-summary data.frame from selected clusters</span></span>
 <span id="cb74-2"><a href="other-useful.html#cb74-2" tabindex="-1"></a><span class="co">#'</span></span>

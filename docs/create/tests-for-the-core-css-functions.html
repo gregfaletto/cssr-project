@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="8 Tests for the core &lt;a href='css.html#css'&gt;css&lt;/a&gt;() functions | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-08-19">
+<meta name="date" content="2026-08-21">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -218,20 +218,20 @@ producing all-zero selections (<code>css</code>) or crashing later (<code>protol
 <span id="cb95-14"><a href="tests-for-the-core-css-functions.html#cb95-14" tabindex="-1"></a>    <span class="co"># numeric data, then pass a character testX of the SAME ncol so it</span></span>
 <span id="cb95-15"><a href="tests-for-the-core-css-functions.html#cb95-15" tabindex="-1"></a>    <span class="co"># reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).</span></span>
 <span id="cb95-16"><a href="tests-for-the-core-css-functions.html#cb95-16" tabindex="-1"></a>    nx <span class="ot">&lt;-</span> <span class="fu">matrix</span>(stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">60</span>), <span class="dv">30</span>, <span class="dv">2</span>)</span>
-<span id="cb95-17"><a href="tests-for-the-core-css-functions.html#cb95-17" tabindex="-1"></a>    res <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X =</span> nx[<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, ], <span class="at">y =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">20</span>), <span class="at">lambda =</span> <span class="fl">0.01</span>, <span class="at">B =</span> <span class="dv">5</span>)</span>
-<span id="cb95-18"><a href="tests-for-the-core-css-functions.html#cb95-18" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
-<span id="cb95-19"><a href="tests-for-the-core-css-functions.html#cb95-19" tabindex="-1"></a>        <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(res, <span class="at">testX =</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(letters, <span class="dv">20</span>, <span class="cn">TRUE</span>), <span class="dv">10</span>, <span class="dv">2</span>),</span>
-<span id="cb95-20"><a href="tests-for-the-core-css-functions.html#cb95-20" tabindex="-1"></a>            <span class="at">trainX =</span> nx[<span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>, ], <span class="at">trainY =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">10</span>)),</span>
-<span id="cb95-21"><a href="tests-for-the-core-css-functions.html#cb95-21" tabindex="-1"></a>        <span class="st">"must be a numeric matrix"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb95-22"><a href="tests-for-the-core-css-functions.html#cb95-22" tabindex="-1"></a>})</span></code></pre></div>
-<pre><code>## -- Warning: non-numeric matrix X is rejected at every entry point (#152) -------
-## Small values of B may lead to poor results.
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="css.html#css">css</a>(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
-##  2.   \-litr (local) <a href="css.html#checkCssInputs">checkCssInputs</a>(...)
-##  3.     \-litr (local) <a href="css.html#checkB">checkB</a>(B)
-## Test passed with 4 successes.</code></pre>
+<span id="cb95-17"><a href="tests-for-the-core-css-functions.html#cb95-17" tabindex="-1"></a>    <span class="co"># B = 5 is under <a href="css.html#checkB">checkB</a>()'s B &lt; 10 threshold, so <a href="css.html#css">css</a>() deliberately warns</span></span>
+<span id="cb95-18"><a href="tests-for-the-core-css-functions.html#cb95-18" tabindex="-1"></a>    <span class="co"># here. Assert it rather than letting it leak into the reporter (#186).</span></span>
+<span id="cb95-19"><a href="tests-for-the-core-css-functions.html#cb95-19" tabindex="-1"></a>    <span class="co"># The assignment sits inside expect_warning() because at testthat edition</span></span>
+<span id="cb95-20"><a href="tests-for-the-core-css-functions.html#cb95-20" tabindex="-1"></a>    <span class="co"># 3 expect_warning() returns the condition, not the expression's value.</span></span>
+<span id="cb95-21"><a href="tests-for-the-core-css-functions.html#cb95-21" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_warning</span>(</span>
+<span id="cb95-22"><a href="tests-for-the-core-css-functions.html#cb95-22" tabindex="-1"></a>        res <span class="ot">&lt;-</span> <a href="css.html#css">css</a>(<span class="at">X =</span> nx[<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, ], <span class="at">y =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">20</span>), <span class="at">lambda =</span> <span class="fl">0.01</span>,</span>
+<span id="cb95-23"><a href="tests-for-the-core-css-functions.html#cb95-23" tabindex="-1"></a>            <span class="at">B =</span> <span class="dv">5</span>),</span>
+<span id="cb95-24"><a href="tests-for-the-core-css-functions.html#cb95-24" tabindex="-1"></a>        <span class="st">"Small values of B may lead to poor results."</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb95-25"><a href="tests-for-the-core-css-functions.html#cb95-25" tabindex="-1"></a>    testthat<span class="sc">::</span><span class="fu">expect_error</span>(</span>
+<span id="cb95-26"><a href="tests-for-the-core-css-functions.html#cb95-26" tabindex="-1"></a>        <a href="sel-and-pred.html#getCssPreds">getCssPreds</a>(res, <span class="at">testX =</span> <span class="fu">matrix</span>(<span class="fu">sample</span>(letters, <span class="dv">20</span>, <span class="cn">TRUE</span>), <span class="dv">10</span>, <span class="dv">2</span>),</span>
+<span id="cb95-27"><a href="tests-for-the-core-css-functions.html#cb95-27" tabindex="-1"></a>            <span class="at">trainX =</span> nx[<span class="dv">21</span><span class="sc">:</span><span class="dv">30</span>, ], <span class="at">trainY =</span> stats<span class="sc">::</span><span class="fu">rnorm</span>(<span class="dv">10</span>)),</span>
+<span id="cb95-28"><a href="tests-for-the-core-css-functions.html#cb95-28" tabindex="-1"></a>        <span class="st">"must be a numeric matrix"</span>, <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb95-29"><a href="tests-for-the-core-css-functions.html#cb95-29" tabindex="-1"></a>})</span></code></pre></div>
+<pre><code>## Test passed with 5 successes.</code></pre>
 <p>Tests for <code><a href="css.html#checkNoNAs">checkNoNAs</a>()</code>:</p>
 <div class="sourceCode" id="cb97"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb97-1"><a href="tests-for-the-core-css-functions.html#cb97-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"checkNoNAs flags NA/NaN/Inf in a matrix or data.frame and passes clean input"</span>, {</span>
 <span id="cb97-2"><a href="tests-for-the-core-css-functions.html#cb97-2" tabindex="-1"></a>  m_ok <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">as.numeric</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>), <span class="at">nrow =</span> <span class="dv">4</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
@@ -2066,39 +2066,7 @@ contracts against this refactor.</p>
 <span id="cb166-242"><a href="tests-for-the-core-css-functions.html#cb166-242" tabindex="-1"></a>    <span class="at">fixed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb166-243"><a href="tests-for-the-core-css-functions.html#cb166-243" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 57 successes.</code></pre>
-<pre><code>## -- Warning: duplicate clusters are removed to match the docs (#156) ------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = list(myclust = 2:3, dup = 2:3))
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(X, y, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: duplicate clusters are removed to match the docs (#156) ------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssSelect">cssSelect</a>(X = x, y = y, clusters = list(myclust = 2:3, dup = 2:3))
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(X, y, css_results$clusters, alpha = alpha)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: duplicate clusters are removed to match the docs (#156) ------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getLassoLambda">getLassoLambda</a>(...)
-##  3.     \-glmnet::cv.glmnet(...)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## -- Warning: duplicate clusters are removed to match the docs (#156) ------------
-## Option grouped=FALSE enforced in cv.glmnet, since &lt; 3 observations per fold
-## Backtrace:
-##     x
-##  1. \-litr (local) <a href="wrapper-functions.html#cssPredict">cssPredict</a>(...)
-##  2.   \-litr (local) <a href="other-useful.html#getModelSize">getModelSize</a>(...)
-##  3.     \-glmnet::cv.glmnet(x = X_size, y = y, family = "gaussian", alpha = alpha)
-##  4.       \-glmnet:::cv.glmnet.raw(...)
-## Test passed with 7 successes.</code></pre>
+<pre><code>## Test passed with 7 successes.</code></pre>
 <pre><code>## Test passed with 1 success.</code></pre>
 <p>The <code>fitfun</code> extension point accepts any function whose arguments are exactly <code>X</code>, <code>y</code>, and <code>lambda</code> – in any order, with or without defaults – because <code>cssLoop</code> calls <code>fitfun</code> by keyword (<code>do.call(fitfun, list(X=..., y=..., lambda=...))</code>). A wrong or extra argument set is rejected with a message listing the arguments actually detected (issue #154).</p>
 <div class="sourceCode" id="cb170"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb170-1"><a href="tests-for-the-core-css-functions.html#cb170-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"css accepts any (X, y, lambda) fitfun signature and rejects wrong args (#154)"</span>, {</span>

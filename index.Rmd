@@ -4887,8 +4887,18 @@ getLassoLambda <- function(X, y, lambda_choice="1se", nfolds=10, alpha=1){
     nfolds <- max(3L, min(nfolds, n_sample))
 
     inds_size <- sample(1:n, n_sample)
+    # cv.glmnet overrides grouped to FALSE, and warns that it did, whenever a
+    # fold would hold fewer than 3 observations -- its rule is nrow(x)/nfolds < 3.
+    # Setting grouped here to what cv.glmnet would set anyway leaves the fit
+    # identical and spares small-n callers a warning about their sample size that
+    # says nothing about cssr (#186). x has n_sample rows, and nfolds is the
+    # clamped value just above. That rule is specific to the gaussian family
+    # fixed just below -- cv.coxnet flips grouped the other way -- so a family
+    # change would invalidate this guard. getModelSize() carries the same guard;
+    # a change to either belongs in both.
     size_results <- glmnet::cv.glmnet(x=X[inds_size, ], y=y[inds_size],
-        family="gaussian", nfolds=nfolds, alpha=alpha)
+        family="gaussian", nfolds=nfolds, alpha=alpha,
+        grouped=n_sample/nfolds >= 3)
 
     lambda_ret <- size_results[[paste("lambda.", lambda_choice, sep="")]]
 
@@ -5015,8 +5025,19 @@ getModelSize <- function(X, y, clusters, alpha = 1){
         return(1L)
     }
 
+    # 10 is cv.glmnet's own default for nfolds; naming it keeps the fit and the
+    # grouped guard below from ever disagreeing about the fold count.
+    nfolds_size <- 10L
+    # As in getLassoLambda(): cv.glmnet overrides grouped to FALSE, and warns,
+    # when nrow(x)/nfolds < 3, for the gaussian family fixed just below (other
+    # families differ; cv.coxnet flips grouped the other way). Setting it
+    # explicitly is behavior-identical and keeps that nag out of small-n callers'
+    # consoles (#186). nrow(X_size), not the already-bound n, because it is
+    # glmnet's N = nrow(x) for the very matrix passed as x -- the two are equal
+    # here only because cluster reduction drops columns and never rows.
     size_results <- glmnet::cv.glmnet(x=X_size, y=y, family="gaussian",
-        alpha=alpha)
+        alpha=alpha, nfolds=nfolds_size,
+        grouped=nrow(X_size)/nfolds_size >= 3)
     coefs <- as.numeric(glmnet::coef.glmnet(size_results, s="lambda.1se"))
 
     # Number of nonzero coefficients (subtract one in order to ignore intercept)
@@ -6679,7 +6700,14 @@ testthat::test_that("non-numeric matrix X is rejected at every entry point (#152
     # numeric data, then pass a character testX of the SAME ncol so it
     # reaches coerceDataFrameToMatrix (not an ncol-mismatch check first).
     nx <- matrix(stats::rnorm(60), 30, 2)
-    res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01, B = 5)
+    # B = 5 is under checkB()'s B < 10 threshold, so css() deliberately warns
+    # here. Assert it rather than letting it leak into the reporter (#186).
+    # The assignment sits inside expect_warning() because at testthat edition
+    # 3 expect_warning() returns the condition, not the expression's value.
+    testthat::expect_warning(
+        res <- css(X = nx[1:20, ], y = stats::rnorm(20), lambda = 0.01,
+            B = 5),
+        "Small values of B may lead to poor results.", fixed = TRUE)
     testthat::expect_error(
         getCssPreds(res, testX = matrix(sample(letters, 20, TRUE), 10, 2),
             trainX = nx[21:30, ], trainY = stats::rnorm(10)),
@@ -11087,11 +11115,22 @@ testthat::test_that("checkGetCssPredsInputs works", {
                        clusters=good_clusters, B = 10)
 
   # Named variables for css matrix but not new one--should get a warning
-  testthat::expect_warning(checkGetCssPredsInputs(css_res_named, testX=x_pred,
-                                weighting="simple_avg", cutoff=0,
-                                min_num_clusts=1, max_num_clusts=NA,
-                                trainX=x_train, trainY=y_train),
-                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+  # checkGetCssPredsInputs() validates testX and trainX separately, and both
+  # are unnamed here while the css X was named, so the warning fires once per
+  # matrix. Collect rather than nesting two expect_warning() calls: the woven
+  # chunks run at testthat edition 2 (no DESCRIPTION at the repo root), where
+  # expect_warning() consumes every warning and a nested pair fails. Asserting
+  # the length also turns an unexpected third warning into a failure (#186).
+  # Keep both assertions: all(grepl(...)) is vacuously TRUE on an empty
+  # vector, so expect_length() is what makes the pair non-blind.
+  name_warns <- testthat::capture_warnings(
+    checkGetCssPredsInputs(css_res_named, testX=x_pred,
+                           weighting="simple_avg", cutoff=0,
+                           min_num_clusts=1, max_num_clusts=NA,
+                           trainX=x_train, trainY=y_train))
+  testthat::expect_length(name_warns, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names (column names) even though the X provided to css did.",
+                                  name_warns, fixed=TRUE)))
 
   # Try mismatching variable names
   colnames(x_train) <- LETTERS[2:7]
@@ -11424,9 +11463,15 @@ testthat::test_that("getCssPreds works", {
                        clusters=good_clusters, B = 10)
 
   # Named variables for css matrix but not new one--should get a warning
-  testthat::expect_warning(getCssPreds(css_res_named, testX=x_pred,
-                                       trainX=x_train, trainY=y_train),
-                           "New X provided had no variable names (column names) even though the X provided to css did.", fixed=TRUE)
+  # As at the checkGetCssPredsInputs site: testX and trainX are both unnamed,
+  # so the warning fires once per matrix. Collected rather than nested for the
+  # same edition-2 reason, and both assertions kept for the same reason (#186).
+  name_warns <- testthat::capture_warnings(
+    getCssPreds(css_res_named, testX=x_pred, trainX=x_train,
+                trainY=y_train))
+  testthat::expect_length(name_warns, 2)
+  testthat::expect_true(all(grepl("New X provided had no variable names (column names) even though the X provided to css did.",
+                                  name_warns, fixed=TRUE)))
 
   # Try mismatching variable names
   colnames(x_train) <- LETTERS[2:7]
@@ -11664,7 +11709,19 @@ testthat::test_that("getCssPreds handles partial trainX/trainY inputs (#128)", {
   clusters <- list(cluster1 = 1:3)
 
   # No train_inds (train_inds empty).
-  css_no_train <- css(X = X, y = y, lambda = 0.01, clusters = clusters, B = 10)
+  # glmnet's own C++ convergence nag fires on this fixture. It is not
+  # asserted, because that would pin a foreign optimizer's behavior, which can
+  # differ across glmnet versions, platforms and BLAS. The predicate matches
+  # glmnet's shared C++-error prefix, so it muffles that whole class -- a
+  # tighter one would pin the very detail we are avoiding. Every non-glmnet
+  # warning from this call still reaches the reporter (#186).
+  css_no_train <- withCallingHandlers(
+    css(X = X, y = y, lambda = 0.01, clusters = clusters, B = 10),
+    warning = function(w) {
+      if (grepl("from glmnet C++ code", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   # train_inds length 6 > 4 clusters, so the fallback path clears the downstream
   # OLS-size guard (needs more training rows than clusters) and can predict
   # rather than error.
@@ -13883,6 +13940,38 @@ testthat::test_that("getModelSize works", {
 })
 ```
 
+These two functions are the package's only `cv.glmnet` call sites, and #186's fix
+is a `grouped` argument on each. This block is what observes that fix:
+
+```{r}
+testthat::test_that("small-n cv.glmnet calls do not leak glmnet's fold-size nag (#186)", {
+  set.seed(186)
+  X <- matrix(stats::rnorm(20 * 6), nrow = 20, ncol = 6)
+  y <- as.numeric(X %*% c(1, -1, 0, 0, 0, 0) + stats::rnorm(20))
+
+  # n = 20 puts both calls under glmnet's nrow(x)/nfolds < 3 rule -- getLassoLambda
+  # subsamples 11 rows over 10 folds, getModelSize passes all 20 over 10 -- so
+  # without the explicit grouped argument cv.glmnet warns here. capture_warnings()
+  # rather than expect_no_warning() because the woven chunks run at testthat
+  # edition 2, where this form behaves the same as it does under devtools::test().
+  lambda_warns <- testthat::capture_warnings(lambda <- getLassoLambda(X = X, y = y))
+  testthat::expect_length(lambda_warns, 0)
+  testthat::expect_true(is.numeric(lambda) & length(lambda) == 1)
+
+  size_warns <- testthat::capture_warnings(
+    size <- getModelSize(X = X, y = y, clusters = list(1:3)))
+  testthat::expect_length(size_warns, 0)
+  testthat::expect_true(is.integer(size) & size >= 1)
+
+  # The user-visible half of #186: under options(warn = 2) the unguarded calls
+  # became errors, so cssSelect()/cssPredict() were unusable at small n.
+  old_warn <- options(warn = 2)
+  on.exit(options(old_warn), add = TRUE)
+  testthat::expect_no_error(getLassoLambda(X = X, y = y))
+  testthat::expect_no_error(getModelSize(X = X, y = y, clusters = list(1:3)))
+})
+```
+
 Tests for `getSelectionPrototypes()`:
 
 ```{r}
@@ -14985,7 +15074,19 @@ testthat::test_that("cssSelect works", {
   # X as a data.frame
   X_df <- datasets::mtcars
   
-  res <- cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3)
+  # cssSelect() reports a max_num_clusts tie on this draw. It is not asserted,
+  # because whether the tie occurs depends on the estimated model size and so
+  # on glmnet's lasso path rather than on cssr; the warning has deterministic
+  # coverage in "checkSelectedClusters works" and in the #159c plot.cssr test.
+  # Muffling just that one message leaves every other warning visible (#186).
+  res <- withCallingHandlers(
+    cssSelect(X=X_df, y=stats::rnorm(nrow(X_df)), clusters=1:3),
+    warning = function(w) {
+      if (grepl("Returning more than max_num_clusts", conditionMessage(w),
+                fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   
   testthat::expect_true(is.list(res))
   testthat::expect_equal(length(res), 3)
