@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="7 Competitor Methods | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-08-27">
+<meta name="date" content="2026-08-28">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -258,56 +258,64 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb85-61"><a href="competitor-methods.html#cb85-61" tabindex="-1"></a>    <span class="co"># normalise rather than rely on it.</span></span>
 <span id="cb85-62"><a href="competitor-methods.html#cb85-62" tabindex="-1"></a>    <span class="co">#</span></span>
 <span id="cb85-63"><a href="competitor-methods.html#cb85-63" tabindex="-1"></a>    <span class="co"># The two data.frame layouts are NOT the same, which is why as.list() alone</span></span>
-<span id="cb85-64"><a href="competitor-methods.html#cb85-64" tabindex="-1"></a>    <span class="co"># would be wrong. When every penalty selected the same k &gt;= 2 features,</span></span>
-<span id="cb85-65"><a href="competitor-methods.html#cb85-65" tabindex="-1"></a>    <span class="co"># apply() gives a k x n_pen matrix and data.frame() lays out one COLUMN per</span></span>
-<span id="cb85-66"><a href="competitor-methods.html#cb85-66" tabindex="-1"></a>    <span class="co"># penalty. When every penalty selected exactly ONE feature, apply() collapses</span></span>
-<span id="cb85-67"><a href="competitor-methods.html#cb85-67" tabindex="-1"></a>    <span class="co"># to a vector and data.frame() gives a single column with one ROW per</span></span>
-<span id="cb85-68"><a href="competitor-methods.html#cb85-68" tabindex="-1"></a>    <span class="co"># penalty--the convention inverts. n_pen tells them apart.</span></span>
-<span id="cb85-69"><a href="competitor-methods.html#cb85-69" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb85-70"><a href="competitor-methods.html#cb85-70" tabindex="-1"></a>    <span class="co"># Do NOT flatten with unlist(). <a href="css.html#cssLasso">cssLasso</a>() does, correctly, because its</span></span>
-<span id="cb85-71"><a href="competitor-methods.html#cb85-71" tabindex="-1"></a>    <span class="co"># scalar s gives it exactly one slot; this result has one slot per model</span></span>
-<span id="cb85-72"><a href="competitor-methods.html#cb85-72" tabindex="-1"></a>    <span class="co"># size and flattening would merge them (#188). That function's comment</span></span>
-<span id="cb85-73"><a href="competitor-methods.html#cb85-73" tabindex="-1"></a>    <span class="co"># states the rule and already warns against copying its idiom here; this</span></span>
-<span id="cb85-74"><a href="competitor-methods.html#cb85-74" tabindex="-1"></a>    <span class="co"># one is the full account of nonzeroCoef()'s layouts. They are</span></span>
-<span id="cb85-75"><a href="competitor-methods.html#cb85-75" tabindex="-1"></a>    <span class="co"># complementary, not competing.</span></span>
-<span id="cb85-76"><a href="competitor-methods.html#cb85-76" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb85-77"><a href="competitor-methods.html#cb85-77" tabindex="-1"></a>    <span class="co"># n_pen is ncol(fit$beta) only because this call passes no s. With s</span></span>
-<span id="cb85-78"><a href="competitor-methods.html#cb85-78" tabindex="-1"></a>    <span class="co"># supplied, predict.glmnet interpolates to length(s) columns instead and this</span></span>
-<span id="cb85-79"><a href="competitor-methods.html#cb85-79" tabindex="-1"></a>    <span class="co"># derivation breaks--change n_pen to length(s) if that ever happens.</span></span>
-<span id="cb85-80"><a href="competitor-methods.html#cb85-80" tabindex="-1"></a>    n_pen <span class="ot">&lt;-</span> <span class="fu">ncol</span>(fit<span class="sc">$</span>beta)</span>
-<span id="cb85-81"><a href="competitor-methods.html#cb85-81" tabindex="-1"></a></span>
-<span id="cb85-82"><a href="competitor-methods.html#cb85-82" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(nonzero)){</span>
-<span id="cb85-83"><a href="competitor-methods.html#cb85-83" tabindex="-1"></a>        nonzero_mat <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(nonzero)</span>
-<span id="cb85-84"><a href="competitor-methods.html#cb85-84" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">ncol</span>(nonzero_mat) <span class="sc">==</span> n_pen){</span>
-<span id="cb85-85"><a href="competitor-methods.html#cb85-85" tabindex="-1"></a>            nonzero <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(n_pen), <span class="cf">function</span>(j){</span>
-<span id="cb85-86"><a href="competitor-methods.html#cb85-86" tabindex="-1"></a>                <span class="fu">as.integer</span>(nonzero_mat[, j])</span>
-<span id="cb85-87"><a href="competitor-methods.html#cb85-87" tabindex="-1"></a>            })</span>
-<span id="cb85-88"><a href="competitor-methods.html#cb85-88" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
-<span id="cb85-89"><a href="competitor-methods.html#cb85-89" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(nonzero_mat) <span class="sc">==</span> n_pen)</span>
-<span id="cb85-90"><a href="competitor-methods.html#cb85-90" tabindex="-1"></a>            nonzero <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(n_pen), <span class="cf">function</span>(i){</span>
-<span id="cb85-91"><a href="competitor-methods.html#cb85-91" tabindex="-1"></a>                <span class="fu">as.integer</span>(nonzero_mat[i, ])</span>
-<span id="cb85-92"><a href="competitor-methods.html#cb85-92" tabindex="-1"></a>            })</span>
-<span id="cb85-93"><a href="competitor-methods.html#cb85-93" tabindex="-1"></a>        }</span>
-<span id="cb85-94"><a href="competitor-methods.html#cb85-94" tabindex="-1"></a>    }</span>
-<span id="cb85-95"><a href="competitor-methods.html#cb85-95" tabindex="-1"></a></span>
-<span id="cb85-96"><a href="competitor-methods.html#cb85-96" tabindex="-1"></a>    <span class="co"># One slot per penalty in the fitted path, on every glmnet version. Any</span></span>
-<span id="cb85-97"><a href="competitor-methods.html#cb85-97" tabindex="-1"></a>    <span class="co"># other container--nonzeroCoef()'s nr == 1 branch, which the</span></span>
-<span id="cb85-98"><a href="competitor-methods.html#cb85-98" tabindex="-1"></a>    <span class="co"># ncol(X_glmnet) &lt; 2 guard above makes unreachable here--stops rather than</span></span>
-<span id="cb85-99"><a href="competitor-methods.html#cb85-99" tabindex="-1"></a>    <span class="co"># being silently misread downstream.</span></span>
-<span id="cb85-100"><a href="competitor-methods.html#cb85-100" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(nonzero))</span>
-<span id="cb85-101"><a href="competitor-methods.html#cb85-101" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.data.frame</span>(nonzero))</span>
-<span id="cb85-102"><a href="competitor-methods.html#cb85-102" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">length</span>(nonzero), n_pen))</span>
+<span id="cb85-64"><a href="competitor-methods.html#cb85-64" tabindex="-1"></a>    <span class="co"># would be wrong. When every penalty selected the same NUMBER k &gt;= 2 of</span></span>
+<span id="cb85-65"><a href="competitor-methods.html#cb85-65" tabindex="-1"></a>    <span class="co"># features -- the sets themselves may differ, {1,2} and {2,3} qualify --</span></span>
+<span id="cb85-66"><a href="competitor-methods.html#cb85-66" tabindex="-1"></a>    <span class="co"># apply() gives a k x n_pen matrix and data.frame() lays out one COLUMN per</span></span>
+<span id="cb85-67"><a href="competitor-methods.html#cb85-67" tabindex="-1"></a>    <span class="co"># penalty. When every penalty selected exactly ONE feature, apply() collapses</span></span>
+<span id="cb85-68"><a href="competitor-methods.html#cb85-68" tabindex="-1"></a>    <span class="co"># to a vector and data.frame() gives a single column with one ROW per</span></span>
+<span id="cb85-69"><a href="competitor-methods.html#cb85-69" tabindex="-1"></a>    <span class="co"># penalty--the convention inverts. n_pen tells them apart.</span></span>
+<span id="cb85-70"><a href="competitor-methods.html#cb85-70" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb85-71"><a href="competitor-methods.html#cb85-71" tabindex="-1"></a>    <span class="co"># Do NOT flatten with unlist(). <a href="css.html#cssLasso">cssLasso</a>() does, correctly, because its</span></span>
+<span id="cb85-72"><a href="competitor-methods.html#cb85-72" tabindex="-1"></a>    <span class="co"># scalar s gives it exactly one slot; this result has one slot per model</span></span>
+<span id="cb85-73"><a href="competitor-methods.html#cb85-73" tabindex="-1"></a>    <span class="co"># size and flattening would merge them (#188). That function's comment</span></span>
+<span id="cb85-74"><a href="competitor-methods.html#cb85-74" tabindex="-1"></a>    <span class="co"># states the rule and already warns against copying its idiom here; this</span></span>
+<span id="cb85-75"><a href="competitor-methods.html#cb85-75" tabindex="-1"></a>    <span class="co"># one is the full account of nonzeroCoef()'s layouts. They are</span></span>
+<span id="cb85-76"><a href="competitor-methods.html#cb85-76" tabindex="-1"></a>    <span class="co"># complementary, not competing.</span></span>
+<span id="cb85-77"><a href="competitor-methods.html#cb85-77" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb85-78"><a href="competitor-methods.html#cb85-78" tabindex="-1"></a>    <span class="co"># n_pen is ncol(fit$beta) only because this call passes no s. With s</span></span>
+<span id="cb85-79"><a href="competitor-methods.html#cb85-79" tabindex="-1"></a>    <span class="co"># supplied, predict.glmnet interpolates to length(s) columns instead and this</span></span>
+<span id="cb85-80"><a href="competitor-methods.html#cb85-80" tabindex="-1"></a>    <span class="co"># derivation breaks--change n_pen to length(s) if that ever happens.</span></span>
+<span id="cb85-81"><a href="competitor-methods.html#cb85-81" tabindex="-1"></a>    n_pen <span class="ot">&lt;-</span> <span class="fu">ncol</span>(fit<span class="sc">$</span>beta)</span>
+<span id="cb85-82"><a href="competitor-methods.html#cb85-82" tabindex="-1"></a></span>
+<span id="cb85-83"><a href="competitor-methods.html#cb85-83" tabindex="-1"></a>    <span class="co"># The ORDER of the two branch predicates is load-bearing. On a square</span></span>
+<span id="cb85-84"><a href="competitor-methods.html#cb85-84" tabindex="-1"></a>    <span class="co"># input (k == n_pen) BOTH are true and the two readings differ, so testing</span></span>
+<span id="cb85-85"><a href="competitor-methods.html#cb85-85" tabindex="-1"></a>    <span class="co"># ncol first is what makes column-major win -- which is correct, because</span></span>
+<span id="cb85-86"><a href="competitor-methods.html#cb85-86" tabindex="-1"></a>    <span class="co"># apply() simplifies to a matrix only with one column per penalty, and</span></span>
+<span id="cb85-87"><a href="competitor-methods.html#cb85-87" tabindex="-1"></a>    <span class="co"># collapses to a vector (hence exactly one column) otherwise. Swapping the</span></span>
+<span id="cb85-88"><a href="competitor-methods.html#cb85-88" tabindex="-1"></a>    <span class="co"># test and the readings together is wrong on square input only, which is</span></span>
+<span id="cb85-89"><a href="competitor-methods.html#cb85-89" tabindex="-1"></a>    <span class="co"># why a fixture of that shape is pinned below.</span></span>
+<span id="cb85-90"><a href="competitor-methods.html#cb85-90" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">is.data.frame</span>(nonzero)){</span>
+<span id="cb85-91"><a href="competitor-methods.html#cb85-91" tabindex="-1"></a>        nonzero_mat <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(nonzero)</span>
+<span id="cb85-92"><a href="competitor-methods.html#cb85-92" tabindex="-1"></a>        <span class="cf">if</span>(<span class="fu">ncol</span>(nonzero_mat) <span class="sc">==</span> n_pen){</span>
+<span id="cb85-93"><a href="competitor-methods.html#cb85-93" tabindex="-1"></a>            nonzero <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(n_pen), <span class="cf">function</span>(j){</span>
+<span id="cb85-94"><a href="competitor-methods.html#cb85-94" tabindex="-1"></a>                <span class="fu">as.integer</span>(nonzero_mat[, j])</span>
+<span id="cb85-95"><a href="competitor-methods.html#cb85-95" tabindex="-1"></a>            })</span>
+<span id="cb85-96"><a href="competitor-methods.html#cb85-96" tabindex="-1"></a>        } <span class="cf">else</span>{</span>
+<span id="cb85-97"><a href="competitor-methods.html#cb85-97" tabindex="-1"></a>            <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(nonzero_mat) <span class="sc">==</span> n_pen)</span>
+<span id="cb85-98"><a href="competitor-methods.html#cb85-98" tabindex="-1"></a>            nonzero <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(n_pen), <span class="cf">function</span>(i){</span>
+<span id="cb85-99"><a href="competitor-methods.html#cb85-99" tabindex="-1"></a>                <span class="fu">as.integer</span>(nonzero_mat[i, ])</span>
+<span id="cb85-100"><a href="competitor-methods.html#cb85-100" tabindex="-1"></a>            })</span>
+<span id="cb85-101"><a href="competitor-methods.html#cb85-101" tabindex="-1"></a>        }</span>
+<span id="cb85-102"><a href="competitor-methods.html#cb85-102" tabindex="-1"></a>    }</span>
 <span id="cb85-103"><a href="competitor-methods.html#cb85-103" tabindex="-1"></a></span>
-<span id="cb85-104"><a href="competitor-methods.html#cb85-104" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(nonzero)</span>
-<span id="cb85-105"><a href="competitor-methods.html#cb85-105" tabindex="-1"></a></span>
-<span id="cb85-106"><a href="competitor-methods.html#cb85-106" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
-<span id="cb85-107"><a href="competitor-methods.html#cb85-107" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
-<span id="cb85-108"><a href="competitor-methods.html#cb85-108" tabindex="-1"></a>        prototypes, feat_names)</span>
-<span id="cb85-109"><a href="competitor-methods.html#cb85-109" tabindex="-1"></a></span>
-<span id="cb85-110"><a href="competitor-methods.html#cb85-110" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
-<span id="cb85-111"><a href="competitor-methods.html#cb85-111" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
-<span id="cb85-112"><a href="competitor-methods.html#cb85-112" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
-<span id="cb85-113"><a href="competitor-methods.html#cb85-113" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb85-104"><a href="competitor-methods.html#cb85-104" tabindex="-1"></a>    <span class="co"># One slot per penalty in the fitted path, on every glmnet version. Any</span></span>
+<span id="cb85-105"><a href="competitor-methods.html#cb85-105" tabindex="-1"></a>    <span class="co"># other container--nonzeroCoef()'s nr == 1 branch, which the</span></span>
+<span id="cb85-106"><a href="competitor-methods.html#cb85-106" tabindex="-1"></a>    <span class="co"># ncol(X_glmnet) &lt; 2 guard above makes unreachable here--stops rather than</span></span>
+<span id="cb85-107"><a href="competitor-methods.html#cb85-107" tabindex="-1"></a>    <span class="co"># being silently misread downstream.</span></span>
+<span id="cb85-108"><a href="competitor-methods.html#cb85-108" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.list</span>(nonzero))</span>
+<span id="cb85-109"><a href="competitor-methods.html#cb85-109" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.data.frame</span>(nonzero))</span>
+<span id="cb85-110"><a href="competitor-methods.html#cb85-110" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">identical</span>(<span class="fu">length</span>(nonzero), n_pen))</span>
+<span id="cb85-111"><a href="competitor-methods.html#cb85-111" tabindex="-1"></a></span>
+<span id="cb85-112"><a href="competitor-methods.html#cb85-112" tabindex="-1"></a>    lasso_sets <span class="ot">&lt;-</span> <span class="fu">unique</span>(nonzero)</span>
+<span id="cb85-113"><a href="competitor-methods.html#cb85-113" tabindex="-1"></a></span>
+<span id="cb85-114"><a href="competitor-methods.html#cb85-114" tabindex="-1"></a>    <span class="co"># Obtain a tidy list of selected sets--one for each model size</span></span>
+<span id="cb85-115"><a href="competitor-methods.html#cb85-115" tabindex="-1"></a>    cluster_sel_results <span class="ot">&lt;-</span> <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>(lasso_sets, clusters,</span>
+<span id="cb85-116"><a href="competitor-methods.html#cb85-116" tabindex="-1"></a>        prototypes, feat_names)</span>
+<span id="cb85-117"><a href="competitor-methods.html#cb85-117" tabindex="-1"></a></span>
+<span id="cb85-118"><a href="competitor-methods.html#cb85-118" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">selected_sets=</span>cluster_sel_results<span class="sc">$</span>selected_sets,</span>
+<span id="cb85-119"><a href="competitor-methods.html#cb85-119" tabindex="-1"></a>        <span class="at">selected_clusts_list=</span>cluster_sel_results<span class="sc">$</span>selected_clusts_list,</span>
+<span id="cb85-120"><a href="competitor-methods.html#cb85-120" tabindex="-1"></a>        <span class="at">beta=</span>fit<span class="sc">$</span>beta))</span>
+<span id="cb85-121"><a href="competitor-methods.html#cb85-121" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="competitor-methods.html#protolasso">protolasso</a>()</code>:</p>
 <div class="sourceCode" id="cb86"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb86-1"><a href="competitor-methods.html#cb86-1" tabindex="-1"></a><span class="co">#' Select features via the protolasso (Reid and Tibshirani 2016)</span></span>
 <span id="cb86-2"><a href="competitor-methods.html#cb86-2" tabindex="-1"></a><span class="co">#'</span></span>

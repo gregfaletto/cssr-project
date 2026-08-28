@@ -63,7 +63,8 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # normalise rather than rely on it.
     #
     # The two data.frame layouts are NOT the same, which is why as.list() alone
-    # would be wrong. When every penalty selected the same k >= 2 features,
+    # would be wrong. When every penalty selected the same NUMBER k >= 2 of
+    # features -- the sets themselves may differ, {1,2} and {2,3} qualify --
     # apply() gives a k x n_pen matrix and data.frame() lays out one COLUMN per
     # penalty. When every penalty selected exactly ONE feature, apply() collapses
     # to a vector and data.frame() gives a single column with one ROW per
@@ -81,6 +82,13 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # derivation breaks--change n_pen to length(s) if that ever happens.
     n_pen <- ncol(fit$beta)
 
+    # The ORDER of the two branch predicates is load-bearing. On a square
+    # input (k == n_pen) BOTH are true and the two readings differ, so testing
+    # ncol first is what makes column-major win -- which is correct, because
+    # apply() simplifies to a matrix only with one column per penalty, and
+    # collapses to a vector (hence exactly one column) otherwise. Swapping the
+    # test and the readings together is wrong on square input only, which is
+    # why a fixture of that shape is pinned below.
     if(is.data.frame(nonzero)){
         nonzero_mat <- as.matrix(nonzero)
         if(ncol(nonzero_mat) == n_pen){

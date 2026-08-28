@@ -9017,6 +9017,7 @@ testthat::test_that("getSelectedSets works", {
   
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[5]]
   
@@ -9056,6 +9057,7 @@ testthat::test_that("getSelectedSets works", {
   
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[5]]
   
@@ -9106,6 +9108,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(X_df)), family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
   
@@ -9166,6 +9169,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
 
@@ -9229,6 +9233,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(df2)), family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
 
@@ -9275,6 +9280,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
   
@@ -9327,10 +9333,18 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # normalisation (#190). These fixtures exercise the CONSUMER against the
   # installed glmnet, bypassing the boundary on purpose, which is what makes
   # them complementary to the mocked shape pins further below; copying the
-  # normalisation in here would defeat that. On a glmnet that returned a
-  # data.frame they would stop at the consumer's new guard rather than silently
-  # misreading it, which is the loud direction.
+  # normalisation in here would defeat that.
+  #
+  # The expect_true() beside each such fixture -- here and in the
+  # "getSelectedSets works" block above -- is the canary for that choice. On a
+  # glmnet that returned a data.frame, the fixtures in THIS block would stop at
+  # the consumer's new guard, but that block's would not: it indexes a single
+  # element out and calls getSelectedSets(), which this PR does not guard, and
+  # a data.frame's [[k]] is column k -- a well-formed integer vector whose
+  # assertions pass silently. The canary makes both blocks fail the same,
+  # legible way instead.
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
   
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9395,6 +9409,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
 
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9471,6 +9486,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=rnorm(nrow(X_df)), family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9551,6 +9567,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
                         nlambda=100)
   
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9623,6 +9640,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian",
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+  testthat::expect_true(is.list(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9779,7 +9797,10 @@ testthat::test_that("clusterLassoCore leaves the list shape alone (#190)", {
   # list" is the likeliest future edit to that block -- under which it errors
   # with "'list' object cannot be coerced to type 'integer'". Apart from the
   # entry-count block below, which trips a different assertion incidentally,
-  # this is the only block that catches that.
+  # this block catches that. It is not the only one -- an unconditional
+  # reshape reaches as.integer() on a list from every caller, so the
+  # end-to-end protolasso/clusterRepLasso blocks error too -- but it is the
+  # only one of the mocked shape pins that does.
   testthat::local_mocked_bindings(
     predict.glmnet = function(object, ...){
       testthat::expect_gte(ncol(object$beta), 3L)
@@ -9865,6 +9886,68 @@ testthat::test_that("getClusterSelsFromGlmnet rejects a non-list (#190)", {
     getClusterSelsFromGlmnet(1:3, process$clusters, process$prototypes,
                              process$var_names),
     "is.list(lasso_sets) is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("clusterLassoCore reads a square data.frame column-major (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # The one shape on which BOTH branch predicates are true: k == n_pen, so
+  # ncol(nonzero_mat) == n_pen and nrow(nonzero_mat) == n_pen alike. The
+  # normalisation resolves it by testing ncol first, which is correct --
+  # apply() simplifies to a matrix only when it has one column per penalty --
+  # but nothing else in this file pins that ORDER, because no other fixture is
+  # square (the single-column one is n_pen x 1, the multi-column one 2 x n_pen).
+  #
+  # Swapping the predicate and the two readings together is wrong on exactly
+  # this shape and correct everywhere else, so without this block that refactor
+  # passes the whole suite while reintroducing #190's failure mode: confidently
+  # wrong model sizes. Read row-major, column 1 becomes c(1L, 1L, 1L), which
+  # getSelectedSets() rejects for having duplicates.
+  #
+  # nlambda is honoured exactly at small values (measured: 2 -> 2, 3 -> 3), so
+  # a square fixture is directly constructible; assert it rather than trusting
+  # it, since a shortened path would make this block vacuous.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      n_pen <- ncol(object$beta)
+      testthat::expect_identical(n_pen, 3L)
+      as.data.frame(matrix(c(1L, 2L, 3L, 1L, 2L, 4L, 1L, 3L, 4L), nrow=3L,
+                           ncol=3L))
+    }, .package="glmnet")
+
+  res <- protolasso(x, y, good_clusters, nlambda=3)
+
+  # Prototypes are c(1, 7, 9, 10, 11), so the fixture's first column c(1, 2, 3)
+  # maps to features 1, 7 and 9.
+  testthat::expect_length(res$selected_sets, 3)
+  testthat::expect_null(res$selected_sets[[1]])
+  testthat::expect_null(res$selected_sets[[2]])
+  testthat::expect_identical(res$selected_sets[[3]], c(1L, 7L, 9L))
+})
+
+testthat::test_that("clusterLassoCore rejects a data.frame of neither orientation (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # Neither ncol nor nrow matches n_pen (66 on this design at nlambda = 100),
+  # so the reshaping cannot tell which orientation it is looking at and stops
+  # instead of guessing. No glmnet in play emits this, which is why the guard
+  # is otherwise unobserved.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(...) data.frame(a=1:2, b=3:4),
+    .package="glmnet")
+
+  testthat::expect_error(protolasso(x, y, good_clusters, nlambda=100),
+                         "nrow(nonzero_mat) == n_pen is not TRUE", fixed=TRUE)
 })
 
 testthat::test_that("protolasso works", {
