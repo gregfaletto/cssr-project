@@ -1406,13 +1406,19 @@ regardless of which glmnet is installed – a test exercising only the <em>insta
 pins nothing about the other one.</p>
 <p><code>glmnet()</code> itself is not mocked, so <code>fit</code> is a real fit whose path length is whatever the
 installed glmnet’s early-stopping heuristics produce (<code>nlambda</code> is a request, not a
-promise: measured on this design, <code>nlambda = 100</code> yields 66 penalties, not 100). Each mock
+promise: measured on the protolasso design these blocks build, <code>nlambda = 100</code> yields 66
+penalties, and 61 on the <code><a href="competitor-methods.html#clusterRepLasso">clusterRepLasso</a>()</code> design block B uses). Each mock
 therefore sizes its fixture from <code>ncol(object$beta)</code> rather than hard-coding a slot count,
 which would be a <code>stopifnot()</code> error rather than a legible test failure.</p>
 <p>Only the single-column <code>data.frame</code> block is a red-green regression test for the container
 bug proper. The multi-column and list blocks are pins that pass on the pre-fix source too;
-the last three pin the three new assertions, each of which is otherwise observed by
-nothing.</p>
+the last three pin the boundary’s entry-count assertion and the consumer’s two container
+guards, each of which is otherwise observed by nothing.</p>
+<p>The boundary’s own <code>is.list()</code> / <code>!is.data.frame()</code> pair and the inner <code>nrow()</code> check in the
+row-major branch are deliberately <em>unpinned</em>: all three are unreachable once the reshaping has
+run, and stand as defence-in-depth against a glmnet returning a container this code has not
+been taught. Deleting any of them leaves every block below green, which is the expected result
+rather than a coverage gap.</p>
 <div class="sourceCode" id="cb354"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb354-1"><a href="tests-for-competitor-methods.html#cb354-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">"clusterLassoCore normalises a single-column data.frame (#190)"</span>, {</span>
 <span id="cb354-2"><a href="tests-for-competitor-methods.html#cb354-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">61282</span>)</span>
 <span id="cb354-3"><a href="tests-for-competitor-methods.html#cb354-3" tabindex="-1"></a></span>

@@ -72,8 +72,9 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # Do NOT flatten with unlist(). cssLasso() does, correctly, because its
     # scalar s gives it exactly one slot; this result has one slot per model
     # size and flattening would merge them (#188). That function's comment
-    # describes the scalar-s case only; this one is the full account of
-    # nonzeroCoef()'s layouts. They are complementary, not competing.
+    # states the rule and already warns against copying its idiom here; this
+    # one is the full account of nonzeroCoef()'s layouts. They are
+    # complementary, not competing.
     #
     # n_pen is ncol(fit$beta) only because this call passes no s. With s
     # supplied, predict.glmnet interpolates to length(s) columns instead and this
@@ -95,9 +96,9 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     }
 
     # One slot per penalty in the fitted path, on every glmnet version. Any
-    # other container--nonzeroCoef()'s nr == 1 branch returns a bare numeric
-    # vector, which the ncol(X_glmnet) < 2 guard above makes unreachable
-    # here--stops rather than being silently misread downstream.
+    # other container--nonzeroCoef()'s nr == 1 branch, which the
+    # ncol(X_glmnet) < 2 guard above makes unreachable here--stops rather than
+    # being silently misread downstream.
     stopifnot(is.list(nonzero))
     stopifnot(!is.data.frame(nonzero))
     stopifnot(identical(length(nonzero), n_pen))

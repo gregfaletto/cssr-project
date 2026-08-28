@@ -6115,8 +6115,9 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     # Do NOT flatten with unlist(). cssLasso() does, correctly, because its
     # scalar s gives it exactly one slot; this result has one slot per model
     # size and flattening would merge them (#188). That function's comment
-    # describes the scalar-s case only; this one is the full account of
-    # nonzeroCoef()'s layouts. They are complementary, not competing.
+    # states the rule and already warns against copying its idiom here; this
+    # one is the full account of nonzeroCoef()'s layouts. They are
+    # complementary, not competing.
     #
     # n_pen is ncol(fit$beta) only because this call passes no s. With s
     # supplied, predict.glmnet interpolates to length(s) columns instead and this
@@ -6138,9 +6139,9 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
     }
 
     # One slot per penalty in the fitted path, on every glmnet version. Any
-    # other container--nonzeroCoef()'s nr == 1 branch returns a bare numeric
-    # vector, which the ncol(X_glmnet) < 2 guard above makes unreachable
-    # here--stops rather than being silently misread downstream.
+    # other container--nonzeroCoef()'s nr == 1 branch, which the
+    # ncol(X_glmnet) < 2 guard above makes unreachable here--stops rather than
+    # being silently misread downstream.
     stopifnot(is.list(nonzero))
     stopifnot(!is.data.frame(nonzero))
     stopifnot(identical(length(nonzero), n_pen))
@@ -6462,8 +6463,9 @@ checkGetXglmnetInputs <- function(x, clusters, type, prototypes){
 #'
 #' @param lasso_sets A list of integer vectors. Each vector represents a set of
 #' features selected by the lasso for a given value of the penalty parameter
-#' lambda. This shape is required rather than merely expected: the function
-#' stops if it is handed anything else, a data.frame included.
+#' lambda. The list container is required rather than merely expected: the
+#' function stops if `lasso_sets` is not a list, or is a data.frame. The
+#' container only -- element types and lengths are not checked.
 #' @param clusters A named list where each entry is an integer vector of indices
 #' of features that are in a common cluster. (The length of list clusters is
 #' equal to the number of clusters.) All identified clusters must be
@@ -16946,14 +16948,21 @@ pins nothing about the other one.
 
 `glmnet()` itself is not mocked, so `fit` is a real fit whose path length is whatever the
 installed glmnet's early-stopping heuristics produce (`nlambda` is a request, not a
-promise: measured on this design, `nlambda = 100` yields 66 penalties, not 100). Each mock
+promise: measured on the protolasso design these blocks build, `nlambda = 100` yields 66
+penalties, and 61 on the `clusterRepLasso()` design block B uses). Each mock
 therefore sizes its fixture from `ncol(object$beta)` rather than hard-coding a slot count,
 which would be a `stopifnot()` error rather than a legible test failure.
 
 Only the single-column `data.frame` block is a red-green regression test for the container
 bug proper. The multi-column and list blocks are pins that pass on the pre-fix source too;
-the last three pin the three new assertions, each of which is otherwise observed by
-nothing.
+the last three pin the boundary's entry-count assertion and the consumer's two container
+guards, each of which is otherwise observed by nothing.
+
+The boundary's own `is.list()` / `!is.data.frame()` pair and the inner `nrow()` check in the
+row-major branch are deliberately *unpinned*: all three are unreachable once the reshaping has
+run, and stand as defence-in-depth against a glmnet returning a container this code has not
+been taught. Deleting any of them leaves every block below green, which is the expected result
+rather than a coverage gap.
 
 ```{r}
 testthat::test_that("clusterLassoCore normalises a single-column data.frame (#190)", {

@@ -5,8 +5,9 @@
 #'
 #' @param lasso_sets A list of integer vectors. Each vector represents a set of
 #' features selected by the lasso for a given value of the penalty parameter
-#' lambda. This shape is required rather than merely expected: the function
-#' stops if it is handed anything else, a data.frame included.
+#' lambda. The list container is required rather than merely expected: the
+#' function stops if `lasso_sets` is not a list, or is a data.frame. The
+#' container only -- element types and lengths are not checked.
 #' @param clusters A named list where each entry is an integer vector of indices
 #' of features that are in a common cluster. (The length of list clusters is
 #' equal to the number of clusters.) All identified clusters must be
