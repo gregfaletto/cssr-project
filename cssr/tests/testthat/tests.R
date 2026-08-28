@@ -9018,6 +9018,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[5]]
   
@@ -9058,6 +9059,7 @@ testthat::test_that("getSelectedSets works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[5]]
   
@@ -9109,6 +9111,7 @@ testthat::test_that("getSelectedSets works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
   
@@ -9170,6 +9173,7 @@ testthat::test_that("getSelectedSets works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
 
@@ -9234,6 +9238,7 @@ testthat::test_that("getSelectedSets works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
 
@@ -9281,6 +9286,7 @@ testthat::test_that("getSelectedSets works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   # Pick an arbitrary lasso set
   lasso_set <- lasso_sets[[min(length(lasso_sets), 3)]]
   
@@ -9335,16 +9341,22 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   # them complementary to the mocked shape pins further below; copying the
   # normalisation in here would defeat that.
   #
-  # The expect_true() beside each such fixture -- here and in the
-  # "getSelectedSets works" block above -- is the canary for that choice. On a
+  # The two assertions beside each such fixture -- here and in the
+  # "getSelectedSets works" block above -- are the canary for that choice. On a
   # glmnet that returned a data.frame, the fixtures in THIS block would stop at
   # the consumer's new guard, but that block's would not: it indexes a single
   # element out and calls getSelectedSets(), which this PR does not guard, and
   # a data.frame's [[k]] is column k -- a well-formed integer vector whose
   # assertions pass silently. The canary makes both blocks fail the same,
   # legible way instead.
+  #
+  # BOTH assertions are needed, for the same reason the consumer needs two
+  # guards: a data.frame IS a list, so expect_true(is.list(...)) alone passes
+  # on the very container this is watching for. The pair mirrors
+  # getClusterSelsFromGlmnet()'s own stopifnot() pair exactly.
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
   
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9410,6 +9422,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9487,6 +9500,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9568,6 +9582,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
   
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9641,6 +9656,7 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
                         nlambda=100)
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   testthat::expect_true(is.list(lasso_sets))
+  testthat::expect_false(is.data.frame(lasso_sets))
 
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
                                   process$prototypes, process$var_names)
@@ -9751,8 +9767,9 @@ testthat::test_that("clusterLassoCore normalises a multi-column data.frame (#190
   good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
 
   # glmnet 4.x's other data.frame layout: every penalty selected the same
-  # k >= 2 features, so apply() returns a k x n_pen matrix and data.frame()
-  # lays out one COLUMN per penalty. This one degenerates to the right answer
+  # NUMBER k >= 2 of features -- the sets may differ, {1,2} and {2,3} qualify
+  # -- so apply() returns a k x n_pen matrix and data.frame() lays out one
+  # COLUMN per penalty. This one degenerates to the right answer
   # pre-fix -- each column is strictly increasing down the rows, so no two rows
   # can be equal and unique() is a no-op on it -- which makes this a pin rather
   # than a red-green test. It holds the column-major branch of the
@@ -9906,8 +9923,8 @@ testthat::test_that("clusterLassoCore reads a square data.frame column-major (#1
   # Swapping the predicate and the two readings together is wrong on exactly
   # this shape and correct everywhere else, so without this block that refactor
   # passes the whole suite while reintroducing #190's failure mode: confidently
-  # wrong model sizes. Read row-major, column 1 becomes c(1L, 1L, 1L), which
-  # getSelectedSets() rejects for having duplicates.
+  # wrong model sizes. Read row-major, slot 1 is ROW 1 -- c(1L, 1L, 1L) --
+  # which getSelectedSets() rejects for having duplicates.
   #
   # nlambda is honoured exactly at small values (measured: 2 -> 2, 3 -> 3), so
   # a square fixture is directly constructible; assert it rather than trusting
