@@ -1706,9 +1706,13 @@ swallowed:</p>
 <span id="cb158-28"><a href="tests-for-the-core-css-functions.html#cb158-28" tabindex="-1"></a>})</span></code></pre></div>
 <pre><code>## Test passed with 7 successes.</code></pre>
 <p><code>predict.glmnet(type = "nonzero")</code> does not return a stable container across glmnet
-versions, so <code><a href="css.html#cssLasso">cssLasso</a>()</code> must not care which one it gets. glmnet 4.x returns a
-<code>data.frame</code> on a non-empty selection and a list on an empty one; glmnet 5.0 always
-returns a list. These blocks mock <code>glmnet::predict.glmnet</code> to hand <code><a href="css.html#cssLasso">cssLasso</a>()</code> each
+versions, so <code><a href="css.html#cssLasso">cssLasso</a>()</code> must not care which one it gets. <strong>For the scalar <code>s</code> used
+here</strong>, glmnet 4.x returns a <code>data.frame</code> on a non-empty selection and a list on an
+empty one; glmnet 5.0 always returns a list. That is a consequence of the general rule,
+not the rule itself – 4.x coerces to a <code>data.frame</code> whenever <code>apply()</code> could simplify,
+which for one <code>s</code> value means whenever anything was selected. The <code><a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>()</code>
+blocks further below cover the no-<code>s</code> case, where the same rule produces two <em>different</em>
+<code>data.frame</code> layouts (#190). These blocks mock <code>glmnet::predict.glmnet</code> to hand <code><a href="css.html#cssLasso">cssLasso</a>()</code> each
 shape directly, which pins the contract on any machine regardless of which glmnet is
 installed – the point being that a test exercising only the <em>installed</em> version pins
 nothing about the other one.</p>

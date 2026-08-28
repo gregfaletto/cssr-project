@@ -8342,9 +8342,13 @@ testthat::test_that("cssLasso works", {
 ```
 
 `predict.glmnet(type = "nonzero")` does not return a stable container across glmnet
-versions, so `cssLasso()` must not care which one it gets. glmnet 4.x returns a
-`data.frame` on a non-empty selection and a list on an empty one; glmnet 5.0 always
-returns a list. These blocks mock `glmnet::predict.glmnet` to hand `cssLasso()` each
+versions, so `cssLasso()` must not care which one it gets. **For the scalar `s` used
+here**, glmnet 4.x returns a `data.frame` on a non-empty selection and a list on an
+empty one; glmnet 5.0 always returns a list. That is a consequence of the general rule,
+not the rule itself -- 4.x coerces to a `data.frame` whenever `apply()` could simplify,
+which for one `s` value means whenever anything was selected. The `clusterLassoCore()`
+blocks further below cover the no-`s` case, where the same rule produces two *different*
+`data.frame` layouts (#190). These blocks mock `glmnet::predict.glmnet` to hand `cssLasso()` each
 shape directly, which pins the contract on any machine regardless of which glmnet is
 installed -- the point being that a test exercising only the *installed* version pins
 nothing about the other one.
