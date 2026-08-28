@@ -43,7 +43,66 @@ clusterLassoCore <- function(X, y, clusters, nlambda, type){
 
     # Estimate the lasso on the cluster prototypes / representatives
     fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=nlambda)
-    lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
+    nonzero <- glmnet::predict.glmnet(fit, type="nonzero")
+
+    # predict.glmnet(type = "nonzero") has no stable container across glmnet
+    # versions, and both operations downstream are container-sensitive: unique()
+    # dedupes list ELEMENTS but data.frame ROWS, and getClusterSelsFromGlmnet()'s
+    # lengths() counts per-element lengths but data.frame ROWS PER COLUMN. So a
+    # SINGLE-COLUMN data.frame here does not error--it returns a confidently
+    # wrong set of model sizes (#190). (The multi-column layout happens to
+    # degenerate to the right answer, because no two of its rows can be equal, so
+    # unique() is a no-op on it. Normalise both anyway: the code should not depend
+    # on which of the two arrives.)
+    #
+    # glmnet 5.0 always returns a list. glmnet 4.x returns one only because this
+    # fit supplies no lambda: the auto-generated sequence starts at lambda_max,
+    # where df == 0, so nonzeroCoef()'s nzel() yields NULL for that penalty,
+    # apply() cannot simplify to a matrix, and 4.x's data.frame(which) coercion
+    # is skipped. That is an accident of the sequence, not a contract, so
+    # normalise rather than rely on it.
+    #
+    # The two data.frame layouts are NOT the same, which is why as.list() alone
+    # would be wrong. When every penalty selected the same k >= 2 features,
+    # apply() gives a k x n_pen matrix and data.frame() lays out one COLUMN per
+    # penalty. When every penalty selected exactly ONE feature, apply() collapses
+    # to a vector and data.frame() gives a single column with one ROW per
+    # penalty--the convention inverts. n_pen tells them apart.
+    #
+    # Do NOT flatten with unlist(). cssLasso() does, correctly, because its
+    # scalar s gives it exactly one slot; this result has one slot per model
+    # size and flattening would merge them (#188). That function's comment
+    # describes the scalar-s case only; this one is the full account of
+    # nonzeroCoef()'s layouts. They are complementary, not competing.
+    #
+    # n_pen is ncol(fit$beta) only because this call passes no s. With s
+    # supplied, predict.glmnet interpolates to length(s) columns instead and this
+    # derivation breaks--change n_pen to length(s) if that ever happens.
+    n_pen <- ncol(fit$beta)
+
+    if(is.data.frame(nonzero)){
+        nonzero_mat <- as.matrix(nonzero)
+        if(ncol(nonzero_mat) == n_pen){
+            nonzero <- lapply(seq_len(n_pen), function(j){
+                as.integer(nonzero_mat[, j])
+            })
+        } else{
+            stopifnot(nrow(nonzero_mat) == n_pen)
+            nonzero <- lapply(seq_len(n_pen), function(i){
+                as.integer(nonzero_mat[i, ])
+            })
+        }
+    }
+
+    # One slot per penalty in the fitted path, on every glmnet version. Any
+    # other container--nonzeroCoef()'s nr == 1 branch returns a bare numeric
+    # vector, which the ncol(X_glmnet) < 2 guard above makes unreachable
+    # here--stops rather than being silently misread downstream.
+    stopifnot(is.list(nonzero))
+    stopifnot(!is.data.frame(nonzero))
+    stopifnot(identical(length(nonzero), n_pen))
+
+    lasso_sets <- unique(nonzero)
 
     # Obtain a tidy list of selected sets--one for each model size
     cluster_sel_results <- getClusterSelsFromGlmnet(lasso_sets, clusters,

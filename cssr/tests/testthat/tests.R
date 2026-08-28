@@ -9323,6 +9323,13 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
                          type="protolasso", prototypes=process$prototypes)
   
   fit <- glmnet::glmnet(x=X_glmnet, y=y, family="gaussian", nlambda=100)
+  # Deliberately the raw predict.glmnet idiom rather than clusterLassoCore()'s
+  # normalisation (#190). These fixtures exercise the CONSUMER against the
+  # installed glmnet, bypassing the boundary on purpose, which is what makes
+  # them complementary to the mocked shape pins further below; copying the
+  # normalisation in here would defeat that. On a glmnet that returned a
+  # data.frame they would stop at the consumer's new guard rather than silently
+  # misreading it, which is the loud direction.
   lasso_sets <- unique(glmnet::predict.glmnet(fit, type="nonzero"))
   
   res <- getClusterSelsFromGlmnet(lasso_sets, process$clusters,
@@ -9679,6 +9686,185 @@ testthat::test_that("getClusterSelsFromGlmnet works", {
       prototypes = 1L, feat_names = NA)
   testthat::expect_length(out_empty$selected_sets, 0)
   testthat::expect_length(out_empty$selected_clusts_list, 0)
+})
+
+testthat::test_that("clusterLassoCore normalises a single-column data.frame (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # glmnet 4.x's shape when every penalty selected exactly ONE feature: apply()
+  # collapses to a vector, so data.frame() gives a single column with one ROW
+  # per penalty and the column<->penalty convention inverts. Read as a list
+  # this is one model of size n_pen; read correctly it is n_pen models of size
+  # 1. The values must cycle through more than one index, or the two readings
+  # coincide and this block cannot go red.
+  #
+  # The cycle needs n_pen >= 3, so assert it rather than documenting it: at
+  # n_pen == 1 the fixture is a 1 x 1 data.frame, both readings agree, and this
+  # block would pass pre-fix -- a green red-green test, which is worse than no
+  # test at all.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      testthat::expect_gte(ncol(object$beta), 3L)
+      data.frame(which=rep_len(c(1L, 2L, 3L), ncol(object$beta)))
+    }, .package="glmnet")
+
+  res <- protolasso(x, y, good_clusters, nlambda=100)
+
+  # Pre-fix, unique() dedupes the data.frame's ROWS and lengths() then counts
+  # rows per column, so this fixture is read as max_length = 3: the block sees
+  # selected_sets of length 3, holding a fabricated size-3 model c(1L, 7L, 9L)
+  # that glmnet never selected, and drops the genuine size-1 one. Both
+  # assertions below move.
+  testthat::expect_length(res$selected_sets, 1)
+  testthat::expect_identical(res$selected_sets[[1]], 1L)
+})
+
+testthat::test_that("clusterLassoCore normalises a multi-column data.frame (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # glmnet 4.x's other data.frame layout: every penalty selected the same
+  # k >= 2 features, so apply() returns a k x n_pen matrix and data.frame()
+  # lays out one COLUMN per penalty. This one degenerates to the right answer
+  # pre-fix -- each column is strictly increasing down the rows, so no two rows
+  # can be equal and unique() is a no-op on it -- which makes this a pin rather
+  # than a red-green test. It holds the column-major branch of the
+  # normalisation against a later refactor, and it goes red if the two branches
+  # are transposed or the reshaping is deleted.
+  #
+  # Driven through clusterRepLasso() so the shared clusterLassoCore() body is
+  # covered from both exported entry points.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      n_pen <- ncol(object$beta)
+      as.data.frame(matrix(rep_len(c(1L, 2L, 1L, 3L), 2L*n_pen), nrow=2L,
+                           ncol=n_pen))
+    }, .package="glmnet")
+
+  res <- clusterRepLasso(x, y, good_clusters, nlambda=100)
+
+  # Design indices 1 and 2 are red_cluster and green_cluster, whose prototypes
+  # are features 1 and 7; getSelectedSets() maps the fixture's indices back
+  # through prototypes, so these are not the fixture's own integers.
+  testthat::expect_length(res$selected_sets, 2)
+  testthat::expect_null(res$selected_sets[[1]])
+  testthat::expect_identical(res$selected_sets[[2]], c(1L, 7L))
+})
+
+testthat::test_that("clusterLassoCore leaves the list shape alone (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # The branch glmnet 5.0 always takes, and the one 4.x takes here today.
+  # Mixed sizes and a NULL slot, so the fixture is not degenerate.
+  #
+  # This is a pin, not a red-green test, and it is deliberately kept despite
+  # being green pre-fix: measured green under deleting the reshaping and under
+  # replacing it with a bare as.list(), because both leave a list untouched.
+  # What it does catch is applying the reshaping UNCONDITIONALLY -- dropping
+  # the is.data.frame() test on the grounds that "the reshape is harmless on a
+  # list" is the likeliest future edit to that block -- under which it errors
+  # with "'list' object cannot be coerced to type 'integer'". Apart from the
+  # entry-count block below, which trips a different assertion incidentally,
+  # this is the only block that catches that.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      testthat::expect_gte(ncol(object$beta), 3L)
+      rep_len(list(NULL, 1L, c(1L, 2L)), ncol(object$beta))
+    }, .package="glmnet")
+
+  res <- protolasso(x, y, good_clusters, nlambda=100)
+
+  testthat::expect_length(res$selected_sets, 2)
+  testthat::expect_identical(res$selected_sets[[1]], 1L)
+  testthat::expect_identical(res$selected_sets[[2]], c(1L, 7L))
+})
+
+testthat::test_that("getClusterSelsFromGlmnet rejects a data.frame (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  process <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters,
+                                       nlambda=100)
+
+  # The message pin separates the NEW guard from the downstream
+  # all(lasso_set <= length(clusters)) check in getSelectedSets(), which fires
+  # only when the fixture's indices exceed length(clusters). Measured on
+  # 2f66a14 with this five-cluster fixture: the call returns cleanly
+  # (selected_sets of length 2), so a bare expect_error() is red-green here as
+  # well -- but it would go green again on any later edit that made this call
+  # error for some unrelated reason, which is why the pin stays.
+  #
+  # fixed=TRUE is mandatory: the message contains "!", "(" and ".", so it does
+  # not match itself as a regex.
+  testthat::expect_error(
+    getClusterSelsFromGlmnet(data.frame(which=c(1L, 2L)), process$clusters,
+                             process$prototypes, process$var_names),
+    "!is.data.frame(lasso_sets) is not TRUE", fixed=TRUE)
+})
+
+testthat::test_that("clusterLassoCore requires one entry per penalty (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  # The entry-count assertion is a new bound on the default code path: before
+  # #190 clusterLassoCore() accepted whatever predict.glmnet handed it,
+  # afterwards it refuses anything whose entry count differs from
+  # ncol(fit$beta). Nothing else observes it, so without this block a later
+  # weakening of it would go unnoticed. On glmnet 4.1.9 the bound excludes
+  # nothing (400/400 agreement over random fits); CI's R-CMD-check matrix,
+  # which installs glmnet 5.0, is its cross-version test.
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      rep_len(list(1L), ncol(object$beta) + 1L)
+    }, .package="glmnet")
+
+  testthat::expect_error(protolasso(x, y, good_clusters, nlambda=100),
+                         "identical(length(nonzero), n_pen) is not TRUE",
+                         fixed=TRUE)
+})
+
+testthat::test_that("getClusterSelsFromGlmnet rejects a non-list (#190)", {
+  set.seed(61282)
+
+  x <- matrix(stats::rnorm(15*11), nrow=15, ncol=11)
+  y <- stats::rnorm(15)
+
+  good_clusters <- list(red_cluster=1L:4L, green_cluster=5L:8L)
+
+  process <- processClusterLassoInputs(X=x, y=y, clusters=good_clusters,
+                                       nlambda=100)
+
+  # The data.frame block above can never reach the is.list() guard, because a
+  # data.frame IS a list and its fixture always falls through to the second
+  # guard; this block is the only thing that exercises the first. Measured on
+  # 2f66a14: this call returns cleanly (selected_sets of length 1), so the red
+  # side is a clean "no error was thrown".
+  testthat::expect_error(
+    getClusterSelsFromGlmnet(1:3, process$clusters, process$prototypes,
+                             process$var_names),
+    "is.list(lasso_sets) is not TRUE", fixed=TRUE)
 })
 
 testthat::test_that("protolasso works", {
