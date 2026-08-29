@@ -5,7 +5,9 @@
 #'
 #' @param lasso_sets A list of integer vectors. Each vector represents a set of
 #' features selected by the lasso for a given value of the penalty parameter
-#' lambda.
+#' lambda. The list container is required rather than merely expected: the
+#' function stops if `lasso_sets` is not a list, or is a data.frame. The
+#' container only -- element types and lengths are not checked.
 #' @param clusters A named list where each entry is an integer vector of indices
 #' of features that are in a common cluster. (The length of list clusters is
 #' equal to the number of clusters.) All identified clusters must be
@@ -40,6 +42,14 @@
 #' @noRd
 getClusterSelsFromGlmnet <- function(lasso_sets, clusters, prototypes,
     feat_names){
+
+    # lasso_sets must be a list with one slot per penalty; clusterLassoCore()
+    # normalises predict.glmnet()'s output to that shape. A data.frame is also
+    # a list, so it needs its own test--on one, lengths() below would count
+    # rows per column instead of per-slot lengths, and the function would report
+    # model sizes glmnet never selected (#190).
+    stopifnot(is.list(lasso_sets))
+    stopifnot(!is.data.frame(lasso_sets))
 
     if(any(!is.na(feat_names))){
         stopifnot(all(!is.na(feat_names)))
