@@ -12,7 +12,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="3 The core function: css | Creating the cssr R package">
 <meta name="author" content="Gregory Faletto">
-<meta name="date" content="2026-08-28">
+<meta name="date" content="2026-09-02">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -833,69 +833,84 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb17-53"><a href="css.html#cb17-53" tabindex="-1"></a></span>
 <span id="cb17-54"><a href="css.html#cb17-54" tabindex="-1"></a>    <span class="co"># Fit a lasso path (full path for speed, per glmnet documentation)</span></span>
 <span id="cb17-55"><a href="css.html#cb17-55" tabindex="-1"></a></span>
-<span id="cb17-56"><a href="css.html#cb17-56" tabindex="-1"></a>    <span class="co"># Build the model with do.call so the stored call (lasso_model$call) carries</span></span>
-<span id="cb17-57"><a href="css.html#cb17-57" tabindex="-1"></a>    <span class="co"># the literal numeric value of alpha rather than the symbol `alpha`. This is</span></span>
-<span id="cb17-58"><a href="css.html#cb17-58" tabindex="-1"></a>    <span class="co"># load-bearing: predict.glmnet(..., exact=TRUE) below re-evaluates the</span></span>
-<span id="cb17-59"><a href="css.html#cb17-59" tabindex="-1"></a>    <span class="co"># stored call via update(), and if that call contained the symbol `alpha`</span></span>
-<span id="cb17-60"><a href="css.html#cb17-60" tabindex="-1"></a>    <span class="co"># (as glmnet::glmnet(X, y, family="gaussian", alpha=alpha) would store) the</span></span>
-<span id="cb17-61"><a href="css.html#cb17-61" tabindex="-1"></a>    <span class="co"># refit would throw "object 'alpha' not found" -- on both the elastic-net</span></span>
-<span id="cb17-62"><a href="css.html#cb17-62" tabindex="-1"></a>    <span class="co"># and the alpha=1 paths. See Decision Log / Surprises in the plan.</span></span>
-<span id="cb17-63"><a href="css.html#cb17-63" tabindex="-1"></a>    lasso_model <span class="ot">&lt;-</span> <span class="fu">do.call</span>(glmnet<span class="sc">::</span>glmnet,</span>
-<span id="cb17-64"><a href="css.html#cb17-64" tabindex="-1"></a>        <span class="fu">list</span>(<span class="at">x=</span>X, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">alpha=</span>alpha))</span>
-<span id="cb17-65"><a href="css.html#cb17-65" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all.equal</span>(<span class="fu">class</span>(lasso_model), <span class="fu">c</span>(<span class="st">"elnet"</span>, <span class="st">"glmnet"</span>)))</span>
-<span id="cb17-66"><a href="css.html#cb17-66" tabindex="-1"></a></span>
-<span id="cb17-67"><a href="css.html#cb17-67" tabindex="-1"></a>    <span class="co"># Get coefficients at desired lambda. exact=TRUE is load-bearing (dropping</span></span>
-<span id="cb17-68"><a href="css.html#cb17-68" tabindex="-1"></a>    <span class="co"># it changes results materially); the model object carries its own alpha for</span></span>
-<span id="cb17-69"><a href="css.html#cb17-69" tabindex="-1"></a>    <span class="co"># the exact refit, so only the unpacked scalar lambda is passed as s.</span></span>
-<span id="cb17-70"><a href="css.html#cb17-70" tabindex="-1"></a></span>
-<span id="cb17-71"><a href="css.html#cb17-71" tabindex="-1"></a>    pred <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(lasso_model, <span class="at">type=</span><span class="st">"nonzero"</span>,</span>
-<span id="cb17-72"><a href="css.html#cb17-72" tabindex="-1"></a>        <span class="at">s=</span>lambda, <span class="at">exact=</span><span class="cn">TRUE</span>, <span class="at">newx=</span>X, <span class="at">x=</span>X, <span class="at">y=</span>y)</span>
-<span id="cb17-73"><a href="css.html#cb17-73" tabindex="-1"></a></span>
-<span id="cb17-74"><a href="css.html#cb17-74" tabindex="-1"></a>    <span class="co"># predict.glmnet(type="nonzero") has never had a stable container. glmnet</span></span>
-<span id="cb17-75"><a href="css.html#cb17-75" tabindex="-1"></a>    <span class="co"># 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever</span></span>
-<span id="cb17-76"><a href="css.html#cb17-76" tabindex="-1"></a>    <span class="co"># the per-s index counts were uniform -- and a list otherwise; glmnet &gt;= 5.0</span></span>
-<span id="cb17-77"><a href="css.html#cb17-77" tabindex="-1"></a>    <span class="co"># always returns a list, one element per s value. For the scalar s used here</span></span>
-<span id="cb17-78"><a href="css.html#cb17-78" tabindex="-1"></a>    <span class="co"># that rule makes 4.x yield a data.frame on a non-empty selection and a list</span></span>
-<span id="cb17-79"><a href="css.html#cb17-79" tabindex="-1"></a>    <span class="co"># on an empty one, but the underlying rule is about simplification, not</span></span>
-<span id="cb17-80"><a href="css.html#cb17-80" tabindex="-1"></a>    <span class="co"># emptiness. unlist() flattens every one of those shapes to the same integer</span></span>
-<span id="cb17-81"><a href="css.html#cb17-81" tabindex="-1"></a>    <span class="co"># vector, so this is version-agnostic -- it is the idiom glmnet 5.0's own</span></span>
-<span id="cb17-82"><a href="css.html#cb17-82" tabindex="-1"></a>    <span class="co"># NEWS prescribes for cross-version callers (#188).</span></span>
-<span id="cb17-83"><a href="css.html#cb17-83" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb17-84"><a href="css.html#cb17-84" tabindex="-1"></a>    <span class="co"># SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:</span></span>
-<span id="cb17-85"><a href="css.html#cb17-85" tabindex="-1"></a>    <span class="co"># <a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>() rejects any lambda whose length is not 1 or 2, and</span></span>
-<span id="cb17-86"><a href="css.html#cb17-86" tabindex="-1"></a>    <span class="co"># the unpacking above reduces the length-2 c(lambda=, alpha=) form to a</span></span>
-<span id="cb17-87"><a href="css.html#cb17-87" tabindex="-1"></a>    <span class="co"># single penalty. (Both halves matter -- <a href="css.html#cssLasso">cssLasso</a>() is exported, so it can</span></span>
-<span id="cb17-88"><a href="css.html#cb17-88" tabindex="-1"></a>    <span class="co"># be called directly.) So pred has exactly one slot and unlist() cannot</span></span>
-<span id="cb17-89"><a href="css.html#cb17-89" tabindex="-1"></a>    <span class="co"># union indices across s values.</span></span>
-<span id="cb17-90"><a href="css.html#cb17-90" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb17-91"><a href="css.html#cb17-91" tabindex="-1"></a>    <span class="co"># Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet</span></span>
-<span id="cb17-92"><a href="css.html#cb17-92" tabindex="-1"></a>    <span class="co"># then returns one slot per penalty in the fitted path. <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>()</span></span>
-<span id="cb17-93"><a href="css.html#cb17-93" tabindex="-1"></a>    <span class="co"># does exactly that, and flattening its result would silently merge the</span></span>
-<span id="cb17-94"><a href="css.html#cb17-94" tabindex="-1"></a>    <span class="co"># per-model-size sets that <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>() consumes (#190).</span></span>
-<span id="cb17-95"><a href="css.html#cb17-95" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span></span>
-<span id="cb17-96"><a href="css.html#cb17-96" tabindex="-1"></a>        <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred)))</span>
-<span id="cb17-97"><a href="css.html#cb17-97" tabindex="-1"></a></span>
-<span id="cb17-98"><a href="css.html#cb17-98" tabindex="-1"></a>    selected_glmnet <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(<span class="fu">unlist</span>(pred)))</span>
-<span id="cb17-99"><a href="css.html#cb17-99" tabindex="-1"></a></span>
-<span id="cb17-100"><a href="css.html#cb17-100" tabindex="-1"></a>    <span class="co"># No feature selected at this penalty: unlist() of the all-NULL result is</span></span>
-<span id="cb17-101"><a href="css.html#cb17-101" tabindex="-1"></a>    <span class="co"># NULL, hence length 0. Replaces the previous is.null(pred[[1]]) test, which</span></span>
-<span id="cb17-102"><a href="css.html#cb17-102" tabindex="-1"></a>    <span class="co"># inspected the container rather than the contents.</span></span>
-<span id="cb17-103"><a href="css.html#cb17-103" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">==</span> <span class="dv">0</span>){</span>
-<span id="cb17-104"><a href="css.html#cb17-104" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">integer</span>())</span>
-<span id="cb17-105"><a href="css.html#cb17-105" tabindex="-1"></a>    }</span>
-<span id="cb17-106"><a href="css.html#cb17-106" tabindex="-1"></a></span>
-<span id="cb17-107"><a href="css.html#cb17-107" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X))</span>
-<span id="cb17-108"><a href="css.html#cb17-108" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(selected_glmnet <span class="sc">==</span> <span class="fu">round</span>(selected_glmnet)))</span>
-<span id="cb17-109"><a href="css.html#cb17-109" tabindex="-1"></a>    <span class="co"># No duplicate check is needed: nonzeroCoef() builds each slot as which[x],</span></span>
-<span id="cb17-110"><a href="css.html#cb17-110" tabindex="-1"></a>    <span class="co"># a logical subset of distinct column indices, so duplicates cannot arise</span></span>
-<span id="cb17-111"><a href="css.html#cb17-111" tabindex="-1"></a>    <span class="co"># upstream. (Asserting it after unique() would be a guardrail blinded by its</span></span>
-<span id="cb17-112"><a href="css.html#cb17-112" tabindex="-1"></a>    <span class="co"># own input rather than a real check.)</span></span>
-<span id="cb17-113"><a href="css.html#cb17-113" tabindex="-1"></a></span>
-<span id="cb17-114"><a href="css.html#cb17-114" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(selected_glmnet)</span>
-<span id="cb17-115"><a href="css.html#cb17-115" tabindex="-1"></a></span>
-<span id="cb17-116"><a href="css.html#cb17-116" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
-<span id="cb17-117"><a href="css.html#cb17-117" tabindex="-1"></a>}</span></code></pre></div>
-<p>Notice that <code><a href="css.html#cssLasso">cssLasso</a>()</code> depends on the package <code>glmnet</code>, and calls the function <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>, which verifies that the inputs to <code><a href="css.html#cssLasso">cssLasso</a>()</code> are as needed. (In particular, the function <code><a href="css.html#css">css</a>()</code> imposes very few requirements on <code>lambda</code> and <code>y</code> to allow the end user flexibility for any specified <code>fitfun</code>. <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> ensures that <code>y</code> is a real-valued response, <code>lambda</code> is a nonnegative real number, etc.) <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> is specified in the helper functions section later.</p>
+<span id="cb17-56"><a href="css.html#cb17-56" tabindex="-1"></a>    lasso_model <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>, <span class="at">alpha=</span>alpha)</span>
+<span id="cb17-57"><a href="css.html#cb17-57" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all.equal</span>(<span class="fu">class</span>(lasso_model), <span class="fu">c</span>(<span class="st">"elnet"</span>, <span class="st">"glmnet"</span>)))</span>
+<span id="cb17-58"><a href="css.html#cb17-58" tabindex="-1"></a></span>
+<span id="cb17-59"><a href="css.html#cb17-59" tabindex="-1"></a>    <span class="co"># Get coefficients at the desired lambda. predict.glmnet(exact=TRUE) used to</span></span>
+<span id="cb17-60"><a href="css.html#cb17-60" tabindex="-1"></a>    <span class="co"># do this by refitting the whole path augmented with lambda -- including</span></span>
+<span id="cb17-61"><a href="css.html#cb17-61" tabindex="-1"></a>    <span class="co"># every grid point BELOW lambda, which warm-started coordinate descent</span></span>
+<span id="cb17-62"><a href="css.html#cb17-62" tabindex="-1"></a>    <span class="co"># solves after the target and which therefore cannot influence it. Instead</span></span>
+<span id="cb17-63"><a href="css.html#cb17-63" tabindex="-1"></a>    <span class="co"># we fit that augmented grid ourselves, shortened by <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()</span></span>
+<span id="cb17-64"><a href="css.html#cb17-64" tabindex="-1"></a>    <span class="co"># and then predicted from with an ordinary exact=FALSE call. The shortened</span></span>
+<span id="cb17-65"><a href="css.html#cb17-65" tabindex="-1"></a>    <span class="co"># grid keeps the augmented grid's own final element: predict.glmnet()</span></span>
+<span id="cb17-66"><a href="css.html#cb17-66" tabindex="-1"></a>    <span class="co"># interpolates through glmnet:::lambda.interp(), which normalises by</span></span>
+<span id="cb17-67"><a href="css.html#cb17-67" tabindex="-1"></a>    <span class="co"># lambda[1] - lambda[k], so the blend weight at lambda depends on the last</span></span>
+<span id="cb17-68"><a href="css.html#cb17-68" tabindex="-1"></a>    <span class="co"># supplied grid point as well as the first, and dropping it changes the</span></span>
+<span id="cb17-69"><a href="css.html#cb17-69" tabindex="-1"></a>    <span class="co"># answer in its last bits. <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()'s n_interior argument is a</span></span>
+<span id="cb17-70"><a href="css.html#cb17-70" tabindex="-1"></a>    <span class="co"># speed constant only; the coefficients here do not depend on it (#125).</span></span>
+<span id="cb17-71"><a href="css.html#cb17-71" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb17-72"><a href="css.html#cb17-72" tabindex="-1"></a>    <span class="co"># The short-circuit is a correctness requirement, not an optimisation.</span></span>
+<span id="cb17-73"><a href="css.html#cb17-73" tabindex="-1"></a>    <span class="co"># Removing it changes the selected set on the on-grid route -- concentrated</span></span>
+<span id="cb17-74"><a href="css.html#cb17-74" tabindex="-1"></a>    <span class="co"># at the top of the path, and by margins far larger than last-bit noise.</span></span>
+<span id="cb17-75"><a href="css.html#cb17-75" tabindex="-1"></a>    <span class="co"># <a href="css.html#css">css</a>() never reaches it (a subsample's target penalty is essentially never</span></span>
+<span id="cb17-76"><a href="css.html#cb17-76" tabindex="-1"></a>    <span class="co"># one of that subsample's own fitted penalties); it is there to keep the</span></span>
+<span id="cb17-77"><a href="css.html#cb17-77" tabindex="-1"></a>    <span class="co"># exported direct-call route byte-identical. The predicate is deliberately</span></span>
+<span id="cb17-78"><a href="css.html#cb17-78" tabindex="-1"></a>    <span class="co"># the one predict.glmnet() itself applies, match(s, lambda, FALSE), so the</span></span>
+<span id="cb17-79"><a href="css.html#cb17-79" tabindex="-1"></a>    <span class="co"># two agree about what "already on the grid" means.</span></span>
+<span id="cb17-80"><a href="css.html#cb17-80" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">match</span>(lambda, lasso_model<span class="sc">$</span>lambda, <span class="dv">0</span><span class="dt">L</span>) <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb17-81"><a href="css.html#cb17-81" tabindex="-1"></a>        fit_at_lambda <span class="ot">&lt;-</span> lasso_model</span>
+<span id="cb17-82"><a href="css.html#cb17-82" tabindex="-1"></a>    } <span class="cf">else</span>{</span>
+<span id="cb17-83"><a href="css.html#cb17-83" tabindex="-1"></a>        fit_at_lambda <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">glmnet</span>(<span class="at">x=</span>X, <span class="at">y=</span>y, <span class="at">family=</span><span class="st">"gaussian"</span>,</span>
+<span id="cb17-84"><a href="css.html#cb17-84" tabindex="-1"></a>            <span class="at">alpha=</span>alpha, <span class="at">lambda=</span><a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>(lasso_model<span class="sc">$</span>lambda, lambda))</span>
+<span id="cb17-85"><a href="css.html#cb17-85" tabindex="-1"></a>    }</span>
+<span id="cb17-86"><a href="css.html#cb17-86" tabindex="-1"></a></span>
+<span id="cb17-87"><a href="css.html#cb17-87" tabindex="-1"></a>    pred <span class="ot">&lt;-</span> glmnet<span class="sc">::</span><span class="fu">predict.glmnet</span>(fit_at_lambda, <span class="at">type=</span><span class="st">"nonzero"</span>, <span class="at">s=</span>lambda)</span>
+<span id="cb17-88"><a href="css.html#cb17-88" tabindex="-1"></a></span>
+<span id="cb17-89"><a href="css.html#cb17-89" tabindex="-1"></a>    <span class="co"># predict.glmnet(type="nonzero") has never had a stable container. glmnet</span></span>
+<span id="cb17-90"><a href="css.html#cb17-90" tabindex="-1"></a>    <span class="co"># 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever</span></span>
+<span id="cb17-91"><a href="css.html#cb17-91" tabindex="-1"></a>    <span class="co"># the per-s index counts were uniform -- and a list otherwise; glmnet &gt;= 5.0</span></span>
+<span id="cb17-92"><a href="css.html#cb17-92" tabindex="-1"></a>    <span class="co"># always returns a list, one element per s value. For the scalar s used here</span></span>
+<span id="cb17-93"><a href="css.html#cb17-93" tabindex="-1"></a>    <span class="co"># that rule makes 4.x yield a data.frame on a non-empty selection and a list</span></span>
+<span id="cb17-94"><a href="css.html#cb17-94" tabindex="-1"></a>    <span class="co"># on an empty one, but the underlying rule is about simplification, not</span></span>
+<span id="cb17-95"><a href="css.html#cb17-95" tabindex="-1"></a>    <span class="co"># emptiness. unlist() flattens every one of those shapes to the same integer</span></span>
+<span id="cb17-96"><a href="css.html#cb17-96" tabindex="-1"></a>    <span class="co"># vector, so this is version-agnostic -- it is the idiom glmnet 5.0's own</span></span>
+<span id="cb17-97"><a href="css.html#cb17-97" tabindex="-1"></a>    <span class="co"># NEWS prescribes for cross-version callers (#188).</span></span>
+<span id="cb17-98"><a href="css.html#cb17-98" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb17-99"><a href="css.html#cb17-99" tabindex="-1"></a>    <span class="co"># SAFE HERE ONLY BECAUSE s IS SCALAR, which two things together guarantee:</span></span>
+<span id="cb17-100"><a href="css.html#cb17-100" tabindex="-1"></a>    <span class="co"># <a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>() rejects any lambda whose length is not 1 or 2, and</span></span>
+<span id="cb17-101"><a href="css.html#cb17-101" tabindex="-1"></a>    <span class="co"># the unpacking above reduces the length-2 c(lambda=, alpha=) form to a</span></span>
+<span id="cb17-102"><a href="css.html#cb17-102" tabindex="-1"></a>    <span class="co"># single penalty. (Both halves matter -- <a href="css.html#cssLasso">cssLasso</a>() is exported, so it can</span></span>
+<span id="cb17-103"><a href="css.html#cb17-103" tabindex="-1"></a>    <span class="co"># be called directly.) So pred has exactly one slot and unlist() cannot</span></span>
+<span id="cb17-104"><a href="css.html#cb17-104" tabindex="-1"></a>    <span class="co"># union indices across s values.</span></span>
+<span id="cb17-105"><a href="css.html#cb17-105" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb17-106"><a href="css.html#cb17-106" tabindex="-1"></a>    <span class="co"># Do NOT copy this idiom to a call that leaves s unspecified: predict.glmnet</span></span>
+<span id="cb17-107"><a href="css.html#cb17-107" tabindex="-1"></a>    <span class="co"># then returns one slot per penalty in the fitted path. <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>()</span></span>
+<span id="cb17-108"><a href="css.html#cb17-108" tabindex="-1"></a>    <span class="co"># does exactly that, and flattening its result would silently merge the</span></span>
+<span id="cb17-109"><a href="css.html#cb17-109" tabindex="-1"></a>    <span class="co"># per-model-size sets that <a href="competitor-methods.html#getClusterSelsFromGlmnet">getClusterSelsFromGlmnet</a>() consumes (#190).</span></span>
+<span id="cb17-110"><a href="css.html#cb17-110" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="sc">!</span>(<span class="st">"try-error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"error"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span></span>
+<span id="cb17-111"><a href="css.html#cb17-111" tabindex="-1"></a>        <span class="st">"simpleError"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred) <span class="sc">|</span> <span class="st">"condition"</span> <span class="sc">%in%</span> <span class="fu">class</span>(pred)))</span>
+<span id="cb17-112"><a href="css.html#cb17-112" tabindex="-1"></a></span>
+<span id="cb17-113"><a href="css.html#cb17-113" tabindex="-1"></a>    selected_glmnet <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(<span class="fu">unlist</span>(pred)))</span>
+<span id="cb17-114"><a href="css.html#cb17-114" tabindex="-1"></a></span>
+<span id="cb17-115"><a href="css.html#cb17-115" tabindex="-1"></a>    <span class="co"># No feature selected at this penalty: unlist() of the all-NULL result is</span></span>
+<span id="cb17-116"><a href="css.html#cb17-116" tabindex="-1"></a>    <span class="co"># NULL, hence length 0. Replaces the previous is.null(pred[[1]]) test, which</span></span>
+<span id="cb17-117"><a href="css.html#cb17-117" tabindex="-1"></a>    <span class="co"># inspected the container rather than the contents.</span></span>
+<span id="cb17-118"><a href="css.html#cb17-118" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb17-119"><a href="css.html#cb17-119" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">integer</span>())</span>
+<span id="cb17-120"><a href="css.html#cb17-120" tabindex="-1"></a>    }</span>
+<span id="cb17-121"><a href="css.html#cb17-121" tabindex="-1"></a></span>
+<span id="cb17-122"><a href="css.html#cb17-122" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(selected_glmnet) <span class="sc">&lt;=</span> <span class="fu">ncol</span>(X))</span>
+<span id="cb17-123"><a href="css.html#cb17-123" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(selected_glmnet <span class="sc">==</span> <span class="fu">round</span>(selected_glmnet)))</span>
+<span id="cb17-124"><a href="css.html#cb17-124" tabindex="-1"></a>    <span class="co"># No duplicate check is needed: nonzeroCoef() builds each slot as which[x],</span></span>
+<span id="cb17-125"><a href="css.html#cb17-125" tabindex="-1"></a>    <span class="co"># a logical subset of distinct column indices, so duplicates cannot arise</span></span>
+<span id="cb17-126"><a href="css.html#cb17-126" tabindex="-1"></a>    <span class="co"># upstream. (Asserting it after unique() would be a guardrail blinded by its</span></span>
+<span id="cb17-127"><a href="css.html#cb17-127" tabindex="-1"></a>    <span class="co"># own input rather than a real check.)</span></span>
+<span id="cb17-128"><a href="css.html#cb17-128" tabindex="-1"></a></span>
+<span id="cb17-129"><a href="css.html#cb17-129" tabindex="-1"></a>    selected <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(selected_glmnet)</span>
+<span id="cb17-130"><a href="css.html#cb17-130" tabindex="-1"></a></span>
+<span id="cb17-131"><a href="css.html#cb17-131" tabindex="-1"></a>    <span class="fu">return</span>(selected)</span>
+<span id="cb17-132"><a href="css.html#cb17-132" tabindex="-1"></a>}</span></code></pre></div>
+<p>Notice that <code><a href="css.html#cssLasso">cssLasso</a>()</code> depends on the package <code>glmnet</code>, and calls the function <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>, which verifies that the inputs to <code><a href="css.html#cssLasso">cssLasso</a>()</code> are as needed. (In particular, the function <code><a href="css.html#css">css</a>()</code> imposes very few requirements on <code>lambda</code> and <code>y</code> to allow the end user flexibility for any specified <code>fitfun</code>. <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> ensures that <code>y</code> is a real-valued response, <code>lambda</code> is a nonnegative real number, etc.) <code><a href="css.html#cssLasso">cssLasso</a>()</code> also calls <code><a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()</code>, which builds the short penalty grid the second lasso fit runs over–the grid is chosen so that the coefficients at the target penalty come out bit-identical to the full-path refit, at the cost of solving only the part of the path that can influence them. Both <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> and <code><a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()</code> are specified in the helper functions section later.</p>
 <p>We add <code>glmnet</code> to the DESCRIPTION file as well:</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="css.html#cb18-1" tabindex="-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"glmnet"</span>)</span></code></pre></div>
 <pre><code>## v Adding glmnet to 'Imports' field in DESCRIPTION.</code></pre>
@@ -1004,6 +1019,8 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 </li>
 <li>
 <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code> checks that the inputs to the provided <code>fitfun</code>, <code><a href="css.html#cssLasso">cssLasso</a>()</code>, are as needed.</li>
+<li>
+<code><a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()</code> builds the penalty grid that <code><a href="css.html#cssLasso">cssLasso</a>()</code> fits its second lasso path over, so that the solution at the target penalty is obtained without also solving the path below it.</li>
 <li>
 <code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code> verifies that the input to <code><a href="css.html#getClusterSelMatrix">getClusterSelMatrix</a>()</code> is as expected.</li>
 </ul>
@@ -2152,66 +2169,157 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb41-61"><a href="css.html#cb41-61" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"For method cssLasso, lambda must be either a single nonnegative numeric or a named length-2 numeric vector c(lambda=&lt;value&gt;, alpha=&lt;value&gt;)."</span>)</span>
 <span id="cb41-62"><a href="css.html#cb41-62" tabindex="-1"></a>    }</span>
 <span id="cb41-63"><a href="css.html#cb41-63" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="css.html#cb42-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
+<p><code><a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()</code> builds the penalty grid that <code><a href="css.html#cssLasso">cssLasso</a>()</code>’s second <code>glmnet</code> fit runs over, replacing the full-path refit that <code>predict.glmnet(exact = TRUE)</code> used to perform internally (#125):</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="css.html#cb42-1" tabindex="-1"></a><span class="co">#' Build an anchored, padded lambda grid for a second glmnet fit</span></span>
 <span id="cb42-2"><a href="css.html#cb42-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb42-3"><a href="css.html#cb42-3" tabindex="-1"></a><span class="co">#' For the default `cssLasso`, `<a href="css.html#css">css</a>()` draws `n_sub` random subsamples of the</span></span>
-<span id="cb42-4"><a href="css.html#cb42-4" tabindex="-1"></a><span class="co">#' selection set, each a size-`floor(n/2)` draw without replacement from the</span></span>
-<span id="cb42-5"><a href="css.html#cb42-5" tabindex="-1"></a><span class="co">#' `n = length(y)` responses; `cssLasso` aborts on any subsample whose `y` has a</span></span>
-<span id="cb42-6"><a href="css.html#cb42-6" tabindex="-1"></a><span class="co">#' single unique value (see `<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()`). This returns the estimated</span></span>
-<span id="cb42-7"><a href="css.html#cb42-7" tabindex="-1"></a><span class="co">#' probability that at least one of those subsamples is all-constant. Per</span></span>
-<span id="cb42-8"><a href="css.html#cb42-8" tabindex="-1"></a><span class="co">#' subsample, P(all one value) is hypergeometric, `sum_v C(count_v, m) / C(n, m)`</span></span>
-<span id="cb42-9"><a href="css.html#cb42-9" tabindex="-1"></a><span class="co">#' with `m = floor(n/2)` (a term is 0 unless some value's count is at least `m`,</span></span>
-<span id="cb42-10"><a href="css.html#cb42-10" tabindex="-1"></a><span class="co">#' i.e. that value is a near-majority), computed in log space (`lchoose`) to</span></span>
-<span id="cb42-11"><a href="css.html#cb42-11" tabindex="-1"></a><span class="co">#' avoid overflow for large `n`. That per-subsample probability is aggregated</span></span>
-<span id="cb42-12"><a href="css.html#cb42-12" tabindex="-1"></a><span class="co">#' over the `n_sub` subsamples treating them as independent (a close</span></span>
-<span id="cb42-13"><a href="css.html#cb42-13" tabindex="-1"></a><span class="co">#' approximation; the small SS within-pair dependence is negligible near the</span></span>
-<span id="cb42-14"><a href="css.html#cb42-14" tabindex="-1"></a><span class="co">#' threshold).</span></span>
-<span id="cb42-15"><a href="css.html#cb42-15" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb42-16"><a href="css.html#cb42-16" tabindex="-1"></a><span class="co">#' @param y A numeric or integer response vector (the selection-set response).</span></span>
-<span id="cb42-17"><a href="css.html#cb42-17" tabindex="-1"></a><span class="co">#' @param B Integer; the number of subsamples (`2*B` are drawn when</span></span>
-<span id="cb42-18"><a href="css.html#cb42-18" tabindex="-1"></a><span class="co">#' `sampling_type = "SS"`).</span></span>
-<span id="cb42-19"><a href="css.html#cb42-19" tabindex="-1"></a><span class="co">#' @param sampling_type A character string; "SS" (the reachable default) draws</span></span>
-<span id="cb42-20"><a href="css.html#cb42-20" tabindex="-1"></a><span class="co">#' `2*B` subsamples, anything else draws `B`.</span></span>
-<span id="cb42-21"><a href="css.html#cb42-21" tabindex="-1"></a><span class="co">#' @return A single number in `[0, 1]`: the estimated probability that at least</span></span>
-<span id="cb42-22"><a href="css.html#cb42-22" tabindex="-1"></a><span class="co">#' one size-`floor(n/2)` subsample of `y` is all-constant (and so aborts the</span></span>
-<span id="cb42-23"><a href="css.html#cb42-23" tabindex="-1"></a><span class="co">#' default `cssLasso`).</span></span>
-<span id="cb42-24"><a href="css.html#cb42-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb42-25"><a href="css.html#cb42-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb42-26"><a href="css.html#cb42-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb42-27"><a href="css.html#cb42-27" tabindex="-1"></a><span id="discreteYAbortProb">discreteYAbortProb</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(y, B, sampling_type){</span>
-<span id="cb42-28"><a href="css.html#cb42-28" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
-<span id="cb42-29"><a href="css.html#cb42-29" tabindex="-1"></a>    m <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">2</span>)</span>
-<span id="cb42-30"><a href="css.html#cb42-30" tabindex="-1"></a>    n_sub <span class="ot">&lt;-</span> <span class="cf">if</span>(sampling_type <span class="sc">==</span> <span class="st">"SS"</span>) <span class="dv">2</span><span class="dt">L</span> <span class="sc">*</span> B <span class="cf">else</span> <span class="fu">as.integer</span>(B)</span>
-<span id="cb42-31"><a href="css.html#cb42-31" tabindex="-1"></a>    counts <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">table</span>(y))</span>
-<span id="cb42-32"><a href="css.html#cb42-32" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">exp</span>(<span class="fu">lchoose</span>(counts, m) <span class="sc">-</span> <span class="fu">lchoose</span>(n, m)))  <span class="co"># sum_v C(count_v,m)/C(n,m)</span></span>
-<span id="cb42-33"><a href="css.html#cb42-33" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">max</span>(p_const, <span class="dv">0</span>), <span class="dv">1</span>)                       <span class="co"># guard fp drift to [0,1]</span></span>
-<span id="cb42-34"><a href="css.html#cb42-34" tabindex="-1"></a>    <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> p_const)<span class="sc">^</span>n_sub</span>
-<span id="cb42-35"><a href="css.html#cb42-35" tabindex="-1"></a>}</span></code></pre></div>
-<p><code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="css.html#cb43-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
+<span id="cb42-3"><a href="css.html#cb42-3" tabindex="-1"></a><span class="co">#' Returns a shortened version of the augmented penalty grid</span></span>
+<span id="cb42-4"><a href="css.html#cb42-4" tabindex="-1"></a><span class="co">#' `unique(rev(sort(c(s, lambda_path))))` that `predict.glmnet(exact = TRUE)`</span></span>
+<span id="cb42-5"><a href="css.html#cb42-5" tabindex="-1"></a><span class="co">#' refits over: that grid's prefix through one element past `s`, a few</span></span>
+<span id="cb42-6"><a href="css.html#cb42-6" tabindex="-1"></a><span class="co">#' geometrically spaced interior points, and that grid's own final element</span></span>
+<span id="cb42-7"><a href="css.html#cb42-7" tabindex="-1"></a><span class="co">#' re-appended. `<a href="css.html#cssLasso">cssLasso</a>()` fits over this instead of over the whole augmented</span></span>
+<span id="cb42-8"><a href="css.html#cb42-8" tabindex="-1"></a><span class="co">#' grid. The comments in the body say why the first and last elements are</span></span>
+<span id="cb42-9"><a href="css.html#cb42-9" tabindex="-1"></a><span class="co">#' carried over unchanged, why each guard is there, and which test block</span></span>
+<span id="cb42-10"><a href="css.html#cb42-10" tabindex="-1"></a><span class="co">#' enforces the construction.</span></span>
+<span id="cb42-11"><a href="css.html#cb42-11" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb42-12"><a href="css.html#cb42-12" tabindex="-1"></a><span class="co">#' @param lambda_path A numeric vector of penalties (in practice the `$lambda`</span></span>
+<span id="cb42-13"><a href="css.html#cb42-13" tabindex="-1"></a><span class="co">#' component of a fitted `glmnet` object). This is a requirement on the caller</span></span>
+<span id="cb42-14"><a href="css.html#cb42-14" tabindex="-1"></a><span class="co">#' rather than a claim about what `glmnet()` returns: because the interior</span></span>
+<span id="cb42-15"><a href="css.html#cb42-15" tabindex="-1"></a><span class="co">#' points are spaced in log space, `lambda_path` must not contain a zero below</span></span>
+<span id="cb42-16"><a href="css.html#cb42-16" tabindex="-1"></a><span class="co">#' its second-smallest positive entry. Such a path takes `log(0)` and errors in</span></span>
+<span id="cb42-17"><a href="css.html#cb42-17" tabindex="-1"></a><span class="co">#' `seq()`; nothing checks it at runtime.</span></span>
+<span id="cb42-18"><a href="css.html#cb42-18" tabindex="-1"></a><span class="co">#' @param s The target penalty; a single nonnegative number.</span></span>
+<span id="cb42-19"><a href="css.html#cb42-19" tabindex="-1"></a><span class="co">#' @param n_interior The number of geometrically spaced interior points padding</span></span>
+<span id="cb42-20"><a href="css.html#cb42-20" tabindex="-1"></a><span class="co">#' the gap below `s`. This is a speed constant and not a correctness one: the</span></span>
+<span id="cb42-21"><a href="css.html#cb42-21" tabindex="-1"></a><span class="co">#' coefficients the returned grid yields at `s` do not depend on it, and 5 was</span></span>
+<span id="cb42-22"><a href="css.html#cb42-22" tabindex="-1"></a><span class="co">#' chosen by end-to-end timing of `<a href="css.html#css">css</a>()`, in particular for the n &lt; p corner</span></span>
+<span id="cb42-23"><a href="css.html#cb42-23" tabindex="-1"></a><span class="co">#' where 0 interior points is a net loss. Changing it changes speed only.</span></span>
+<span id="cb42-24"><a href="css.html#cb42-24" tabindex="-1"></a><span class="co">#' @return A strictly decreasing numeric vector with no duplicated entries,</span></span>
+<span id="cb42-25"><a href="css.html#cb42-25" tabindex="-1"></a><span class="co">#' whose first and last elements are `identical()` to those of</span></span>
+<span id="cb42-26"><a href="css.html#cb42-26" tabindex="-1"></a><span class="co">#' `unique(rev(sort(c(s, lambda_path))))`.</span></span>
+<span id="cb42-27"><a href="css.html#cb42-27" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb42-28"><a href="css.html#cb42-28" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb42-29"><a href="css.html#cb42-29" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb42-30"><a href="css.html#cb42-30" tabindex="-1"></a><span id="anchoredLambdaGrid">anchoredLambdaGrid</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(lambda_path, s, <span class="at">n_interior=</span><span class="dv">5</span><span class="dt">L</span>){</span>
+<span id="cb42-31"><a href="css.html#cb42-31" tabindex="-1"></a>    <span class="co"># g_full is the grid predict.glmnet(exact=TRUE) refits over -- the fitted</span></span>
+<span id="cb42-32"><a href="css.html#cb42-32" tabindex="-1"></a>    <span class="co"># path augmented with s, de-duplicated and ordered decreasing. The</span></span>
+<span id="cb42-33"><a href="css.html#cb42-33" tabindex="-1"></a>    <span class="co"># expression is character-for-character glmnet's own, so both sides discard</span></span>
+<span id="cb42-34"><a href="css.html#cb42-34" tabindex="-1"></a>    <span class="co"># non-finite path entries and collapse repeats identically.</span></span>
+<span id="cb42-35"><a href="css.html#cb42-35" tabindex="-1"></a>    g_full <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">rev</span>(<span class="fu">sort</span>(<span class="fu">c</span>(s, lambda_path))))</span>
+<span id="cb42-36"><a href="css.html#cb42-36" tabindex="-1"></a>    k_full <span class="ot">&lt;-</span> <span class="fu">length</span>(g_full)</span>
+<span id="cb42-37"><a href="css.html#cb42-37" tabindex="-1"></a></span>
+<span id="cb42-38"><a href="css.html#cb42-38" tabindex="-1"></a>    <span class="co"># glmnet walks a grid in decreasing order with each solution warm-starting</span></span>
+<span id="cb42-39"><a href="css.html#cb42-39" tabindex="-1"></a>    <span class="co"># the next, so the solution at s depends only on penalties at or above s;</span></span>
+<span id="cb42-40"><a href="css.html#cb42-40" tabindex="-1"></a>    <span class="co"># kt counts those. The prefix is kept through one element PAST s because</span></span>
+<span id="cb42-41"><a href="css.html#cb42-41" tabindex="-1"></a>    <span class="co"># predict.glmnet interpolates between s's two neighbours in the grid, and</span></span>
+<span id="cb42-42"><a href="css.html#cb42-42" tabindex="-1"></a>    <span class="co"># that extra element is the one lambda.interp() calls `right` -- the next</span></span>
+<span id="cb42-43"><a href="css.html#cb42-43" tabindex="-1"></a>    <span class="co"># penalty DOWN, since the grid is ordered decreasing. The min() caps the index</span></span>
+<span id="cb42-44"><a href="css.html#cb42-44" tabindex="-1"></a>    <span class="co"># for the case where kt already reaches the end of g_full and there is no</span></span>
+<span id="cb42-45"><a href="css.html#cb42-45" tabindex="-1"></a>    <span class="co"># further element to keep -- s = 0, and any s at or below min(lambda_path).</span></span>
+<span id="cb42-46"><a href="css.html#cb42-46" tabindex="-1"></a>    kt <span class="ot">&lt;-</span> <span class="fu">sum</span>(g_full <span class="sc">&gt;=</span> s)</span>
+<span id="cb42-47"><a href="css.html#cb42-47" tabindex="-1"></a>    keep <span class="ot">&lt;-</span> g_full[<span class="dv">1</span><span class="sc">:</span><span class="fu">min</span>(k_full, kt <span class="sc">+</span> <span class="dv">1</span><span class="dt">L</span>)]</span>
+<span id="cb42-48"><a href="css.html#cb42-48" tabindex="-1"></a></span>
+<span id="cb42-49"><a href="css.html#cb42-49" tabindex="-1"></a>    lo <span class="ot">&lt;-</span> g_full[k_full]</span>
+<span id="cb42-50"><a href="css.html#cb42-50" tabindex="-1"></a>    hi <span class="ot">&lt;-</span> keep[<span class="fu">length</span>(keep)]</span>
+<span id="cb42-51"><a href="css.html#cb42-51" tabindex="-1"></a></span>
+<span id="cb42-52"><a href="css.html#cb42-52" tabindex="-1"></a>    <span class="co"># Two cases have no gap to pad: n_interior &lt;= 0, the caller asking for no</span></span>
+<span id="cb42-53"><a href="css.html#cb42-53" tabindex="-1"></a>    <span class="co"># padding, and hi &lt;= lo, keep already reaching the end of g_full (again</span></span>
+<span id="cb42-54"><a href="css.html#cb42-54" tabindex="-1"></a>    <span class="co"># s = 0 and any s at or below min(lambda_path)). This guard is also what</span></span>
+<span id="cb42-55"><a href="css.html#cb42-55" tabindex="-1"></a>    <span class="co"># keeps log(0) out of the seq() below on a degenerate glmnet path, which is</span></span>
+<span id="cb42-56"><a href="css.html#cb42-56" tabindex="-1"></a>    <span class="co"># a case that genuinely occurs rather than a hypothetical one: on an exactly</span></span>
+<span id="cb42-57"><a href="css.html#cb42-57" tabindex="-1"></a>    <span class="co"># orthogonal design glmnet returns NaN followed by zeros for $lambda, and</span></span>
+<span id="cb42-58"><a href="css.html#cb42-58" tabindex="-1"></a>    <span class="co"># sort() drops the NaN while unique() collapses the zeros, leaving a g_full</span></span>
+<span id="cb42-59"><a href="css.html#cb42-59" tabindex="-1"></a>    <span class="co"># of two elements that lands here.</span></span>
+<span id="cb42-60"><a href="css.html#cb42-60" tabindex="-1"></a>    <span class="cf">if</span>(n_interior <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> hi <span class="sc">&lt;=</span> lo){</span>
+<span id="cb42-61"><a href="css.html#cb42-61" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">unique</span>(<span class="fu">c</span>(keep, lo)))</span>
+<span id="cb42-62"><a href="css.html#cb42-62" tabindex="-1"></a>    }</span>
+<span id="cb42-63"><a href="css.html#cb42-63" tabindex="-1"></a></span>
+<span id="cb42-64"><a href="css.html#cb42-64" tabindex="-1"></a>    <span class="co"># Geometrically spaced filler between the two anchors, with the anchors</span></span>
+<span id="cb42-65"><a href="css.html#cb42-65" tabindex="-1"></a>    <span class="co"># themselves dropped back off...</span></span>
+<span id="cb42-66"><a href="css.html#cb42-66" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">seq</span>(<span class="fu">log</span>(hi), <span class="fu">log</span>(lo), <span class="at">length.out=</span>n_interior <span class="sc">+</span> <span class="dv">2</span><span class="dt">L</span>))</span>
+<span id="cb42-67"><a href="css.html#cb42-67" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="fu">length</span>(mid))]</span>
+<span id="cb42-68"><a href="css.html#cb42-68" tabindex="-1"></a>    <span class="co"># ...and then any filler point that floating-point rounding placed on top of</span></span>
+<span id="cb42-69"><a href="css.html#cb42-69" tabindex="-1"></a>    <span class="co"># an anchor removed. This filter is load-bearing rather than belt-and-</span></span>
+<span id="cb42-70"><a href="css.html#cb42-70" tabindex="-1"></a>    <span class="co"># braces: without it the returned grid can repeat an anchor, which is</span></span>
+<span id="cb42-71"><a href="css.html#cb42-71" tabindex="-1"></a>    <span class="co"># visible only on a path whose entries are a few ULPs apart.</span></span>
+<span id="cb42-72"><a href="css.html#cb42-72" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[mid <span class="sc">&lt;</span> hi <span class="sc">&amp;</span> mid <span class="sc">&gt;</span> lo]</span>
+<span id="cb42-73"><a href="css.html#cb42-73" tabindex="-1"></a></span>
+<span id="cb42-74"><a href="css.html#cb42-74" tabindex="-1"></a>    <span class="co"># lo is re-appended rather than simply left at the end of a longer prefix,</span></span>
+<span id="cb42-75"><a href="css.html#cb42-75" tabindex="-1"></a>    <span class="co"># and this is the load-bearing line. glmnet:::lambda.interp(), which</span></span>
+<span id="cb42-76"><a href="css.html#cb42-76" tabindex="-1"></a>    <span class="co"># predict.glmnet() always calls, normalises by lambda[1] - lambda[k], so the</span></span>
+<span id="cb42-77"><a href="css.html#cb42-77" tabindex="-1"></a>    <span class="co"># blend weight at s depends on the last element of the supplied grid as much</span></span>
+<span id="cb42-78"><a href="css.html#cb42-78" tabindex="-1"></a>    <span class="co"># as on the first. Handing over the same first and last elements the exact</span></span>
+<span id="cb42-79"><a href="css.html#cb42-79" tabindex="-1"></a>    <span class="co"># refit would have handed over is what makes the interpolated coefficients</span></span>
+<span id="cb42-80"><a href="css.html#cb42-80" tabindex="-1"></a>    <span class="co"># agree bit for bit.</span></span>
+<span id="cb42-81"><a href="css.html#cb42-81" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb42-82"><a href="css.html#cb42-82" tabindex="-1"></a>    <span class="co"># This construction was validated over a six-figure sweep of designs, alphas</span></span>
+<span id="cb42-83"><a href="css.html#cb42-83" tabindex="-1"></a>    <span class="co"># and s placements; do not "simplify" it without re-running that evidence.</span></span>
+<span id="cb42-84"><a href="css.html#cb42-84" tabindex="-1"></a>    <span class="co"># The block that enforces it is test_that("anchoredLambdaGrid holds its</span></span>
+<span id="cb42-85"><a href="css.html#cb42-85" tabindex="-1"></a>    <span class="co"># invariants (#125)"), NOT test_that("cssLasso is byte-identical to the</span></span>
+<span id="cb42-86"><a href="css.html#cb42-86" tabindex="-1"></a>    <span class="co"># exact refit (#125)"): both of the natural simplifications -- dropping this</span></span>
+<span id="cb42-87"><a href="css.html#cb42-87" tabindex="-1"></a>    <span class="co"># re-appended anchor, and keeping the prefix through kt rather than kt + 1</span></span>
+<span id="cb42-88"><a href="css.html#cb42-88" tabindex="-1"></a>    <span class="co"># -- leave that identity pin entirely green.</span></span>
+<span id="cb42-89"><a href="css.html#cb42-89" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">c</span>(keep, <span class="fu">sort</span>(<span class="fu">unique</span>(mid), <span class="at">decreasing=</span><span class="cn">TRUE</span>), lo))</span>
+<span id="cb42-90"><a href="css.html#cb42-90" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="css.html#cb43-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
 <span id="cb43-2"><a href="css.html#cb43-2" tabindex="-1"></a><span class="co">#'</span></span>
-<span id="cb43-3"><a href="css.html#cb43-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
-<span id="cb43-4"><a href="css.html#cb43-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
-<span id="cb43-5"><a href="css.html#cb43-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
-<span id="cb43-6"><a href="css.html#cb43-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
-<span id="cb43-7"><a href="css.html#cb43-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
-<span id="cb43-8"><a href="css.html#cb43-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
-<span id="cb43-9"><a href="css.html#cb43-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
-<span id="cb43-10"><a href="css.html#cb43-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
-<span id="cb43-11"><a href="css.html#cb43-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
-<span id="cb43-12"><a href="css.html#cb43-12" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring if the inputs</span></span>
-<span id="cb43-13"><a href="css.html#cb43-13" tabindex="-1"></a><span class="co">#' to getClusterSelMatrix are invalid.</span></span>
-<span id="cb43-14"><a href="css.html#cb43-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
-<span id="cb43-15"><a href="css.html#cb43-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
-<span id="cb43-16"><a href="css.html#cb43-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
-<span id="cb43-17"><a href="css.html#cb43-17" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
-<span id="cb43-18"><a href="css.html#cb43-18" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
-<span id="cb43-19"><a href="css.html#cb43-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
-<span id="cb43-20"><a href="css.html#cb43-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
-<span id="cb43-21"><a href="css.html#cb43-21" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
-<span id="cb43-22"><a href="css.html#cb43-22" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
-<span id="cb43-23"><a href="css.html#cb43-23" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb43-3"><a href="css.html#cb43-3" tabindex="-1"></a><span class="co">#' For the default `cssLasso`, `<a href="css.html#css">css</a>()` draws `n_sub` random subsamples of the</span></span>
+<span id="cb43-4"><a href="css.html#cb43-4" tabindex="-1"></a><span class="co">#' selection set, each a size-`floor(n/2)` draw without replacement from the</span></span>
+<span id="cb43-5"><a href="css.html#cb43-5" tabindex="-1"></a><span class="co">#' `n = length(y)` responses; `cssLasso` aborts on any subsample whose `y` has a</span></span>
+<span id="cb43-6"><a href="css.html#cb43-6" tabindex="-1"></a><span class="co">#' single unique value (see `<a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()`). This returns the estimated</span></span>
+<span id="cb43-7"><a href="css.html#cb43-7" tabindex="-1"></a><span class="co">#' probability that at least one of those subsamples is all-constant. Per</span></span>
+<span id="cb43-8"><a href="css.html#cb43-8" tabindex="-1"></a><span class="co">#' subsample, P(all one value) is hypergeometric, `sum_v C(count_v, m) / C(n, m)`</span></span>
+<span id="cb43-9"><a href="css.html#cb43-9" tabindex="-1"></a><span class="co">#' with `m = floor(n/2)` (a term is 0 unless some value's count is at least `m`,</span></span>
+<span id="cb43-10"><a href="css.html#cb43-10" tabindex="-1"></a><span class="co">#' i.e. that value is a near-majority), computed in log space (`lchoose`) to</span></span>
+<span id="cb43-11"><a href="css.html#cb43-11" tabindex="-1"></a><span class="co">#' avoid overflow for large `n`. That per-subsample probability is aggregated</span></span>
+<span id="cb43-12"><a href="css.html#cb43-12" tabindex="-1"></a><span class="co">#' over the `n_sub` subsamples treating them as independent (a close</span></span>
+<span id="cb43-13"><a href="css.html#cb43-13" tabindex="-1"></a><span class="co">#' approximation; the small SS within-pair dependence is negligible near the</span></span>
+<span id="cb43-14"><a href="css.html#cb43-14" tabindex="-1"></a><span class="co">#' threshold).</span></span>
+<span id="cb43-15"><a href="css.html#cb43-15" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb43-16"><a href="css.html#cb43-16" tabindex="-1"></a><span class="co">#' @param y A numeric or integer response vector (the selection-set response).</span></span>
+<span id="cb43-17"><a href="css.html#cb43-17" tabindex="-1"></a><span class="co">#' @param B Integer; the number of subsamples (`2*B` are drawn when</span></span>
+<span id="cb43-18"><a href="css.html#cb43-18" tabindex="-1"></a><span class="co">#' `sampling_type = "SS"`).</span></span>
+<span id="cb43-19"><a href="css.html#cb43-19" tabindex="-1"></a><span class="co">#' @param sampling_type A character string; "SS" (the reachable default) draws</span></span>
+<span id="cb43-20"><a href="css.html#cb43-20" tabindex="-1"></a><span class="co">#' `2*B` subsamples, anything else draws `B`.</span></span>
+<span id="cb43-21"><a href="css.html#cb43-21" tabindex="-1"></a><span class="co">#' @return A single number in `[0, 1]`: the estimated probability that at least</span></span>
+<span id="cb43-22"><a href="css.html#cb43-22" tabindex="-1"></a><span class="co">#' one size-`floor(n/2)` subsample of `y` is all-constant (and so aborts the</span></span>
+<span id="cb43-23"><a href="css.html#cb43-23" tabindex="-1"></a><span class="co">#' default `cssLasso`).</span></span>
+<span id="cb43-24"><a href="css.html#cb43-24" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb43-25"><a href="css.html#cb43-25" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb43-26"><a href="css.html#cb43-26" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb43-27"><a href="css.html#cb43-27" tabindex="-1"></a><span id="discreteYAbortProb">discreteYAbortProb</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(y, B, sampling_type){</span>
+<span id="cb43-28"><a href="css.html#cb43-28" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(y)</span>
+<span id="cb43-29"><a href="css.html#cb43-29" tabindex="-1"></a>    m <span class="ot">&lt;-</span> <span class="fu">floor</span>(n <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb43-30"><a href="css.html#cb43-30" tabindex="-1"></a>    n_sub <span class="ot">&lt;-</span> <span class="cf">if</span>(sampling_type <span class="sc">==</span> <span class="st">"SS"</span>) <span class="dv">2</span><span class="dt">L</span> <span class="sc">*</span> B <span class="cf">else</span> <span class="fu">as.integer</span>(B)</span>
+<span id="cb43-31"><a href="css.html#cb43-31" tabindex="-1"></a>    counts <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(<span class="fu">table</span>(y))</span>
+<span id="cb43-32"><a href="css.html#cb43-32" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">exp</span>(<span class="fu">lchoose</span>(counts, m) <span class="sc">-</span> <span class="fu">lchoose</span>(n, m)))  <span class="co"># sum_v C(count_v,m)/C(n,m)</span></span>
+<span id="cb43-33"><a href="css.html#cb43-33" tabindex="-1"></a>    p_const <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="fu">max</span>(p_const, <span class="dv">0</span>), <span class="dv">1</span>)                       <span class="co"># guard fp drift to [0,1]</span></span>
+<span id="cb43-34"><a href="css.html#cb43-34" tabindex="-1"></a>    <span class="dv">1</span> <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> p_const)<span class="sc">^</span>n_sub</span>
+<span id="cb43-35"><a href="css.html#cb43-35" tabindex="-1"></a>}</span></code></pre></div>
+<p><code><a href="css.html#checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</a>()</code>:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="css.html#cb44-1" tabindex="-1"></a><span class="co">#' Helper function to check inputs to getClusterSelMatrix function</span></span>
+<span id="cb44-2"><a href="css.html#cb44-2" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb44-3"><a href="css.html#cb44-3" tabindex="-1"></a><span class="co">#' @param clusters A named list where each entry is an integer vector of indices</span></span>
+<span id="cb44-4"><a href="css.html#cb44-4" tabindex="-1"></a><span class="co">#' of features that are in a common cluster, as in the output of formatClusters.</span></span>
+<span id="cb44-5"><a href="css.html#cb44-5" tabindex="-1"></a><span class="co">#' (The length of list clusters is equal to the number of clusters.) All</span></span>
+<span id="cb44-6"><a href="css.html#cb44-6" tabindex="-1"></a><span class="co">#' identified clusters must be non-overlapping, and all features must appear in</span></span>
+<span id="cb44-7"><a href="css.html#cb44-7" tabindex="-1"></a><span class="co">#' exactly one cluster (any unclustered features should be in their own</span></span>
+<span id="cb44-8"><a href="css.html#cb44-8" tabindex="-1"></a><span class="co">#' "cluster" of size 1).</span></span>
+<span id="cb44-9"><a href="css.html#cb44-9" tabindex="-1"></a><span class="co">#' @param res A binary integer matrix. `res[i, j]` = 1 if feature j was selected</span></span>
+<span id="cb44-10"><a href="css.html#cb44-10" tabindex="-1"></a><span class="co">#' on subsample i and equals 0 otherwise, as in the output of getSelMatrix.</span></span>
+<span id="cb44-11"><a href="css.html#cb44-11" tabindex="-1"></a><span class="co">#' (That is, each row is a selected set.)</span></span>
+<span id="cb44-12"><a href="css.html#cb44-12" tabindex="-1"></a><span class="co">#' @return No return value; called for the side effect of erroring if the inputs</span></span>
+<span id="cb44-13"><a href="css.html#cb44-13" tabindex="-1"></a><span class="co">#' to getClusterSelMatrix are invalid.</span></span>
+<span id="cb44-14"><a href="css.html#cb44-14" tabindex="-1"></a><span class="co">#' @author Gregory Faletto, Jacob Bien</span></span>
+<span id="cb44-15"><a href="css.html#cb44-15" tabindex="-1"></a><span class="co">#' @keywords internal</span></span>
+<span id="cb44-16"><a href="css.html#cb44-16" tabindex="-1"></a><span class="co">#' @noRd</span></span>
+<span id="cb44-17"><a href="css.html#cb44-17" tabindex="-1"></a><span id="checkGetClusterSelMatrixInput">checkGetClusterSelMatrixInput</span> <span class="ot">&lt;-</span> <span class="cf">function</span>(clusters, res){</span>
+<span id="cb44-18"><a href="css.html#cb44-18" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">is.matrix</span>(res))</span>
+<span id="cb44-19"><a href="css.html#cb44-19" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">all</span>(res <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>)))</span>
+<span id="cb44-20"><a href="css.html#cb44-20" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ncol</span>(res)</span>
+<span id="cb44-21"><a href="css.html#cb44-21" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">nrow</span>(res) <span class="sc">&gt;</span> <span class="dv">0</span>)</span>
+<span id="cb44-22"><a href="css.html#cb44-22" tabindex="-1"></a>    <a href="css.html#checkClusters">checkClusters</a>(clusters, p)</span>
+<span id="cb44-23"><a href="css.html#cb44-23" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </div>
             </section>

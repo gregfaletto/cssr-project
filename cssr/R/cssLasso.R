@@ -57,23 +57,38 @@ cssLasso <- function(X, y, lambda){
 
     # Fit a lasso path (full path for speed, per glmnet documentation)
 
-    # Build the model with do.call so the stored call (lasso_model$call) carries
-    # the literal numeric value of alpha rather than the symbol `alpha`. This is
-    # load-bearing: predict.glmnet(..., exact=TRUE) below re-evaluates the
-    # stored call via update(), and if that call contained the symbol `alpha`
-    # (as glmnet::glmnet(X, y, family="gaussian", alpha=alpha) would store) the
-    # refit would throw "object 'alpha' not found" -- on both the elastic-net
-    # and the alpha=1 paths. See Decision Log / Surprises in the plan.
-    lasso_model <- do.call(glmnet::glmnet,
-        list(x=X, y=y, family="gaussian", alpha=alpha))
+    lasso_model <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=alpha)
     stopifnot(all.equal(class(lasso_model), c("elnet", "glmnet")))
 
-    # Get coefficients at desired lambda. exact=TRUE is load-bearing (dropping
-    # it changes results materially); the model object carries its own alpha for
-    # the exact refit, so only the unpacked scalar lambda is passed as s.
+    # Get coefficients at the desired lambda. predict.glmnet(exact=TRUE) used to
+    # do this by refitting the whole path augmented with lambda -- including
+    # every grid point BELOW lambda, which warm-started coordinate descent
+    # solves after the target and which therefore cannot influence it. Instead
+    # we fit that augmented grid ourselves, shortened by anchoredLambdaGrid()
+    # and then predicted from with an ordinary exact=FALSE call. The shortened
+    # grid keeps the augmented grid's own final element: predict.glmnet()
+    # interpolates through glmnet:::lambda.interp(), which normalises by
+    # lambda[1] - lambda[k], so the blend weight at lambda depends on the last
+    # supplied grid point as well as the first, and dropping it changes the
+    # answer in its last bits. anchoredLambdaGrid()'s n_interior argument is a
+    # speed constant only; the coefficients here do not depend on it (#125).
+    #
+    # The short-circuit is a correctness requirement, not an optimisation.
+    # Removing it changes the selected set on the on-grid route -- concentrated
+    # at the top of the path, and by margins far larger than last-bit noise.
+    # css() never reaches it (a subsample's target penalty is essentially never
+    # one of that subsample's own fitted penalties); it is there to keep the
+    # exported direct-call route byte-identical. The predicate is deliberately
+    # the one predict.glmnet() itself applies, match(s, lambda, FALSE), so the
+    # two agree about what "already on the grid" means.
+    if(match(lambda, lasso_model$lambda, 0L) > 0){
+        fit_at_lambda <- lasso_model
+    } else{
+        fit_at_lambda <- glmnet::glmnet(x=X, y=y, family="gaussian",
+            alpha=alpha, lambda=anchoredLambdaGrid(lasso_model$lambda, lambda))
+    }
 
-    pred <- glmnet::predict.glmnet(lasso_model, type="nonzero",
-        s=lambda, exact=TRUE, newx=X, x=X, y=y)
+    pred <- glmnet::predict.glmnet(fit_at_lambda, type="nonzero", s=lambda)
 
     # predict.glmnet(type="nonzero") has never had a stable container. glmnet
     # 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever
