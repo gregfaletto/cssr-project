@@ -1537,9 +1537,12 @@ testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
   # entirely green under both of the natural simplifications of that
   # construction, so a green run here is not licence to simplify the helper.
   #
-  # IF THIS BLOCK REDDENS, rule out a local change first: to
-  # anchoredLambdaGrid(), or to cssLasso()'s on-grid branch predicate. Both
-  # redden this same block. Only once those are excluded does it mean glmnet has
+  # IF THIS BLOCK REDDENS, rule out a local change first -- most likely to
+  # cssLasso()'s on-grid branch predicate, which reddens this block directly. A
+  # change to anchoredLambdaGrid() reddens it only rarely: every mutation of the
+  # helper tried during review left this block green, which is why the invariants
+  # block below exists and why a green run here is not licence to simplify the
+  # helper. Only once both are excluded does it mean glmnet has
   # changed one of the two internals the bit-identity rests on -- lambda.interp()'s
   # lambda[1] - lambda[k] normaliser, or the round trip a user-supplied lambda
   # grid makes through the response scale. That distinction matters because in
@@ -1651,8 +1654,8 @@ testthat::test_that("cssLasso fits the anchored grid rather than refitting exact
   # pin what the grid contains, and naming anchoredLambdaGrid() inside it makes
   # it look as though it does. Production and the assertion call the same
   # helper, so a wrong construction moves both sides together and leaves this
-  # block green; both of the helper mutants named in
-  # test_that("anchoredLambdaGrid holds its invariants (#125)") pass here. That
+  # block green; every helper mutant named in
+  # test_that("anchoredLambdaGrid holds its invariants (#125)") passes here. That
   # block is what catches those.
   #
   # The form is expect_identical against the helper's own length rather than
@@ -1694,8 +1697,10 @@ testthat::test_that("anchoredLambdaGrid holds its invariants (#125)", {
   # three of the fixture's parts are load-bearing: a fixed vector rather than a
   # random draw (with an unseeded draw the detection is a coin flip), an
   # interior s rather than one below the path or at 0 (those take the guard
-  # branch), and the production n_interior = 5 rather than 0 or 1 (too few
-  # interior points and no collision occurs).
+  # branch), and n_interior at the production 5, passed explicitly here rather
+  # than taken from the default. Measured, the detection threshold is 5 and not
+  # 2: below it the interior points are too sparse to land on an anchor and the
+  # pair goes blind again.
   inv <- function(lambda_path, s, n_interior=5L){
     g <- anchoredLambdaGrid(lambda_path, s, n_interior)
     g_full <- unique(rev(sort(c(s, lambda_path))))
@@ -1742,6 +1747,10 @@ testthat::test_that("cssLasso short-circuits when lambda is already on the path 
   X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y <- as.numeric(X %*% c(rep(1.5, 3), rep(0, p - 3)) + stats::rnorm(n))
 
+  # do.call here is habit rather than necessity -- alpha is a literal, and this
+  # block's s values are all ON the fitted grid, so predict.glmnet(exact=TRUE)
+  # returns without ever reaching update(). The identity block's claim to be the
+  # one place that still exercises the stored-call fact is therefore accurate.
   fA <- do.call(glmnet::glmnet, list(x=X, y=y, family="gaussian", alpha=1))
   # Rank 1 is in the fixture set deliberately: when the short-circuit is
   # deleted, the resulting selected-set breaks concentrate at the top of the

@@ -14,9 +14,9 @@
 #' @param lambda_path A numeric vector of penalties (in practice the `$lambda`
 #' component of a fitted `glmnet` object). This is a requirement on the caller
 #' rather than a claim about what `glmnet()` returns: because the interior
-#' points are spaced in log space, `lambda_path` must not contain a zero below
-#' its second-smallest positive entry. Such a path takes `log(0)` and errors in
-#' `seq()`; nothing checks it at runtime.
+#' points are spaced in log space, `lambda_path` must not contain a zero unless
+#' `s` is at or below its smallest positive entry. Any other path containing a
+#' zero takes `log(0)` and errors in `seq()`; nothing checks it at runtime.
 #' @param s The target penalty; a single nonnegative number.
 #' @param n_interior The number of geometrically spaced interior points padding
 #' the gap below `s`. This is a speed constant and not a correctness one: the
@@ -32,8 +32,8 @@
 anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
     # g_full is the grid predict.glmnet(exact=TRUE) refits over -- the fitted
     # path augmented with s, de-duplicated and ordered decreasing. The
-    # expression is character-for-character glmnet's own, so both sides discard
-    # non-finite path entries and collapse repeats identically.
+    # expression is glmnet's own operator for operator, so both sides drop NA and
+    # NaN (sort() keeps +-Inf) and collapse repeats identically.
     g_full <- unique(rev(sort(c(s, lambda_path))))
     k_full <- length(g_full)
 
@@ -52,8 +52,11 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
     hi <- keep[length(keep)]
 
     # Two cases have no gap to pad: n_interior <= 0, the caller asking for no
-    # padding, and hi <= lo, keep already reaching the end of g_full (again
-    # s = 0 and any s at or below min(lambda_path)). This guard is also what
+    # padding, and hi <= lo, keep already reaching the end of g_full. That is a
+    # wider set than the min() cap above: it holds whenever s is the smallest or
+    # the SECOND smallest element of g_full, so a user penalty falling between
+    # the two smallest fitted ones also lands here and gets the augmented grid
+    # unshortened, which is correct and saves nothing. This guard is also what
     # keeps log(0) out of the seq() below on a degenerate glmnet path, which is
     # a case that genuinely occurs rather than a hypothetical one: on an exactly
     # orthogonal design glmnet returns NaN followed by zeros for $lambda, and
