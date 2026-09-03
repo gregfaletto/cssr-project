@@ -1533,9 +1533,12 @@ testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
   # *was* this reference. The block that fails on the pre-change source is
   # test_that("cssLasso fits the anchored grid rather than refitting exactly
   # (#125)"). The block that enforces the grid construction is
-  # test_that("anchoredLambdaGrid holds its invariants (#125)"): this pin stayed
-  # entirely green under both of the natural simplifications of that
-  # construction, so a green run here is not licence to simplify the helper.
+  # test_that("anchoredLambdaGrid holds its invariants (#125)"): this pin stays
+  # entirely green under every simplification of that construction anyone has
+  # tried -- dropping the re-appended anchor, dropping the head anchor, keeping
+  # the prefix through kt, dropping the interior filter, naive truncation, and
+  # removing the shortening altogether -- each of which reddens only the
+  # invariants block. A green run here is not licence to simplify the helper.
   #
   # IF THIS BLOCK REDDENS, rule out a local change first -- most likely to
   # cssLasso()'s on-grid branch predicate, which reddens this block directly. A
@@ -1582,12 +1585,14 @@ testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
       lambda=if(alpha == 1) L else c(lambda=L, alpha=alpha)), ref)
   }
 
-  # Exactly four fixtures, spanning the regimes that matter. Four rather than
-  # "a handful": this pin is not the enforcer of the construction and its
-  # detection curve is weak by design -- against the naive-truncation variant,
-  # whose selected sets agree with the reference in the large majority of
-  # comparisons, a pin of this size catches it only occasionally. Leaving the
-  # count open would invite a reader to infer a power the block does not have.
+  # Exactly four fixtures, spanning the regimes that matter -- and ADDING MORE
+  # WOULD BUY NOTHING, which is the part worth knowing before anyone tries. This
+  # pin compares selected sets, via type="nonzero", while the property at stake
+  # is bit-identity of the coefficients. Measured: naive truncation breaks
+  # bit-identity on roughly 2% of off-grid penalties yet reproduced the
+  # reference's selected set in every one of 600 comparisons. So the limit is
+  # GRANULARITY, not sample size, and the enforcer is the invariants block. Four
+  # fixtures pin the regimes; a fortieth would pin nothing further.
 
   # (1) An ordinary iid design.
   set.seed(5011)

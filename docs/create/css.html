@@ -2234,50 +2234,55 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb42-62"><a href="css.html#cb42-62" tabindex="-1"></a>    <span class="co"># a generic y gives an ordinary path, and so does one with max|X'y| at 1e-16.</span></span>
 <span id="cb42-63"><a href="css.html#cb42-63" tabindex="-1"></a>    <span class="co"># At exact zero glmnet returns NaN followed by zeros for $lambda; sort() then</span></span>
 <span id="cb42-64"><a href="css.html#cb42-64" tabindex="-1"></a>    <span class="co"># drops the NaN and unique() collapses the zeros, leaving a g_full of two</span></span>
-<span id="cb42-65"><a href="css.html#cb42-65" tabindex="-1"></a>    <span class="co"># elements that lands here. The repo's #157 fixture reaches it with paired</span></span>
-<span id="cb42-66"><a href="css.html#cb42-66" tabindex="-1"></a>    <span class="co"># +1/-1 integer rows -- grep 'lasso path selects nothing (#157)'.</span></span>
-<span id="cb42-67"><a href="css.html#cb42-67" tabindex="-1"></a>    <span class="cf">if</span>(n_interior <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> hi <span class="sc">&lt;=</span> lo){</span>
-<span id="cb42-68"><a href="css.html#cb42-68" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">unique</span>(<span class="fu">c</span>(keep, lo)))</span>
-<span id="cb42-69"><a href="css.html#cb42-69" tabindex="-1"></a>    }</span>
-<span id="cb42-70"><a href="css.html#cb42-70" tabindex="-1"></a></span>
-<span id="cb42-71"><a href="css.html#cb42-71" tabindex="-1"></a>    <span class="co"># Geometrically spaced filler between the two anchors, with the anchors</span></span>
-<span id="cb42-72"><a href="css.html#cb42-72" tabindex="-1"></a>    <span class="co"># themselves dropped back off...</span></span>
-<span id="cb42-73"><a href="css.html#cb42-73" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">seq</span>(<span class="fu">log</span>(hi), <span class="fu">log</span>(lo), <span class="at">length.out=</span>n_interior <span class="sc">+</span> <span class="dv">2</span><span class="dt">L</span>))</span>
-<span id="cb42-74"><a href="css.html#cb42-74" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="fu">length</span>(mid))]</span>
-<span id="cb42-75"><a href="css.html#cb42-75" tabindex="-1"></a>    <span class="co"># ...and then any filler point that floating-point rounding placed on top of</span></span>
-<span id="cb42-76"><a href="css.html#cb42-76" tabindex="-1"></a>    <span class="co"># an anchor removed. This filter is load-bearing rather than belt-and-</span></span>
-<span id="cb42-77"><a href="css.html#cb42-77" tabindex="-1"></a>    <span class="co"># braces: without it the returned grid can repeat an anchor, which is</span></span>
-<span id="cb42-78"><a href="css.html#cb42-78" tabindex="-1"></a>    <span class="co"># visible only on a path whose entries are a few ULPs apart.</span></span>
-<span id="cb42-79"><a href="css.html#cb42-79" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[mid <span class="sc">&lt;</span> hi <span class="sc">&amp;</span> mid <span class="sc">&gt;</span> lo]</span>
-<span id="cb42-80"><a href="css.html#cb42-80" tabindex="-1"></a></span>
-<span id="cb42-81"><a href="css.html#cb42-81" tabindex="-1"></a>    <span class="co"># lo is re-appended rather than simply left at the end of a longer prefix,</span></span>
-<span id="cb42-82"><a href="css.html#cb42-82" tabindex="-1"></a>    <span class="co"># and this is the load-bearing line. glmnet:::lambda.interp(), which</span></span>
-<span id="cb42-83"><a href="css.html#cb42-83" tabindex="-1"></a>    <span class="co"># predict.glmnet() always calls, normalises by lambda[1] - lambda[k].</span></span>
-<span id="cb42-84"><a href="css.html#cb42-84" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb42-85"><a href="css.html#cb42-85" tabindex="-1"></a>    <span class="co"># READ THIS BEFORE DELETING THE ANCHOR ON ALGEBRAIC GROUNDS. That normaliser</span></span>
-<span id="cb42-86"><a href="css.html#cb42-86" tabindex="-1"></a>    <span class="co"># CANCELS in exact arithmetic: work the two ratios through and the weight is</span></span>
-<span id="cb42-87"><a href="css.html#cb42-87" tabindex="-1"></a>    <span class="co"># just (lambda_right - s)/(lambda_right - lambda_left), with no dependence on</span></span>
-<span id="cb42-88"><a href="css.html#cb42-88" tabindex="-1"></a>    <span class="co"># the grid's last element at all. So a maintainer who reasons this through</span></span>
-<span id="cb42-89"><a href="css.html#cb42-89" tabindex="-1"></a>    <span class="co"># symbolically will correctly conclude the anchor is unnecessary -- and be</span></span>
-<span id="cb42-90"><a href="css.html#cb42-90" tabindex="-1"></a>    <span class="co"># wrong, because in floating point the cancellation is inexact. Measured over</span></span>
-<span id="cb42-91"><a href="css.html#cb42-91" tabindex="-1"></a>    <span class="co"># 1000 s values on two grids sharing every element but the last: the weight</span></span>
-<span id="cb42-92"><a href="css.html#cb42-92" tabindex="-1"></a>    <span class="co"># differed in 74% of them, by up to 6 ULP, with left and right identical.</span></span>
-<span id="cb42-93"><a href="css.html#cb42-93" tabindex="-1"></a>    <span class="co"># The anchor exists to reproduce the ROUNDING, not the algebra. Handing over</span></span>
-<span id="cb42-94"><a href="css.html#cb42-94" tabindex="-1"></a>    <span class="co"># the same first and last elements the exact refit would have handed over is</span></span>
-<span id="cb42-95"><a href="css.html#cb42-95" tabindex="-1"></a>    <span class="co"># what makes the interpolated coefficients agree bit for bit.</span></span>
-<span id="cb42-96"><a href="css.html#cb42-96" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb42-97"><a href="css.html#cb42-97" tabindex="-1"></a>    <span class="co"># This construction was validated over a six-figure sweep of designs, alphas</span></span>
-<span id="cb42-98"><a href="css.html#cb42-98" tabindex="-1"></a>    <span class="co"># and s placements; the evidence is in PR #200, which is where to look</span></span>
-<span id="cb42-99"><a href="css.html#cb42-99" tabindex="-1"></a>    <span class="co"># rather than at any local planning directory. Do not "simplify" it without</span></span>
-<span id="cb42-100"><a href="css.html#cb42-100" tabindex="-1"></a>    <span class="co"># re-running that evidence.</span></span>
-<span id="cb42-101"><a href="css.html#cb42-101" tabindex="-1"></a>    <span class="co"># The block that enforces it is test_that("anchoredLambdaGrid holds its</span></span>
-<span id="cb42-102"><a href="css.html#cb42-102" tabindex="-1"></a>    <span class="co"># invariants (#125)"), NOT test_that("cssLasso is byte-identical to the</span></span>
-<span id="cb42-103"><a href="css.html#cb42-103" tabindex="-1"></a>    <span class="co"># exact refit (#125)"): every natural simplification of this construction --</span></span>
-<span id="cb42-104"><a href="css.html#cb42-104" tabindex="-1"></a>    <span class="co"># dropping this re-appended anchor, keeping the prefix through kt rather than</span></span>
-<span id="cb42-105"><a href="css.html#cb42-105" tabindex="-1"></a>    <span class="co"># kt + 1, and dropping the filter above -- leaves that identity pin entirely</span></span>
-<span id="cb42-106"><a href="css.html#cb42-106" tabindex="-1"></a>    <span class="co"># green.</span></span>
-<span id="cb42-107"><a href="css.html#cb42-107" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">c</span>(keep, <span class="fu">sort</span>(<span class="fu">unique</span>(mid), <span class="at">decreasing=</span><span class="cn">TRUE</span>), lo))</span>
-<span id="cb42-108"><a href="css.html#cb42-108" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb42-65"><a href="css.html#cb42-65" tabindex="-1"></a>    <span class="co"># elements that lands here -- verified by handing such a design to this</span></span>
+<span id="cb42-66"><a href="css.html#cb42-66" tabindex="-1"></a>    <span class="co"># function directly. </span><span class="al">NOTE</span><span class="co"> what is NOT true: no test in this suite exercises</span></span>
+<span id="cb42-67"><a href="css.html#cb42-67" tabindex="-1"></a>    <span class="co"># this branch with a degenerate path. The #157 fixture builds one (paired</span></span>
+<span id="cb42-68"><a href="css.html#cb42-68" tabindex="-1"></a>    <span class="co"># +1/-1 integer rows -- grep 'lasso path selects nothing (#157)') but reaches</span></span>
+<span id="cb42-69"><a href="css.html#cb42-69" tabindex="-1"></a>    <span class="co"># glmnet through <a href="competitor-methods.html#clusterLassoCore">clusterLassoCore</a>(), which never calls <a href="css.html#cssLasso">cssLasso</a>(), so it</span></span>
+<span id="cb42-70"><a href="css.html#cb42-70" tabindex="-1"></a>    <span class="co"># makes no call to this function at all. Measured across the whole suite:</span></span>
+<span id="cb42-71"><a href="css.html#cb42-71" tabindex="-1"></a>    <span class="co"># every call here arrives with an ordinary path.</span></span>
+<span id="cb42-72"><a href="css.html#cb42-72" tabindex="-1"></a>    <span class="cf">if</span>(n_interior <span class="sc">&lt;=</span> <span class="dv">0</span> <span class="sc">|</span> hi <span class="sc">&lt;=</span> lo){</span>
+<span id="cb42-73"><a href="css.html#cb42-73" tabindex="-1"></a>        <span class="fu">return</span>(<span class="fu">unique</span>(<span class="fu">c</span>(keep, lo)))</span>
+<span id="cb42-74"><a href="css.html#cb42-74" tabindex="-1"></a>    }</span>
+<span id="cb42-75"><a href="css.html#cb42-75" tabindex="-1"></a></span>
+<span id="cb42-76"><a href="css.html#cb42-76" tabindex="-1"></a>    <span class="co"># Geometrically spaced filler between the two anchors, with the anchors</span></span>
+<span id="cb42-77"><a href="css.html#cb42-77" tabindex="-1"></a>    <span class="co"># themselves dropped back off...</span></span>
+<span id="cb42-78"><a href="css.html#cb42-78" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">seq</span>(<span class="fu">log</span>(hi), <span class="fu">log</span>(lo), <span class="at">length.out=</span>n_interior <span class="sc">+</span> <span class="dv">2</span><span class="dt">L</span>))</span>
+<span id="cb42-79"><a href="css.html#cb42-79" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="fu">length</span>(mid))]</span>
+<span id="cb42-80"><a href="css.html#cb42-80" tabindex="-1"></a>    <span class="co"># ...and then any filler point that floating-point rounding placed on top of</span></span>
+<span id="cb42-81"><a href="css.html#cb42-81" tabindex="-1"></a>    <span class="co"># an anchor removed. This filter is load-bearing rather than belt-and-</span></span>
+<span id="cb42-82"><a href="css.html#cb42-82" tabindex="-1"></a>    <span class="co"># braces: without it the returned grid can repeat an anchor, which is</span></span>
+<span id="cb42-83"><a href="css.html#cb42-83" tabindex="-1"></a>    <span class="co"># visible only on a path whose entries are a few ULPs apart.</span></span>
+<span id="cb42-84"><a href="css.html#cb42-84" tabindex="-1"></a>    mid <span class="ot">&lt;-</span> mid[mid <span class="sc">&lt;</span> hi <span class="sc">&amp;</span> mid <span class="sc">&gt;</span> lo]</span>
+<span id="cb42-85"><a href="css.html#cb42-85" tabindex="-1"></a></span>
+<span id="cb42-86"><a href="css.html#cb42-86" tabindex="-1"></a>    <span class="co"># lo is re-appended rather than simply left at the end of a longer prefix,</span></span>
+<span id="cb42-87"><a href="css.html#cb42-87" tabindex="-1"></a>    <span class="co"># and this is the load-bearing line. glmnet:::lambda.interp(), which</span></span>
+<span id="cb42-88"><a href="css.html#cb42-88" tabindex="-1"></a>    <span class="co"># predict.glmnet() always calls, normalises by lambda[1] - lambda[k].</span></span>
+<span id="cb42-89"><a href="css.html#cb42-89" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb42-90"><a href="css.html#cb42-90" tabindex="-1"></a>    <span class="co"># READ THIS BEFORE DELETING THE ANCHOR ON ALGEBRAIC GROUNDS. That normaliser</span></span>
+<span id="cb42-91"><a href="css.html#cb42-91" tabindex="-1"></a>    <span class="co"># CANCELS in exact arithmetic: work the two ratios through and the weight is</span></span>
+<span id="cb42-92"><a href="css.html#cb42-92" tabindex="-1"></a>    <span class="co"># just (lambda_right - s)/(lambda_right - lambda_left), with no dependence on</span></span>
+<span id="cb42-93"><a href="css.html#cb42-93" tabindex="-1"></a>    <span class="co"># the grid's last element at all. So a maintainer who reasons this through</span></span>
+<span id="cb42-94"><a href="css.html#cb42-94" tabindex="-1"></a>    <span class="co"># symbolically will correctly conclude the anchor is unnecessary -- and be</span></span>
+<span id="cb42-95"><a href="css.html#cb42-95" tabindex="-1"></a>    <span class="co"># wrong, because in floating point the cancellation is inexact. Measured over</span></span>
+<span id="cb42-96"><a href="css.html#cb42-96" tabindex="-1"></a>    <span class="co"># 1000 s values on two grids sharing every element but the last: the weight</span></span>
+<span id="cb42-97"><a href="css.html#cb42-97" tabindex="-1"></a>    <span class="co"># differed in 74% of them, by up to 6 ULP, with left and right identical.</span></span>
+<span id="cb42-98"><a href="css.html#cb42-98" tabindex="-1"></a>    <span class="co"># The anchor exists to reproduce the ROUNDING, not the algebra. Handing over</span></span>
+<span id="cb42-99"><a href="css.html#cb42-99" tabindex="-1"></a>    <span class="co"># the same first and last elements the exact refit would have handed over is</span></span>
+<span id="cb42-100"><a href="css.html#cb42-100" tabindex="-1"></a>    <span class="co"># what makes the interpolated coefficients agree bit for bit.</span></span>
+<span id="cb42-101"><a href="css.html#cb42-101" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb42-102"><a href="css.html#cb42-102" tabindex="-1"></a>    <span class="co"># This construction was validated over a six-figure sweep of designs, alphas</span></span>
+<span id="cb42-103"><a href="css.html#cb42-103" tabindex="-1"></a>    <span class="co"># and s placements; the evidence is in PR #200, which is where to look</span></span>
+<span id="cb42-104"><a href="css.html#cb42-104" tabindex="-1"></a>    <span class="co"># rather than at any local planning directory. Do not "simplify" it without</span></span>
+<span id="cb42-105"><a href="css.html#cb42-105" tabindex="-1"></a>    <span class="co"># re-running that evidence.</span></span>
+<span id="cb42-106"><a href="css.html#cb42-106" tabindex="-1"></a>    <span class="co"># The block that enforces it is test_that("anchoredLambdaGrid holds its</span></span>
+<span id="cb42-107"><a href="css.html#cb42-107" tabindex="-1"></a>    <span class="co"># invariants (#125)"), NOT test_that("cssLasso is byte-identical to the</span></span>
+<span id="cb42-108"><a href="css.html#cb42-108" tabindex="-1"></a>    <span class="co"># exact refit (#125)"): every natural simplification of this construction --</span></span>
+<span id="cb42-109"><a href="css.html#cb42-109" tabindex="-1"></a>    <span class="co"># dropping this re-appended anchor, keeping the prefix through kt rather than</span></span>
+<span id="cb42-110"><a href="css.html#cb42-110" tabindex="-1"></a>    <span class="co"># kt + 1, and dropping the filter above -- leaves that identity pin entirely</span></span>
+<span id="cb42-111"><a href="css.html#cb42-111" tabindex="-1"></a>    <span class="co"># green.</span></span>
+<span id="cb42-112"><a href="css.html#cb42-112" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">c</span>(keep, <span class="fu">sort</span>(<span class="fu">unique</span>(mid), <span class="at">decreasing=</span><span class="cn">TRUE</span>), lo))</span>
+<span id="cb42-113"><a href="css.html#cb42-113" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="css.html#cb43-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
 <span id="cb43-2"><a href="css.html#cb43-2" tabindex="-1"></a><span class="co">#'</span></span>

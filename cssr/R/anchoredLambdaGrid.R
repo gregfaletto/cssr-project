@@ -64,8 +64,13 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
     # a generic y gives an ordinary path, and so does one with max|X'y| at 1e-16.
     # At exact zero glmnet returns NaN followed by zeros for $lambda; sort() then
     # drops the NaN and unique() collapses the zeros, leaving a g_full of two
-    # elements that lands here. The repo's #157 fixture reaches it with paired
-    # +1/-1 integer rows -- grep 'lasso path selects nothing (#157)'.
+    # elements that lands here -- verified by handing such a design to this
+    # function directly. NOTE what is NOT true: no test in this suite exercises
+    # this branch with a degenerate path. The #157 fixture builds one (paired
+    # +1/-1 integer rows -- grep 'lasso path selects nothing (#157)') but reaches
+    # glmnet through clusterLassoCore(), which never calls cssLasso(), so it
+    # makes no call to this function at all. Measured across the whole suite:
+    # every call here arrives with an ordinary path.
     if(n_interior <= 0 | hi <= lo){
         return(unique(c(keep, lo)))
     }
