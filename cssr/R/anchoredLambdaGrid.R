@@ -58,10 +58,14 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
     # the two smallest fitted ones also lands here and gets the augmented grid
     # unshortened, which is correct and saves nothing. This guard is also what
     # keeps log(0) out of the seq() below on a degenerate glmnet path, which is
-    # a case that genuinely occurs rather than a hypothetical one: on an exactly
-    # orthogonal design glmnet returns NaN followed by zeros for $lambda, and
-    # sort() drops the NaN while unique() collapses the zeros, leaving a g_full
-    # of two elements that lands here.
+    # a case that genuinely occurs rather than a hypothetical one. The condition
+    # is max(abs(crossprod(X, y))) == 0 EXACTLY -- not merely an orthogonal
+    # design, and not a numerically small value: measured, an orthonormal X with
+    # a generic y gives an ordinary path, and so does one with max|X'y| at 1e-16.
+    # At exact zero glmnet returns NaN followed by zeros for $lambda; sort() then
+    # drops the NaN and unique() collapses the zeros, leaving a g_full of two
+    # elements that lands here. The repo's #157 fixture reaches it with paired
+    # +1/-1 integer rows -- grep 'lasso path selects nothing (#157)'.
     if(n_interior <= 0 | hi <= lo){
         return(unique(c(keep, lo)))
     }
@@ -78,18 +82,29 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
 
     # lo is re-appended rather than simply left at the end of a longer prefix,
     # and this is the load-bearing line. glmnet:::lambda.interp(), which
-    # predict.glmnet() always calls, normalises by lambda[1] - lambda[k], so the
-    # blend weight at s depends on the last element of the supplied grid as much
-    # as on the first. Handing over the same first and last elements the exact
-    # refit would have handed over is what makes the interpolated coefficients
-    # agree bit for bit.
+    # predict.glmnet() always calls, normalises by lambda[1] - lambda[k].
+    #
+    # READ THIS BEFORE DELETING THE ANCHOR ON ALGEBRAIC GROUNDS. That normaliser
+    # CANCELS in exact arithmetic: work the two ratios through and the weight is
+    # just (lambda_right - s)/(lambda_right - lambda_left), with no dependence on
+    # the grid's last element at all. So a maintainer who reasons this through
+    # symbolically will correctly conclude the anchor is unnecessary -- and be
+    # wrong, because in floating point the cancellation is inexact. Measured over
+    # 1000 s values on two grids sharing every element but the last: the weight
+    # differed in 74% of them, by up to 6 ULP, with left and right identical.
+    # The anchor exists to reproduce the ROUNDING, not the algebra. Handing over
+    # the same first and last elements the exact refit would have handed over is
+    # what makes the interpolated coefficients agree bit for bit.
     #
     # This construction was validated over a six-figure sweep of designs, alphas
-    # and s placements; do not "simplify" it without re-running that evidence.
+    # and s placements; the evidence is in PR #200, which is where to look
+    # rather than at any local planning directory. Do not "simplify" it without
+    # re-running that evidence.
     # The block that enforces it is test_that("anchoredLambdaGrid holds its
     # invariants (#125)"), NOT test_that("cssLasso is byte-identical to the
-    # exact refit (#125)"): both of the natural simplifications -- dropping this
-    # re-appended anchor, and keeping the prefix through kt rather than kt + 1
-    # -- leave that identity pin entirely green.
+    # exact refit (#125)"): every natural simplification of this construction --
+    # dropping this re-appended anchor, keeping the prefix through kt rather than
+    # kt + 1, and dropping the filter above -- leaves that identity pin entirely
+    # green.
     return(c(keep, sort(unique(mid), decreasing=TRUE), lo))
 }

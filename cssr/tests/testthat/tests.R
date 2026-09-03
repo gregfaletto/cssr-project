@@ -1701,7 +1701,17 @@ testthat::test_that("anchoredLambdaGrid holds its invariants (#125)", {
   # than taken from the default. Measured, the detection threshold is 5 and not
   # 2: below it the interior points are too sparse to land on an anchor and the
   # pair goes blind again.
-  inv <- function(lambda_path, s, n_interior=5L){
+  # `shortens` pins THE POINT OF THE CHANGE, which the five invariants below do
+  # not: g_full satisfies every one of them, because it IS the reference grid.
+  # Measured -- replacing this helper's body with return(g_full), i.e. removing
+  # the optimisation outright, left the whole suite byte-identical at
+  # [ FAIL 0 | WARN 0 | SKIP 0 | PASS 4262 ] before this argument existed. The
+  # routing block cannot cover the gap either: it compares the fitted grid's
+  # length against a call to this same helper, so a helper that stopped
+  # shortening would move both sides of that comparison together. Both
+  # directions are pinned, because returning the FULL grid is the correct
+  # answer on the guard branch and is worth asserting rather than tolerating.
+  inv <- function(lambda_path, s, n_interior=5L, shortens){
     g <- anchoredLambdaGrid(lambda_path, s, n_interior)
     g_full <- unique(rev(sort(c(s, lambda_path))))
     k_full <- length(g_full)
@@ -1716,6 +1726,13 @@ testthat::test_that("anchoredLambdaGrid holds its invariants (#125)", {
     testthat::expect_identical(length(unique(g)), length(g))
     # The prefix through one element past s is carried over untouched.
     testthat::expect_identical(g[1:m], g_full[1:m])
+    # And the grid is actually shorter than the one exact=TRUE would have refit
+    # over -- or exactly it, on the guard branch, where there is nothing to drop.
+    if(shortens){
+      testthat::expect_lt(length(g), k_full)
+    } else{
+      testthat::expect_identical(length(g), k_full)
+    }
   }
 
   # A synthetic decreasing path, in the geometric shape glmnet's default grid
@@ -1723,21 +1740,21 @@ testthat::test_that("anchoredLambdaGrid holds its invariants (#125)", {
   # glmnet.
   lp <- exp(seq(log(2), log(0.01), length.out=30))
 
-  inv(lp, 5)                              # s above the largest penalty
-  inv(lp, 0.001)                          # s below the smallest
-  inv(lp, lp[9])                          # s exactly on the path
-  inv(lp, 0)                              # s = 0
-  inv(lp, sqrt(lp[9]*lp[10]))             # s mid-path, the production case
-  inv(lp, sqrt(lp[9]*lp[10]), 0L)         # no interior padding
-  inv(0.5, 0.1)                           # length-1 path, s below it
-  inv(0.5, 5)                             # length-1 path, s above it
-  inv(0.5, 0.5)                           # length-1 path, s equal to it
+  inv(lp, 5, shortens=TRUE)               # s above the largest penalty
+  inv(lp, 0.001, shortens=FALSE)          # s below the smallest: guard branch
+  inv(lp, lp[9], shortens=TRUE)           # s exactly on the path
+  inv(lp, 0, shortens=FALSE)              # s = 0: guard branch
+  inv(lp, sqrt(lp[9]*lp[10]), shortens=TRUE)  # mid-path, the production case
+  inv(lp, sqrt(lp[9]*lp[10]), 0L, shortens=TRUE)  # no interior padding
+  inv(0.5, 0.1, shortens=FALSE)           # length-1 path, s below it
+  inv(0.5, 5, shortens=FALSE)             # length-1 path, s above it
+  inv(0.5, 0.5, shortens=FALSE)           # length-1 path, s equal to it
 
   # The ULP-spaced path: eight distinct, strictly decreasing doubles a few
   # units in the last place apart, exercised at an on-grid s and at the
   # production n_interior.
   lp_ulp <- 1 + (8:1) * .Machine$double.eps
-  inv(lp_ulp, lp_ulp[4], 5L)
+  inv(lp_ulp, lp_ulp[4], 5L, shortens=FALSE)
 })
 
 testthat::test_that("cssLasso short-circuits when lambda is already on the path (#125)", {
@@ -1768,11 +1785,16 @@ testthat::test_that("cssLasso short-circuits when lambda is already on the path 
   # above; local_mocked_bindings() takes effect from this line to the end of the
   # block.
   #
-  # THIS IS THE LOAD-BEARING ASSERTION OF THE BLOCK. Deleting the short-circuit
-  # leaves the identity assertions above green on an ordinary fixture, and it is
-  # the fit handed to predict.glmnet() that gives the change away: with the
-  # short-circuit the default path arrives untouched, without it a second,
-  # shorter fit does.
+  # This assertion and the identity assertions above are BOTH live, and an
+  # earlier revision of this comment claimed the identity ones were not.
+  # Measured against a [ FAIL 0 | PASS 4262 ] control, deleting the short-circuit
+  # reddens three of this block's assertions, the rank-1 identity comparison
+  # among them -- which is precisely why the comment above puts rank 1 in the
+  # fixture set, and the two statements contradicted each other until now. What
+  # this assertion adds is a cause rather than a symptom: it names the fit handed
+  # to predict.glmnet(), so with the short-circuit the default path arrives
+  # untouched and without it a second, shorter fit does. Do not trim the rank-1
+  # fixture as redundant -- it is the only value-level detector for this route.
   seen <- NULL
   testthat::local_mocked_bindings(
     predict.glmnet = function(object, ...){
