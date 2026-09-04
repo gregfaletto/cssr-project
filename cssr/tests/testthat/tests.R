@@ -1813,6 +1813,33 @@ testthat::test_that("cssLasso short-circuits when lambda is already on the path 
   }
 })
 
+testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
+  # A design with max|X'y| EXACTLY zero -- paired +1/-1 integer rows, the #157
+  # construction. Not merely orthogonal and not numerically small: measured, an
+  # orthonormal X with a generic y gives an ordinary path, and so does one with
+  # max|X'y| at 1e-16. Only exact zero degenerates the path.
+  y <- as.double(c(1, 1, 1, 1, -1, -1, -1, -1))
+  X <- cbind(c(1,-1,0,0,0,0,0,0), c(0,0,1,-1,0,0,0,0),
+      c(0,0,0,0,1,-1,0,0), c(0,0,0,0,0,0,1,-1))
+  storage.mode(X) <- "double"
+  testthat::expect_identical(max(abs(crossprod(X, y))), 0)
+
+  # The path really is degenerate. These two assertions are the upstream-drift
+  # detector: if a future glmnet stops returning NaN-then-zeros here, they fail
+  # and the comment in anchoredLambdaGrid() about this case needs re-deriving.
+  lam <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)$lambda
+  testthat::expect_true(anyNA(lam))
+  testthat::expect_true(any(lam == 0, na.rm=TRUE))
+
+  # And cssLasso() returns an empty selection rather than erroring. This is the
+  # assertion that holds the no-runtime-validation decision: adding
+  # stopifnot(all(lasso_model$lambda > 0)) -- or all(is.finite(.)), which also
+  # fails here -- reddens this line. Use lambda strictly above 0; at exactly 0
+  # this design raises a PRE-EXISTING interpolation error on both this branch
+  # and origin/main, which is not what this block is about.
+  testthat::expect_identical(cssLasso(X=X, y=y, lambda=0.01), integer(0))
+})
+
 testthat::test_that("getClusterSelMatrix works", {
   good_clusters <- list(red_cluster=1L:5L,
                         green_cluster=6L:8L, blue_clust=9L)

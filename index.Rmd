@@ -2301,13 +2301,11 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
     # a generic y gives an ordinary path, and so does one with max|X'y| at 1e-16.
     # At exact zero glmnet returns NaN followed by zeros for $lambda; sort() then
     # drops the NaN and unique() collapses the zeros, leaving a g_full of two
-    # elements that lands here -- verified by handing such a design to this
-    # function directly. NOTE what is NOT true: no test in this suite exercises
-    # this branch with a degenerate path. The #157 fixture builds one (paired
-    # +1/-1 integer rows -- grep 'lasso path selects nothing (#157)') but reaches
-    # glmnet through clusterLassoCore(), which never calls cssLasso(), so it
-    # makes no call to this function at all. Measured across the whole suite:
-    # every call here arrives with an ordinary path.
+    # elements that lands here. Pinned end to end by
+    # test_that("cssLasso survives a degenerate lasso path (#125)"), which drives
+    # such a design through cssLasso() and asserts an empty selection rather than
+    # an error. Note that the repo's older #157 fixture does NOT reach this
+    # function: it goes through clusterLassoCore(), which never calls cssLasso().
     if(n_interior <= 0 | hi <= lo){
         return(unique(c(keep, lo)))
     }
@@ -8866,6 +8864,42 @@ testthat::test_that("cssLasso short-circuits when lambda is already on the path 
     invisible(cssLasso(X=X, y=y, lambda=L))
     testthat::expect_identical(seen, length(fA$lambda))
   }
+})
+```
+
+`anchoredLambdaGrid()`'s guard branch has a reason that is easy to mistake for a hypothetical:
+a perfectly orthogonal design makes `glmnet()` return a `$lambda` of `NaN` followed by zeros,
+and the guard is what keeps `log(0)` out of the interior-point construction on such a path. The
+next block pins that end to end, and in particular pins the decision **not** to validate
+`$lambda` at runtime: a positivity check on it would turn this case from an empty selection into
+an error, on exactly the shape issue #157 was filed to stop crashing.
+
+```{r}
+testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
+  # A design with max|X'y| EXACTLY zero -- paired +1/-1 integer rows, the #157
+  # construction. Not merely orthogonal and not numerically small: measured, an
+  # orthonormal X with a generic y gives an ordinary path, and so does one with
+  # max|X'y| at 1e-16. Only exact zero degenerates the path.
+  y <- as.double(c(1, 1, 1, 1, -1, -1, -1, -1))
+  X <- cbind(c(1,-1,0,0,0,0,0,0), c(0,0,1,-1,0,0,0,0),
+      c(0,0,0,0,1,-1,0,0), c(0,0,0,0,0,0,1,-1))
+  storage.mode(X) <- "double"
+  testthat::expect_identical(max(abs(crossprod(X, y))), 0)
+
+  # The path really is degenerate. These two assertions are the upstream-drift
+  # detector: if a future glmnet stops returning NaN-then-zeros here, they fail
+  # and the comment in anchoredLambdaGrid() about this case needs re-deriving.
+  lam <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)$lambda
+  testthat::expect_true(anyNA(lam))
+  testthat::expect_true(any(lam == 0, na.rm=TRUE))
+
+  # And cssLasso() returns an empty selection rather than erroring. This is the
+  # assertion that holds the no-runtime-validation decision: adding
+  # stopifnot(all(lasso_model$lambda > 0)) -- or all(is.finite(.)), which also
+  # fails here -- reddens this line. Use lambda strictly above 0; at exactly 0
+  # this design raises a PRE-EXISTING interpolation error on both this branch
+  # and origin/main, which is not what this block is about.
+  testthat::expect_identical(cssLasso(X=X, y=y, lambda=0.01), integer(0))
 })
 ```
 
