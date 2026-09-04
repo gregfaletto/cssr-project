@@ -1527,6 +1527,319 @@ testthat::test_that("cssLasso returns an empty selection under either glmnet sha
   testthat::expect_true(is.integer(res))
 })
 
+testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
+  # A PIN, NOT A RED-GREEN TEST -- like the second and third #188 blocks above,
+  # it passes on the pre-change source, because before the rewrite cssLasso()
+  # *was* this reference. The block that fails on the pre-change source is
+  # test_that("cssLasso fits the anchored grid rather than refitting exactly
+  # (#125)"). The block that enforces the grid construction is
+  # test_that("anchoredLambdaGrid holds its invariants (#125)"): this pin stays
+  # entirely green under every simplification of that construction anyone has
+  # tried -- dropping the re-appended anchor, dropping the head anchor, keeping
+  # the prefix through kt, dropping the interior filter, naive truncation, and
+  # removing the shortening altogether -- each of which reddens only the
+  # invariants block. A green run here is not licence to simplify the helper.
+  #
+  # IF THIS BLOCK REDDENS, rule out a local change first -- most likely to
+  # cssLasso()'s on-grid branch predicate, which reddens this block directly. A
+  # change to anchoredLambdaGrid() reddens it only rarely: every mutation of the
+  # helper tried during review left this block green, which is why the invariants
+  # block below exists and why a green run here is not licence to simplify the
+  # helper. Only once both are excluded does it mean glmnet has
+  # changed one of the two internals the bit-identity rests on -- lambda.interp()'s
+  # lambda[1] - lambda[k] normaliser, or the round trip a user-supplied lambda
+  # grid makes through the response scale. That distinction matters because in
+  # the litr weave this failure prints no test name and no assertion, arriving
+  # instead as the missing-'./cssr' red herring, so this comment is the whole
+  # diagnosis a reader gets.
+  #
+  # The reference MUST be built with do.call: exact=TRUE re-evaluates the fit's
+  # stored call through update(), and a call that stored the symbol `alpha`
+  # throws "object 'alpha' not found". That is why the production code used to
+  # build its fit that way, and this is now the one place that still exercises
+  # the fact.
+  pin <- function(X, y, L, alpha){
+    ref_fit <- do.call(glmnet::glmnet,
+                       list(x=X, y=y, family="gaussian", alpha=alpha))
+
+    # Two fixture rules, asserted rather than written down, because a rule
+    # nothing checks rots the first time someone adds a fixture. (i) L must sit
+    # at least 1e-14 relative away from every fitted penalty: closer than that,
+    # lambda.interp()'s approx() emits "collapsing to unique 'x' values" -- on
+    # the current, the anchored and the naive-truncation paths alike, so it is
+    # pre-existing rather than introduced here -- and importing it would move
+    # the suite's WARN 0 baseline. (ii) the reference must select more than one
+    # feature: an L above lambda_max clears rule (i) by orders of magnitude and
+    # selects nothing, which reduces the identity assertion to
+    # identical(integer(0), integer(0)) and makes it pass for the naive
+    # truncation this change exists to avoid, and indeed for any implementation
+    # at all. More than one rather than at least one because the naive grid's
+    # breaks concentrate in *which* of several features moves.
+    testthat::expect_gt(min(abs(L - ref_fit$lambda)/L), 1e-14)
+
+    ref <- as.integer(sort(unique(unlist(glmnet::predict.glmnet(ref_fit,
+      type="nonzero", s=L, exact=TRUE, x=X, y=y)))))
+    testthat::expect_gt(length(ref), 1L)
+
+    testthat::expect_identical(cssLasso(X=X, y=y,
+      lambda=if(alpha == 1) L else c(lambda=L, alpha=alpha)), ref)
+  }
+
+  # Exactly four fixtures, spanning the regimes that matter -- and ADDING MORE
+  # WOULD BUY NOTHING, which is the part worth knowing before anyone tries. This
+  # pin compares selected sets, via type="nonzero", while the property at stake
+  # is bit-identity of the coefficients. Measured: naive truncation breaks
+  # bit-identity on roughly 2% of off-grid penalties yet reproduced the
+  # reference's selected set in every one of 600 comparisons. So the limit is
+  # GRANULARITY, not sample size, and the enforcer is the invariants block. Four
+  # fixtures pin the regimes; a fortieth would pin nothing further.
+
+  # (1) An ordinary iid design.
+  set.seed(5011)
+  n <- 60
+  p <- 25
+  X_iid <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y_iid <- as.numeric(X_iid %*% c(rep(1.5, 3), rep(0, p - 3)) + stats::rnorm(n))
+  pin(X_iid, y_iid, 0.164396, 1)
+
+  # (2) A strongly correlated design, built the way the bundled-alpha block
+  # above builds one.
+  set.seed(5012)
+  n <- 100
+  p <- 20
+  rho <- 0.9
+  block <- 4
+  Z <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  common <- stats::rnorm(n)
+  for(j in 1:block){
+    Z[, j] <- sqrt(rho)*common + sqrt(1 - rho)*Z[, j]
+  }
+  y_corr <- as.numeric(Z %*% c(rep(1, block), rep(0, p - block)) +
+                       stats::rnorm(n))
+  pin(Z, y_corr, 0.355123, 1)
+
+  # (3) n < p, the regime cssr itself targets.
+  set.seed(5013)
+  n <- 40
+  p <- 120
+  X_np <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y_np <- as.numeric(X_np %*% c(rep(1.5, 4), rep(0, p - 4)) + stats::rnorm(n))
+  pin(X_np, y_np, 0.420866, 1)
+
+  # (4) alpha bundled into lambda at a value other than 1, so the elastic-net
+  # route is pinned too.
+  pin(Z, y_corr, 0.887808, 0.4)
+})
+
+testthat::test_that("cssLasso fits the anchored grid rather than refitting exactly (#125)", {
+  set.seed(5014)
+  n <- 80
+  p <- 40
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- as.numeric(X %*% c(rep(1.5, 5), rep(0, p - 5)) + stats::rnorm(n))
+  # Off-grid and mid-path, so the truncation is substantial.
+  L <- 0.153994
+
+  fA <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)
+
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ..., exact=FALSE){
+      seen <<- list(exact=exact, k=length(object$lambda))
+      return(list(NULL))
+    }, .package="glmnet")
+
+  # list(NULL) is the "nothing selected" shape, so cssLasso()'s own container
+  # handling runs to completion and returns integer(0); the assertions are about
+  # the call it made, not the value it returned.
+  invisible(cssLasso(X=X, y=y, lambda=L))
+
+  # WHAT THE SECOND ASSERTION PINS: routing -- that cssLasso() handed
+  # predict.glmnet() the anchored fit and not the full default path. It does NOT
+  # pin what the grid contains, and naming anchoredLambdaGrid() inside it makes
+  # it look as though it does. Production and the assertion call the same
+  # helper, so a wrong construction moves both sides together and leaves this
+  # block green; every helper mutant named in
+  # test_that("anchoredLambdaGrid holds its invariants (#125)") passes here. That
+  # block is what catches those.
+  #
+  # The form is expect_identical against the helper's own length rather than
+  # expect_lt(seen$k, length(fA$lambda)), which is red pre-change too but is
+  # coupled to the interior-padding constant: raising n_interior far enough
+  # would redden a test whose message points at the wrong thing, even though
+  # n_interior is a speed knob that cannot change any result.
+  testthat::expect_false(isTRUE(seen$exact))
+  testthat::expect_identical(seen$k, length(anchoredLambdaGrid(fA$lambda, L)))
+})
+
+testthat::test_that("anchoredLambdaGrid holds its invariants (#125)", {
+  # THE THREE MUTANTS THIS BLOCK EXISTS TO CATCH, and the assertion family that
+  # catches each -- all three are natural "simplifications" a future reader may
+  # try, and none of them is caught by
+  # test_that("cssLasso is byte-identical to the exact refit (#125)"):
+  #
+  #   dropping the re-appended final anchor          -> the last-element assertion
+  #   keeping the prefix through kt, not kt + 1      -> the prefix assertion
+  #   dropping the mid[mid < hi & mid > lo] filter   -> the strictly-decreasing
+  #                                                     and no-duplicates pair
+  #
+  # DO NOT claim this block catches a change to the interior *spacing* rule
+  # (geometric to arithmetic). Nothing catches it and nothing should: the
+  # coefficients at s depend only on the grid's two endpoints and the retained
+  # prefix, so the spacing of the filler is a pure speed choice.
+  #
+  # THE ULP-SPACED FIXTURE AT THE BOTTOM IS MANDATORY, and it is the reason the
+  # strictly-decreasing and no-duplicates pair is worth asserting at all.
+  # Without it those two cannot fail: on every other fixture here the shipped
+  # construction is well-formed by construction, and on the guard branch the
+  # helper returns unique(c(keep, lo)), which makes a no-duplicates assertion a
+  # guardrail blinded by its own input -- the same shape #188 removed from the
+  # "cssLasso works" block above rather than leave it looking like coverage.
+  # Every fixture below whose kept prefix already reaches the end of the
+  # augmented grid takes that branch, and so does the n_interior = 0 one. On a
+  # path whose entries are a few ULPs apart the pair becomes live, because that
+  # is where dropping the filter lets an interior point land on an anchor. All
+  # three of the fixture's parts are load-bearing: a fixed vector rather than a
+  # random draw (with an unseeded draw the detection is a coin flip), an
+  # interior s rather than one below the path or at 0 (those take the guard
+  # branch), and n_interior at the production 5, passed explicitly here rather
+  # than taken from the default. Measured, the detection threshold is 5 and not
+  # 2: below it the interior points are too sparse to land on an anchor and the
+  # pair goes blind again.
+  # `shortens` pins THE POINT OF THE CHANGE, which the five invariants below do
+  # not: g_full satisfies every one of them, because it IS the reference grid.
+  # Measured -- replacing this helper's body with return(g_full), i.e. removing
+  # the optimisation outright, left the whole suite byte-identical at
+  # [ FAIL 0 | WARN 0 | SKIP 0 | PASS 4262 ] before this argument existed. The
+  # routing block cannot cover the gap either: it compares the fitted grid's
+  # length against a call to this same helper, so a helper that stopped
+  # shortening would move both sides of that comparison together. Both
+  # directions are pinned, because returning the FULL grid is the correct
+  # answer on the guard branch and is worth asserting rather than tolerating.
+  inv <- function(lambda_path, s, n_interior=5L, shortens){
+    g <- anchoredLambdaGrid(lambda_path, s, n_interior)
+    g_full <- unique(rev(sort(c(s, lambda_path))))
+    k_full <- length(g_full)
+    m <- min(k_full, sum(g_full >= s) + 1L)
+
+    # First and last elements identical to the augmented grid's, which is what
+    # lambda.interp()'s lambda[1] - lambda[k] normaliser reads.
+    testthat::expect_identical(g[1], g_full[1])
+    testthat::expect_identical(g[length(g)], g_full[k_full])
+    # Well-formed as a glmnet lambda argument.
+    testthat::expect_true(all(diff(g) < 0))
+    testthat::expect_identical(length(unique(g)), length(g))
+    # The prefix through one element past s is carried over untouched.
+    testthat::expect_identical(g[1:m], g_full[1:m])
+    # And the grid is actually shorter than the one exact=TRUE would have refit
+    # over -- or exactly it, on the guard branch, where there is nothing to drop.
+    if(shortens){
+      testthat::expect_lt(length(g), k_full)
+    } else{
+      testthat::expect_identical(length(g), k_full)
+    }
+  }
+
+  # A synthetic decreasing path, in the geometric shape glmnet's default grid
+  # has. No RNG and no fit: this block is about the construction, not about
+  # glmnet.
+  lp <- exp(seq(log(2), log(0.01), length.out=30))
+
+  inv(lp, 5, shortens=TRUE)               # s above the largest penalty
+  inv(lp, 0.001, shortens=FALSE)          # s below the smallest: guard branch
+  inv(lp, lp[9], shortens=TRUE)           # s exactly on the path
+  inv(lp, 0, shortens=FALSE)              # s = 0: guard branch
+  inv(lp, sqrt(lp[9]*lp[10]), shortens=TRUE)  # mid-path, the production case
+  inv(lp, sqrt(lp[9]*lp[10]), 0L, shortens=TRUE)  # no interior padding
+  inv(0.5, 0.1, shortens=FALSE)           # length-1 path, s below it
+  inv(0.5, 5, shortens=FALSE)             # length-1 path, s above it
+  inv(0.5, 0.5, shortens=FALSE)           # length-1 path, s equal to it
+
+  # The ULP-spaced path: eight distinct, strictly decreasing doubles a few
+  # units in the last place apart, exercised at an on-grid s and at the
+  # production n_interior.
+  lp_ulp <- 1 + (8:1) * .Machine$double.eps
+  inv(lp_ulp, lp_ulp[4], 5L, shortens=FALSE)
+})
+
+testthat::test_that("cssLasso short-circuits when lambda is already on the path (#125)", {
+  set.seed(5011)
+  n <- 60
+  p <- 25
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- as.numeric(X %*% c(rep(1.5, 3), rep(0, p - 3)) + stats::rnorm(n))
+
+  # do.call here is habit rather than necessity -- alpha is a literal, and this
+  # block's s values are all ON the fitted grid, so predict.glmnet(exact=TRUE)
+  # returns without ever reaching update(). The identity block's claim to be the
+  # one place that still exercises the stored-call fact is therefore accurate.
+  fA <- do.call(glmnet::glmnet, list(x=X, y=y, family="gaussian", alpha=1))
+  # Rank 1 is in the fixture set deliberately: when the short-circuit is
+  # deleted, the resulting selected-set breaks concentrate at the top of the
+  # path.
+  on_grid <- fA$lambda[c(1, 12)]
+
+  for(L in on_grid){
+    ref <- as.integer(sort(unique(unlist(glmnet::predict.glmnet(fA,
+      type="nonzero", s=L, exact=TRUE, x=X, y=y)))))
+    testthat::expect_identical(cssLasso(X=X, y=y, lambda=L), ref)
+  }
+
+  # The mock is installed here rather than at the top of the block because it
+  # would otherwise replace the predict.glmnet() that computes the reference
+  # above; local_mocked_bindings() takes effect from this line to the end of the
+  # block.
+  #
+  # This assertion and the identity assertions above are BOTH live, and an
+  # earlier revision of this comment claimed the identity ones were not.
+  # Measured against a [ FAIL 0 | PASS 4262 ] control, deleting the short-circuit
+  # reddens three of this block's assertions, the rank-1 identity comparison
+  # among them -- which is precisely why the comment above puts rank 1 in the
+  # fixture set, and the two statements contradicted each other until now. What
+  # this assertion adds is a cause rather than a symptom: it names the fit handed
+  # to predict.glmnet(), so with the short-circuit the default path arrives
+  # untouched and without it a second, shorter fit does. Do not trim the rank-1
+  # fixture as redundant -- it is the only value-level detector for this route.
+  seen <- NULL
+  testthat::local_mocked_bindings(
+    predict.glmnet = function(object, ...){
+      seen <<- length(object$lambda)
+      return(list(NULL))
+    }, .package="glmnet")
+
+  for(L in on_grid){
+    invisible(cssLasso(X=X, y=y, lambda=L))
+    testthat::expect_identical(seen, length(fA$lambda))
+  }
+})
+
+testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
+  # A design with max|X'y| EXACTLY zero -- paired +1/-1 integer rows, the #157
+  # construction. Not merely orthogonal and not numerically small: measured, an
+  # orthonormal X with a generic y gives an ordinary path, and so does one with
+  # max|X'y| at 1e-16. Only exact zero degenerates the path.
+  y <- as.double(c(1, 1, 1, 1, -1, -1, -1, -1))
+  X <- cbind(c(1,-1,0,0,0,0,0,0), c(0,0,1,-1,0,0,0,0),
+      c(0,0,0,0,1,-1,0,0), c(0,0,0,0,0,0,1,-1))
+  storage.mode(X) <- "double"
+  testthat::expect_identical(max(abs(crossprod(X, y))), 0)
+
+  # The path really is degenerate. These two assertions are the upstream-drift
+  # detector: if a future glmnet stops returning NaN-then-zeros here, they fail
+  # and the comment in anchoredLambdaGrid() about this case needs re-deriving.
+  lam <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)$lambda
+  testthat::expect_true(anyNA(lam))
+  testthat::expect_true(any(lam == 0, na.rm=TRUE))
+
+  # And cssLasso() returns an empty selection rather than erroring. This is the
+  # assertion that holds the no-runtime-validation decision: adding
+  # stopifnot(all(lasso_model$lambda > 0)) -- or all(is.finite(.)), which also
+  # fails here -- reddens this line. Use lambda strictly above 0; at exactly 0
+  # this design raises a PRE-EXISTING interpolation error on both this branch
+  # and origin/main, which is not what this block is about.
+  testthat::expect_identical(cssLasso(X=X, y=y, lambda=0.01), integer(0))
+})
+
 testthat::test_that("getClusterSelMatrix works", {
   good_clusters <- list(red_cluster=1L:5L,
                         green_cluster=6L:8L, blue_clust=9L)
