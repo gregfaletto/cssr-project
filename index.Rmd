@@ -2402,6 +2402,16 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
 #' @keywords internal
 #' @noRd
 snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
+    # The one thing this function does check, and it is about s rather than
+    # lambda_fitted, so it does not touch the no-validation decision recorded
+    # below. The sibling anchoredLambdaGrid(lambda_path, s, n_interior) has the
+    # same arity and the same second formal and sits in the chunk above, so a
+    # crossed call at cssLasso()'s site is easy to write; every crossing reddens
+    # the suite, but the one that hands THIS function the anchored site's
+    # arguments survives on a single incidental assertion without this line.
+    # Asserting a scalar s makes that crossing fail directly instead.
+    stopifnot(length(s) == 1L)
+
     # WHY A TOLERANCE OF A FEW ULP IS THE RIGHT SIZE, and why that is a claim
     # about IEEE-754 rather than about this machine. glmnet() passes a supplied
     # penalty grid through as ulam = as.double(rev(sort(lambda))) and reports
@@ -9062,7 +9072,9 @@ nonzero set rather than a blend of two.
 
 ```{r}
 testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
-  # THE RED-GREEN TEST FOR #199, and the only block that can be one. The
+  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names --
+  # though it is not the only block that reddens under the mutation, as the last
+  # paragraph of this comment records. The
   # mutation to score is "helper present, call site absent": reverting the
   # source hunks outright deletes snapLambdaToGrid(), so
   # test_that("snapLambdaToGrid holds its invariants (#199)") fails with "could

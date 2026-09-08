@@ -16,16 +16,30 @@
   floating-point debris from interpolating between two lasso-path
   columns is no longer selected
   ([\#199](https://github.com/gregfaletto/cssr-project/issues199)). This
-  changes which features
+  supersedes the identity above, which held against the refit as it then
+  behaved. It is uncommon, and most likely where the penalty sits near
+  the top of the lasso path fitted to a single subsample.
+
+  **At the
   [`cssLasso()`](https://gregfaletto.github.io/cssr-project/reference/cssLasso.md)
-  and
+  level the change can only remove a feature.** The interpolated
+  coefficient vector’s support is a superset of the solved column’s,
+  because a feature carried only by the adjacent column leaks in at
+  around `1e-17` and is selected on `abs(x) > 0`.
+
+  **At the
   [`css()`](https://gregfaletto.github.io/cssr-project/reference/css.md)
-  return – superseding the identity above, which held against the refit
-  as it then behaved. It is rare, and every change observed was a
-  feature no longer being selected. It can arise anywhere on the lasso
-  path, more often the nearer the penalty sits to the top of the path
-  fitted to a single subsample, so it is most visible on small or
-  weak-signal data.
+  level it can go either way**, and callers of
+  [`cssSelect()`](https://gregfaletto.github.io/cssr-project/reference/cssSelect.md)
+  and
+  [`cssPredict()`](https://gregfaletto.github.io/cssr-project/reference/cssPredict.md)
+  should know it. A removal upstream lowers a cluster’s selection
+  proportion, which can reach a `max_num_clusts` tie;
+  `getSelectedClusters()` resolves such a tie by returning *more*
+  clusters and warning. So a returned cluster set can widen, the
+  `Returning more than max_num_clusts` warning can fire where it did not
+  before, and under `options(warn = 2)` a call that returned a result
+  can now stop with an error.
 
 This file starts here rather than covering the package’s whole history;
 for changes before this point, see the closed pull requests and the

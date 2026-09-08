@@ -1858,7 +1858,9 @@ testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
 })
 
 testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
-  # THE RED-GREEN TEST FOR #199, and the only block that can be one. The
+  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names --
+  # though it is not the only block that reddens under the mutation, as the last
+  # paragraph of this comment records. The
   # mutation to score is "helper present, call site absent": reverting the
   # source hunks outright deletes snapLambdaToGrid(), so
   # test_that("snapLambdaToGrid holds its invariants (#199)") fails with "could
