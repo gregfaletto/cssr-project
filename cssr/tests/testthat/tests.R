@@ -1858,9 +1858,10 @@ testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
 })
 
 testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
-  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names --
-  # though it is not the only block that reddens under the mutation, as the last
-  # paragraph of this comment records. The
+  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names. It is
+  # not the only block that reddens under the mutation -- measured, this block's
+  # wiring assertion and the end-to-end block's structural assertion both go red
+  # and nothing else in the suite moves. The
   # mutation to score is "helper present, call site absent": reverting the
   # source hunks outright deletes snapLambdaToGrid(), so
   # test_that("snapLambdaToGrid holds its invariants (#199)") fails with "could
@@ -1963,6 +1964,15 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
   # would fail with "could not find function". The block that discharges the
   # red-green obligation is
   # test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
+  #
+  # The scalar precondition, which without this assertion has no red-green cover
+  # at all: measured, deleting stopifnot(length(s) == 1L) from the helper reddens
+  # nothing in the suite, so it could be weakened later in silence. fixed = TRUE
+  # is mandatory -- the message contains ( and ), so it does not match itself as
+  # a regex (grepl(m, m) is FALSE), and at edition 2 a mismatched expect_error()
+  # aborts the whole render behind gotcha 1's missing-directory error.
+  testthat::expect_error(snapLambdaToGrid(c(1, 0.5), c(1, 0.5)),
+    "length(s) == 1L is not TRUE", fixed=TRUE)
   #
   # TWO MUTANTS DELIBERATELY HAVE NO ASSERTION HERE, so that the next reader
   # does not add one. Replacing the tolerance comparison's <= with < is a

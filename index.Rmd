@@ -2404,12 +2404,20 @@ anchoredLambdaGrid <- function(lambda_path, s, n_interior=5L){
 snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     # The one thing this function does check, and it is about s rather than
     # lambda_fitted, so it does not touch the no-validation decision recorded
-    # below. The sibling anchoredLambdaGrid(lambda_path, s, n_interior) has the
-    # same arity and the same second formal and sits in the chunk above, so a
-    # crossed call at cssLasso()'s site is easy to write; every crossing reddens
-    # the suite, but the one that hands THIS function the anchored site's
-    # arguments survives on a single incidental assertion without this line.
-    # Asserting a scalar s makes that crossing fail directly instead.
+    # below. WHAT IT ACTUALLY BUYS, measured rather than reasoned, because an
+    # earlier revision of this comment claimed the wrong crossing: the sibling
+    # anchoredLambdaGrid(lambda_path, s, n_interior) has the same arity and the
+    # same second formal and sits in the chunk above, so a crossed call is easy
+    # to write. Handing THIS function the anchored site's arguments passes a
+    # scalar s, so this line does not fire and the suite output is byte-identical
+    # with and without it -- that crossing is caught by the two #199 red-green
+    # assertions, not by this. What this line converts is the TRANSPOSED call,
+    # where s is the fitted path: without it R reports
+    # 'length = 45' in coercion to 'logical(1)' from inside which.min(); with it
+    # the failure names the precondition and the line that holds it. No
+    # legitimate caller can reach it -- checkCssLassoInputs() rejects any lambda
+    # whose length is not 1 or 2, and the length-2 form is unpacked before the
+    # call site -- so it is a tripwire, not a runtime check.
     stopifnot(length(s) == 1L)
 
     # WHY A TOLERANCE OF A FEW ULP IS THE RIGHT SIZE, and why that is a claim
@@ -9072,9 +9080,10 @@ nonzero set rather than a blend of two.
 
 ```{r}
 testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
-  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names --
-  # though it is not the only block that reddens under the mutation, as the last
-  # paragraph of this comment records. The
+  # THE RED-GREEN TEST FOR #199, and the one acceptance criterion 5 names. It is
+  # not the only block that reddens under the mutation -- measured, this block's
+  # wiring assertion and the end-to-end block's structural assertion both go red
+  # and nothing else in the suite moves. The
   # mutation to score is "helper present, call site absent": reverting the
   # source hunks outright deletes snapLambdaToGrid(), so
   # test_that("snapLambdaToGrid holds its invariants (#199)") fails with "could
@@ -9181,6 +9190,15 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
   # would fail with "could not find function". The block that discharges the
   # red-green obligation is
   # test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
+  #
+  # The scalar precondition, which without this assertion has no red-green cover
+  # at all: measured, deleting stopifnot(length(s) == 1L) from the helper reddens
+  # nothing in the suite, so it could be weakened later in silence. fixed = TRUE
+  # is mandatory -- the message contains ( and ), so it does not match itself as
+  # a regex (grepl(m, m) is FALSE), and at edition 2 a mismatched expect_error()
+  # aborts the whole render behind gotcha 1's missing-directory error.
+  testthat::expect_error(snapLambdaToGrid(c(1, 0.5), c(1, 0.5)),
+    "length(s) == 1L is not TRUE", fixed=TRUE)
   #
   # TWO MUTANTS DELIBERATELY HAVE NO ASSERTION HERE, so that the next reader
   # does not add one. Replacing the tolerance comparison's <= with < is a

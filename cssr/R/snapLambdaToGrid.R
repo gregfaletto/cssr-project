@@ -27,12 +27,20 @@
 snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     # The one thing this function does check, and it is about s rather than
     # lambda_fitted, so it does not touch the no-validation decision recorded
-    # below. The sibling anchoredLambdaGrid(lambda_path, s, n_interior) has the
-    # same arity and the same second formal and sits in the chunk above, so a
-    # crossed call at cssLasso()'s site is easy to write; every crossing reddens
-    # the suite, but the one that hands THIS function the anchored site's
-    # arguments survives on a single incidental assertion without this line.
-    # Asserting a scalar s makes that crossing fail directly instead.
+    # below. WHAT IT ACTUALLY BUYS, measured rather than reasoned, because an
+    # earlier revision of this comment claimed the wrong crossing: the sibling
+    # anchoredLambdaGrid(lambda_path, s, n_interior) has the same arity and the
+    # same second formal and sits in the chunk above, so a crossed call is easy
+    # to write. Handing THIS function the anchored site's arguments passes a
+    # scalar s, so this line does not fire and the suite output is byte-identical
+    # with and without it -- that crossing is caught by the two #199 red-green
+    # assertions, not by this. What this line converts is the TRANSPOSED call,
+    # where s is the fitted path: without it R reports
+    # 'length = 45' in coercion to 'logical(1)' from inside which.min(); with it
+    # the failure names the precondition and the line that holds it. No
+    # legitimate caller can reach it -- checkCssLassoInputs() rejects any lambda
+    # whose length is not 1 or 2, and the length-2 form is unpacked before the
+    # call site -- so it is a tripwire, not a runtime check.
     stopifnot(length(s) == 1L)
 
     # WHY A TOLERANCE OF A FEW ULP IS THE RIGHT SIZE, and why that is a claim
