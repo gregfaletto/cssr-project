@@ -1528,6 +1528,18 @@ testthat::test_that("cssLasso returns an empty selection under either glmnet sha
 })
 
 testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
+  # WHAT THIS PINS, since #199 narrowed it: cssLasso() is identical to the exact
+  # refit EXCEPT where that refit's own interpolation produces sub-ULP debris.
+  # Since #199, cssLasso() predicts at the penalty glmnet returned rather than at
+  # the one it was asked for, so where the two differ in their last bits it reads
+  # a solved column and the reference reads a blend of two -- and the blend can
+  # carry a coefficient around 1e-17 that the solved column does not.
+  # test_that("cssLasso returns a solved column rather than a blend (#199)")
+  # pins where that divergence occurs. All four fixtures below round-trip
+  # exactly, which is why none of them diverges and why their assertions did not
+  # move; a fixture whose round trip is inexact WILL redden this block, and that
+  # is the correct outcome rather than a reason to widen the pin.
+  #
   # A PIN, NOT A RED-GREEN TEST -- like the second and third #188 blocks above,
   # it passes on the pre-change source, because before the rewrite cssLasso()
   # *was* this reference. The block that fails on the pre-change source is
@@ -1541,7 +1553,9 @@ testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
   # invariants block. A green run here is not licence to simplify the helper.
   #
   # IF THIS BLOCK REDDENS, rule out a local change first -- most likely to
-  # cssLasso()'s on-grid branch predicate, which reddens this block directly. A
+  # cssLasso()'s on-grid branch predicate, which reddens this block directly, or
+  # to snapLambdaToGrid(), whose tolerance decides which penalties cssLasso()
+  # treats as an exact grid hit and so which of them can still diverge here. A
   # change to anchoredLambdaGrid() reddens it only rarely: every mutation of the
   # helper tried during review left this block green, which is why the invariants
   # block below exists and why a green run here is not licence to simplify the
@@ -1840,6 +1854,250 @@ testthat::test_that("cssLasso survives a degenerate lasso path (#125)", {
   testthat::expect_identical(cssLasso(X=X, y=y, lambda=0.01), integer(0))
 })
 
+testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
+  # THE RED-GREEN TEST FOR #199, and the only block that can be one. The
+  # mutation to score is "helper present, call site absent": reverting the
+  # source hunks outright deletes snapLambdaToGrid(), so
+  # test_that("snapLambdaToGrid holds its invariants (#199)") fails with "could
+  # not find function", which is the symbol's absence speaking rather than an
+  # assertion observing behaviour. Only a block that drives cssLasso() sees the
+  # wiring. Measured under that mutation: this block's wiring assertion and
+  # test_that("cssLasso returns a solved column rather than a blend (#199)")'s
+  # structural assertion are the only two things in the suite that redden.
+  #
+  # The blend is reached by MOCKING rather than by a live fixture, because
+  # glmnet echoes this fixture's grid back verbatim on this machine, so an
+  # unmocked wiring assertion would be green before the change here. Mocking an
+  # external package's binding is safe in the bare weave; mocking a cssr
+  # internal is not, which is why the invariants block calls the helper
+  # directly instead.
+  set.seed(5014)
+  n <- 80
+  p <- 40
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- as.numeric(X %*% c(rep(1.5, 5), rep(0, p - 5)) + stats::rnorm(n))
+  # FIXTURE CONSTRAINT, asserted rather than written down: L must be OFF the
+  # first fit's own grid, so the refit route runs and the nudge below can
+  # apply at all. An on-grid L short-circuits, the second glmnet() call never
+  # happens, and the wiring assertion then reads TRUE wired and unwired alike.
+  L <- 0.153994
+  m0 <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)
+  testthat::expect_identical(match(L, m0$lambda, 0L), 0L)
+
+  real_glmnet <- glmnet::glmnet  # captured BEFORE local_mocked_bindings(), which
+  # rebinds inside glmnet's namespace: glmnet::, glmnet::: and getFromNamespace()
+  # inside a mock all resolve to the MOCK and recurse until the C stack dies.
+  # Measured, all three. In the weave that error is thrown from test_that() at
+  # top level and arrives as the missing-'./cssr' red herring.
+
+  seen_grid <- NULL
+  seen_s <- NULL
+  testthat::local_mocked_bindings(
+    glmnet = function(...){
+      f <- real_glmnet(...)
+      # The nudge is what the response-scale round trip does to a supplied
+      # penalty, made deterministic. It applies only to the SECOND fit, whose
+      # reported $lambda is the vector cssLasso() now reads; the condition is a
+      # claim about how cssLasso() spells that call, which is why the negative
+      # control below is not optional. The mock must delegate rather than
+      # fabricate a fit, because cssLasso() runs stopifnot(all.equal(class(...)))
+      # on the first one.
+      #
+      # THE CONSTANT IS 2*eps AND IS BOUNDED ON BOTH SIDES. What is multiplied
+      # is glmnet's ECHO of L, not L: writing u for one ULP of L and m for its
+      # significand, fl((L - u)*(1 + eps)) == L exactly whenever m < 1.5, and
+      # this fixture's L = 0.153994 has m = 1.2320. So on a platform whose echo
+      # sits an ULP below this machine's, a 1*eps nudge lands back on L, the
+      # negative control below is red on correct code, and the wiring assertion
+      # goes green with the wiring removed. Measured over 6e5 enumerated
+      # (magnitude, echo) pairs inside glmnet's round-trip bound: 1*eps
+      # collapses in about one in six, 2*eps in none, and 3*eps never collapses
+      # but reaches an offset of 4.286 eps*L, outside the helper's n_ulp = 4.
+      # More is not safer here.
+      if(!is.null(list(...)$lambda))
+        f$lambda <- f$lambda*(1 + 2*.Machine$double.eps)
+      f
+    },
+    predict.glmnet = function(object, ..., s){
+      seen_grid <<- object$lambda
+      seen_s <<- s
+      return(list(NULL))
+    }, .package="glmnet")
+
+  # list(NULL) is the "nothing selected" shape, so cssLasso()'s container
+  # handling runs to completion; the assertions are about the call it made.
+  invisible(cssLasso(X=X, y=y, lambda=L))
+
+  # THE INSTRUMENT'S OWN NEGATIVE CONTROL, and it is not optional: it says the
+  # requested penalty is absent from the grid cssLasso() predicted from -- by
+  # the nudge, by glmnet's natural round trip, or both. Without it the block has
+  # two measured ways of passing while checking nothing. An on-grid L
+  # short-circuits past the nudge (this reads 10 there), and a mock whose firing
+  # condition stopped matching how cssLasso() spells its second call nudges
+  # nothing (reads 27). It reads 0 only in the state this block exists to test.
+  testthat::expect_identical(match(L, seen_grid, 0L), 0L)
+  # THE WIRING ASSERTION: the penalty handed to predict.glmnet() is an element
+  # of the grid predicted from, which is exactly what makes lambda.interp()
+  # report an exact hit. FALSE without the call site in cssLasso(), TRUE with it.
+  testthat::expect_gt(match(seen_s, seen_grid, 0L), 0L)
+})
+
+testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
+  # THIS BLOCK PINS THE ARITHMETIC, NOT THE WIRING, and it cannot pin the
+  # wiring: reverting #199's source hunks deletes the function it calls, so it
+  # would fail with "could not find function". The block that discharges the
+  # red-green obligation is
+  # test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
+  #
+  # TWO MUTANTS DELIBERATELY HAVE NO ASSERTION HERE, so that the next reader
+  # does not add one. Replacing the tolerance comparison's <= with < is a
+  # measure-zero boundary no reachable input sits on. And a very large n_ulp is
+  # harmless on cssLasso()'s ordinary route, because anchoredLambdaGrid() has
+  # put s in the grid and which.min() therefore picks s's own echo whatever the
+  # tolerance admits.
+  eps <- .Machine$double.eps
+
+  # One ULP below a grid entry, one ULP above, and an exact hit. The offsets are
+  # built as g*(1 +- eps) rather than typed as literals so the fixture states
+  # the property: the result is 1 to 2 ULP of g at any magnitude and can never
+  # be zero for a normal double, so it is inside n_ulp = 4 by construction
+  # rather than by measurement.
+  g <- c(1.0, 0.5)
+  testthat::expect_identical(snapLambdaToGrid(g, 1.0*(1 + eps)), 1.0)
+  testthat::expect_identical(snapLambdaToGrid(g, 1.0*(1 - eps)), 1.0)
+  testthat::expect_identical(snapLambdaToGrid(g, 1.0), 1.0)
+  testthat::expect_identical(snapLambdaToGrid(g, 0.5*(1 - eps)), 0.5)
+
+  # THE ONLY FIXTURE THAT MAKES THE TOLERANCE'S * s SCALING LOAD-BEARING, and
+  # its magnitude is the point of it. Measured: an absolute-tolerance mutant
+  # (n_ulp*eps with the * s dropped) is INDISTINGUISHABLE from the correct
+  # helper at magnitude 4, and first diverges at 8 -- on grid c(8, 4) the
+  # correct helper returns 8 and the mutant returns 8.0000000000000018, and here
+  # it returns 1000000.0000000002. Every other fixture in this block sits at
+  # O(1), and cssLasso()'s penalty is on the response scale, so a user with a
+  # larger response is exactly who the mutant silently stops snapping for. DO
+  # NOT "simplify" this to a friendlier magnitude.
+  testthat::expect_identical(snapLambdaToGrid(c(1e6, 5e5), 1e6*(1 + eps)), 1e6)
+
+  # A penalty between two well-separated entries, ON BOTH SIDES. Both are needed
+  # because dropping abs() from the tolerance comparison is a genuine one-sided
+  # defect and only the below case catches it: measured on this grid, s = 0.7
+  # (nearest entry 0.5, below it) reddens that mutant while s = 0.8 (nearest
+  # entry 1.0, above it) leaves it green.
+  testthat::expect_identical(snapLambdaToGrid(g, 0.7), 0.7)
+  testthat::expect_identical(snapLambdaToGrid(g, 0.8), 0.8)
+
+  # A length-1 lambda_fitted, which has the same asymmetry: 0.9 is the case
+  # that catches the dropped-abs() mutant.
+  testthat::expect_identical(snapLambdaToGrid(0.5, 0.9), 0.9)
+  testthat::expect_identical(snapLambdaToGrid(0.5, 0.1), 0.1)
+  testthat::expect_identical(snapLambdaToGrid(0.5, 0.5*(1 + eps)), 0.5)
+
+  # NaN mixed with numbers is what glmnet returns on the degenerate path
+  # test_that("cssLasso survives a degenerate lasso path (#125)") drives, and
+  # which.min() simply ignores it. All-NaN and empty are the two inputs that
+  # make which.min() return integer(0), where if(logical(0)) would abort: they
+  # are what the length(j) == 1L clause is for. Neither is reachable through
+  # cssLasso() today, but the helper is stated to survive them.
+  testthat::expect_identical(snapLambdaToGrid(c(NaN, 1.0, 0.5), 1.0*(1 + eps)),
+                             1.0)
+  testthat::expect_identical(snapLambdaToGrid(c(NaN, NaN), 0.3), 0.3)
+  testthat::expect_identical(snapLambdaToGrid(numeric(0), 0.3), 0.3)
+
+  # s = 0 is permitted by checkCssLassoInputs(), and there the relative
+  # tolerance collapses to exactly zero, so only an exact zero in lambda_fitted
+  # can match. Both grids therefore return 0 and the pair cannot be told apart
+  # by value -- one returns the grid's own zero and the other returns s. What it
+  # pins is that neither path errors and neither drifts off zero.
+  testthat::expect_identical(snapLambdaToGrid(c(1.0, 0.5, 0), 0), 0)
+  testthat::expect_identical(snapLambdaToGrid(c(1.0, 0.5), 0), 0)
+})
+
+testthat::test_that("cssLasso returns a solved column rather than a blend (#199)", {
+  # WHAT THIS BLOCK DOES AND DOES NOT COVER, stated the way the #125 blocks
+  # state their division of labour, because a future reader who trims something
+  # on the strength of three green blocks is the failure mode.
+  #
+  #  - j below is a DELIBERATE SECOND COPY of the argmin, hard-coded rather than
+  #    a call to snapLambdaToGrid(). That is why a production change to the
+  #    argmin -- which.max, a dropped abs(), an off-by-one -- moves the result
+  #    without moving the reference and is caught here. DO NOT "de-duplicate" it
+  #    into a helper call; doing so is exactly what blinds this block.
+  #  - It CANNOT see a tolerance that is too permissive, by construction: the
+  #    reference is the nonzero set of the column nearest L, which is what a
+  #    helper with no tolerance at all produces, so every mutant that widens the
+  #    tolerance moves both sides together. The invariants block owns tolerance.
+  #  - It does not rebuild the anchored grid, so it is not coupled to production
+  #    through anchoredLambdaGrid(). It IS blind to a change in which fit is
+  #    routed to predict.glmnet(), since it reads its reference off the very
+  #    object cssLasso() chose -- and that has independent cover: measured,
+  #    making cssLasso() never refit reddens
+  #    test_that("cssLasso is byte-identical to the exact refit (#125)"),
+  #    test_that("cssLasso fits the anchored grid rather than refitting exactly
+  #    (#125)") and test_that("cssLasso survives a degenerate lasso path
+  #    (#125)").
+  #  - The one residual coupling, named rather than denied: the assertion embeds
+  #    the same belief the helper embeds, that the right column is the argmin of
+  #    |grid - L|. If that belief were wrong, both would move together. That is
+  #    inherent to a structural assertion of this shape.
+  set.seed(2019)
+  n <- 40
+  p <- 30
+  X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
+  y <- as.numeric(X %*% c(rep(1.5, 4), rep(0, p - 4)) + stats::rnorm(n))
+  # Off the first fit's grid, so the refit route runs, and near the top of the
+  # path, which is the only place a blend can materialise at all:
+  # lambda.interp() normalises by (lambda[1] - s), and that subtraction
+  # annihilates an ULP-scale perturbation of an s far below lambda[1].
+  L <- 1.6415147022263146
+
+  m0 <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)
+  testthat::expect_identical(match(L, m0$lambda, 0L), 0L)
+
+  real_glmnet <- glmnet::glmnet          # captured BEFORE local_mocked_bindings() --
+  real_pred   <- glmnet::predict.glmnet  # `glmnet::` inside a mock reaches the MOCK
+  seen_fit <- NULL
+  testthat::local_mocked_bindings(
+    glmnet = function(...){
+      f <- real_glmnet(...)
+      if(!is.null(list(...)$lambda))
+        f$lambda <- f$lambda*(1 + 2*.Machine$double.eps)
+      f
+    },
+    predict.glmnet = function(object, ...){
+      seen_fit <<- object
+      real_pred(object, ...)
+    }, .package="glmnet")
+  got <- cssLasso(X=X, y=y, lambda=L)
+
+  # THE PERTURBATION IS SYNTHETIC ON PURPOSE. Driving the fixture's own natural
+  # round trip would put a platform-dependent assertion inside a gating CI
+  # matrix: fl(fl(s/ys)*ys) is exact for about 90% of random pairs and this
+  # fixture is in the inexact 10%, so an ULP move in the response scale -- which
+  # glmnet computes in Fortran, where -ffp-contract=fast permits FMA -- redraws
+  # it with roughly a nine-in-ten chance of becoming exact. The constant is
+  # 2*eps for the reason the routing block's comment gives. The cost, recorded
+  # rather than hidden: no gating assertion anywhere exercises glmnet's natural
+  # round trip. Note also that seen_fit is not an object glmnet ever produced --
+  # it carries a synthetic $lambda and a real $beta, and the assertion reads the
+  # real half.
+  #
+  # The anti-vacuity guard, and it is about the fit cssLasso() actually
+  # predicted from, which is why that fit is captured rather than rebuilt: the
+  # requested penalty is absent from that grid, by the nudge, by the natural
+  # round trip, or both. If the nudge ever stopped applying, L would be in the
+  # grid, frac would be exactly 1, and this block would return the same answer
+  # before and after the change.
+  testthat::expect_identical(match(L, seen_fit$lambda, 0L), 0L)
+  j <- which.min(abs(seen_fit$lambda - L))
+  # unname() IS LOAD-BEARING, NOT TIDINESS: seen_fit$beta is a dgCMatrix whose
+  # rownames glmnet sets to V1 ... Vp, so which() returns a NAMED integer vector
+  # while cssLasso() returns an unnamed one, and the assertion without it is red
+  # on correct code at both editions -- reporting a names diff, whose first
+  # reading is "the snap did not work".
+  testthat::expect_identical(got, unname(which(seen_fit$beta[, j] != 0)))
+})
+
 testthat::test_that("getClusterSelMatrix works", {
   good_clusters <- list(red_cluster=1L:5L,
                         green_cluster=6L:8L, blue_clust=9L)
@@ -2112,13 +2370,41 @@ testthat::test_that("duplicate clusters are removed to match the docs (#156)", {
 
   # (iii) cssSelect and cssPredict route through css -> checkCssInputs, so they
   # inherit the fix: a named duplicate cluster runs without error.
-  sel <- cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3))
+  #
+  # These two calls report a max_num_clusts tie on this fixture -- cssPredict()
+  # on this machine, since #199's penalty snap changed which features cssLasso()
+  # returns here and dropped the modal cluster's selection proportion into a
+  # tie. It is not asserted, because whether the tie occurs depends on the
+  # estimated model size and so on glmnet's lasso path rather than on cssr; the
+  # warning has deterministic coverage in "checkSelectedClusters works" and in
+  # test_that("plot.cssr surfaces the tie-breach warning (#159c)"). Muffling just
+  # that one message leaves every other warning in the block visible (#186,
+  # #199). BOTH calls are wrapped, not just the one that ties here: across 40
+  # jittered draws of this fixture the tie lands on cssSelect() in 2 of them and
+  # on cssPredict() in 0, so a one-call muffle reddens on a platform whose
+  # glmnet path differs slightly. The assertions below are untouched -- they are
+  # about well-formedness of the returns, which the tie is orthogonal to.
+  sel <- withCallingHandlers(
+    cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3)),
+    warning = function(w) {
+      if (grepl("Returning more than max_num_clusts", conditionMessage(w),
+                fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   testthat::expect_identical(names(sel), c("selected_clusts", "selected_feats",
                                            "weights"))
 
   test_x <- matrix(stats::rnorm(5*11), nrow=5, ncol=11)
-  preds <- cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
-                      clusters=list(myclust=2:3, dup=2:3))
+  preds <- withCallingHandlers(
+    cssPredict(X_train_selec=x, y_train_selec=y, X_test=test_x,
+               clusters=list(myclust=2:3, dup=2:3)),
+    warning = function(w) {
+      if (grepl("Returning more than max_num_clusts", conditionMessage(w),
+                fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    })
   testthat::expect_true(is.numeric(preds))
   testthat::expect_equal(length(preds), 5)
 

@@ -72,6 +72,8 @@ cssLasso <- function(X, y, lambda){
     # supplied grid point as well as the first, and dropping it changes the
     # answer in its last bits. anchoredLambdaGrid()'s n_interior argument is a
     # speed constant only; the coefficients here do not depend on it (#125).
+    # The penalty finally predicted at is not lambda but snapLambdaToGrid()'s
+    # reading of it off the fit; the comment at that call says why (#199).
     #
     # The short-circuit is a correctness requirement, not an optimisation.
     # Removing it changes the selected set on the on-grid route -- concentrated
@@ -88,7 +90,29 @@ cssLasso <- function(X, y, lambda){
             alpha=alpha, lambda=anchoredLambdaGrid(lasso_model$lambda, lambda))
     }
 
-    pred <- glmnet::predict.glmnet(fit_at_lambda, type="nonzero", s=lambda)
+    # Predict at the penalty this fit actually holds, not at the one we asked
+    # for. glmnet reports a supplied grid back through the response scale --
+    # divided by it and multiplied by it again -- so the entry that comes back
+    # can sit an ULP away from what went in. predict.glmnet() with a numeric s
+    # does not solve anything: it calls glmnet:::lambda.interp(), which locates
+    # s between two grid columns and returns left, right and frac, and then
+    # forms beta[, left]*frac + beta[, right]*(1 - frac). An ULP miss near the
+    # top of the path leaves frac a hair short of 1, and every coefficient the
+    # neighbouring column has and this one does not leaks in at the scale of
+    # that hair -- around 1e-17, and SELECTED, because nonzeroCoef()'s
+    # membership test is abs(x) > 0 with no tolerance. Handing s the fit's own
+    # entry makes lambda.interp() report left == right with frac == 1, so what
+    # comes back is the solved column with its exact zeros (#199).
+    #
+    # Applied on BOTH routes rather than only on the refit route. On the
+    # short-circuit route match(lambda, lasso_model$lambda, 0L) > 0 has already
+    # established an exact hit, so the helper returns lambda unchanged there and
+    # test_that("cssLasso short-circuits when lambda is already on the path
+    # (#125)") stays green with its assertions untouched -- which is how that
+    # claim is confirmed, by running it rather than by asserting it here.
+    s <- snapLambdaToGrid(fit_at_lambda$lambda, lambda)
+
+    pred <- glmnet::predict.glmnet(fit_at_lambda, type="nonzero", s=s)
 
     # predict.glmnet(type="nonzero") has never had a stable container. glmnet
     # 4.x returned a data.frame whenever apply() could simplify -- i.e. whenever
