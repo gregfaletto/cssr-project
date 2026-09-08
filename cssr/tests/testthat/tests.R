@@ -1993,12 +1993,15 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
   testthat::expect_identical(snapLambdaToGrid(0.5, 0.1), 0.1)
   testthat::expect_identical(snapLambdaToGrid(0.5, 0.5*(1 + eps)), 0.5)
 
-  # NaN mixed with numbers is what glmnet returns on the degenerate path
-  # test_that("cssLasso survives a degenerate lasso path (#125)") drives, and
-  # which.min() simply ignores it. All-NaN and empty are the two inputs that
-  # make which.min() return integer(0), where if(logical(0)) would abort: they
-  # are what the length(j) == 1L clause is for. Neither is reachable through
-  # cssLasso() today, but the helper is stated to survive them.
+  # NaN mixed with numbers is the shape glmnet's FIRST fit returns on the
+  # degenerate path test_that("cssLasso survives a degenerate lasso path
+  # (#125)") drives, and which.min() simply ignores it. All-NaN and empty are
+  # the two inputs that make which.min() return integer(0), where
+  # if(logical(0)) would abort: they are what the length(j) == 1L clause is
+  # for. NONE OF THE THREE IS REACHABLE THROUGH cssLasso() TODAY -- measured,
+  # anchoredLambdaGrid() drops the NaN, so even on that degenerate design the
+  # vector arriving here is c(0.01, 0) -- but the helper is stated to survive
+  # them, so it must.
   testthat::expect_identical(snapLambdaToGrid(c(NaN, 1.0, 0.5), 1.0*(1 + eps)),
                              1.0)
   testthat::expect_identical(snapLambdaToGrid(c(NaN, NaN), 0.3), 0.3)

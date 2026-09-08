@@ -53,12 +53,20 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     #
     # NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than
     # an omission -- the same one anchoredLambdaGrid()'s roxygen states for its
-    # own requirement on the caller. A positivity or finiteness stopifnot() here
-    # would turn the degenerate path, where glmnet returns NaN followed by
-    # zeros, from an empty selection into an error, on exactly the shape issue
-    # #157 was filed to stop crashing; it reddens
-    # test_that("cssLasso survives a degenerate lasso path (#125)"). The
-    # length(j) == 1L clause below is control flow and not validation: an
+    # own requirement on the caller. A positivity stopifnot() here would turn
+    # the degenerate path from an empty selection into an error, on exactly the
+    # shape issue #157 was filed to stop crashing. Measured on the design
+    # test_that("cssLasso survives a degenerate lasso path (#125)") drives: the
+    # FIRST fit's $lambda is NaN followed by zeros, anchoredLambdaGrid()
+    # reduces that to c(0.01, 0), and the second fit returns exactly that -- so
+    # what arrives here is finite and NaN-free but contains a zero, and
+    # all(lambda_fitted > 0) reddens that block -- and, measured alongside it,
+    # the s = 0 fixtures in
+    # test_that("snapLambdaToGrid holds its invariants (#199)"). A finiteness
+    # check would NOT,
+    # because this vector is finite; it is the first fit's $lambda that carries
+    # the NaN, and adding a check THERE is what that block also exists to stop.
+    # The length(j) == 1L clause below is control flow and not validation: an
     # all-NaN or empty lambda_fitted makes which.min() return integer(0), and
     # if(logical(0)) aborts, so the clause turns that case into "return s".
     #
