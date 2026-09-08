@@ -1865,6 +1865,14 @@ testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
   # test_that("cssLasso returns a solved column rather than a blend (#199)")'s
   # structural assertion are the only two things in the suite that redden.
   #
+  # THE SAME MOCK AND THE SAME FIRING CONDITION LIVE IN
+  # test_that("cssLasso returns a solved column rather than a blend (#199)").
+  # The nudge fires on !is.null(list(...)$lambda), which is a claim about how
+  # cssLasso() spells its second glmnet() call, so a refactor of that call
+  # disarms BOTH blocks at once rather than one of them. Change either mock and
+  # check the other. (The negative control below is what makes such a
+  # disarming visible here rather than silent.)
+  #
   # The blend is reached by MOCKING rather than by a live fixture, because
   # glmnet echoes this fixture's grid back verbatim on this machine, so an
   # unmocked wiring assertion would be green before the change here. Mocking an
@@ -2041,6 +2049,11 @@ testthat::test_that("cssLasso returns a solved column rather than a blend (#199)
   #    (#125)"), test_that("cssLasso survives a degenerate lasso path (#125)")
   #    and test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
   #    Four blocks, so do not trim one of them believing this block covers it.
+  #  - It shares its mock, and the mock's firing condition, with
+  #    test_that("cssLasso predicts at the penalty glmnet fitted (#199)"). That
+  #    condition is a claim about how cssLasso() spells its second glmnet()
+  #    call, so a refactor of that call disarms BOTH blocks at once. Change
+  #    either mock and check the other.
   #  - The one residual coupling, named rather than denied: the assertion embeds
   #    the same belief the helper embeds, that the right column is the argmin of
   #    |grid - L|. If that belief were wrong, both would move together. That is
@@ -2090,9 +2103,13 @@ testthat::test_that("cssLasso returns a solved column rather than a blend (#199)
   # The anti-vacuity guard, and it is about the fit cssLasso() actually
   # predicted from, which is why that fit is captured rather than rebuilt: the
   # requested penalty is absent from that grid, by the nudge, by the natural
-  # round trip, or both. If the nudge ever stopped applying, L would be in the
-  # grid, frac would be exactly 1, and this block would return the same answer
-  # before and after the change.
+  # round trip, or both. What the guard is FOR is the platform where neither
+  # holds: there L would be in the grid, frac would be exactly 1, and the block
+  # would return the same answer before and after the change, so the guard
+  # reddens instead of passing vacuously. It cannot, however, detect the nudge
+  # alone going away -- measured on this machine, with both nudges disarmed the
+  # guard still reads 0 and the block still separates 1 3 4 from 1 4, because
+  # this fixture's natural round trip is already inexact here.
   testthat::expect_identical(match(L, seen_fit$lambda, 0L), 0L)
   j <- which.min(abs(seen_fit$lambda - L))
   # unname() IS LOAD-BEARING, NOT TIDINESS: seen_fit$beta is a dgCMatrix whose
@@ -2384,10 +2401,9 @@ testthat::test_that("duplicate clusters are removed to match the docs (#156)", {
   # warning has deterministic coverage in "checkSelectedClusters works" and in
   # test_that("plot.cssr surfaces the tie-breach warning (#159c)"). Muffling just
   # that one message leaves every other warning in the block visible (#186,
-  # #199). BOTH calls are wrapped, not just the one that ties here: across 40
-  # jittered draws of this fixture the tie lands on cssSelect() in 2 of them and
-  # on cssPredict() in 0, so a one-call muffle reddens on a platform whose
-  # glmnet path differs slightly. The assertions below are untouched -- they are
+  # #199). BOTH calls are wrapped, not just the one that ties here: which of
+  # them ties depends on glmnet's lasso path, so a one-call muffle would redden
+  # on a platform whose path differs slightly. Today only cssPredict() ties. The assertions below are untouched -- they are
   # about well-formedness of the returns, which the tie is orthogonal to.
   sel <- withCallingHandlers(
     cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3)),

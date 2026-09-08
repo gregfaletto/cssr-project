@@ -47,25 +47,24 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     # anchoredLambdaGrid() has already placed s in the grid handed to glmnet(),
     # so which.min() below picks s's own echo and no n_ulp, however large,
     # reaches past it; only on a route where s is absent from the fitted path
-    # does the spacing of that path become the operative bound -- and measured
-    # on glmnet's default grids, adjacent penalties are a relative 0.05 to 0.1
-    # apart, which is of order 1e14 ulp.
+    # does the spacing of that path become the operative bound -- and on
+    # glmnet's default grids that spacing is of order 1e14 ulp, so it is not a
+    # bound n_ulp can approach.
     #
     # NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than
     # an omission -- the same one anchoredLambdaGrid()'s roxygen states for its
-    # own requirement on the caller. A positivity stopifnot() here would turn
-    # the degenerate path from an empty selection into an error, on exactly the
-    # shape issue #157 was filed to stop crashing. Measured on the design
-    # test_that("cssLasso survives a degenerate lasso path (#125)") drives: the
-    # FIRST fit's $lambda is NaN followed by zeros, anchoredLambdaGrid()
-    # reduces that to c(0.01, 0), and the second fit returns exactly that -- so
-    # what arrives here is finite and NaN-free but contains a zero, and
-    # all(lambda_fitted > 0) reddens that block -- and, measured alongside it,
-    # the s = 0 fixtures in
-    # test_that("snapLambdaToGrid holds its invariants (#199)"). A finiteness
-    # check would NOT,
-    # because this vector is finite; it is the first fit's $lambda that carries
-    # the NaN, and adding a check THERE is what that block also exists to stop.
+    # own requirement on the caller. The rule the suite enforces, stated once
+    # and without an enumeration to get wrong: ANY validation added here reddens
+    # it. Both shapes anyone would reach for do -- all(lambda_fitted > 0) and
+    # all(is.finite(lambda_fitted)) -- because the fixtures deliberately drive a
+    # zero-bearing grid and a NaN-bearing one through this function. The reason
+    # it matters beyond bookkeeping is the degenerate lasso path: a validating
+    # helper would turn that case from an empty selection into an error, on
+    # exactly the shape issue #157 was filed to stop crashing, which is what
+    # test_that("cssLasso survives a degenerate lasso path (#125)") exists to
+    # hold. (Two earlier revisions of this comment enumerated which check
+    # reddens which block and were wrong both times; the positive form above is
+    # the correction.)
     # The length(j) == 1L clause below is control flow and not validation: an
     # all-NaN or empty lambda_fitted makes which.min() return integer(0), and
     # if(logical(0)) aborts, so the clause turns that case into "return s".
