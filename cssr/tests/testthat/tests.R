@@ -1537,8 +1537,11 @@ testthat::test_that("cssLasso is byte-identical to the exact refit (#125)", {
   # test_that("cssLasso returns a solved column rather than a blend (#199)")
   # pins where that divergence occurs. All four fixtures below round-trip
   # exactly, which is why none of them diverges and why their assertions did not
-  # move; a fixture whose round trip is inexact WILL redden this block, and that
-  # is the correct outcome rather than a reason to widen the pin.
+  # move. An inexact round trip is NOT on its own enough to redden this block:
+  # measured over fixtures satisfying this block's own two rules, the large
+  # majority of the inexact ones stay green, because a blend has to leak a
+  # feature the reference does not already carry before the selected sets can
+  # differ.
   #
   # A PIN, NOT A RED-GREEN TEST -- like the second and third #188 blocks above,
   # it passes on the pre-change source, because before the rewrite cssLasso()
@@ -1894,7 +1897,8 @@ testthat::test_that("cssLasso predicts at the penalty glmnet fitted (#199)", {
 
   real_glmnet <- glmnet::glmnet  # captured BEFORE local_mocked_bindings(), which
   # rebinds inside glmnet's namespace: glmnet::, glmnet::: and getFromNamespace()
-  # inside a mock all resolve to the MOCK and recurse until the C stack dies.
+  # inside a mock all resolve to the MOCK and recurse until R aborts with
+  # "evaluation nested too deeply".
   # Measured, all three. In the weave that error is thrown from test_that() at
   # top level and arrives as the missing-'./cssr' red herring.
 
@@ -1980,8 +1984,8 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
   # THE ONLY FIXTURE THAT MAKES THE TOLERANCE'S * s SCALING LOAD-BEARING, and
   # its magnitude is the point of it. Measured: an absolute-tolerance mutant
   # (n_ulp*eps with the * s dropped) is INDISTINGUISHABLE from the correct
-  # helper at magnitude 4, and first diverges at 8 -- on grid c(8, 4) the
-  # correct helper returns 8 and the mutant returns 8.0000000000000018, and here
+  # helper at magnitude 4, and first diverges at 6 -- on grid c(6, 3) the
+  # correct helper returns 6 and the mutant returns 6.0000000000000018, and here
   # it returns 1000000.0000000002. Every other fixture in this block sits at
   # O(1), and cssLasso()'s penalty is on the response scale, so a user with a
   # larger response is exactly who the mutant silently stops snapping for. DO
@@ -2064,9 +2068,12 @@ testthat::test_that("cssLasso returns a solved column rather than a blend (#199)
   X <- matrix(stats::rnorm(n*p), nrow=n, ncol=p)
   y <- as.numeric(X %*% c(rep(1.5, 4), rep(0, p - 4)) + stats::rnorm(n))
   # Off the first fit's grid, so the refit route runs, and near the top of the
-  # path, which is the only place a blend can materialise at all:
-  # lambda.interp() normalises by (lambda[1] - s), and that subtraction
-  # annihilates an ULP-scale perturbation of an s far below lambda[1].
+  # path, where a blend is most likely: lambda.interp() forms (lambda[1] - s)
+  # over the normaliser (lambda[1] - lambda[k]), and the numerator's subtraction
+  # absorbs more of an ULP-scale perturbation of s the further s sits below
+  # lambda[1]. It is a gradient and NOT a threshold -- measured, blends occur
+  # down to L/lambda[1] near 0.05 -- so this fixture is chosen to make the blend
+  # reliable here, not because a lower one could not blend.
   L <- 1.6415147022263146
 
   m0 <- glmnet::glmnet(x=X, y=y, family="gaussian", alpha=1)
@@ -2393,18 +2400,21 @@ testthat::test_that("duplicate clusters are removed to match the docs (#156)", {
   # (iii) cssSelect and cssPredict route through css -> checkCssInputs, so they
   # inherit the fix: a named duplicate cluster runs without error.
   #
-  # These two calls report a max_num_clusts tie on this fixture -- cssPredict()
-  # on this machine, since #199's penalty snap changed which features cssLasso()
-  # returns here and dropped the modal cluster's selection proportion into a
-  # tie. It is not asserted, because whether the tie occurs depends on the
-  # estimated model size and so on glmnet's lasso path rather than on cssr; the
-  # warning has deterministic coverage in "checkSelectedClusters works" and in
-  # test_that("plot.cssr surfaces the tie-breach warning (#159c)"). Muffling just
-  # that one message leaves every other warning in the block visible (#186,
-  # #199). BOTH calls are wrapped, not just the one that ties here: which of
-  # them ties depends on glmnet's lasso path, so a one-call muffle would redden
-  # on a platform whose path differs slightly. Today only cssPredict() ties. The assertions below are untouched -- they are
-  # about well-formedness of the returns, which the tie is orthogonal to.
+  # cssPredict() reports a max_num_clusts tie on this fixture on this machine,
+  # because #199's penalty snap changed which features cssLasso() returns here
+  # and dropped the modal cluster's selection proportion into a tie. The tie is
+  # not asserted: whether it occurs depends on the estimated model size, and so
+  # on glmnet's lasso path rather than on cssr. The warning itself keeps
+  # deterministic coverage in "checkSelectedClusters works" and in
+  # test_that("plot.cssr surfaces the tie-breach warning (#159c)"), and muffling
+  # this one message by its text leaves every other warning in the block visible
+  # (#186, #199).
+  #
+  # BOTH calls are wrapped although only cssPredict() ties today, because which
+  # of them ties follows from that same lasso path, so a one-call muffle would
+  # redden on a platform whose path differs slightly. The assertions below are
+  # untouched -- they are about well-formedness of the returns, which the tie is
+  # orthogonal to.
   sel <- withCallingHandlers(
     cssSelect(X=x, y=y, clusters=list(myclust=2:3, dup=2:3)),
     warning = function(w) {

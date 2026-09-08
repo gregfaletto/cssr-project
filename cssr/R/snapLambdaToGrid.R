@@ -7,9 +7,8 @@
 #' the returned value rather than at `s`, which is what makes
 #' `predict.glmnet()` hand back a solved lasso path column, exact zeros
 #' included, instead of a blend of two adjacent columns. The comments in the
-#' body say why a tolerance this small is enough, why each end of it is
-#' insensitive for a different reason, and what the function deliberately does
-#' not check.
+#' body say why a tolerance this small is enough, why its two ends are bounded
+#' by different mechanisms, and what the function deliberately does not check.
 #'
 #' @param lambda_fitted A numeric vector of penalties (in practice the
 #' `$lambda` component of a fitted `glmnet` object). It may contain `NaN`, and
@@ -43,7 +42,9 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     #
     # THE INSENSITIVITY OF n_ulp IS ONE-SIDED, and each end is bounded by a
     # different mechanism. Downwards it is not insensitive at all: measured, the
-    # snap stops firing at n_ulp = 0.5. Upwards, on cssLasso()'s ordinary route,
+    # suite reddens at n_ulp = 2 and the invariants fixtures stop snapping at 1,
+    # so the value is pinned from below and 4 carries a factor of two over the
+    # nearest failing one. Upwards, on cssLasso()'s ordinary route,
     # anchoredLambdaGrid() has already placed s in the grid handed to glmnet(),
     # so which.min() below picks s's own echo and no n_ulp, however large,
     # reaches past it; only on a route where s is absent from the fitted path
@@ -53,11 +54,14 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     #
     # NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than
     # an omission -- the same one anchoredLambdaGrid()'s roxygen states for its
-    # own requirement on the caller. The rule the suite enforces, stated once
-    # and without an enumeration to get wrong: ANY validation added here reddens
-    # it. Both shapes anyone would reach for do -- all(lambda_fitted > 0) and
-    # all(is.finite(lambda_fitted)) -- because the fixtures deliberately drive a
-    # zero-bearing grid and a NaN-bearing one through this function. The reason
+    # own requirement on the caller. What is MEASURED, and nothing wider than
+    # that, because two earlier revisions of this comment stated a rule and were
+    # wrong both times: all(lambda_fitted > 0) reddens the suite, and
+    # all(is.finite(lambda_fitted)) reddens it too, because the fixtures
+    # deliberately drive a zero-bearing grid and a NaN-bearing one through this
+    # function. A type check does NOT -- stopifnot(is.numeric(lambda_fitted))
+    # leaves the suite byte-identically green -- so this is not a rule about
+    # validation in general and must not be written as one. The reason
     # it matters beyond bookkeeping is the degenerate lasso path: a validating
     # helper would turn that case from an empty selection into an error, on
     # exactly the shape issue #157 was filed to stop crashing, which is what
