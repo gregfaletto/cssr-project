@@ -2034,8 +2034,9 @@ testthat::test_that("cssLasso returns a solved column rather than a blend (#199)
   #    making cssLasso() never refit reddens
   #    test_that("cssLasso is byte-identical to the exact refit (#125)"),
   #    test_that("cssLasso fits the anchored grid rather than refitting exactly
-  #    (#125)") and test_that("cssLasso survives a degenerate lasso path
-  #    (#125)").
+  #    (#125)"), test_that("cssLasso survives a degenerate lasso path (#125)")
+  #    and test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
+  #    Four blocks, so do not trim one of them believing this block covers it.
   #  - The one residual coupling, named rather than denied: the assertion embeds
   #    the same belief the helper embeds, that the right column is the argmin of
   #    |grid - L|. If that belief were wrong, both would move together. That is

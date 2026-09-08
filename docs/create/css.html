@@ -2353,47 +2353,48 @@ We add the <code>parallel</code> package to the DESCRIPTION file:</p>
 <span id="cb43-45"><a href="css.html#cb43-45" tabindex="-1"></a>    <span class="co"># <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>() has already placed s in the grid handed to glmnet(),</span></span>
 <span id="cb43-46"><a href="css.html#cb43-46" tabindex="-1"></a>    <span class="co"># so which.min() below picks s's own echo and no n_ulp, however large,</span></span>
 <span id="cb43-47"><a href="css.html#cb43-47" tabindex="-1"></a>    <span class="co"># reaches past it; only on a route where s is absent from the fitted path</span></span>
-<span id="cb43-48"><a href="css.html#cb43-48" tabindex="-1"></a>    <span class="co"># does the spacing of that path -- adjacent glmnet penalties a relative 0.08</span></span>
-<span id="cb43-49"><a href="css.html#cb43-49" tabindex="-1"></a>    <span class="co"># or so apart, of order 1e14 ulp -- become the operative bound.</span></span>
-<span id="cb43-50"><a href="css.html#cb43-50" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb43-51"><a href="css.html#cb43-51" tabindex="-1"></a>    <span class="co"># NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than</span></span>
-<span id="cb43-52"><a href="css.html#cb43-52" tabindex="-1"></a>    <span class="co"># an omission -- the same one <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()'s roxygen states for its</span></span>
-<span id="cb43-53"><a href="css.html#cb43-53" tabindex="-1"></a>    <span class="co"># own requirement on the caller. A positivity or finiteness stopifnot() here</span></span>
-<span id="cb43-54"><a href="css.html#cb43-54" tabindex="-1"></a>    <span class="co"># would turn the degenerate path, where glmnet returns NaN followed by</span></span>
-<span id="cb43-55"><a href="css.html#cb43-55" tabindex="-1"></a>    <span class="co"># zeros, from an empty selection into an error, on exactly the shape issue</span></span>
-<span id="cb43-56"><a href="css.html#cb43-56" tabindex="-1"></a>    <span class="co"># #157 was filed to stop crashing; it reddens</span></span>
-<span id="cb43-57"><a href="css.html#cb43-57" tabindex="-1"></a>    <span class="co"># test_that("cssLasso survives a degenerate lasso path (#125)"). The</span></span>
-<span id="cb43-58"><a href="css.html#cb43-58" tabindex="-1"></a>    <span class="co"># length(j) == 1L clause below is control flow and not validation: an</span></span>
-<span id="cb43-59"><a href="css.html#cb43-59" tabindex="-1"></a>    <span class="co"># all-NaN or empty lambda_fitted makes which.min() return integer(0), and</span></span>
-<span id="cb43-60"><a href="css.html#cb43-60" tabindex="-1"></a>    <span class="co"># if(logical(0)) aborts, so the clause turns that case into "return s".</span></span>
-<span id="cb43-61"><a href="css.html#cb43-61" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb43-62"><a href="css.html#cb43-62" tabindex="-1"></a>    <span class="co"># THE INVARIANT <a href="css.html#cssLasso">cssLasso</a>()'S NEW READ ASSUMES, named here rather than</span></span>
-<span id="cb43-63"><a href="css.html#cb43-63" tabindex="-1"></a>    <span class="co"># asserted, for the reason just given. <a href="css.html#cssLasso">cssLasso</a>() asserts the class of its</span></span>
-<span id="cb43-64"><a href="css.html#cb43-64" tabindex="-1"></a>    <span class="co"># FIRST fit and nothing about its second, and until #199 the second fit's</span></span>
-<span id="cb43-65"><a href="css.html#cb43-65" tabindex="-1"></a>    <span class="co"># $lambda was consumed only by predict.glmnet(), which owns its own</span></span>
-<span id="cb43-66"><a href="css.html#cb43-66" tabindex="-1"></a>    <span class="co"># contract. What is now silently assumed of it is that it is a numeric</span></span>
-<span id="cb43-67"><a href="css.html#cb43-67" tabindex="-1"></a>    <span class="co"># vector with at least one non-NaN entry, on the same scale as lambda.</span></span>
-<span id="cb43-68"><a href="css.html#cb43-68" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb43-69"><a href="css.html#cb43-69" tabindex="-1"></a>    <span class="co"># THE FIRST FORMAL IS lambda_fitted AND NOT lambda_path DELIBERATELY. The</span></span>
-<span id="cb43-70"><a href="css.html#cb43-70" tabindex="-1"></a>    <span class="co"># sibling <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>(lambda_path, s, n_interior) has the same arity,</span></span>
-<span id="cb43-71"><a href="css.html#cb43-71" tabindex="-1"></a>    <span class="co"># the same second formal and the chunk immediately above, so a transposed</span></span>
-<span id="cb43-72"><a href="css.html#cb43-72" tabindex="-1"></a>    <span class="co"># call type-checks and runs -- and would predict at a penalty absent from</span></span>
-<span id="cb43-73"><a href="css.html#cb43-73" tabindex="-1"></a>    <span class="co"># the fitted grid, which is where the per-s-slot union <a href="css.html#cssLasso">cssLasso</a>()'s own</span></span>
-<span id="cb43-74"><a href="css.html#cb43-74" tabindex="-1"></a>    <span class="co"># comment warns about from #190 comes from. The differing name is the one</span></span>
-<span id="cb43-75"><a href="css.html#cb43-75" tabindex="-1"></a>    <span class="co"># signal at a call site that these take different things: the FIRST fit's</span></span>
-<span id="cb43-76"><a href="css.html#cb43-76" tabindex="-1"></a>    <span class="co"># path going in, the SECOND fit's returned penalties coming back.</span></span>
-<span id="cb43-77"><a href="css.html#cb43-77" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb43-78"><a href="css.html#cb43-78" tabindex="-1"></a>    <span class="co"># The block that enforces this arithmetic is</span></span>
-<span id="cb43-79"><a href="css.html#cb43-79" tabindex="-1"></a>    <span class="co"># test_that("snapLambdaToGrid holds its invariants (#199)"); the block that</span></span>
-<span id="cb43-80"><a href="css.html#cb43-80" tabindex="-1"></a>    <span class="co"># enforces the call site in <a href="css.html#cssLasso">cssLasso</a>() is</span></span>
-<span id="cb43-81"><a href="css.html#cb43-81" tabindex="-1"></a>    <span class="co"># test_that("cssLasso predicts at the penalty glmnet fitted (#199)").</span></span>
-<span id="cb43-82"><a href="css.html#cb43-82" tabindex="-1"></a>    j <span class="ot">&lt;-</span> <span class="fu">which.min</span>(<span class="fu">abs</span>(lambda_fitted <span class="sc">-</span> s))</span>
-<span id="cb43-83"><a href="css.html#cb43-83" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(j) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span></span>
-<span id="cb43-84"><a href="css.html#cb43-84" tabindex="-1"></a>        <span class="fu">abs</span>(lambda_fitted[j] <span class="sc">-</span> s) <span class="sc">&lt;=</span> n_ulp<span class="sc">*</span>.Machine<span class="sc">$</span>double.eps<span class="sc">*</span>s){</span>
-<span id="cb43-85"><a href="css.html#cb43-85" tabindex="-1"></a>        <span class="fu">return</span>(lambda_fitted[j])</span>
-<span id="cb43-86"><a href="css.html#cb43-86" tabindex="-1"></a>    }</span>
-<span id="cb43-87"><a href="css.html#cb43-87" tabindex="-1"></a>    <span class="fu">return</span>(s)</span>
-<span id="cb43-88"><a href="css.html#cb43-88" tabindex="-1"></a>}</span></code></pre></div>
+<span id="cb43-48"><a href="css.html#cb43-48" tabindex="-1"></a>    <span class="co"># does the spacing of that path become the operative bound -- and measured</span></span>
+<span id="cb43-49"><a href="css.html#cb43-49" tabindex="-1"></a>    <span class="co"># on glmnet's default grids, adjacent penalties are a relative 0.05 to 0.1</span></span>
+<span id="cb43-50"><a href="css.html#cb43-50" tabindex="-1"></a>    <span class="co"># apart, which is of order 1e14 ulp.</span></span>
+<span id="cb43-51"><a href="css.html#cb43-51" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb43-52"><a href="css.html#cb43-52" tabindex="-1"></a>    <span class="co"># NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than</span></span>
+<span id="cb43-53"><a href="css.html#cb43-53" tabindex="-1"></a>    <span class="co"># an omission -- the same one <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>()'s roxygen states for its</span></span>
+<span id="cb43-54"><a href="css.html#cb43-54" tabindex="-1"></a>    <span class="co"># own requirement on the caller. A positivity or finiteness stopifnot() here</span></span>
+<span id="cb43-55"><a href="css.html#cb43-55" tabindex="-1"></a>    <span class="co"># would turn the degenerate path, where glmnet returns NaN followed by</span></span>
+<span id="cb43-56"><a href="css.html#cb43-56" tabindex="-1"></a>    <span class="co"># zeros, from an empty selection into an error, on exactly the shape issue</span></span>
+<span id="cb43-57"><a href="css.html#cb43-57" tabindex="-1"></a>    <span class="co"># #157 was filed to stop crashing; it reddens</span></span>
+<span id="cb43-58"><a href="css.html#cb43-58" tabindex="-1"></a>    <span class="co"># test_that("cssLasso survives a degenerate lasso path (#125)"). The</span></span>
+<span id="cb43-59"><a href="css.html#cb43-59" tabindex="-1"></a>    <span class="co"># length(j) == 1L clause below is control flow and not validation: an</span></span>
+<span id="cb43-60"><a href="css.html#cb43-60" tabindex="-1"></a>    <span class="co"># all-NaN or empty lambda_fitted makes which.min() return integer(0), and</span></span>
+<span id="cb43-61"><a href="css.html#cb43-61" tabindex="-1"></a>    <span class="co"># if(logical(0)) aborts, so the clause turns that case into "return s".</span></span>
+<span id="cb43-62"><a href="css.html#cb43-62" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb43-63"><a href="css.html#cb43-63" tabindex="-1"></a>    <span class="co"># THE INVARIANT <a href="css.html#cssLasso">cssLasso</a>()'S NEW READ ASSUMES, named here rather than</span></span>
+<span id="cb43-64"><a href="css.html#cb43-64" tabindex="-1"></a>    <span class="co"># asserted, for the reason just given. <a href="css.html#cssLasso">cssLasso</a>() asserts the class of its</span></span>
+<span id="cb43-65"><a href="css.html#cb43-65" tabindex="-1"></a>    <span class="co"># FIRST fit and nothing about its second, and until #199 the second fit's</span></span>
+<span id="cb43-66"><a href="css.html#cb43-66" tabindex="-1"></a>    <span class="co"># $lambda was consumed only by predict.glmnet(), which owns its own</span></span>
+<span id="cb43-67"><a href="css.html#cb43-67" tabindex="-1"></a>    <span class="co"># contract. What is now silently assumed of it is that it is a numeric</span></span>
+<span id="cb43-68"><a href="css.html#cb43-68" tabindex="-1"></a>    <span class="co"># vector with at least one non-NaN entry, on the same scale as lambda.</span></span>
+<span id="cb43-69"><a href="css.html#cb43-69" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb43-70"><a href="css.html#cb43-70" tabindex="-1"></a>    <span class="co"># THE FIRST FORMAL IS lambda_fitted AND NOT lambda_path DELIBERATELY. The</span></span>
+<span id="cb43-71"><a href="css.html#cb43-71" tabindex="-1"></a>    <span class="co"># sibling <a href="css.html#anchoredLambdaGrid">anchoredLambdaGrid</a>(lambda_path, s, n_interior) has the same arity,</span></span>
+<span id="cb43-72"><a href="css.html#cb43-72" tabindex="-1"></a>    <span class="co"># the same second formal and the chunk immediately above, so a transposed</span></span>
+<span id="cb43-73"><a href="css.html#cb43-73" tabindex="-1"></a>    <span class="co"># call type-checks and runs -- and would predict at a penalty absent from</span></span>
+<span id="cb43-74"><a href="css.html#cb43-74" tabindex="-1"></a>    <span class="co"># the fitted grid, which is where the per-s-slot union <a href="css.html#cssLasso">cssLasso</a>()'s own</span></span>
+<span id="cb43-75"><a href="css.html#cb43-75" tabindex="-1"></a>    <span class="co"># comment warns about from #190 comes from. The differing name is the one</span></span>
+<span id="cb43-76"><a href="css.html#cb43-76" tabindex="-1"></a>    <span class="co"># signal at a call site that these take different things: the FIRST fit's</span></span>
+<span id="cb43-77"><a href="css.html#cb43-77" tabindex="-1"></a>    <span class="co"># path going in, the SECOND fit's returned penalties coming back.</span></span>
+<span id="cb43-78"><a href="css.html#cb43-78" tabindex="-1"></a>    <span class="co">#</span></span>
+<span id="cb43-79"><a href="css.html#cb43-79" tabindex="-1"></a>    <span class="co"># The block that enforces this arithmetic is</span></span>
+<span id="cb43-80"><a href="css.html#cb43-80" tabindex="-1"></a>    <span class="co"># test_that("snapLambdaToGrid holds its invariants (#199)"); the block that</span></span>
+<span id="cb43-81"><a href="css.html#cb43-81" tabindex="-1"></a>    <span class="co"># enforces the call site in <a href="css.html#cssLasso">cssLasso</a>() is</span></span>
+<span id="cb43-82"><a href="css.html#cb43-82" tabindex="-1"></a>    <span class="co"># test_that("cssLasso predicts at the penalty glmnet fitted (#199)").</span></span>
+<span id="cb43-83"><a href="css.html#cb43-83" tabindex="-1"></a>    j <span class="ot">&lt;-</span> <span class="fu">which.min</span>(<span class="fu">abs</span>(lambda_fitted <span class="sc">-</span> s))</span>
+<span id="cb43-84"><a href="css.html#cb43-84" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(j) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span> <span class="sc">&amp;&amp;</span></span>
+<span id="cb43-85"><a href="css.html#cb43-85" tabindex="-1"></a>        <span class="fu">abs</span>(lambda_fitted[j] <span class="sc">-</span> s) <span class="sc">&lt;=</span> n_ulp<span class="sc">*</span>.Machine<span class="sc">$</span>double.eps<span class="sc">*</span>s){</span>
+<span id="cb43-86"><a href="css.html#cb43-86" tabindex="-1"></a>        <span class="fu">return</span>(lambda_fitted[j])</span>
+<span id="cb43-87"><a href="css.html#cb43-87" tabindex="-1"></a>    }</span>
+<span id="cb43-88"><a href="css.html#cb43-88" tabindex="-1"></a>    <span class="fu">return</span>(s)</span>
+<span id="cb43-89"><a href="css.html#cb43-89" tabindex="-1"></a>}</span></code></pre></div>
 <p><code><a href="css.html#discreteYAbortProb">discreteYAbortProb</a>()</code> powers the up-front <code><a href="css.html#css">css</a>()</code> diagnostic for a highly discrete response (issue #131). For the default <code>cssLasso</code>, it estimates the probability that at least one random size-<code>floor(n/2)</code> subsample of <code>y</code> contains only a single unique value (which aborts the run in <code><a href="css.html#checkCssLassoInputs">checkCssLassoInputs</a>()</code>). Per subsample this probability is hypergeometric; the crucial property is that it is nonzero only when some value’s count is at least <code>floor(n/2)</code> (a near-majority), so a balanced binary <code>y</code> does not trip it while a strongly majority-dominated <code>y</code> does:</p>
 <div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="css.html#cb44-1" tabindex="-1"></a><span class="co">#' Estimated probability the default cssLasso aborts on a constant-y subsample</span></span>
 <span id="cb44-2"><a href="css.html#cb44-2" tabindex="-1"></a><span class="co">#'</span></span>

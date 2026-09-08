@@ -2424,8 +2424,9 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     # anchoredLambdaGrid() has already placed s in the grid handed to glmnet(),
     # so which.min() below picks s's own echo and no n_ulp, however large,
     # reaches past it; only on a route where s is absent from the fitted path
-    # does the spacing of that path -- adjacent glmnet penalties a relative 0.08
-    # or so apart, of order 1e14 ulp -- become the operative bound.
+    # does the spacing of that path become the operative bound -- and measured
+    # on glmnet's default grids, adjacent penalties are a relative 0.05 to 0.1
+    # apart, which is of order 1e14 ulp.
     #
     # NOTHING HERE VALIDATES lambda_fitted, and that is a decision rather than
     # an omission -- the same one anchoredLambdaGrid()'s roxygen states for its
@@ -9235,8 +9236,9 @@ testthat::test_that("cssLasso returns a solved column rather than a blend (#199)
   #    making cssLasso() never refit reddens
   #    test_that("cssLasso is byte-identical to the exact refit (#125)"),
   #    test_that("cssLasso fits the anchored grid rather than refitting exactly
-  #    (#125)") and test_that("cssLasso survives a degenerate lasso path
-  #    (#125)").
+  #    (#125)"), test_that("cssLasso survives a degenerate lasso path (#125)")
+  #    and test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
+  #    Four blocks, so do not trim one of them believing this block covers it.
   #  - The one residual coupling, named rather than denied: the assertion embeds
   #    the same belief the helper embeds, that the right column is the argmin of
   #    |grid - L|. If that belief were wrong, both would move together. That is
