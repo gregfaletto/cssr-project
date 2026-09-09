@@ -1979,8 +1979,11 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
     "length(s) == 1L is not TRUE", fixed=TRUE)
   #
   # TWO MUTANTS DELIBERATELY HAVE NO ASSERTION HERE, so that the next reader
-  # does not add one. Replacing the tolerance comparison's <= with < is a
-  # measure-zero boundary no reachable input sits on. And a very large n_ulp is
+  # does not add one. Replacing the tolerance comparison's <= with < is
+  # undetectable, but NOT because nothing reaches the boundary -- the s = 0
+  # fixture below sits exactly on it, since |g - s| and the relative tolerance
+  # are both 0 there. It is undetectable because on that boundary both branches
+  # return the same double, so no observable differs. And a very large n_ulp is
   # harmless on cssLasso()'s ordinary route, because anchoredLambdaGrid() has
   # put s in the grid and which.min() therefore picks s's own echo whatever the
   # tolerance admits.

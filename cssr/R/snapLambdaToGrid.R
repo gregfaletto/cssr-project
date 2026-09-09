@@ -32,12 +32,16 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     # anchoredLambdaGrid(lambda_path, s, n_interior) has the same arity and the
     # same second formal and sits in the chunk above, so a crossed call is easy
     # to write. Handing THIS function the anchored site's arguments passes a
-    # scalar s, so this line does not fire and the suite output is byte-identical
-    # with and without it -- that crossing is caught by the two #199 red-green
-    # assertions, not by this. What this line converts is the TRANSPOSED call,
-    # where s is the fitted path: without it R reports
-    # 'length = 45' in coercion to 'logical(1)' from inside which.min(); with it
-    # the failure names the precondition and the line that holds it. No
+    # scalar s, so this line never fires on that crossing, which is caught by the
+    # two #199 red-green assertions rather than by this. (Do not restate that as
+    # "the suite output is byte-identical with and without this line": since the
+    # invariants block gained an expect_error() for this guard, deleting the
+    # guard moves the suite whatever else is wrong.) What this line converts is
+    # the TRANSPOSED call, where s is the fitted path. Without it the error comes
+    # from the && in the tolerance test below -- which.min() itself is untroubled
+    # and returns an index -- and reads as a coercion complaint about a length
+    # nothing in this file explains. With it the failure names the precondition
+    # and the line that holds it. No
     # legitimate caller can reach it -- checkCssLassoInputs() rejects any lambda
     # whose length is not 1 or 2, and the length-2 form is unpacked before the
     # call site -- so it is a tripwire, not a runtime check.
@@ -100,10 +104,13 @@ snapLambdaToGrid <- function(lambda_fitted, s, n_ulp=4L){
     #
     # THE FIRST FORMAL IS lambda_fitted AND NOT lambda_path DELIBERATELY. The
     # sibling anchoredLambdaGrid(lambda_path, s, n_interior) has the same arity,
-    # the same second formal and the chunk immediately above, so a transposed
-    # call type-checks and runs -- and would predict at a penalty absent from
-    # the fitted grid, which is where the per-s-slot union cssLasso()'s own
-    # comment warns about from #190 comes from. The differing name is the one
+    # the same second formal and the chunk immediately above, so a CROSSED call
+    # -- this function given the anchored site's arguments, both in their usual
+    # order -- type-checks and runs, and would predict at a penalty chosen from
+    # the wrong fit's path. (The TRANSPOSED call, arguments swapped, errors on
+    # the scalar guard above; and neither is the route to #190's per-s-slot
+    # union, which comes from calling predict.glmnet() with no s at all.) The
+    # differing name is the one
     # signal at a call site that these take different things: the FIRST fit's
     # path going in, the SECOND fit's returned penalties coming back.
     #

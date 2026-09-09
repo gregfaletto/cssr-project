@@ -99,14 +99,17 @@ cssLasso <- function(X, y, lambda){
     # forms beta[, left]*frac + beta[, right]*(1 - frac). An ULP miss leaves
     # frac indistinguishable from 1 or from 0 -- WHICH ONE DEPENDS ON THE SIDE
     # THE MISS FALLS, measured at path positions 2-5: a miss upward, s above the
-    # fitted entry, gives a median frac of 0, and a miss downward gives 1. Do
-    # not write this as "a hair short of 1"; that is half the cases. Either way
-    # the nearer entry is the column whose weight is indistinguishable from 1,
-    # so every coefficient the OTHER column carries and it does not leaks in at
-    # the scale of the complement -- around 1e-17, and SELECTED, because
-    # nonzeroCoef()'s membership test is abs(x) > 0 with no tolerance. Handing s the fit's own
-    # entry makes lambda.interp() report left == right with frac == 1, so what
-    # comes back is the solved column with its exact zeros (#199).
+    # fitted entry, leaves frac indistinguishable from 0, and a miss downward
+    # from 1. Do not write this as "a hair short of 1"; that is half the cases.
+    # Either way the nearer entry is the column whose weight is indistinguishable
+    # from 1 -- which follows from lambda.interp()'s construction rather than
+    # only from the sweep -- so every coefficient the OTHER column carries and it
+    # does not is scaled by the complement and SELECTED, because nonzeroCoef()'s
+    # membership test is abs(x) > 0 with no tolerance. The leaked COEFFICIENTS
+    # land around 1e-17; the complement itself is larger, so do not attach that
+    # figure to it. Handing s the fit's own entry makes lambda.interp() report
+    # left == right with frac == 1, so what comes back is the solved column with
+    # its exact zeros (#199).
     #
     # Applied on BOTH routes rather than only on the refit route. On the
     # short-circuit route match(lambda, lasso_model$lambda, 0L) > 0 has already
