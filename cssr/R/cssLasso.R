@@ -96,11 +96,15 @@ cssLasso <- function(X, y, lambda){
     # can sit an ULP away from what went in. predict.glmnet() with a numeric s
     # does not solve anything: it calls glmnet:::lambda.interp(), which locates
     # s between two grid columns and returns left, right and frac, and then
-    # forms beta[, left]*frac + beta[, right]*(1 - frac). An ULP miss near the
-    # top of the path leaves frac a hair short of 1, and every coefficient the
-    # neighbouring column has and this one does not leaks in at the scale of
-    # that hair -- around 1e-17, and SELECTED, because nonzeroCoef()'s
-    # membership test is abs(x) > 0 with no tolerance. Handing s the fit's own
+    # forms beta[, left]*frac + beta[, right]*(1 - frac). An ULP miss leaves
+    # frac indistinguishable from 1 or from 0 -- WHICH ONE DEPENDS ON THE SIDE
+    # THE MISS FALLS, measured at path positions 2-5: a miss upward, s above the
+    # fitted entry, gives a median frac of 0, and a miss downward gives 1. Do
+    # not write this as "a hair short of 1"; that is half the cases. Either way
+    # the nearer entry is the column whose weight is indistinguishable from 1,
+    # so every coefficient the OTHER column carries and it does not leaks in at
+    # the scale of the complement -- around 1e-17, and SELECTED, because
+    # nonzeroCoef()'s membership test is abs(x) > 0 with no tolerance. Handing s the fit's own
     # entry makes lambda.interp() report left == right with frac == 1, so what
     # comes back is the solved column with its exact zeros (#199).
     #

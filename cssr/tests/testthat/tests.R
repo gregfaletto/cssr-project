@@ -1965,12 +1965,16 @@ testthat::test_that("snapLambdaToGrid holds its invariants (#199)", {
   # red-green obligation is
   # test_that("cssLasso predicts at the penalty glmnet fitted (#199)").
   #
-  # The scalar precondition, which without this assertion has no red-green cover
-  # at all: measured, deleting stopifnot(length(s) == 1L) from the helper reddens
-  # nothing in the suite, so it could be weakened later in silence. fixed = TRUE
-  # is mandatory -- the message contains ( and ), so it does not match itself as
-  # a regex (grepl(m, m) is FALSE), and at edition 2 a mismatched expect_error()
-  # aborts the whole render behind gotcha 1's missing-directory error.
+  # The scalar precondition. This assertion is its only cover: measured before
+  # it existed, deleting stopifnot(length(s) == 1L) from the helper reddened
+  # nothing at all, so the guard could have been weakened later in silence. With
+  # it, that deletion records an ERROR rather than a failure -- the mismatched
+  # expect_error() re-raises and aborts this block, taking the assertions below
+  # it with it, so read the error column and not just the summary line's FAIL,
+  # which aggregates both. fixed = TRUE is mandatory: the message contains ( and
+  # ), so it does not match itself as a regex (grepl(m, m) is FALSE), and at
+  # edition 2 a mismatch aborts the whole render behind gotcha 1's
+  # missing-directory error.
   testthat::expect_error(snapLambdaToGrid(c(1, 0.5), c(1, 0.5)),
     "length(s) == 1L is not TRUE", fixed=TRUE)
   #
