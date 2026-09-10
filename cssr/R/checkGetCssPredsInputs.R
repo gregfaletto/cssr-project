@@ -13,8 +13,9 @@
 #' combine features from the selected clusters into weighted averages, called
 #' cluster representatives. Must be one of "sparse", "weighted_avg", or
 #' "simple_avg". For "sparse", all the weight is put on the most frequently
-#' selected individual cluster member (or divided equally among all the clusters
-#' that are tied for the top selection proportion if there is a tie). For
+#' selected individual cluster member (or divided equally among all the
+#' cluster members that are tied for the top selection proportion if there is
+#' a tie). For
 #' "weighted_avg", the weight used for each cluster member is calculated in
 #' proportion to the individual selection proportions of each feature. For
 #' "simple_avg", each cluster member gets equal weight regardless of the

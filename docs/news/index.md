@@ -57,6 +57,28 @@
     rely on warnings to notice a change, since there is nothing to
     catch.
 
+- Corrected the `weighting` documentation on
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md),
+  [`getCssDesign()`](https://gregfaletto.github.io/cssr-project/reference/getCssDesign.md)
+  and
+  [`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md):
+  under `"sparse"` weighting a tie divides the weight equally among the
+  tied members of a cluster, not among the tied clusters, as the text
+  had said.
+  [`cssSelect()`](https://gregfaletto.github.io/cssr-project/reference/cssSelect.md)
+  and
+  [`cssPredict()`](https://gregfaletto.github.io/cssr-project/reference/cssPredict.md)
+  now also state which weighting each of them uses and what that means
+  for what they return, and
+  [`getCssDesign()`](https://gregfaletto.github.io/cssr-project/reference/getCssDesign.md)
+  and
+  [`getCssPreds()`](https://gregfaletto.github.io/cssr-project/reference/getCssPreds.md)
+  now carry the exception clause
+  [`getCssSelections()`](https://gregfaletto.github.io/cssr-project/reference/getCssSelections.md)
+  already published, for the case where no member of a selected cluster
+  was selected on any subsample. Documentation only; no behavior changed
+  ([\#203](https://github.com/gregfaletto/cssr-project/issues203)).
+
 This file starts here rather than covering the package’s whole history;
 for changes before this point, see the closed pull requests and the
 commit log.

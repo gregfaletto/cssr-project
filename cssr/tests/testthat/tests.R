@@ -3336,6 +3336,111 @@ testthat::test_that("getSelectedClusters applies cutoff as an exact >= threshold
   testthat::expect_false("c2" %in% sel(0.71))
 })
 
+testthat::test_that("getSelectedClusters returns the whole tied set when raising the threshold would empty it (#203)", {
+  # The max loop has TWO exits and this block pins the second one. Exit A,
+  # `if(thresh > B) break`, fires when the tied clusters sit at count B, i.e.
+  # selection proportion exactly 1.0 -- that is the case covered by
+  # "getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)".
+  # Exit B, the `else { break }` arm of `any(counts >= thresh)`, fires when the
+  # clusters tie at any count BELOW B: the threshold steps past the tied count,
+  # nothing meets it, and the loop breaks rather than emptying the selection.
+  # Exit B is the branch a removal at the per-subsample fitting level reaches,
+  # because a removal LOWERS a selection proportion rather than raising it to
+  # 1.0.
+  #
+  # Fixture: three clusters, each selected on 3 of B = 10 subsamples, so all
+  # three tie at count 3. thresh climbs 1 -> 2 -> 3, still selecting all three
+  # each time, then 4, where any(counts >= 4) is FALSE and the else fires.
+  # min_num_clusts = 1 because getSelectedClusters() has no default for it and
+  # NA errors in the min loop's while condition. The weighting is NOT
+  # load-bearing here: both loops run before any weight is computed.
+  #
+  # The warning assertion is NOT what makes this block about Exit B.
+  # checkSelectedClusters() runs after both exits and renders the identical
+  # string for each, so the literal cannot tell them apart. What makes this
+  # block about Exit B is the fixture reaching it, plus the count and
+  # exact-names assertions -- simplifying the block down to the warning would
+  # delete the pin without failing anything.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
+  props <- c(0.3, 0.3, 0.3)
+  clus_sel_mat <- do.call(cbind, lapply(props, function(p)
+    as.integer(c(rep(1, round(p * B)), rep(0, B - round(p * B))))))
+  colnames(clus_sel_mat) <- c("c1", "c2", "c3")
+  feat_sel_mat <- clus_sel_mat
+  colnames(feat_sel_mat) <- c("f1", "f2", "f3")
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+
+  testthat::expect_warning(
+    res <- getSelectedClusters(obj, weighting = "simple_avg", cutoff = 0,
+                               min_num_clusts = 1, max_num_clusts = 1),
+    "Returning more than max_num_clusts = 1", fixed = TRUE)
+
+  # Strictly more than max_num_clusts comes back ...
+  testthat::expect_gt(length(res$selected_clusts), 1)
+  # ... and it is the WHOLE tied set, so a future rule returning only some of
+  # the tied clusters fails here. expect_identical on names(), never
+  # all(names(...) %in% ...): names() is NULL on an unnamed vector and
+  # all(NULL %in% anything) is TRUE, so the %in% form would pass on an empty
+  # return while reading as the strongest assertion in the block.
+  testthat::expect_identical(names(res$selected_clusts), c("c1", "c2", "c3"))
+})
+
+testthat::test_that("getSelectedClusters overshoots min_num_clusts on a whole-count tie, silently (#203)", {
+  # The min loop lowers thresh by a WHOLE count, so one decrement admits every
+  # cluster sitting at that count at once and the function can return strictly
+  # MORE than min_num_clusts. Nothing warns: checkSelectedClusters() has a
+  # branch for n_sel_clusts < min_num_clusts and none for the overshoot.
+  #
+  # Fixture: one cluster at count 8 and three tied at count 3, B = 10, with
+  # cutoff = 0.8 so the initial threshold of 8 selects c1 alone.
+  # min_num_clusts = 2 then decrements thresh down to 3, where the three tied
+  # clusters are admitted together and four clusters come back for a minimum of
+  # two.
+  #
+  # max_num_clusts = NA is LOAD-BEARING, not "unset": the max loop is wrapped in
+  # if(!is.na(max_num_clusts)), so NA skips it entirely. It runs after the min
+  # loop and undoes the overshoot, which the counter-case at the end of this
+  # block pins.
+  B <- 10
+  clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L, c4 = 4L)
+  props <- c(0.8, 0.3, 0.3, 0.3)
+  clus_sel_mat <- do.call(cbind, lapply(props, function(p)
+    as.integer(c(rep(1, round(p * B)), rep(0, B - round(p * B))))))
+  colnames(clus_sel_mat) <- c("c1", "c2", "c3", "c4")
+  feat_sel_mat <- clus_sel_mat
+  colnames(feat_sel_mat) <- c("f1", "f2", "f3", "f4")
+  obj <- structure(list(feat_sel_mat = feat_sel_mat, clus_sel_mat = clus_sel_mat,
+                        clusters = clusters), class = "cssr")
+
+  # capture_warnings() rather than a bare expect_silent() or a nested
+  # expect_warning(): the woven chunks run at testthat edition 2, where an
+  # expect_warning() consumes every warning, and this collector behaves
+  # identically at both editions.
+  overshoot_warns <- testthat::capture_warnings(
+    res <- getSelectedClusters(obj, weighting = "simple_avg", cutoff = 0.8,
+                               min_num_clusts = 2, max_num_clusts = NA))
+
+  testthat::expect_gt(length(res$selected_clusts), 2)
+  testthat::expect_identical(names(res$selected_clusts),
+                             c("c1", "c2", "c3", "c4"))
+  # The silence is the property under question, so it is asserted rather than
+  # assumed.
+  testthat::expect_length(overshoot_warns, 0)
+
+  # Counter-case, and the reason max_num_clusts = NA above is load-bearing: with
+  # a finite max_num_clusts the max loop runs after the min loop and undoes the
+  # overshoot, returning FEWER than min_num_clusts and raising the opposite
+  # warning.
+  testthat::expect_warning(
+    res_capped <- getSelectedClusters(obj, weighting = "simple_avg",
+                                      cutoff = 0.8, min_num_clusts = 2,
+                                      max_num_clusts = 3),
+    "Returning fewer than min_num_clusts = 2", fixed = TRUE)
+  testthat::expect_identical(names(res_capped$selected_clusts), "c1")
+})
+
 testthat::test_that("getCssSelections works", {
 
   set.seed(26717)
