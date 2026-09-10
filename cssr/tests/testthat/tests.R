@@ -3379,7 +3379,7 @@ testthat::test_that("getSelectedClusters returns the whole tied set when raising
   testthat::expect_warning(
     res <- getSelectedClusters(obj, weighting = "simple_avg", cutoff = 0,
                                min_num_clusts = 1, max_num_clusts = 1),
-    "Returning more than max_num_clusts = 1", fixed = TRUE)
+    "Returning more than max_num_clusts = 1 clusters", fixed = TRUE)
 
   # Strictly more than max_num_clusts comes back ...
   testthat::expect_gt(length(res$selected_clusts), 1)
@@ -3441,7 +3441,7 @@ testthat::test_that("getSelectedClusters overshoots min_num_clusts on a whole-co
     res_capped <- getSelectedClusters(obj, weighting = "simple_avg",
                                       cutoff = 0.8, min_num_clusts = 2,
                                       max_num_clusts = 3),
-    "Returning fewer than min_num_clusts = 2", fixed = TRUE)
+    "Returning fewer than min_num_clusts = 2 clusters", fixed = TRUE)
   testthat::expect_identical(names(res_capped$selected_clusts), "c1")
 })
 
