@@ -10685,10 +10685,14 @@ testthat::test_that("getSelectedClusters applies cutoff as an exact >= threshold
 })
 
 testthat::test_that("getSelectedClusters returns the whole tied set when raising the threshold would empty it (#203)", {
-  # The max loop has TWO exits and this block pins the second one. Exit A,
-  # `if(thresh > B) break`, fires when the tied clusters sit at count B, i.e.
-  # selection proportion exactly 1.0 -- that is the case covered by
-  # "getSelectedClusters max_num_clusts handles proportion-1.0 ties (#42)".
+  # The max loop can leave more than one way, and this block pins the way
+  # nothing else reaches. Exit A, `if(thresh > B) break`, fires when the tied
+  # clusters sit TOGETHER at count B -- selection proportion exactly 1.0 --
+  # which is what "plot.cssr surfaces the tie-breach warning (#159c)" reaches.
+  # The loop can also end on its own `while` condition, having succeeded: that
+  # is what "getSelectedClusters max_num_clusts handles proportion-1.0 ties
+  # (#42)" does, because its c1 at count B and c2 at count B - 1 are NOT tied,
+  # so c2 drops out and the condition goes false before either break runs.
   # Exit B, the `else { break }` arm of `any(counts >= thresh)`, fires when the
   # clusters tie at any count BELOW B: the threshold steps past the tied count,
   # nothing meets it, and the loop breaks rather than emptying the selection.
