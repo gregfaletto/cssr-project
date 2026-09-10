@@ -27,7 +27,10 @@
 #' cluster members that are tied for the top selection proportion if there is
 #' a tie). For
 #' "weighted_avg", only the features within a selected cluster that were
-#' themselves selected on at least one subsample will have nonzero weight. For
+#' themselves selected on at least one subsample will have nonzero weight.
+#' (Exception: if no member of a selected cluster was selected on any subsample,
+#' the weights fall back to a simple average, so all of that cluster's members
+#' are returned.) For
 #' "simple_avg", each cluster member gets equal weight regardless of the
 #' individual feature selection proportions (that is, all cluster members within
 #' each selected cluster will be returned.). See Faletto and Bien (2022) for

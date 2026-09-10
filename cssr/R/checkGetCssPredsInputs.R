@@ -17,7 +17,10 @@
 #' cluster members that are tied for the top selection proportion if there is
 #' a tie). For
 #' "weighted_avg", the weight used for each cluster member is calculated in
-#' proportion to the individual selection proportions of each feature. For
+#' proportion to the individual selection proportions of each feature.
+#' (Exception: if no member of a selected cluster was selected on any
+#' subsample, the weights fall back to a simple average, so all of that
+#' cluster's members contribute to the representative.) For
 #' "simple_avg", each cluster member gets equal weight regardless of the
 #' individual feature selection proportions (that is, the cluster representative
 #' is just a simple average of all the cluster members). See Faletto and Bien
