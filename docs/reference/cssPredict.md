@@ -137,6 +137,16 @@ cssPredict(
 A numeric vector of length nrow(X_test) of predictions corresponding to
 the observations from X_test.
 
+## Details
+
+cssPredict uses "weighted_avg" weighting: each selected cluster is
+represented by a weighted average of the cluster members that were
+selected on at least one subsample, with weights proportional to their
+individual selection proportions. (Exception: if no member of a selected
+cluster was selected on any subsample, the weights fall back to a simple
+average, so all of that cluster's members contribute to the
+representative.)
+
 ## Author
 
 Gregory Faletto, Jacob Bien

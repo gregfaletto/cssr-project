@@ -122,7 +122,11 @@ A named list with three items.
 - selected_feats:
 
   A named integer vector; the indices of the features with nonzero
-  weights from all of the selected clusters.
+  weights from all of the selected clusters. cssSelect uses "sparse"
+  weighting, so a selected cluster contributes the member with the
+  highest individual selection proportion, along with every other member
+  of that cluster tied with it at that maximum. A selected cluster can
+  therefore contribute more than one feature.
 
 - weights:
 
