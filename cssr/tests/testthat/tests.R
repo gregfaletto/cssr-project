@@ -3359,12 +3359,12 @@ testthat::test_that("getSelectedClusters returns the whole tied set when raising
   # NA errors in the min loop's while condition. The weighting is NOT
   # load-bearing here: both loops run before any weight is computed.
   #
-  # The warning assertion is NOT what makes this block about Exit B.
-  # checkSelectedClusters() runs after both exits and renders the identical
-  # string for each, so the literal cannot tell them apart. What makes this
-  # block about Exit B is the fixture reaching it, plus the count and
-  # exact-names assertions -- simplifying the block down to the warning would
-  # delete the pin without failing anything.
+  # What makes this block about Exit B is the fixture reaching it, not the
+  # warning: checkSelectedClusters() runs after both exits and renders the
+  # identical string for each, so the literal cannot tell them apart. The three
+  # assertions pin three different properties of the outcome -- that MORE than
+  # max_num_clusts comes back, that it is the WHOLE tied set, and that the
+  # breach is announced. Keep all three.
   B <- 10
   clusters <- list(c1 = 1L, c2 = 2L, c3 = 3L)
   props <- c(0.3, 0.3, 0.3)
