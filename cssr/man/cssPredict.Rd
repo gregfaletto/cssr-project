@@ -115,6 +115,15 @@ return results for different matrices of new data or using different values
 of cutoff, max_num_clusts, etc. by using the calculations done in one call to
 css.
 }
+\details{
+cssPredict uses "weighted_avg" weighting: each selected cluster is
+represented by a weighted average of the cluster members that were selected
+on at least one subsample, with weights proportional to their individual
+selection proportions.
+(Exception: if no member of a selected cluster was selected on any
+subsample, the weights fall back to a simple average, so all of that
+cluster's members contribute to the representative.)
+}
 \examples{
 set.seed(1)
 train <- genClusteredData(n = 80, p = 11, k_unclustered = 2,

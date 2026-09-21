@@ -37,5 +37,15 @@
     route to know about if you rely on warnings to notice a change, since there
     is nothing to catch.
 
+* Corrected the `weighting` documentation on `getCssSelections()`,
+  `getCssDesign()` and `getCssPreds()`: under `"sparse"` weighting a tie divides
+  the weight equally among the tied members of a cluster, not among the tied
+  clusters, as the text had said. `cssSelect()` and `cssPredict()` now also state
+  which weighting each of them uses and what that means for what they return, and
+  `getCssDesign()` and `getCssPreds()` now carry the exception clause
+  `getCssSelections()` already published, for the case where no member of a
+  selected cluster was selected on any subsample. Documentation only; no behavior
+  changed (#203).
+
 This file starts here rather than covering the package's whole history; for
 changes before this point, see the closed pull requests and the commit log.

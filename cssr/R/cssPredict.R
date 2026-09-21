@@ -13,6 +13,14 @@
 #' of cutoff, max_num_clusts, etc. by using the calculations done in one call to
 #' css.
 #'
+#' cssPredict uses "weighted_avg" weighting: each selected cluster is
+#' represented by a weighted average of the cluster members that were selected
+#' on at least one subsample, with weights proportional to their individual
+#' selection proportions.
+#' (Exception: if no member of a selected cluster was selected on any
+#' subsample, the weights fall back to a simple average, so all of that
+#' cluster's members contribute to the representative.)
+#'
 #' @param X_train_selec An n x p numeric matrix (preferably) or a data.frame
 #' (which will be coerced internally to a matrix by the function model.matrix)
 #' containing the p >= 2 features/predictors. The data from X_train_selec and

@@ -104,8 +104,11 @@ formed:
 - `"weighted_avg"` — a weighted average with weights inferred from the
   selection proportions, so noisier proxies get less weight. Best when
   the members’ noise levels vary.
-- `"sparse"` — use a single member (the most-selected one), in the
-  spirit of the protolasso. Simplest, but discards the other members.
+- `"sparse"` — concentrate the weight on the most-selected member, in
+  the spirit of the protolasso. Simplest, but discards the rest of the
+  cluster. On a tie the members at the top selection proportion share
+  the weight equally, so that cluster’s column is their average rather
+  than a copy of one member.
 
 ``` r
 for (w in c("simple_avg", "weighted_avg", "sparse")) {
